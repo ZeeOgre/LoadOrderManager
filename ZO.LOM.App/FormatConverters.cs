@@ -228,4 +228,21 @@ namespace ZO.LoadOrderManager
             throw new NotImplementedException();
         }
     }
+
+    public class FilesToStringConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value is List<FileInfo> files)
+            {
+                return string.Join(", ", files.Select(f => f.Filename));
+            }
+            return string.Empty;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
 }

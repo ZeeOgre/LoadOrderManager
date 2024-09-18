@@ -73,7 +73,52 @@ namespace ZO.LoadOrderManager
                     }
 
                     // Load Plugins and Groups
-                    using (var command = new SQLiteCommand("SELECT * FROM vwPluginGrpUnion", connection))
+                    using (var command = new SQLiteCommand(@"
+                        SELECT 
+                            p.PluginID, 
+                            p.PluginName, 
+                            p.Description, 
+                            p.Achievements, 
+                            p.DTStamp, 
+                            p.Version, 
+                            p.GroupID AS PluginGroupID, 
+                            p.GroupOrdinal, 
+                            g.GroupID AS GroupID,  
+                            g.GroupName AS GroupName,      
+                            g.Description AS GroupDescription, 
+                            g.ParentID, 
+                            g.Ordinal AS GroupGroupOrdinal, 
+                            pp.ProfileID, 
+                            e.BethesdaID, 
+                            e.NexusID 
+                        FROM 
+                            Plugins p 
+                        LEFT JOIN 
+                            ModGroups g ON p.GroupID = g.GroupID 
+                        LEFT JOIN 
+                            ProfilePlugins pp ON p.PluginID = pp.PluginID 
+                        LEFT JOIN 
+                            ExternalIDs e ON p.PluginID = e.PluginID 
+                        UNION 
+                        SELECT 
+                            NULL AS PluginID, 
+                            NULL AS PluginName, 
+                            NULL AS Description, 
+                            NULL AS Achievements, 
+                            NULL AS DTStamp, 
+                            NULL AS Version, 
+                            g.GroupID AS PluginGroupID, 
+                            NULL AS GroupOrdinal, 
+                            g.GroupID AS GroupID,    
+                            g.GroupName AS GroupName,      
+                            g.Description AS GroupDescription, 
+                            g.ParentID, 
+                            g.Ordinal AS GroupGroupOrdinal, 
+                            NULL AS ProfileID, 
+                            NULL AS BethesdaID, 
+                            NULL AS NexusID 
+                        FROM 
+                            ModGroups g", connection))
                     using (var reader = command.ExecuteReader())
                     {
                         var pluginDict = new Dictionary<int, Plugin>();
@@ -83,6 +128,7 @@ namespace ZO.LoadOrderManager
                         {
                             var pluginID = reader.IsDBNull(reader.GetOrdinal("PluginID")) ? (int?)null : reader.GetInt32(reader.GetOrdinal("PluginID"));
                             var groupID = reader.GetInt32(reader.GetOrdinal("GroupID"));
+                            var profileID = reader.IsDBNull(reader.GetOrdinal("ProfileID")) ? (int?)null : reader.GetInt32(reader.GetOrdinal("ProfileID"));
 
                             // Process Plugin
                             if (pluginID.HasValue && !pluginDict.ContainsKey(pluginID.Value))
@@ -129,6 +175,17 @@ namespace ZO.LoadOrderManager
                                 var plugin = pluginDict[pluginID.Value];
                                 var modGroup = groupDict[groupID];
                                 modGroup.Plugins.Add(plugin);
+                            }
+
+                            // Associate Plugin with LoadOut
+                            if (profileID.HasValue)
+                            {
+                                var loadOut = LoadOuts.FirstOrDefault(l => l.ProfileID == profileID.Value);
+                                if (loadOut != null && pluginID.HasValue)
+                                {
+                                    var plugin = pluginDict[pluginID.Value];
+                                    loadOut.Plugins.Add(new PluginViewModel(plugin, true)); // Assuming the plugin is enabled
+                                }
                             }
                         }
                     }

@@ -3,6 +3,7 @@ using System.Data.SQLite;
 using System.IO;
 using YamlDotNet.Serialization;
 using System.ComponentModel;
+using System.Collections.ObjectModel;
 
 namespace ZO.LoadOrderManager
 {
@@ -474,6 +475,9 @@ namespace ZO.LoadOrderManager
     {
         private Plugin _plugin;
         private bool _isEnabled;
+        private ObservableCollection<ModGroup> _groups;
+        private ObservableCollection<LoadOut> _loadouts;
+        private string _files;
 
         public Plugin Plugin
         {
@@ -501,29 +505,98 @@ namespace ZO.LoadOrderManager
             }
         }
 
-        public PluginViewModel()
+        public ObservableCollection<ModGroup> Groups
         {
-            _plugin = new Plugin();
-            _isEnabled = false;
+            get => _groups;
+            set
+            {
+                if (_groups != value)
+                {
+                    _groups = value;
+                    OnPropertyChanged(nameof(Groups));
+                }
+            }
+        }
+
+        public ObservableCollection<LoadOut> Loadouts
+        {
+            get => _loadouts;
+            set
+            {
+                if (_loadouts != value)
+                {
+                    _loadouts = value;
+                    OnPropertyChanged(nameof(Loadouts));
+                }
+            }
+        }
+
+        public string Files
+        {
+            get => _files;
+            set
+            {
+                if (_files != value)
+                {
+                    _files = value;
+                    OnPropertyChanged(nameof(Files));
+                }
+            }
         }
 
         public PluginViewModel(Plugin plugin, bool isEnabled)
         {
             _plugin = plugin;
             _isEnabled = isEnabled;
+            _groups = AggLoadInfo.Instance.Groups;
+            _loadouts = AggLoadInfo.Instance.LoadOuts;
+            _files = string.Join(", ", _plugin.Files.Select(f => f.Filename));
         }
 
-        public event PropertyChangedEventHandler PropertyChanged;
+        public void Save()
+        {
+            // Update _plugin object
+            _plugin.Files = Files.Split(',').Select(f => new FileInfo(f.Trim())).ToList();
+
+            // Check if the GroupID has changed
+            var originalGroupID = AggLoadInfo.Instance.Plugins
+                .FirstOrDefault(p => p.PluginID == _plugin.PluginID)?.GroupID;
+            var newGroupID = _plugin.GroupID;
+
+            if (originalGroupID.HasValue && originalGroupID.Value != newGroupID)
+            {
+                // Update the GroupID and GroupOrdinal
+                _plugin.GroupID = newGroupID;
+                _plugin.GroupOrdinal = AggLoadInfo.Instance.Plugins
+                    .Where(p => p.GroupID == newGroupID)
+                    .Select(p => p.GroupOrdinal)
+                    .DefaultIfEmpty(1)
+                    .Max() + 1;
+            }
+
+            // Update the database and the Plugins singleton
+            foreach (var file in _plugin.Files)
+            {
+                FileInfo.InsertFileInfo(file, _plugin.PluginID);
+            }
+
+            _plugin.WriteMod();
+
+            // Remove the old plugin and add the updated one
+            var existingPlugin = AggLoadInfo.Instance.Plugins.FirstOrDefault(p => p.PluginID == _plugin.PluginID);
+            if (existingPlugin != null)
+            {
+                _ = AggLoadInfo.Instance.Plugins.Remove(existingPlugin);
+            }
+            AggLoadInfo.Instance.Plugins.Add(_plugin);
+        }
 
         protected virtual void OnPropertyChanged(string propertyName)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
-       
-
-
-
+        public event PropertyChangedEventHandler PropertyChanged;
     }
 
 }

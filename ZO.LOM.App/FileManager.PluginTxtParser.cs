@@ -175,11 +175,7 @@ namespace ZO.LoadOrderManager
                         var completePlugin = Plugin.LoadPlugin(plugin.PluginName);
                         if (completePlugin != null)
                         {
-                            loadOut.Plugins.Add(new PluginViewModel
-                            {
-                                Plugin = completePlugin,
-                                IsEnabled = isEnabled // Set the IsEnabled property based on the isEnabled variable
-                            });
+                            loadOut.Plugins.Add(new PluginViewModel(completePlugin, isEnabled)); // Call the constructor with parameters
 
                             if (isEnabled)
                             {

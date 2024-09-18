@@ -173,12 +173,12 @@ namespace ZO.LoadOrderManager
                         InitializationManager.EndInitialization(nameof(DbManager));
                         App.LogDebug("Database manager initialized.");
 
-                        App.LogDebug("Initializing AggLoadInfo from database...");
-                        InitializationManager.StartInitialization(nameof(AggLoadInfo));
-                        AggLoadInfo.Instance.InitFromDatabase();
-                        InitializationManager.ReportProgress(60, "AggLoadInfo initialized from database");
-                        InitializationManager.EndInitialization(nameof(AggLoadInfo));
-                        App.LogDebug("AggLoadInfo initialized from database.");
+                        //App.LogDebug("Initializing AggLoadInfo from database...");
+                        //InitializationManager.StartInitialization(nameof(AggLoadInfo));
+                        //AggLoadInfo.Instance.InitFromDatabase();
+                        //InitializationManager.ReportProgress(60, "AggLoadInfo initialized from database");
+                        //InitializationManager.EndInitialization(nameof(AggLoadInfo));
+                        //App.LogDebug("AggLoadInfo initialized from database.");
 
                         App.LogDebug("Initializing file manager...");
                         InitializationManager.StartInitialization(nameof(FileManager));

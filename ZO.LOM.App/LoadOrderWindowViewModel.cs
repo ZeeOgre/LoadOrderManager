@@ -482,11 +482,9 @@ namespace ZO.LoadOrderManager
                     var newLoadOut = new LoadOut
                     {
                         Name = newProfileName,
-                        Plugins = new ObservableCollection<PluginViewModel>(Plugins.Select(p => new PluginViewModel
-                        {
-                            Plugin = p,
-                            IsEnabled = true
-                        }))
+                        Plugins = new ObservableCollection<PluginViewModel>(
+        Plugins.Select(p => new PluginViewModel(p, true))
+    )
                     };
 
                     // Write the new profile to the database
