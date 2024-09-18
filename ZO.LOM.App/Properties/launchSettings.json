@@ -1,0 +1,9 @@
+{
+  "profiles": {
+    "ZO.LOM.APP": {
+      "commandName": "Project",
+      "nativeDebugging": false,
+      "sqlDebugging": false
+    }
+  }
+}

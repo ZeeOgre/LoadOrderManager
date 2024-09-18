@@ -1,0 +1,76 @@
+<Window x:Class="ZO.LoadOrderManager.PluginEditorWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="LoadOrderManager - Plugin Editor" Height="570" Width="600">
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="2*"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <Label Content="Plugin Name:" Grid.Row="0" Grid.Column="0" Margin="5"/>
+        <TextBox Text="{Binding Plugin.PluginName}" Grid.Row="0" Grid.Column="1" Margin="5"/>
+
+        <Label Content="Description:" Grid.Row="1" Grid.Column="0" Margin="5"/>
+        <TextBox Text="{Binding Plugin.Description}" Grid.Row="1" Grid.Column="1" Margin="5"/>
+
+        <Label Content="Achievement Safe:" Grid.Row="2" Grid.Column="0" Margin="5"/>
+        <CheckBox IsChecked="{Binding Plugin.Achievements}" Grid.Row="2" Grid.Column="1" Margin="5"/>
+
+        <Label Content="Files:" Grid.Row="3" Grid.Column="0" Margin="5"/>
+        <TextBox Text="{Binding Files}" Grid.Row="3" Grid.Column="1" Margin="5" Height="60" TextWrapping="Wrap"/>
+
+        <Label Content="TimeStamp:" Grid.Row="4" Grid.Column="0" Margin="5"/>
+        <TextBox Text="{Binding Plugin.DTStamp}" Grid.Row="4" Grid.Column="1" Margin="5"/>
+
+        <Label Content="Version:" Grid.Row="5" Grid.Column="0" Margin="5"/>
+        <TextBox Text="{Binding Plugin.Version}" Grid.Row="5" Grid.Column="1" Margin="5"/>
+
+        <Label Content="Bethesda ID:" Grid.Row="6" Grid.Column="0" Margin="5"/>
+        <TextBox Text="{Binding Plugin.BethesdaID}" Grid.Row="6" Grid.Column="1" Margin="5"/>
+
+        <Label Content="Nexus ID:" Grid.Row="7" Grid.Column="0" Margin="5"/>
+        <TextBox Text="{Binding Plugin.NexusID}" Grid.Row="7" Grid.Column="1" Margin="5"/>
+
+        <Label Content="Group:" Grid.Row="8" Grid.Column="0" Margin="5"/>
+        <ComboBox ItemsSource="{Binding Groups}" 
+                  DisplayMemberPath="GroupName" 
+                  SelectedValuePath="GroupID" 
+                  SelectedValue="{Binding Plugin.GroupID}" 
+                  Grid.Row="8" Grid.Column="1" Margin="5"/>
+
+        <Label Content="Loadouts:" Grid.Row="9" Grid.Column="0" Margin="5"/>
+        <ScrollViewer Grid.Row="9" Grid.Column="1" Margin="5" Height="100">
+            <UniformGrid Columns="4">
+                <ItemsControl ItemsSource="{Binding Loadouts}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal">
+                                <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay, RelativeSource={RelativeSource AncestorType=ListBoxItem}}"/>
+                                <TextBlock Text="{Binding Name}" Margin="5,0,0,0"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </UniformGrid>
+        </ScrollViewer>
+
+        <StackPanel Grid.Row="10" Grid.ColumnSpan="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="5">
+            <Button Content="Save" Width="60" Margin="5" Click="SaveButton_Click"/>
+            <Button Content="Cancel" Width="60" Margin="5" Click="CancelButton_Click"/>
+        </StackPanel>
+    </Grid>
+</Window>

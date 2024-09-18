@@ -1,0 +1,162 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <!-- General project properties -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <GenerateDocumentationFile>False</GenerateDocumentationFile>
+    <SignAssembly>False</SignAssembly>
+    <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
+    <Title>ZeeOgre.DevModManager</Title>
+    <Description>A mod lifecycle manager designed to leverage Vortex or MO2 to efficiently handle release cycles of Bethesda Game mods</Description>
+    <Copyright>Copyright 2024 ZeeOgre</Copyright>
+    <PackageIcon>docs\img\ZeeOgre_NoBackground.jpg</PackageIcon>
+    <PackageProjectUrl>https://github.com/ZeeOgre/DevModManager</PackageProjectUrl>
+    <PackageReadmeFile>docs\README.md</PackageReadmeFile>
+    <RepositoryUrl>https://github.com/ZeeOgre/DevModManager</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageLicenseExpression>AGPL-3.0-or-later</PackageLicenseExpression>
+    <Version>0.0.4</Version>
+    <Configurations>Debug;Release;GitRelease;GitPublish</Configurations>
+    <Authors>ZeeOgre</Authors>
+    <ApplicationIcon>docs\img\ZeeOgre.ico</ApplicationIcon>
+    <NeutralLanguage>en-US</NeutralLanguage>
+    <ProduceReferenceAssembly>False</ProduceReferenceAssembly>
+    <AssemblyName>DevModManager</AssemblyName>
+    <RootNamespace>DevModManager.App</RootNamespace>
+    <WixVersion>$(Version)</WixVersion>
+    <WixProductName>$(AssemblyName)</WixProductName>
+    <WixManufacturer>$(Authors)</WixManufacturer>
+  </PropertyGroup>
+  <!-- Optimization settings for GitRelease configuration -->
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <Optimize>True</Optimize>
+  </PropertyGroup>
+  <!-- Optimization settings for GitRelease configuration -->
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='GitRelease|AnyCPU'">
+    <Optimize>True</Optimize>
+  </PropertyGroup>
+  <!-- Output path and optimization settings for GitPublish configuration -->
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='GitPublish|AnyCPU'">
+    <Optimize>True</Optimize>
+    <OutputPath>bin\GitPublish\</OutputPath>
+    <PublishDir>publish\GitPublish\</PublishDir>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Remove="data\DevModManager.db" />
+  </ItemGroup>
+  <!-- Include content files in the project -->
+  <ItemGroup>
+    <Content Include="docs\img\ZeeOgre.ico" />
+    <Content Include="docs\img\ZeeOgre_NoBackground.jpg">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </Content>
+  </ItemGroup>
+  <!-- Ensure specific files are included in the NuGet package -->
+  <ItemGroup>
+    <None Update="data\LoadOrderManager.db">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="docs\img\ZeeOgre_NoBackground.jpg">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+    <None Update="docs\README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
+  <!-- Package references for the project -->
+  <ItemGroup>
+    <PackageReference Include="Autoupdater.NET.Official" Version="1.9.2" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.8" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.8" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="SharpCompress" Version="0.37.2" />
+    <PackageReference Include="System.Data.SQLite" Version="1.0.118" />
+    <PackageReference Include="YamlDotNet" Version="16.0.0" />
+  </ItemGroup>
+  <!-- Define properties for paths -->
+  <PropertyGroup>
+    <SettingsFile>$(ProjectDir)Properties\Settings.settings</SettingsFile>
+    <CsprojFilePath>$(MSBuildProjectFullPath)</CsprojFilePath>
+    <AppConfigFilePath>$(ProjectDir)App.config</AppConfigFilePath>
+    <VersionTxtFilePath>$(ProjectDir)Properties\version.txt</VersionTxtFilePath>
+  </PropertyGroup>
+  <Target Name="IncrementVersion" BeforeTargets="BeforeBuild" Condition="'$(Configuration)' == 'GitRelease'">
+    <Message Text="Running IncrementVersion target..." Importance="high" />
+    <Exec Command="powershell -ExecutionPolicy Bypass -File $(ProjectDir)scripts\IncrementVersion.ps1 -SettingsFile &quot;$(SettingsFile)&quot; -CsprojFilePath &quot;$(CsprojFilePath)&quot; -AppConfigFilePath &quot;$(AppConfigFilePath)&quot; -VersionTxtFilePath &quot;$(VersionTxtFilePath)&quot;" />
+    <!-- Re-evaluate the version property after incrementing -->
+    <ReadLinesFromFile File="$(VersionTxtFilePath)">
+      <Output TaskParameter="Lines" PropertyName="Version" />
+    </ReadLinesFromFile>
+  </Target>
+  <!-- Git commands to commit, push, tag, and release -->
+  <!-- Debug configuration specific settings -->
+  <ItemGroup Condition="'$(Configuration)' == 'Debug'">
+    <None Include="config\config.yaml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+  <!-- Ensure docs folder contents are copied to the output directory -->
+  <ItemGroup>
+    <None Update="docs\**\*">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+  <!-- Ensure data file is copied to the output directory for non-Debug configurations -->
+  <ItemGroup Condition="'$(Configuration)' != 'Debug'">
+    <Content Include="config\config_sample.yaml">
+      <Link>config\config.yaml</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <None Update="data\DevModManager.db">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+  <!-- Ensure Settings.Designer.cs is generated correctly -->
+  <ItemGroup>
+    <None Update="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
+    <Compile Update="Properties\Resources.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Properties\Settings.Designer.cs">
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Settings.settings</DependentUpon>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Update="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="data\" />
+  </ItemGroup>
+  <!-- Move language resource files to locale subfolder after build for non-GitPublish configurations -->
+  <Target Name="MoveFilesAfterBuild" AfterTargets="Build;Publish">
+    <PropertyGroup>
+      <TargetDir Condition="'$(Configuration)' == 'GitPublish'">$(PublishDir)</TargetDir>
+      <TargetDir Condition="'$(Configuration)' != 'GitPublish'">$(OutputPath)</TargetDir>
+    </PropertyGroup>
+    <ItemGroup>
+      <LanguageResources Include="$(TargetDir)**\*.resources.dll" Exclude="$(TargetDir)locale\**\*;$(TargetDir)lib\**\*" />
+      <DllFiles Include="$(TargetDir)\*.dll" Exclude="$(TargetDir)$(AssemblyName).dll" />
+    </ItemGroup>
+    <Message Text="Moving language resource files to locale subfolder..." Importance="high" />
+    <Move SourceFiles="@(LanguageResources)" DestinationFolder="$(TargetDir)locale\%(RecursiveDir)" />
+    <RemoveDir Directories="@(LanguageResources->'%(RootDir)%(Directory)')" Condition="!Exists('%(RootDir)%(Directory)%(Filename)%(Extension)')" />
+    <Message Text="Moving DLL files to lib subfolder..." Importance="high" />
+    <Move SourceFiles="@(DllFiles)" DestinationFolder="$(TargetDir)lib\" />
+  </Target>
+</Project>

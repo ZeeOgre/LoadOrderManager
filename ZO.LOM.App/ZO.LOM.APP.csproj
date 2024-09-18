@@ -1,0 +1,135 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>True</UseWPF>
+    <ApplicationIcon>ZeeOgre.ico</ApplicationIcon>
+    <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
+    <PackageId>ZeeOgre.LoadOrderManager</PackageId>
+    <Title>ZeeOgre's Load Order Manager</Title>
+    <Authors>ZeeOgre</Authors>
+    <Product>LoadOrderManager</Product>
+    <Copyright>2024 ZeeOgre</Copyright>
+    <PackageProjectUrl>https://github.com/ZeeOgre/ZO.LoadOrderManager</PackageProjectUrl>
+    <PackageIcon>ZeeOgre_NoBackground.jpg</PackageIcon>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <RepositoryUrl>https://github.com/ZeeOgre/ZO.LoadOrderManager</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackAsTool>True</PackAsTool>
+    <ToolCommandName>ZeeOgre.LoadOrderManager</ToolCommandName>
+    <PackageLicenseExpression>AGPL-3.0-or-later</PackageLicenseExpression>
+    <RootNamespace>ZO.LoadOrderManager</RootNamespace>
+    <AssemblyName>LoadOrderManager</AssemblyName>
+    <Configurations>Debug;Release;GitRelease</Configurations>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <StartupObject></StartupObject>
+    <EnforceCodeStyleInBuild>True</EnforceCodeStyleInBuild>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='GitRelease|AnyCPU'">
+    <Optimize>True</Optimize>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="FileManager.ContentCatalogParser.cs" />
+    <Content Include="ZeeOgre.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\ZO.SharedResources\img\ZeeOgre_NoBackground.jpg">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Autoupdater.NET.Official" Version="1.9.2" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="System.Data.SQLite" Version="1.0.118" />
+    <PackageReference Include="YamlDotNet" Version="16.1.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Page Include="App.xaml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="docs\README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+    <None Update="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="installer\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="Properties\Settings.Designer.cs">
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Settings.settings</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="data\**\*" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="docs\**\*" CopyToOutputDirectory="OverwriteAlways" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="docs\FileManager.ContentCatalogParser.cs" />
+    <Compile Remove="LoadOrderWindow .bak.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="LoadOrderWindow.bak" />
+  </ItemGroup>
+
+  <Target Name="RearrangeOutputFiles" AfterTargets="Build;Publish" BeforeTargets="PostBuildEvent">
+    <ItemGroup>
+      <DllFiles Include="$(OutputPath)*.dll" Exclude="$(OutputPath)LoadOrderManager.dll;$(OutputPath)**\*.resources.dll;$(OutputPath)lib\**\*.*;$(OutputPath)runtimes\**\*.*" />
+      <ResourceDllFiles Include="$(OutputPath)**\*.resources.dll" Exclude="$(OutputPath)locale\**\*.*;$(OutputPath)runtimes\**\*.*" />
+    </ItemGroup>
+    <Move SourceFiles="@(DllFiles)" DestinationFolder="$(OutputPath)lib\%(RecursiveDir)" />
+    <MakeDir Directories="$(OutputPath)locale" />
+    <Move SourceFiles="@(ResourceDllFiles)" DestinationFolder="$(OutputPath)locale\%(RecursiveDir)" />
+    <RemoveEmptyDirectories RootDirectory="$(OutputPath)" />
+  </Target>
+
+  <Target Name="CopyConfigFile" AfterTargets="Build;Publish" BeforeTargets="PostBuildEvent">
+    <ItemGroup>
+      <ConfigFile Include="config\config.yaml" Condition="'$(Configuration)' == 'Debug'" />
+      <ConfigFile Include="config\config_sample.yaml" Condition="'$(Configuration)' != 'Debug'" />
+    </ItemGroup>
+    <Copy SourceFiles="@(ConfigFile)" DestinationFiles="$(OutputPath)config\config.yaml" />
+  </Target>
+
+  <UsingTask TaskName="RemoveEmptyDirectories" TaskFactory="CodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+    <ParameterGroup>
+      <RootDirectory ParameterType="System.String" Required="true" />
+    </ParameterGroup>
+    <Task>
+      <Using Namespace="System.IO" />
+      <Code Type="Fragment" Language="cs">
+        <![CDATA[
+          foreach (var dir in Directory.GetDirectories(RootDirectory, "*", SearchOption.AllDirectories))
+          {
+            if (Directory.GetFiles(dir).Length == 0 && Directory.GetDirectories(dir).Length == 0)
+            {
+              Directory.Delete(dir, false);
+            }
+          }
+        ]]>
+      </Code>
+    </Task>
+  </UsingTask>
+
+</Project>

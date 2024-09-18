@@ -1,0 +1,48 @@
+﻿<Window x:Class="ZO.LoadOrderManager.SettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:ZO.LoadOrderManager"
+        Title="Settings" Height="600" Width="800">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/> <!-- New row definition for the button -->
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="150"/>
+            <ColumnDefinition Width="550"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- Game Folder -->
+        <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" Margin="0,0,0,5">
+            <Label Content="Game Folder:" VerticalAlignment="Center" Width="150"/>
+            <TextBox Name="GameFolderTextBox" Width="300" Margin="5,0,0,0" Text="{Binding GameFolder, UpdateSourceTrigger=PropertyChanged}"/>
+            <Button Content="📁" Click="GameFolderButton_Click" Width="30" Margin="5,0,0,0"/>
+        </StackPanel>
+
+        <!-- Auto Check for Updates -->
+        <StackPanel Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,25,0,0">
+            <CheckBox Name="AutoCheckUpdatesCheckBox" Content="Automatically check at startup" Margin="10,0,0,0" 
+                      IsChecked="{Binding AutoCheckForUpdates, UpdateSourceTrigger=PropertyChanged}" 
+                      VerticalAlignment="Center" />
+        </StackPanel>
+
+        <!-- Version Display and Save Button -->
+        <StackPanel Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,25,0,5">
+            <Label Content="Version:" VerticalAlignment="Center" Width="50"/>
+            <TextBlock Name="VersionTextBlock" Width="100" Margin="5,0,0,0" Text="{x:Static local:App.Version}" 
+                       HorizontalAlignment="Center" VerticalAlignment="Center" TextAlignment="Center"/>
+            <Button Content="Check for Updates" Click="CheckForUpdatesButton_Click" Width="150" Margin="10,0,0,0"/>
+            <Button Content="Save" Click="SaveButton_Click" Width="100" Margin="25,0,10,0"/>
+        </StackPanel>
+
+        <!-- New row for the "Load from Yaml" button -->
+        <StackPanel Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="3" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,25,0,0">
+            <Button Content="Load from Yaml" Width="150" Click="ImportFromYaml_Click"/>
+        </StackPanel>
+    </Grid>
+</Window>
