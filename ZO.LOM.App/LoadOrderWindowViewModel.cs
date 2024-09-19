@@ -31,6 +31,8 @@ namespace ZO.LoadOrderManager
             {
                 _selectedItem = value;
                 OnPropertyChanged(nameof(SelectedItem));
+                ((RelayCommand<object>)MoveUpCommand).RaiseCanExecuteChanged();
+                ((RelayCommand<object>)MoveDownCommand).RaiseCanExecuteChanged();
                 UpdateStatusMessage();
             }
         }
@@ -45,6 +47,17 @@ namespace ZO.LoadOrderManager
                     _selectedProfileId = value;
                     OnPropertyChanged(nameof(SelectedProfileId));
                 }
+            }
+        }
+        
+        private LoadOut _selectedLoadOut;
+        public LoadOut SelectedLoadOut
+        {
+            get => _selectedLoadOut;
+            set
+            {
+                _selectedLoadOut = value;
+                OnPropertyChanged(nameof(SelectedLoadOut));
             }
         }
 
@@ -77,7 +90,7 @@ namespace ZO.LoadOrderManager
         public ICommand SaveCommand { get; }
         public ICommand MoveUpCommand { get; }
         public ICommand MoveDownCommand { get; }
-        public ICommand ImportPluginsCommand { get; }
+        //public ICommand ImportPluginsCommand { get; }
         public ICommand SaveAsNewLoadoutCommand { get; }
         public ICommand OpenGameFolderCommand { get; }
         public ICommand OpenGameSaveFolderCommand { get; }
@@ -114,35 +127,31 @@ namespace ZO.LoadOrderManager
             Items = new ObservableCollection<LoadOrderItemViewModel>();
 
             // Initialize commands
+            // Initialize commands
             SearchCommand = new RelayCommand<string?>(Search);
-            SaveCommand = new RelayCommand(Save, CanExecuteSave);
-            MoveUpCommand = new RelayCommand(MoveUp, CanMoveUp);
-            MoveDownCommand = new RelayCommand(MoveDown, CanMoveDown);
-            ImportPluginsCommand = new RelayCommand(ImportPlugins);
-            SaveAsNewLoadoutCommand = new RelayCommand(SaveAsNewLoadout);
-            OpenGameFolderCommand = new RelayCommand(OpenGameFolder);
-            OpenGameSaveFolderCommand = new RelayCommand(OpenGameSaveFolder);
-            EditPluginsCommand = new RelayCommand(EditPlugins);
-            EditContentCatalogCommand = new RelayCommand(EditContentCatalog);
-            ImportContextCatalogCommand = new RelayCommand(ImportContextCatalog);
-            SavePluginsCommand = new RelayCommand(SavePlugins);
-            EditHighlightedItemCommand = new RelayCommand(EditHighlightedItem);
-            OpenAppDataFolderCommand = new RelayCommand(OpenAppDataFolder);
-            OpenGameLocalAppDataCommand = new RelayCommand(OpenGameLocalAppData);
-            SettingsWindowCommand = new RelayCommand(SettingsWindow);
-            ImportFromYamlCommand = new RelayCommand(ImportFromYaml);
-            SaveLoadOutCommand = new RelayCommand(Save);
-            OpenGameSettingsCommand = new RelayCommand(OpenGameSettings);
-            OpenPluginEditorCommand = new RelayCommand(OpenPluginEditor);
-            OpenGroupEditorCommand = new RelayCommand(OpenGroupEditor);
-            RefreshDataCommand = new RelayCommand(RefreshData);
-            CopyTextCommand = new RelayCommand(CopyText, () => CanExecuteCopyText(null));
-            DeleteCommand = new RelayCommand(Delete, () => CanExecuteDelete(null));
-            EditCommand = new RelayCommand(EditHighlightedItem, () => CanExecuteEdit(null));
-            ToggleEnableCommand = new RelayCommand(() => ToggleEnable(null), () => CanExecuteToggleEnable(null));
+            MoveUpCommand = new RelayCommand<object?>(param => MoveUp(), param => CanMoveUp());
+            MoveDownCommand = new RelayCommand<object?>(param => MoveDown(), param => CanMoveDown());
+            SaveAsNewLoadoutCommand = new RelayCommand<object?>(param => SaveAsNewLoadout());
+            OpenGameFolderCommand = new RelayCommand<object?>(param => OpenGameFolder());
+            OpenGameSaveFolderCommand = new RelayCommand<object?>(param => OpenGameSaveFolder());
+            EditPluginsCommand = new RelayCommand<object?>(param => EditPlugins());
+            EditContentCatalogCommand = new RelayCommand<object?>(param => EditContentCatalog());
+            ImportContextCatalogCommand = new RelayCommand<object?>(param => ImportContextCatalog());
+            SavePluginsCommand = new RelayCommand<object?>(param => SavePlugins());
+            EditHighlightedItemCommand = new RelayCommand<object?>(param => EditHighlightedItem());
+            OpenAppDataFolderCommand = new RelayCommand<object?>(param => OpenAppDataFolder());
+            OpenGameLocalAppDataCommand = new RelayCommand<object?>(param => OpenGameLocalAppData());
+            SettingsWindowCommand = new RelayCommand<object?>(param => SettingsWindow());
+            ImportFromYamlCommand = new RelayCommand<object?>(param => ImportFromYaml());
+            OpenGameSettingsCommand = new RelayCommand<object?>(param => OpenGameSettings());
+            OpenPluginEditorCommand = new RelayCommand<object?>(param => OpenPluginEditor());
+            OpenGroupEditorCommand = new RelayCommand<object?>(param => OpenGroupEditor());
+            RefreshDataCommand = new RelayCommand<object?>(param => RefreshData());
+            CopyTextCommand = new RelayCommand<object?>(param => CopyText(), param => CanExecuteCopyText(null));
+            DeleteCommand = new RelayCommand<object?>(param => Delete(), param => CanExecuteDelete(null));
+            EditCommand = new RelayCommand<object?>(param => EditHighlightedItem(), param => CanExecuteEdit(null));
+            ToggleEnableCommand = new RelayCommand<object?>(param => ToggleEnable(null), param => CanExecuteToggleEnable(null));
             ChangeGroupCommand = new RelayCommandWithParameter(ChangeGroup, CanExecuteChangeGroup);
-            CopyTextCommand = new RelayCommand(CopyText, () => CanExecuteCopyText(null));
-            DeleteCommand = new RelayCommand(Delete, () => CanExecuteDelete(null));
 
             // Load initial data
             LoadInitialData();
@@ -156,20 +165,19 @@ namespace ZO.LoadOrderManager
             {
                 if (AggLoadInfo.Instance != null)
                 {
-                    // Load groups, plugins, and loadouts from the singleton instance
                     Groups = new ObservableCollection<ModGroup>(AggLoadInfo.Instance.Groups);
                     Plugins = new ObservableCollection<Plugin>(AggLoadInfo.Instance.Plugins);
                     LoadOuts = new ObservableCollection<LoadOut>(AggLoadInfo.Instance.LoadOuts);
 
-                    // Initialize Items collection
                     Items.Clear();
-                    var currentLoadOut = LoadOuts.FirstOrDefault(lo => lo.ProfileID == SelectedProfileId);
+                    SelectedLoadOut = LoadOuts.FirstOrDefault();
+
                     foreach (var group in Groups)
                     {
                         var groupViewModel = CreateGroupViewModel(group);
                         foreach (var plugin in group.Plugins ?? Enumerable.Empty<Plugin>())
                         {
-                            var isEnabled = currentLoadOut?.Plugins.Any(pvm => pvm.Plugin.PluginID == plugin.PluginID) ?? false;
+                            var isEnabled = SelectedLoadOut.Plugins.Any(pvm => pvm.Plugin.PluginID == plugin.PluginID);
                             groupViewModel.Children.Add(new LoadOrderItemViewModel
                             {
                                 PluginData = plugin,
@@ -179,13 +187,6 @@ namespace ZO.LoadOrderManager
                         }
                         Items.Add(groupViewModel);
                     }
-
-                    SelectedProfileId = LoadOuts.FirstOrDefault()?.ProfileID;
-                }
-                else
-                {
-                    // Handle the case where the singleton instance is not initialized
-                    MessageBox.Show("Singleton is not initialized. Please initialize the singleton before opening the window.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
             finally
@@ -193,6 +194,7 @@ namespace ZO.LoadOrderManager
                 InitializationManager.EndInitialization(nameof(LoadOrderWindowViewModel));
             }
         }
+    
 
         private void UpdateStatusMessage()
         {
@@ -208,22 +210,7 @@ namespace ZO.LoadOrderManager
 
         private LoadOrderItemViewModel CreateGroupViewModel(ModGroup group)
         {
-            return new LoadOrderItemViewModel
-            {
-                DisplayName = group.GroupName ?? string.Empty,
-                EntityType = EntityType.Group,
-                PluginData = null,
-                IsEnabled = true,
-                Children = new ObservableCollection<LoadOrderItemViewModel>(
-                    group.Plugins?.OrderBy(p => p.GroupOrdinal).Select(p => new LoadOrderItemViewModel
-                    {
-                        DisplayName = p.PluginName,
-                        EntityType = EntityType.Plugin,
-                        PluginData = p,
-                        IsEnabled = p.Achievements
-                    }) ?? Enumerable.Empty<LoadOrderItemViewModel>()
-                )
-            };
+            return new LoadOrderItemViewModel(group);
         }
 
         protected virtual void OnPropertyChanged(string propertyName)
@@ -243,7 +230,7 @@ namespace ZO.LoadOrderManager
         {
             if (SelectedItem is Plugin plugin)
             {
-                var editorWindow = new PluginEditorWindow(plugin);
+                var editorWindow = new PluginEditorWindow(plugin,SelectedLoadOut);
                 if (editorWindow.ShowDialog() == true)
                 {
                     RefreshData();
@@ -269,63 +256,41 @@ namespace ZO.LoadOrderManager
         {
             if (InitializationManager.IsAnyInitializing()) return;
             UpdateStatus("Refreshing data...");
-            if (SelectedProfileId.HasValue)
+
+            if (SelectedLoadOut != null)
             {
-                // Retrieve active plugins for the profile ID
-                var activePlugins = LoadOut.GetActivePlugins(SelectedProfileId.Value);
+                Plugins = new ObservableCollection<Plugin>(SelectedLoadOut.Plugins.Select(pvm => pvm.Plugin));
 
-                // Update the Plugins collection with the active plugins
-                Plugins = new ObservableCollection<Plugin>(
-                    activePlugins.Select(p => p.Plugin)
-                );
-
-                // Refresh the Items collection
                 Items.Clear();
                 foreach (var group in Groups)
                 {
                     Items.Add(CreateGroupViewModel(group));
                 }
 
-                StatusMessage = $"Loaded plugins for profile ID: {SelectedProfileId}";
+                StatusMessage = $"Loaded plugins for profile: {SelectedLoadOut.Name}";
                 UpdateStatus(StatusMessage);
             }
         }
+
         private bool CanExecuteSave()
         {
-            return true; // Add your logic here
+            return SelectedLoadOut != null;
         }
 
-        private void Save()
+        private void Save(object? parameter)
         {
-            // Save the current state of groups and plugins
-            foreach (var group in Groups)
+            if (SelectedLoadOut != null)
             {
-                if (group.GroupID >= 0)
-                {
-                    group.WriteGroup();
-                    foreach (var plugin in group.Plugins)
-                    {
-                        plugin.WriteMod();
-                    }
-                }
+                SelectedLoadOut.WriteProfile();
+                UpdateStatus("Profile saved successfully.");
             }
-
-            // Save the current loadout
-            var currentLoadOut = LoadOuts.FirstOrDefault(lo => lo.ProfileID == _selectedProfileId);
-            if (currentLoadOut != null)
+            else
             {
-                currentLoadOut.WriteProfile();
+                UpdateStatus("No loadout selected.");
             }
-
-            // Create and populate AggLoadInfo
-            var aggLoadInfo = AggLoadInfo.Instance;
-
-            // Save to database
-            aggLoadInfo.SaveToDatabase();
-
-            isSaved = true;
         }
-        private void SaveCurrentState() => Save();
+
+        private void SaveCurrentState() => Save(this);
 
         private bool CanMoveUp()
         {
@@ -337,7 +302,7 @@ namespace ZO.LoadOrderManager
                 }
 
                 var group = Groups.FirstOrDefault(g => g.Plugins != null && g.Plugins.Contains(selectedPlugin));
-                if (group != null && group.Plugins != null)
+                if (group != null)
                 {
                     int index = group.Plugins.IndexOf(selectedPlugin);
                     return index > 0;
@@ -361,7 +326,7 @@ namespace ZO.LoadOrderManager
                 }
 
                 var group = Groups.FirstOrDefault(g => g.Plugins != null && g.Plugins.Contains(selectedPlugin));
-                if (group != null && group.Plugins != null)
+                if (group != null)
                 {
                     int index = group.Plugins.IndexOf(selectedPlugin);
                     return index < group.Plugins.Count - 1;
@@ -446,69 +411,87 @@ namespace ZO.LoadOrderManager
             OnPropertyChanged(nameof(Groups));
         }
 
-        private void ImportPlugins()
+        private void ImportPlugins(string pluginsFile, string mode)
         {
-            var openFileDialog = new OpenFileDialog
-            {
-                InitialDirectory = Path.GetDirectoryName(FileManager.PluginsFile),
-                Filter = "Text files (*.txt)|*.txt|All files (*.*)|*.*",
-                Title = "Select Plugins.txt file"
-            };
-
-            if (openFileDialog.ShowDialog() == true)
-            {
-                var selectedFile = openFileDialog.FileName;
-                FileManager.ParsePluginsTxt(selectedFile);
-
-                var result = MessageBox.Show("Do you want to create a new loadout with these plugins?", "New Loadout", MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
-                if (result == MessageBoxResult.Yes)
-                {
-                    SaveAsNewLoadout();
-                }
-                else if (result == MessageBoxResult.No)
-                {
-                    SavePlugins();
-                }
-                else if (result == MessageBoxResult.Cancel)
-                {
-                    return;
-                }
-            }
-
-            RefreshData();
+            var newLoadOut = FileManager.ParsePluginsTxt(pluginsFile, SelectedLoadOut);
+            //if (mode == "new")
+            //{
+            //    LoadOuts.Add(newLoadOut);
+            //}
+            //else
+            //{
+            //    SelectedLoadOut = newLoadOut;
+            //}
+            //RefreshData();
         }
+
+
+        //private void ImportPlugins(string pluginsFile, string mode)
+        //{
+        //    try
+        //    {
+        //        // Parse the plugins file
+        //        var aggLoadInfo = ParsePluginsFile(pluginsFile, mode);
+
+        //        // Update the LoadOuts and Plugins collections
+        //        LoadOuts.Clear();
+        //        foreach (var loadOut in aggLoadInfo.LoadOuts)
+        //        {
+        //            LoadOuts.Add(loadOut);
+        //        }
+
+        //        Plugins.Clear();
+        //        foreach (var plugin in aggLoadInfo.Plugins)
+        //        {
+        //            Plugins.Add(plugin);
+        //        }
+
+        //        // Update the UI based on the mode
+        //        if (mode == "new")
+        //        {
+        //            SelectedLoadOut = LoadOuts.FirstOrDefault();
+        //        }
+        //        else
+        //        {
+        //            SelectedLoadOut = aggLoadInfo.LoadOuts.FirstOrDefault();
+        //        }
+
+        //        RefreshData();
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        // Handle any exceptions that occur during parsing
+        //        StatusMessage = $"Error importing plugins: {ex.Message}";
+        //    }
+        //}
+
+
+        //private AggLoadInfo ParsePluginsFile(string pluginsFile, string mode)
+        //{
+        //    // Call the ParsePluginsTxt method
+        //    //return AggLoadInfo.ParsePluginsTxt(pluginsFile, null, mode);
+        //}
 
         private void SaveAsNewLoadout()
         {
-            var inputDialog = new InputDialog("Enter the name for the new LoadOut:", "New LoadOut");
-            if (inputDialog.ShowDialog() == true)
-            {
-                var newProfileName = inputDialog.ResponseText;
+            //var inputDialog = new InputDialog("Enter the name for the new LoadOut:", "New LoadOut");
+            //if (inputDialog.ShowDialog() == true)
+            //{
+            //    var newProfileName = inputDialog.ResponseText;
 
-                try
-                {
-                    // Create a new LoadOut instance
-                    var newLoadOut = new LoadOut
-                    {
-                        Name = newProfileName,
-                        Plugins = new ObservableCollection<PluginViewModel>(
-        Plugins.Select(p => new PluginViewModel(p, true))
-    )
-                    };
+            //    try
+            //    {
+            //        var newLoadOut = new LoadOut(newProfileName, SelectedLoadOut);
+            //        newLoadOut.WriteProfile();
+            //        LoadOuts.Add(newLoadOut);
 
-                    // Write the new profile to the database
-                    newLoadOut.WriteProfile();
-
-                    // Add the new LoadOut to the collection
-                    LoadOuts.Add(newLoadOut);
-
-                    MessageBox.Show("New loadout saved successfully.", "Save As New Loadout", MessageBoxButton.OK, MessageBoxImage.Information);
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"An error occurred: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                }
-            }
+            //        MessageBox.Show("New loadout saved successfully.", "Save As New Loadout", MessageBoxButton.OK, MessageBoxImage.Information);
+            //    }
+            //    catch (Exception ex)
+            //    {
+            //        MessageBox.Show($"An error occurred: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            //    }
+            //}
         }
 
         private void OpenGameFolder()
@@ -555,10 +538,10 @@ namespace ZO.LoadOrderManager
 
         private void SavePlugins()
         {
-            Save();
+            Save(this);
             if (SelectedProfileId.HasValue)
             {
-                var currentLoadOut = LoadOuts.FirstOrDefault(lo => lo.ProfileID == SelectedProfileId.Value);
+                var currentLoadOut = SelectedLoadOut;
                 if (currentLoadOut == null)
                 {
                     StatusMessage = "Selected profile not found.";
@@ -566,7 +549,7 @@ namespace ZO.LoadOrderManager
                 }
 
                 var profileName = currentLoadOut.Name;
-                var defaultFileName = $"profile_{profileName}.txt";
+                var defaultFileName = $"Plugins_{profileName}.txt";
                 var defaultFilePath = Path.Combine(FileManager.AppDataFolder, defaultFileName);
 
                 var result = MessageBox.Show($"Producing {defaultFilePath}. Do you want to save to a different location?", "Save Plugins", MessageBoxButton.YesNo);
@@ -631,7 +614,7 @@ namespace ZO.LoadOrderManager
                         var plugin = underlyingObject as Plugin;
                         if (plugin != null)
                         {
-                            var pluginEditorWindow = new PluginEditorWindow(plugin);
+                            var pluginEditorWindow = new PluginEditorWindow(plugin, SelectedLoadOut);
                             if (pluginEditorWindow.ShowDialog() == true)
                             {
                                 // Handle successful edit
@@ -739,28 +722,28 @@ namespace ZO.LoadOrderManager
 
         private void ToggleEnable(object parameter)
         {
-            if (SelectedItem is LoadOrderItemViewModel selectedItem && selectedItem.EntityType == EntityType.Plugin)
+            if (SelectedLoadOut != null && parameter is PluginViewModel pluginViewModel)
             {
-                var plugin = selectedItem.PluginData;
-                var loadOut = LoadOuts.FirstOrDefault(lo => lo.ProfileID == SelectedProfileId);
-                if (loadOut != null)
+                if (pluginViewModel.IsEnabled)
                 {
-                    var pluginViewModel = loadOut.Plugins.FirstOrDefault(pvm => pvm.Plugin.PluginID == plugin.PluginID);
-                    if (pluginViewModel != null)
-                    {
-                        pluginViewModel.IsEnabled = !pluginViewModel.IsEnabled;
-                    }
-                    else
-                    {
-                        loadOut.Plugins.Add(new PluginViewModel(plugin, true));
-                    }
+                    SelectedLoadOut.Plugins.Remove(pluginViewModel);
                 }
+                else
+                {
+                    SelectedLoadOut.Plugins.Add(pluginViewModel);
+                }
+
+                pluginViewModel.IsEnabled = !pluginViewModel.IsEnabled;
+            }
+            else
+            {
+                UpdateStatus("No loadout or plugin selected.");
             }
         }
 
         private bool CanExecuteToggleEnable(object parameter)
         {
-            return SelectedItem is LoadOrderItemViewModel selectedItem && selectedItem.EntityType == EntityType.Plugin;
+            return SelectedLoadOut != null && parameter is PluginViewModel;
         }
 
         private bool CanExecuteDelete(object parameter)

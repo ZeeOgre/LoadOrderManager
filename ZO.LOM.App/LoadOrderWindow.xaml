@@ -233,8 +233,7 @@
                     <ComboBox  x:Name="cmbProfile"
                               ItemsSource="{Binding LoadOuts}"
                               DisplayMemberPath="Name"
-                              SelectedValuePath="ProfileID"
-                              SelectedValue="{Binding SelectedProfileId, Mode=TwoWay}"
+                              SelectedValue="{Binding SelectedLoadOut, Mode=TwoWay}"
                               Width="200" Height="30" Margin="10">
                     </ComboBox>
                 </StackPanel>

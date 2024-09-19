@@ -7,10 +7,10 @@ namespace ZO.LoadOrderManager
     {
         private PluginViewModel _viewModel;
 
-        public PluginEditorWindow(Plugin plugin)
+        public PluginEditorWindow(Plugin plugin, LoadOut loadOut)
         {
             InitializeComponent();
-            _viewModel = new PluginViewModel(plugin, true); // Assuming the plugin is enabled by default
+            _viewModel = new PluginViewModel(plugin, loadOut); // Assuming the plugin is enabled by default
             DataContext = _viewModel;
         }
 

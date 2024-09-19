@@ -72,6 +72,27 @@ namespace ZO.LoadOrderManager
             }
         }
 
+        public LoadOrderItemViewModel()
+        {
+        }
+
+        public LoadOrderItemViewModel(ModGroup group)
+        {
+            DisplayName = group.GroupName ?? string.Empty;
+            EntityType = EntityType.Group;
+            PluginData = null;
+            IsEnabled = true;
+            Children = new ObservableCollection<LoadOrderItemViewModel>(
+                group.Plugins?.OrderBy(p => p.GroupOrdinal).Select(p => new LoadOrderItemViewModel
+                {
+                    DisplayName = p.PluginName,
+                    EntityType = EntityType.Plugin,
+                    PluginData = p,
+                    IsEnabled = p.Achievements
+                }) ?? Enumerable.Empty<LoadOrderItemViewModel>()
+            );
+        }
+
         public event PropertyChangedEventHandler PropertyChanged;
 
         protected virtual void OnPropertyChanged(string propertyName)

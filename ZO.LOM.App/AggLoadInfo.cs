@@ -286,7 +286,7 @@ namespace ZO.LoadOrderManager
                                 if (loadOut != null && pluginID.HasValue)
                                 {
                                     var plugin = pluginDict[pluginID.Value];
-                                    loadOut.Plugins.Add(new PluginViewModel(plugin, true)); // Assuming the plugin is enabled
+                                    loadOut.Plugins.Add(new PluginViewModel(plugin, loadOut)); // Assuming the plugin is enabled
                                 }
                             }
                         }
@@ -340,6 +340,17 @@ namespace ZO.LoadOrderManager
             }
         }
 
+        // Clone method
+        public AggLoadInfo Clone()
+        {
+            return new AggLoadInfo
+            {
+                Plugins = new ObservableCollection<Plugin>(this.Plugins),
+                Groups = new ObservableCollection<ModGroup>(this.Groups),
+                LoadOuts = new ObservableCollection<LoadOut>(this.LoadOuts)
+            };
+        }
+        
         public void SaveToDatabaseWithBackup(string? preSaveBackupPath = null, string? postSaveBackupPath = null)
         {
             // Create a backup before saving to the database if not provided
