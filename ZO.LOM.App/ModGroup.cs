@@ -14,6 +14,7 @@ namespace ZO.LoadOrderManager
         public string? Description { get; set; }
         public string? GroupName { get; set; }
         public int? ParentID { get; set; }
+        public int? GroupSetID { get; set; }
         public ObservableCollection<Plugin>? Plugins { get; set; } = new ObservableCollection<Plugin>();
 
         private static readonly HashSet<string> ReservedWords = new HashSet<string>
@@ -29,7 +30,22 @@ namespace ZO.LoadOrderManager
         public string DisplayName => $"{GroupName} | {Description}";
 
 
-        public ModGroup Clone()
+        public ModGroup Clone(string groupName)
+        {
+            return new ModGroup
+            {
+                GroupID = this.GroupID,
+                Ordinal = this.Ordinal,
+                Description = this.Description,
+                GroupName = groupName,
+                ParentID = this.ParentID,
+                GroupSetID = this.GroupSetID,   
+                Plugins = new ObservableCollection<Plugin>(this.Plugins?.Select(p => p.Clone()) ?? Enumerable.Empty<Plugin>())
+            };
+        }
+
+
+        public ModGroup Clone(GroupSet groupSet)
         {
             return new ModGroup
             {
@@ -38,13 +54,15 @@ namespace ZO.LoadOrderManager
                 Description = this.Description,
                 GroupName = this.GroupName,
                 ParentID = this.ParentID,
-                Plugins = new ObservableCollection<Plugin>(this.Plugins.Select(p => p.Clone())) // Assuming Plugin has a Clone method
+                GroupSetID = groupSet.GroupSetID,
+                Plugins = new ObservableCollection<Plugin>(this.Plugins?.Select(p => p.Clone()) ?? Enumerable.Empty<Plugin>())
             };
         }
 
+
         public override string ToString()
         {
-            return $"GroupID: {GroupID}, GroupName: {GroupName}, Description: {Description}, Ordinal: {Ordinal}, ParentID: {ParentID}";
+            return $"GroupID: {GroupID}, GroupName: {GroupName}, Description: {Description}, Ordinal: {Ordinal}, ParentID: {ParentID}, GroupSet: {GroupSetID}";
         }
 
         public string ToPluginsString()
@@ -254,8 +272,6 @@ namespace ZO.LoadOrderManager
 
             // If not found in AggLoadInfo, query the database
             using var connection = DbManager.Instance.GetConnection();
-            
-
             using var command = new SQLiteCommand(connection);
             command.CommandText = "SELECT * FROM ModGroups WHERE GroupID = @GroupID";
             command.Parameters.AddWithValue("@GroupID", groupId);
@@ -263,14 +279,43 @@ namespace ZO.LoadOrderManager
             using var reader = command.ExecuteReader();
             if (reader.Read())
             {
-                return new ModGroup
+                var newModGroup = new ModGroup
                 {
                     GroupID = reader.GetInt32(reader.GetOrdinal("GroupID")),
                     Ordinal = reader.IsDBNull(reader.GetOrdinal("Ordinal")) ? null : reader.GetInt32(reader.GetOrdinal("Ordinal")),
                     Description = reader.IsDBNull(reader.GetOrdinal("Description")) ? null : reader.GetString(reader.GetOrdinal("Description")),
                     GroupName = reader.IsDBNull(reader.GetOrdinal("GroupName")) ? null : reader.GetString(reader.GetOrdinal("GroupName")),
-                    ParentID = reader.IsDBNull(reader.GetOrdinal("ParentID")) ? null : reader.GetInt32(reader.GetOrdinal("ParentID"))
+                    ParentID = reader.IsDBNull(reader.GetOrdinal("ParentID")) ? null : reader.GetInt32(reader.GetOrdinal("ParentID")),
+                    Plugins = new ObservableCollection<Plugin>()
                 };
+
+                // Load plugins associated with this ModGroup
+                command.CommandText = "SELECT * FROM Plugins WHERE GroupID = @GroupID";
+                command.Parameters.Clear();
+                command.Parameters.AddWithValue("@GroupID", groupId);
+
+                using var pluginReader = command.ExecuteReader();
+                while (pluginReader.Read())
+                {
+                    var plugin = new Plugin
+                    {
+                        PluginID = pluginReader.GetInt32(pluginReader.GetOrdinal("PluginID")),
+                        PluginName = pluginReader.GetString(pluginReader.GetOrdinal("PluginName")),
+                        Description = pluginReader.GetString(pluginReader.GetOrdinal("Description")),
+                        Achievements = pluginReader.GetBoolean(pluginReader.GetOrdinal("Achievements")),
+                        DTStamp = pluginReader.GetString(pluginReader.GetOrdinal("DTStamp")),
+                        Version = pluginReader.GetString(pluginReader.GetOrdinal("Version")),
+                        BethesdaID = pluginReader.GetString(pluginReader.GetOrdinal("BethesdaID")),
+                        NexusID = pluginReader.GetString(pluginReader.GetOrdinal("NexusID")),
+                        GroupID = pluginReader.GetInt32(pluginReader.GetOrdinal("GroupID")),
+                        GroupOrdinal = pluginReader.GetInt32(pluginReader.GetOrdinal("GroupOrdinal")),
+                        Files = new FileInfo().LoadFilesByPlugin(pluginReader.GetInt32(pluginReader.GetOrdinal("PluginID")))
+                    };
+
+                    newModGroup.Plugins.Add(plugin);
+                }
+
+                return newModGroup;
             }
             return null;
         }
@@ -313,7 +358,60 @@ namespace ZO.LoadOrderManager
             this.Ordinal = maxOrdinal + 1;
         }
 
-        // Method to load ModGroup by GroupID
+        public static List<ModGroup> LoadModGroupsByGroupSet(int groupSetID)
+        {
+            var modGroups = new List<ModGroup>();
+
+            using var connection = DbManager.Instance.GetConnection();
+            using var command = new SQLiteCommand(connection);
+            command.CommandText = "SELECT * FROM ModGroups WHERE GroupSetID = @GroupSetID";
+            command.Parameters.AddWithValue("@GroupSetID", groupSetID);
+
+            using var reader = command.ExecuteReader();
+            while (reader.Read())
+            {
+                var modGroup = new ModGroup
+                {
+                    GroupID = reader.GetInt32(reader.GetOrdinal("GroupID")),
+                    Ordinal = reader.IsDBNull(reader.GetOrdinal("Ordinal")) ? null : reader.GetInt32(reader.GetOrdinal("Ordinal")),
+                    Description = reader.IsDBNull(reader.GetOrdinal("Description")) ? null : reader.GetString(reader.GetOrdinal("Description")),
+                    GroupName = reader.IsDBNull(reader.GetOrdinal("GroupName")) ? null : reader.GetString(reader.GetOrdinal("GroupName")),
+                    ParentID = reader.IsDBNull(reader.GetOrdinal("ParentID")) ? null : reader.GetInt32(reader.GetOrdinal("ParentID")),
+                    Plugins = new ObservableCollection<Plugin>()
+                };
+
+                // Load plugins associated with this ModGroup
+                command.CommandText = "SELECT * FROM Plugins WHERE GroupID = @GroupID";
+                command.Parameters.Clear();
+                command.Parameters.AddWithValue("@GroupID", modGroup.GroupID);
+
+                using var pluginReader = command.ExecuteReader();
+                while (pluginReader.Read())
+                {
+                    var plugin = new Plugin
+                    {
+                        PluginID = pluginReader.GetInt32(pluginReader.GetOrdinal("PluginID")),
+                        PluginName = pluginReader.GetString(pluginReader.GetOrdinal("PluginName")),
+                        Description = pluginReader.GetString(pluginReader.GetOrdinal("Description")),
+                        Achievements = pluginReader.GetBoolean(pluginReader.GetOrdinal("Achievements")),
+                        DTStamp = pluginReader.GetString(pluginReader.GetOrdinal("DTStamp")),
+                        Version = pluginReader.GetString(pluginReader.GetOrdinal("Version")),
+                        BethesdaID = pluginReader.GetString(pluginReader.GetOrdinal("BethesdaID")),
+                        NexusID = pluginReader.GetString(pluginReader.GetOrdinal("NexusID")),
+                        GroupID = pluginReader.GetInt32(pluginReader.GetOrdinal("GroupID")),
+                        GroupOrdinal = pluginReader.GetInt32(pluginReader.GetOrdinal("GroupOrdinal")),
+                        Files = new FileInfo().LoadFilesByPlugin(pluginReader.GetInt32(pluginReader.GetOrdinal("PluginID")))
+                    };
+
+                    modGroup.Plugins.Add(plugin);
+                }
+
+                modGroups.Add(modGroup);
+            }
+
+            return modGroups;
+        }
+
 
 
 

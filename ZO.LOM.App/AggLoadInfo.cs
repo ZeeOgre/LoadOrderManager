@@ -25,6 +25,15 @@ namespace ZO.LoadOrderManager
 
         public int GroupCount => Groups?.Count ?? 0;
 
+        public void UpdateFromLoadOut(LoadOut loadOut)
+        {
+            // Update the singleton's state based on the selected LoadOut
+            this.Plugins = new ObservableCollection<Plugin>(loadOut.Plugins.Select(pvm => pvm.Plugin));
+            this.Groups = loadOut.GroupSet.ModGroups;
+            this.LoadOuts = new ObservableCollection<LoadOut> { loadOut };
+            // Update other properties as needed
+        }
+
         public void LoadFromPluginsTxt(string filePath)
         {
             filePath ??= FileManager.PluginsFile;
@@ -50,7 +59,100 @@ namespace ZO.LoadOrderManager
                 LoadOuts.Clear();
 
                 using var connection = DbManager.Instance.GetConnection();
+                using (var command = new SQLiteCommand(@"
+    SELECT 
+        p.PluginID, 
+        p.PluginName, 
+        p.Description, 
+        p.Achievements, 
+        p.DTStamp, 
+        p.Version, 
+        p.State, 
+        p.GroupID AS PluginGroupID, 
+        p.GroupOrdinal, 
+        g.GroupID AS GroupID,  
+        g.GroupName AS GroupName,      
+        g.Description AS GroupDescription, 
+        g.ParentID, 
+        g.Ordinal AS GroupGroupOrdinal, 
+        pp.ProfileID, 
+        e.BethesdaID, 
+        e.NexusID, 
+        l.GroupSetID, 
+        gs.GroupSetName 
+    FROM 
+        vwPluginGrpUnion", connection))
+                using (var reader = command.ExecuteReader())
+                {
+                    var pluginDict = new Dictionary<int, Plugin>();
+                    var groupDict = new Dictionary<int, ModGroup>();
 
+                    while (reader.Read())
+                    {
+                        var pluginID = reader.IsDBNull(reader.GetOrdinal("PluginID")) ? (int?)null : reader.GetInt32(reader.GetOrdinal("PluginID"));
+                        var groupID = reader.GetInt32(reader.GetOrdinal("GroupID"));
+                        var profileID = reader.IsDBNull(reader.GetOrdinal("ProfileID")) ? (int?)null : reader.GetInt32(reader.GetOrdinal("ProfileID"));
+
+                        // Process Plugin
+                        if (pluginID.HasValue && !pluginDict.ContainsKey(pluginID.Value))
+                        {
+                            var plugin = new Plugin
+                            {
+                                PluginID = pluginID.Value,
+                                PluginName = reader.IsDBNull(reader.GetOrdinal("PluginName")) ? string.Empty : reader.GetString(reader.GetOrdinal("PluginName")),
+                                Description = reader.IsDBNull(reader.GetOrdinal("Description")) ? string.Empty : reader.GetString(reader.GetOrdinal("Description")),
+                                Achievements = !reader.IsDBNull(reader.GetOrdinal("Achievements")) && reader.GetInt64(reader.GetOrdinal("Achievements")) != 0,
+                                DTStamp = reader.IsDBNull(reader.GetOrdinal("DTStamp")) ? string.Empty : reader.GetString(reader.GetOrdinal("DTStamp")),
+                                Version = reader.IsDBNull(reader.GetOrdinal("Version")) ? string.Empty : reader.GetString(reader.GetOrdinal("Version")),
+                                State = reader.IsDBNull(reader.GetOrdinal("State")) ? (ModState)0 : (ModState)reader.GetInt32(reader.GetOrdinal("State")),
+                                BethesdaID = reader.IsDBNull(reader.GetOrdinal("BethesdaID")) ? string.Empty : reader.GetString(reader.GetOrdinal("BethesdaID")),
+                                NexusID = reader.IsDBNull(reader.GetOrdinal("NexusID")) ? string.Empty : reader.GetString(reader.GetOrdinal("NexusID")),
+                                GroupID = reader.IsDBNull(reader.GetOrdinal("PluginGroupID")) ? (int?)null : reader.GetInt32(reader.GetOrdinal("PluginGroupID")),
+                                GroupOrdinal = reader.IsDBNull(reader.GetOrdinal("GroupOrdinal")) ? (int?)null : reader.GetInt32(reader.GetOrdinal("GroupOrdinal"))
+                            };
+
+                            // Load FileInfo objects for the plugin
+                            plugin.Files = new FileInfo().LoadFilesByPlugin(plugin.PluginID);
+
+                            pluginDict[pluginID.Value] = plugin;
+                            Plugins.Add(plugin);
+                        }
+
+                        // Process Group
+                        if (!groupDict.ContainsKey(groupID))
+                        {
+                            var modGroup = new ModGroup
+                            {
+                                GroupID = groupID,
+                                GroupName = reader.GetString(reader.GetOrdinal("GroupName")),
+                                Description = reader.IsDBNull(reader.GetOrdinal("GroupDescription")) ? string.Empty : reader.GetString(reader.GetOrdinal("GroupDescription")),
+                                ParentID = reader.IsDBNull(reader.GetOrdinal("ParentID")) ? (int?)null : reader.GetInt32(reader.GetOrdinal("ParentID")),
+                                Plugins = new ObservableCollection<Plugin>()
+                            };
+                            groupDict[groupID] = modGroup;
+                            Groups.Add(modGroup);
+                        }
+
+                        // Associate Plugin with Group
+                        if (pluginID.HasValue && groupDict.ContainsKey(groupID))
+                        {
+                            var plugin = pluginDict[pluginID.Value];
+                            var modGroup = groupDict[groupID];
+                            modGroup.Plugins.Add(plugin);
+                        }
+
+                        // Associate Plugin with LoadOut
+                        if (profileID.HasValue)
+                        {
+                            var loadOut = LoadOuts.FirstOrDefault(l => l.ProfileID == profileID.Value);
+                            if (loadOut != null && pluginID.HasValue)
+                            {
+                                var plugin = pluginDict[pluginID.Value];
+                                loadOut.Plugins.Add(new PluginViewModel(plugin, true)); // Assuming the plugin is enabled
+                            }
+                        }
+                    }
+                }
                 App.LogDebug("Init From Database");
 
                 try
