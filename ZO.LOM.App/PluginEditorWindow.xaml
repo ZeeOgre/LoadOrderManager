@@ -40,7 +40,7 @@
         <CheckBox IsChecked="{Binding Plugin.Achievements}" Grid.Row="2" Grid.Column="1" Margin="5"/>
 
         <Label Content="Files:" Grid.Row="3" Grid.Column="0" Margin="5"/>
-        <TextBox Text="{Binding Files, Converter={StaticResource FilesToStringConverter}}" Grid.Row="3" Grid.Column="1" Margin="5" Height="60" TextWrapping="Wrap"/>
+        <TextBox Text="{Binding Files}" Grid.Row="3" Grid.Column="1" Margin="5" Height="60" TextWrapping="Wrap"/>
 
         <Label Content="TimeStamp:" Grid.Row="4" Grid.Column="0" Margin="5"/>
         <TextBox Text="{Binding Plugin.DTStamp}" Grid.Row="4" Grid.Column="1" Margin="5"/>

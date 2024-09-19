@@ -6,9 +6,31 @@ namespace ZO.LoadOrderManager
     public class LoadOut
     {
         public int ProfileID { get; set; }
-        public required string Name { get; set; }
+        public string Name { get; set; }
         public ObservableCollection<PluginViewModel> Plugins { get; set; }
         private HashSet<int> enabledPlugins;
+
+        //public LoadOut(string name, LoadOut? existingLoadOut = null)
+        //{
+        //    LoadOut newLoadout = new LoadOut();
+        //    if (existingLoadOut != null)
+        //    {
+        //        newLoadout = existingLoadOut.Clone();
+        //        newLoadout
+        //    }
+        //    else
+        //    {
+        //        Plugins = new ObservableCollection<PluginViewModel>();
+        //    }
+        //    LoadOut newLoadOut = new LoadOut();
+        //    newLoadOut.Name = name;
+
+
+
+        //}
+
+        // Clone method
+
 
         public LoadOut()
         {
@@ -16,11 +38,12 @@ namespace ZO.LoadOrderManager
             enabledPlugins = new HashSet<int>();
         }
 
+
         public void LoadPlugins(IEnumerable<Plugin> plugins)
         {
             foreach (var plugin in plugins)
             {
-                var pluginViewModel = new PluginViewModel(plugin, true);
+                var pluginViewModel = new PluginViewModel(plugin,this);
                 Plugins.Add(pluginViewModel);
             }
         }

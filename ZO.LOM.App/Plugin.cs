@@ -4,6 +4,7 @@ using System.IO;
 using YamlDotNet.Serialization;
 using System.ComponentModel;
 using System.Collections.ObjectModel;
+using System.Linq;
 
 namespace ZO.LoadOrderManager
 {
@@ -150,7 +151,7 @@ namespace ZO.LoadOrderManager
             return plugin;
         }
 
- 
+
 
 
 
@@ -284,10 +285,10 @@ namespace ZO.LoadOrderManager
 
             return clonedPlugin;
         }
-    
 
 
-public void WriteMod()
+
+        public void WriteMod()
         {
             App.LogDebug($"Plugin.WriteMod: Writing plugin: {PluginName}");
             EnsureFilesList(); // Ensure the Files list is not empty
@@ -458,6 +459,7 @@ public void WriteMod()
         }
 
     }
+
     public class PluginViewModel : INotifyPropertyChanged
     {
         private Plugin _plugin;
@@ -465,6 +467,7 @@ public void WriteMod()
         private ObservableCollection<ModGroup> _groups;
         private ObservableCollection<LoadOut> _loadouts;
         private string _files;
+        private Dictionary<string, bool> _loadOutEnabled;  // Track enabled status per loadout
 
         public Plugin Plugin
         {
@@ -518,6 +521,19 @@ public void WriteMod()
             }
         }
 
+        public Dictionary<string, bool> LoadOutEnabled // This is used to bind the loadout checkbox
+        {
+            get => _loadOutEnabled;
+            set
+            {
+                if (_loadOutEnabled != value)
+                {
+                    _loadOutEnabled = value;
+                    OnPropertyChanged(nameof(LoadOutEnabled));
+                }
+            }
+        }
+
         public string Files
         {
             get => _files;
@@ -531,51 +547,35 @@ public void WriteMod()
             }
         }
 
-        public PluginViewModel(Plugin plugin, bool isEnabled)
+        public int PluginID => _plugin.PluginID;
+
+        // Constructor that builds using the Plugin object and a specific LoadOut
+        public PluginViewModel(Plugin plugin, LoadOut loadOut)
         {
             _plugin = plugin;
-            _isEnabled = isEnabled;
             _groups = AggLoadInfo.Instance.Groups;
-            _loadouts = AggLoadInfo.Instance.LoadOuts;
+            _loadouts = new ObservableCollection<LoadOut> { loadOut }; // Only the specific loadout
             _files = string.Join(", ", _plugin.Files.Select(f => f.Filename));
+
+            // Initialize LoadOutEnabled for the specific LoadOut
+            _loadOutEnabled = new Dictionary<string, bool>
+        {
+            { loadOut.Name, true }  // Automatically enable the plugin for this loadout
+        };
         }
 
         public void Save()
         {
-            // Update _plugin object
-            _plugin.Files = Files.Split(',').Select(f => new FileInfo(f.Trim())).ToList();
-
-            // Check if the GroupID has changed
-            var originalGroupID = AggLoadInfo.Instance.Plugins
-                .FirstOrDefault(p => p.PluginID == _plugin.PluginID)?.GroupID;
-            var newGroupID = _plugin.GroupID;
-
-            if (originalGroupID.HasValue && originalGroupID.Value != newGroupID)
+            // Save plugin and update loadout plugin associations
+            foreach (var loadOut in _loadOutEnabled)
             {
-                // Update the GroupID and GroupOrdinal
-                _plugin.GroupID = newGroupID;
-                _plugin.GroupOrdinal = AggLoadInfo.Instance.Plugins
-                    .Where(p => p.GroupID == newGroupID)
-                    .Select(p => p.GroupOrdinal)
-                    .DefaultIfEmpty(1)
-                    .Max() + 1;
-            }
-
-            // Update the database and the Plugins singleton
-            foreach (var file in _plugin.Files)
-            {
-                FileInfo.InsertFileInfo(file, _plugin.PluginID);
+                if (loadOut.Value) // If the plugin is enabled for this loadout
+                {
+                    LoadOut.SetPluginEnabled(AggLoadInfo.Instance.LoadOuts.First(l => l.Name == loadOut.Key).ProfileID, _plugin.PluginID, true);
+                }
             }
 
             _plugin.WriteMod();
-
-            // Remove the old plugin and add the updated one
-            var existingPlugin = AggLoadInfo.Instance.Plugins.FirstOrDefault(p => p.PluginID == _plugin.PluginID);
-            if (existingPlugin != null)
-            {
-                _ = AggLoadInfo.Instance.Plugins.Remove(existingPlugin);
-            }
-            AggLoadInfo.Instance.Plugins.Add(_plugin);
         }
 
         protected virtual void OnPropertyChanged(string propertyName)
