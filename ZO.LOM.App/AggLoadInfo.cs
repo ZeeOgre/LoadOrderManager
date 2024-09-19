@@ -21,9 +21,25 @@ namespace ZO.LoadOrderManager
         public ObservableCollection<ModGroup> Groups { get; set; } = new ObservableCollection<ModGroup>();
         public ObservableCollection<LoadOut> LoadOuts { get; set; } = new ObservableCollection<LoadOut>();
 
+        public int GroupCount => Groups?.Count ?? 0;
+
         private AggLoadInfo() { }
 
-        public int GroupCount => Groups?.Count ?? 0;
+        public AggLoadInfo(LoadOut loadOut)
+        {
+            UpdateFromLoadOut(loadOut);
+        }
+
+        // Constructor to take a LoadOut and a GroupSet as arguments
+        public AggLoadInfo(LoadOut loadOut, GroupSet groupSet)
+        {
+            UpdateFromLoadOut(loadOut);
+            Groups.Clear();
+            foreach (var modGroup in groupSet.ModGroups)
+            {
+                Groups.Add(modGroup);
+            }
+        }
 
         public void UpdateFromLoadOut(LoadOut loadOut)
         {
@@ -60,28 +76,8 @@ namespace ZO.LoadOrderManager
 
                 using var connection = DbManager.Instance.GetConnection();
                 using (var command = new SQLiteCommand(@"
-    SELECT 
-        p.PluginID, 
-        p.PluginName, 
-        p.Description, 
-        p.Achievements, 
-        p.DTStamp, 
-        p.Version, 
-        p.State, 
-        p.GroupID AS PluginGroupID, 
-        p.GroupOrdinal, 
-        g.GroupID AS GroupID,  
-        g.GroupName AS GroupName,      
-        g.Description AS GroupDescription, 
-        g.ParentID, 
-        g.Ordinal AS GroupGroupOrdinal, 
-        pp.ProfileID, 
-        e.BethesdaID, 
-        e.NexusID, 
-        l.GroupSetID, 
-        gs.GroupSetName 
-    FROM 
-        vwPluginGrpUnion", connection))
+                    SELECT *
+                    FROM vwPluginGrpUnion", connection))
                 using (var reader = command.ExecuteReader())
                 {
                     var pluginDict = new Dictionary<int, Plugin>();
@@ -148,154 +144,34 @@ namespace ZO.LoadOrderManager
                             if (loadOut != null && pluginID.HasValue)
                             {
                                 var plugin = pluginDict[pluginID.Value];
-                                loadOut.Plugins.Add(new PluginViewModel(plugin, true)); // Assuming the plugin is enabled
+                                loadOut.Plugins.Add(new PluginViewModel(plugin, loadOut)); // Assuming the plugin is enabled
                             }
                         }
                     }
                 }
-                App.LogDebug("Init From Database");
 
-                try
+                // Sanity check to ensure GroupSet 1 is only read from
+                var groupSet1 = GroupSet.LoadGroupSet(1);
+                if (groupSet1 != null)
                 {
-                    // Load LoadOuts
-                    using (var command = new SQLiteCommand("SELECT DISTINCT ProfileID, ProfileName FROM vwLoadOuts", connection))
-                    using (var reader = command.ExecuteReader())
+                    Groups.Clear();
+                    foreach (var modGroup in groupSet1.ModGroups)
                     {
-                        while (reader.Read())
-                        {
-                            var profileID = reader.GetInt32(reader.GetOrdinal("ProfileID"));
-                            var loadOut = LoadOuts.FirstOrDefault(l => l.ProfileID == profileID) ?? new LoadOut
-                            {
-                                ProfileID = profileID,
-                                Name = reader.GetString(reader.GetOrdinal("ProfileName")),
-                                Plugins = new ObservableCollection<PluginViewModel>()
-                            };
-                            LoadOuts.Add(loadOut);
-                        }
-                    }
-
-                    // Load Plugins and Groups
-                    using (var command = new SQLiteCommand(@"
-                        SELECT 
-                            p.PluginID, 
-                            p.PluginName, 
-                            p.Description, 
-                            p.Achievements, 
-                            p.DTStamp, 
-                            p.Version, 
-                            p.GroupID AS PluginGroupID, 
-                            p.GroupOrdinal, 
-                            g.GroupID AS GroupID,  
-                            g.GroupName AS GroupName,      
-                            g.Description AS GroupDescription, 
-                            g.ParentID, 
-                            g.Ordinal AS GroupGroupOrdinal, 
-                            pp.ProfileID, 
-                            e.BethesdaID, 
-                            e.NexusID 
-                        FROM 
-                            Plugins p 
-                        LEFT JOIN 
-                            ModGroups g ON p.GroupID = g.GroupID 
-                        LEFT JOIN 
-                            ProfilePlugins pp ON p.PluginID = pp.PluginID 
-                        LEFT JOIN 
-                            ExternalIDs e ON p.PluginID = e.PluginID 
-                        UNION 
-                        SELECT 
-                            NULL AS PluginID, 
-                            NULL AS PluginName, 
-                            NULL AS Description, 
-                            NULL AS Achievements, 
-                            NULL AS DTStamp, 
-                            NULL AS Version, 
-                            g.GroupID AS PluginGroupID, 
-                            NULL AS GroupOrdinal, 
-                            g.GroupID AS GroupID,    
-                            g.GroupName AS GroupName,      
-                            g.Description AS GroupDescription, 
-                            g.ParentID, 
-                            g.Ordinal AS GroupGroupOrdinal, 
-                            NULL AS ProfileID, 
-                            NULL AS BethesdaID, 
-                            NULL AS NexusID 
-                        FROM 
-                            ModGroups g", connection))
-                    using (var reader = command.ExecuteReader())
-                    {
-                        var pluginDict = new Dictionary<int, Plugin>();
-                        var groupDict = new Dictionary<int, ModGroup>();
-
-                        while (reader.Read())
-                        {
-                            var pluginID = reader.IsDBNull(reader.GetOrdinal("PluginID")) ? (int?)null : reader.GetInt32(reader.GetOrdinal("PluginID"));
-                            var groupID = reader.GetInt32(reader.GetOrdinal("GroupID"));
-                            var profileID = reader.IsDBNull(reader.GetOrdinal("ProfileID")) ? (int?)null : reader.GetInt32(reader.GetOrdinal("ProfileID"));
-
-                            // Process Plugin
-                            if (pluginID.HasValue && !pluginDict.ContainsKey(pluginID.Value))
-                            {
-                                var plugin = new Plugin
-                                {
-                                    PluginID = pluginID.Value,
-                                    PluginName = reader.IsDBNull(reader.GetOrdinal("PluginName")) ? string.Empty : reader.GetString(reader.GetOrdinal("PluginName")),
-                                    Description = reader.IsDBNull(reader.GetOrdinal("Description")) ? string.Empty : reader.GetString(reader.GetOrdinal("Description")),
-                                    Achievements = !reader.IsDBNull(reader.GetOrdinal("Achievements")) && reader.GetInt64(reader.GetOrdinal("Achievements")) != 0,
-                                    DTStamp = reader.IsDBNull(reader.GetOrdinal("DTStamp")) ? string.Empty : reader.GetString(reader.GetOrdinal("DTStamp")),
-                                    Version = reader.IsDBNull(reader.GetOrdinal("Version")) ? string.Empty : reader.GetString(reader.GetOrdinal("Version")),
-                                    BethesdaID = reader.IsDBNull(reader.GetOrdinal("BethesdaID")) ? string.Empty : reader.GetString(reader.GetOrdinal("BethesdaID")),
-                                    NexusID = reader.IsDBNull(reader.GetOrdinal("NexusID")) ? string.Empty : reader.GetString(reader.GetOrdinal("NexusID")),
-                                    GroupID = reader.IsDBNull(reader.GetOrdinal("PluginGroupID")) ? (int?)null : reader.GetInt32(reader.GetOrdinal("PluginGroupID")),
-                                    GroupOrdinal = reader.IsDBNull(reader.GetOrdinal("GroupOrdinal")) ? (int?)null : reader.GetInt32(reader.GetOrdinal("GroupOrdinal"))
-                                };
-
-                                // Load FileInfo objects for the plugin
-                                plugin.Files = new FileInfo().LoadFilesByPlugin(plugin.PluginID);
-
-                                pluginDict[pluginID.Value] = plugin;
-                                Plugins.Add(plugin);
-                            }
-
-                            // Process Group
-                            if (!groupDict.ContainsKey(groupID))
-                            {
-                                var modGroup = new ModGroup
-                                {
-                                    GroupID = groupID,
-                                    GroupName = reader.GetString(reader.GetOrdinal("GroupName")),
-                                    Description = reader.IsDBNull(reader.GetOrdinal("GroupDescription")) ? string.Empty : reader.GetString(reader.GetOrdinal("GroupDescription")),
-                                    ParentID = reader.IsDBNull(reader.GetOrdinal("ParentID")) ? (int?)null : reader.GetInt32(reader.GetOrdinal("ParentID")),
-                                    Plugins = new ObservableCollection<Plugin>()
-                                };
-                                groupDict[groupID] = modGroup;
-                                Groups.Add(modGroup);
-                            }
-
-                            // Associate Plugin with Group
-                            if (pluginID.HasValue && groupDict.ContainsKey(groupID))
-                            {
-                                var plugin = pluginDict[pluginID.Value];
-                                var modGroup = groupDict[groupID];
-                                modGroup.Plugins.Add(plugin);
-                            }
-
-                            // Associate Plugin with LoadOut
-                            if (profileID.HasValue)
-                            {
-                                var loadOut = LoadOuts.FirstOrDefault(l => l.ProfileID == profileID.Value);
-                                if (loadOut != null && pluginID.HasValue)
-                                {
-                                    var plugin = pluginDict[pluginID.Value];
-                                    loadOut.Plugins.Add(new PluginViewModel(plugin, loadOut)); // Assuming the plugin is enabled
-                                }
-                            }
-                        }
+                        Groups.Add(modGroup);
                     }
                 }
-                catch (Exception ex)
+
+                // Create a new GroupSet from the active LoadOut
+                if (LoadOuts.Any())
                 {
-                    App.LogDebug($"Error in InitFromDatabase: {ex.Message}");
-                    throw;
+                    var activeLoadOut = LoadOuts.First();
+                    var newGroupSet = new GroupSet(activeLoadOut.GroupSet.GroupSetID, activeLoadOut.GroupSet.GroupSetName, activeLoadOut.GroupSet.GroupSetFlags);
+                    newGroupSet.Merge(activeLoadOut.GroupSet);
+                    Groups.Clear();
+                    foreach (var modGroup in newGroupSet.ModGroups)
+                    {
+                        Groups.Add(modGroup);
+                    }
                 }
 
                 App.LogDebug("Init From Database Complete");

@@ -10,7 +10,7 @@ using System.Windows.Input;
 namespace ZO.LoadOrderManager
 {
 
-[Flags]
+    [Flags]
     public enum GroupFlags
     {
         None = 0,
@@ -19,7 +19,7 @@ namespace ZO.LoadOrderManager
         Hidden = 1 << 2,       // 4
         Archived = 1 << 3,     // 8
         Favorite = 1 << 4,     // 16
-        // Add other characteristics as needed
+                               // Add other characteristics as needed
     }
 
 
@@ -76,8 +76,7 @@ namespace ZO.LoadOrderManager
             var clonedGroupSet = new GroupSet(this.GroupSetID, this.GroupSetName, this.GroupSetFlags);
             foreach (var modGroup in this.ModGroups)
             {
-                // Pass the current GroupSet instance to the ModGroup.Clone method
-                clonedGroupSet.ModGroups.Add(modGroup.Clone(clonedGroupSet));
+                clonedGroupSet.ModGroups.Add(modGroup.Clone());
             }
             return clonedGroupSet;
         }
@@ -89,8 +88,7 @@ namespace ZO.LoadOrderManager
             {
                 if (!this.ModGroups.Any(mg => mg.GroupID == modGroup.GroupID))
                 {
-                    // Pass the current GroupSet instance to the ModGroup.Clone method
-                    this.ModGroups.Add(modGroup.Clone(this));
+                    this.ModGroups.Add(modGroup.Clone());
                 }
             }
         }
@@ -100,7 +98,7 @@ namespace ZO.LoadOrderManager
         {
             using var connection = DbManager.Instance.GetConnection();
             using var command = new SQLiteCommand(connection);
-            command.CommandText = "SELECT * FROM GroupSets WHERE GroupSetID = @GroupSetID";
+            command.CommandText = "SELECT * FROM GroupSet WHERE GroupSetID = @GroupSetID";
             command.Parameters.AddWithValue("@GroupSetID", groupSetID);
 
             using var reader = command.ExecuteReader();
@@ -126,7 +124,7 @@ namespace ZO.LoadOrderManager
             using var command = new SQLiteCommand(connection);
 
             // Check if the GroupSet already exists
-            command.CommandText = "SELECT GroupSetFlags FROM GroupSets WHERE GroupSetID = @GroupSetID";
+            command.CommandText = "SELECT GroupSetFlags FROM GroupSet WHERE GroupSetID = @GroupSetID";
             command.Parameters.AddWithValue("@GroupSetID", GroupSetID);
 
             var existingFlags = command.ExecuteScalar();
@@ -143,8 +141,8 @@ namespace ZO.LoadOrderManager
 
             // Prepare insert or replace command
             command.CommandText = @"
-                INSERT OR REPLACE INTO GroupSets (GroupSetID, GroupSetName, GroupSetFlags)
-                VALUES (@GroupSetID, @GroupSetName, @GroupSetFlags)";
+                    INSERT OR REPLACE INTO GroupSet (GroupSetID, GroupSetName, GroupSetFlags)
+                    VALUES (@GroupSetID, @GroupSetName, @GroupSetFlags)";
             command.Parameters.AddWithValue("@GroupSetName", GroupSetName);
             command.Parameters.AddWithValue("@GroupSetFlags", (int)GroupSetFlags);
 
@@ -212,18 +210,26 @@ namespace ZO.LoadOrderManager
 
         public ObservableCollection<ModGroupViewModel> ModGroups { get; }
 
-        public ICommand AddModGroupCommand => new RelayCommand(AddModGroup);
+        public ICommand AddModGroupCommand => new RelayCommand<object?>(AddModGroup);
+        public ICommand CloneModGroupCommand => new RelayCommand<ModGroupViewModel>(CloneModGroup);
 
-        private void AddModGroup()
+        private void CloneModGroup(ModGroupViewModel modGroupViewModel)
+        {
+            var clonedModGroup = modGroupViewModel.ModGroup.Clone();
+            _groupSet.AddModGroup(clonedModGroup);
+            ModGroups.Add(new ModGroupViewModel(clonedModGroup));
+        }
+
+        private void AddModGroup(object? parameter)
         {
             var newModGroup = new ModGroup();
             _groupSet.AddModGroup(newModGroup);
             ModGroups.Add(new ModGroupViewModel(newModGroup));
         }
 
-        public event PropertyChangedEventHandler PropertyChanged;
+        public event PropertyChangedEventHandler? PropertyChanged = delegate { };
 
-        protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
@@ -253,7 +259,7 @@ namespace ZO.LoadOrderManager
 
         public string GroupName
         {
-            get => _modGroup.GroupName;
+            get => _modGroup.GroupName ?? string.Empty;
             set
             {
                 if (_modGroup.GroupName != value)
@@ -264,11 +270,13 @@ namespace ZO.LoadOrderManager
             }
         }
 
-        public ObservableCollection<Plugin> Plugins => _modGroup.Plugins;
+        public ObservableCollection<Plugin> Plugins => _modGroup.Plugins ?? new ObservableCollection<Plugin>();
 
-        public event PropertyChangedEventHandler PropertyChanged;
+        public ModGroup ModGroup => _modGroup;
 
-        protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        public event PropertyChangedEventHandler? PropertyChanged = delegate { };
+
+        protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }

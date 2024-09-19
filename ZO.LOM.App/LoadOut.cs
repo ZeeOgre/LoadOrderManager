@@ -24,7 +24,7 @@ namespace ZO.LoadOrderManager
         {
             foreach (var plugin in plugins)
             {
-                var pluginViewModel = new PluginViewModel(plugin, true);
+                var pluginViewModel = new PluginViewModel(plugin, this);
                 Plugins.Add(pluginViewModel);
             }
         }
@@ -83,7 +83,7 @@ namespace ZO.LoadOrderManager
             }
             catch (Exception ex)
             {
-                App.LogError("Error writing profile to database", ex);
+                App.LogDebug("Error writing profile to database", ex.ToString());
                 transaction.Rollback();
                 throw;
             }

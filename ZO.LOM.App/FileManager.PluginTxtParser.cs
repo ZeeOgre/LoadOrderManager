@@ -246,7 +246,7 @@ namespace ZO.LoadOrderManager
         {
             // Append group header
             sb.AppendLine(group.ToPluginsString());
-            sb.AppendLine();
+            //sb.AppendLine();
 
             var pluginsInGroup = loadOut.Plugins
                 .Where(p => p.Plugin.GroupID == group.GroupID)

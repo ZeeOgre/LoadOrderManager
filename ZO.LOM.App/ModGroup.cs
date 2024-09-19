@@ -29,6 +29,21 @@ namespace ZO.LoadOrderManager
 
         public string DisplayName => $"{GroupName} | {Description}";
 
+        public ModGroup Clone()
+        {
+            var clonedModGroup = new ModGroup
+            {
+                GroupID = this.GroupID,
+                Ordinal = this.Ordinal,
+                Description = this.Description,
+                GroupName = this.GroupName,
+                ParentID = this.ParentID,
+                GroupSetID = this.GroupSetID,
+                Plugins = new ObservableCollection<Plugin>(this.Plugins?.Select(p => p.Clone()) ?? Enumerable.Empty<Plugin>())
+            };
+            return clonedModGroup;
+        }
+
 
         public ModGroup Clone(string groupName)
         {
