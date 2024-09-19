@@ -245,4 +245,27 @@ namespace ZO.LoadOrderManager
             throw new NotImplementedException();
         }
     }
+    public class EnumFlagConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            var state = (ModState)value;
+            var flag = (ModState)parameter;
+            return state.HasFlag(flag);
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            var state = (ModState)value;
+            var flag = (ModState)parameter;
+            if ((bool)value)
+            {
+                return state | flag;
+            }
+            else
+            {
+                return state & ~flag;
+            }
+        }
+    }
 }

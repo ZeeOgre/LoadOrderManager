@@ -64,17 +64,23 @@ namespace ZO.LoadOrderManager
                         if (IsSampleOrInvalidData(config))
                         {
                             App.LogDebug("Configuration data is still invalid after settings window.");
-                            var resultRetry = MessageBox.Show("Configuration data is invalid. Would you like to retry?", "Error", MessageBoxButton.YesNo, MessageBoxImage.Error);
-                            if (resultRetry == MessageBoxResult.Yes)
+
+                            // Wrap message box in Dispatcher
+                            Application.Current.Dispatcher.Invoke(() =>
                             {
-                                settingsSaved = LaunchSettingsWindow(SettingsLaunchSource.DatabaseInitialization);
-                            }
-                            else
-                            {
-                                App.LogDebug("User chose not to retry. Shutting down application.");
-                                Application.Current.Shutdown();
-                                return;
-                            }
+                                var resultRetry = MessageBox.Show("Configuration data is invalid. Would you like to retry?", "Error", MessageBoxButton.YesNo, MessageBoxImage.Error);
+
+                                if (resultRetry == MessageBoxResult.Yes)
+                                {
+                                    settingsSaved = LaunchSettingsWindow(SettingsLaunchSource.DatabaseInitialization);
+                                }
+                                else
+                                {
+                                    App.LogDebug("User chose not to retry. Shutting down application.");
+                                    Application.Current.Shutdown();
+                                    return;
+                                }
+                            });
                         }
 
                         if (!settingsSaved)
@@ -97,6 +103,7 @@ namespace ZO.LoadOrderManager
             }
         }
 
+
         public static bool IsSampleOrInvalidData(Config config)
         {
             return config.GameFolder == "<<GAME ROOT FOLDER>>" ||
@@ -105,11 +112,19 @@ namespace ZO.LoadOrderManager
 
         public bool LaunchSettingsWindow(SettingsLaunchSource source)
         {
-            var settingsWindow = new SettingsWindow(source);
-            bool? result = settingsWindow.ShowDialog();
-            App.LogDebug($"SettingsWindow launching ");
+            bool? result = null;
+
+            // Ensure the settings window is launched on the UI thread
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                var settingsWindow = new SettingsWindow(source);
+                result = settingsWindow.ShowDialog();
+            });
+
+            App.LogDebug($"SettingsWindow launched.");
             return result == true;
         }
+
 
         public SQLiteConnection GetConnection()
         {

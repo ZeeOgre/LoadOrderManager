@@ -13,8 +13,6 @@ namespace ZO.LoadOrderManager
         public static string GameFolder => Config.Instance.GameFolder;
         public static string GameDocsFolder => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "My Games", "Starfield");
         public static string GameSaveFolder => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "My Games", "Starfield", "Saves");
-        //public static string PluginsFile => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "starfield", "plugins.txt");
-        //public static string ContentCatalogFile => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "starfield", "ContentCatalog.txt");
         public static string GameLocalAppDataFolder => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "starfield");
 
         private static bool _initialized = false;
@@ -51,24 +49,9 @@ namespace ZO.LoadOrderManager
                     if (AggLoadInfo.Instance.Plugins.Count == 9 && (AggLoadInfo.Instance.Groups.Count == 4 && AggLoadInfo.Instance.LoadOuts.Count == 1))
                     {
                         App.LogDebug("FileManager: Working from an empty set. Loading plugins and content catalog...");
-
-                        // Load plugins from plugins.txt
-                        App.LogDebug($"FileManager: Loading plugins from {PluginsFile}...");
-                        ParsePluginsTxt(PluginsFile);
-                        AggLoadInfo.Instance.SaveToDatabase();
-                        App.LogDebug("FileManager: Plugins loaded.");
-
-                        // Load content catalog
-                        App.LogDebug($"FileManager: Loading content catalog from {ContentCatalogFile}...");
-                        ParseContentCatalogTxt(ContentCatalogFile);
-                        AggLoadInfo.Instance.SaveToDatabase();
-                        App.LogDebug("FileManager: Content catalog loaded.");
-
-                        // Scan game directory for stray files
-                        App.LogDebug("FileManager: Scanning game directory for stray files...");
-                        ScanGameDirectoryForStrays();
-                        AggLoadInfo.Instance.SaveToDatabase();
-                        App.LogDebug("FileManager: Game directory scan completed.");
+                        FileManager.ParsePluginsTxt(PluginsFile);
+                        FileManager.ParseContentCatalogTxt();   
+                        FileManager.ScanGameDirectoryForStrays();
                     }
                     else if (AggLoadInfo.Instance.Plugins.Count > 9 && AggLoadInfo.Instance.Groups.Count >= 4 && AggLoadInfo.Instance.LoadOuts.Count >= 1)
                     {
@@ -77,14 +60,15 @@ namespace ZO.LoadOrderManager
                     else
                     {
                         App.LogDebug("FileManager: Invalid data state detected. Shutting down application...");
-                        if (Application.Current != null)
+
+                        // Safely shutdown application via dispatcher
+                        Application.Current.Dispatcher.Invoke(() =>
                         {
+                            MessageBox.Show("Invalid data state detected. The application will shut down.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                             Application.Current.Shutdown();
-                        }
-                        else
-                        {
-                            _ = MessageBox.Show("Application is not initialized properly.");
-                        }
+                        });
+
+                        return; // Immediately return after shutdown to avoid continuing execution
                     }
 
                     _initialized = true;
@@ -101,6 +85,8 @@ namespace ZO.LoadOrderManager
                 }
             }
         }
+
+
 
         public static List<ZO.LoadOrderManager.FileInfo> LoadFilesByPlugin(int pluginID, SQLiteConnection connection)
         {

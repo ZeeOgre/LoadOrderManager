@@ -5,6 +5,7 @@
         Title="LoadOrderManager - Plugin Editor" Height="570" Width="600">
     <Window.Resources>
         <local:FilesToStringConverter x:Key="FilesToStringConverter"/>
+        <local:EnumFlagConverter x:Key="EnumFlagConverter"/>
     </Window.Resources>
     <Window.DataContext>
         <Binding Path="Plugin" />
@@ -76,9 +77,26 @@
             </UniformGrid>
         </ScrollViewer>
 
-        <StackPanel Grid.Row="10" Grid.ColumnSpan="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="5">
-            <Button Content="Save" Width="60" Margin="5" Click="SaveButton_Click"/>
-            <Button Content="Cancel" Width="60" Margin="5" Click="CancelButton_Click"/>
-        </StackPanel>
+        <!-- New Grid for Row 10 -->
+        <Grid Grid.Row="10" Grid.ColumnSpan="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Checkmarks StackPanel on the left -->
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Margin="5">
+                <CheckBox Content="Game Folder" IsChecked="{Binding Path=State, Converter={StaticResource EnumFlagConverter}, ConverterParameter={x:Static local:ModState.GameFolder}}" />
+                <CheckBox Content="Bethesda" IsChecked="{Binding Path=State, Converter={StaticResource EnumFlagConverter}, ConverterParameter={x:Static local:ModState.Bethesda}}" />
+                <CheckBox Content="Nexus" IsChecked="{Binding Path=State, Converter={StaticResource EnumFlagConverter}, ConverterParameter={x:Static local:ModState.Nexus}}" />
+                <CheckBox Content="Mod Manager" IsChecked="{Binding Path=State, Converter={StaticResource EnumFlagConverter}, ConverterParameter={x:Static local:ModState.ModManager}}" />
+            </StackPanel>
+
+            <!-- Save and Cancel buttons on the right -->
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="5" Grid.Column="1">
+                <Button Content="Save" Width="60" Margin="5" Click="SaveButton_Click"/>
+                <Button Content="Cancel" Width="60" Margin="5" Click="CancelButton_Click"/>
+            </StackPanel>
+        </Grid>
     </Grid>
 </Window>

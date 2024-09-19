@@ -151,9 +151,6 @@ namespace ZO.LoadOrderManager
 
         private void LoadInitialData()
         {
-
-
-
             InitializationManager.StartInitialization(nameof(LoadOrderWindowViewModel));
             try
             {
@@ -166,9 +163,21 @@ namespace ZO.LoadOrderManager
 
                     // Initialize Items collection
                     Items.Clear();
+                    var currentLoadOut = LoadOuts.FirstOrDefault(lo => lo.ProfileID == SelectedProfileId);
                     foreach (var group in Groups)
                     {
-                        Items.Add(CreateGroupViewModel(group));
+                        var groupViewModel = CreateGroupViewModel(group);
+                        foreach (var plugin in group.Plugins ?? Enumerable.Empty<Plugin>())
+                        {
+                            var isEnabled = currentLoadOut?.Plugins.Any(pvm => pvm.Plugin.PluginID == plugin.PluginID) ?? false;
+                            groupViewModel.Children.Add(new LoadOrderItemViewModel
+                            {
+                                PluginData = plugin,
+                                IsEnabled = isEnabled,
+                                EntityType = EntityType.Plugin
+                            });
+                        }
+                        Items.Add(groupViewModel);
                     }
 
                     SelectedProfileId = LoadOuts.FirstOrDefault()?.ProfileID;

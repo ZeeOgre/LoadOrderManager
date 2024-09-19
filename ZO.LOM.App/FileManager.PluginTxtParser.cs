@@ -168,11 +168,9 @@ namespace ZO.LoadOrderManager
 
                         // Increment the ordinal for the current group
                         pluginOrdinalTracker[currentGroup.GroupID]++;
-#if WINDOWS
-                        App.LogDebug($"Successfully added plugin: {plugin.PluginName} to group {currentGroup.GroupName} with Ordinal {plugin.GroupOrdinal}.");
-#endif
 
-                        var completePlugin = Plugin.LoadPlugin(plugin.PluginName);
+                        App.LogDebug($"Successfully added plugin: {plugin.PluginName} to group {currentGroup.GroupName} with Ordinal {plugin.GroupOrdinal}.");
+                        var completePlugin = Plugin.LoadPlugin(modName: plugin.PluginName);
                         if (completePlugin != null)
                         {
                             loadOut.Plugins.Add(new PluginViewModel(completePlugin, isEnabled)); // Call the constructor with parameters

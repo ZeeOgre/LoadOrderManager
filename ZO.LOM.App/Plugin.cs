@@ -7,6 +7,16 @@ using System.Collections.ObjectModel;
 
 namespace ZO.LoadOrderManager
 {
+    [Flags]
+    public enum ModState
+    {
+        None = 0,
+        GameFolder = 1 << 0,
+        Bethesda = 1 << 1,
+        Nexus = 1 << 2,
+        ModManager = 1 << 3
+    }
+
     public class Plugin
     {
         public int PluginID { get; set; }
@@ -16,6 +26,7 @@ namespace ZO.LoadOrderManager
         public List<FileInfo> Files { get; set; }
         public string DTStamp { get; set; } = string.Empty;
         public string Version { get; set; } = string.Empty;
+        public ModState State { get; set; } // Add the State property
         public string BethesdaID { get; set; } = string.Empty;
         public string NexusID { get; set; } = string.Empty;
         public int? GroupID { get; set; } = 1; // Default group ID
@@ -104,78 +115,42 @@ namespace ZO.LoadOrderManager
 
 
 
-        public static Plugin? LoadPlugin(string pluginName)
+        public static Plugin? LoadPlugin(int? modID = null, string? modName = null)
         {
-            pluginName = pluginName.ToLowerInvariant(); // Normalize case before querying
+            Plugin? plugin = null;
 
             using var connection = DbManager.Instance.GetConnection();
-            
-            using var command = new SQLiteCommand("SELECT * FROM Plugins WHERE LOWER(PluginName) = @PluginName", connection);
-            command.Parameters.AddWithValue("@PluginName", pluginName);
+            using var command = new SQLiteCommand(connection);
+            command.CommandText = "SELECT * FROM Plugins WHERE PluginID = @modID OR PluginName = @modName";
+            command.Parameters.AddWithValue("@modID", (object?)modID ?? DBNull.Value);
+            command.Parameters.AddWithValue("@modName", (object?)modName ?? DBNull.Value);
+
             using var reader = command.ExecuteReader();
             if (reader.Read())
             {
-                return new Plugin
+                plugin = new Plugin
                 {
                     PluginID = reader.GetInt32(reader.GetOrdinal("PluginID")),
                     PluginName = reader.GetString(reader.GetOrdinal("PluginName")),
-                    Description = reader.GetString(reader.GetOrdinal("Description")),
+                    Description = reader.IsDBNull(reader.GetOrdinal("Description")) ? null : reader.GetString(reader.GetOrdinal("Description")),
                     Achievements = reader.GetBoolean(reader.GetOrdinal("Achievements")),
                     DTStamp = reader.GetString(reader.GetOrdinal("DTStamp")),
                     Version = reader.GetString(reader.GetOrdinal("Version")),
-                    GroupID = reader.GetInt32(reader.GetOrdinal("GroupID")),
-                    GroupOrdinal = reader.GetInt32(reader.GetOrdinal("GroupOrdinal"))
-                };
-            }
-            return null;
-        }
-
-        public static Plugin? LoadPlugin(int modID)
-        {
-            using var connection = DbManager.Instance.GetConnection();
-
-            using var command = new SQLiteCommand("SELECT * FROM vwPlugins WHERE PluginID = @ModID", connection);
-            command.Parameters.AddWithValue("@ModID", modID);
-            using var reader = command.ExecuteReader();
-            if (reader.Read())
-            {
-                var plugin = new Plugin
-                {
-                    PluginID = reader.GetInt32(reader.GetOrdinal("PluginID")),
-                    PluginName = reader.GetString(reader.GetOrdinal("PluginName")),
-                    Description = reader.GetString(reader.GetOrdinal("Description")),
-                    Achievements = reader.GetInt32(reader.GetOrdinal("Achievements")) == 1,
-                    DTStamp = reader.GetString(reader.GetOrdinal("DTStamp")),
-                    Version = reader.GetString(reader.GetOrdinal("Version")),
-                    BethesdaID = reader.GetString(reader.GetOrdinal("BethesdaID")),
-                    NexusID = reader.GetString(reader.GetOrdinal("NexusID")),
+                    State = reader.IsDBNull(reader.GetOrdinal("State")) ? 0 : (ModState)reader.GetInt32(reader.GetOrdinal("State")),
+                    BethesdaID = reader.IsDBNull(reader.GetOrdinal("BethesdaID")) ? null : reader.GetString(reader.GetOrdinal("BethesdaID")),
+                    NexusID = reader.IsDBNull(reader.GetOrdinal("NexusID")) ? null : reader.GetString(reader.GetOrdinal("NexusID")),
                     GroupID = reader.IsDBNull(reader.GetOrdinal("GroupID")) ? (int?)null : reader.GetInt32(reader.GetOrdinal("GroupID")),
-                    GroupOrdinal = reader.IsDBNull(reader.GetOrdinal("GroupOrdinal")) ? (int?)null : reader.GetInt32(reader.GetOrdinal("GroupOrdinal")),
-                    Files = new List<FileInfo>()
+                    GroupOrdinal = reader.IsDBNull(reader.GetOrdinal("GroupOrdinal")) ? (int?)null : reader.GetInt32(reader.GetOrdinal("GroupOrdinal"))
                 };
 
-                // Load FileInfo records
-                using (var fileCommand = new SQLiteCommand("SELECT * FROM vwModFiles WHERE PluginID = @ModID", connection))
-                {
-                    fileCommand.Parameters.AddWithValue("@ModID", modID);
-                    using var fileReader = fileCommand.ExecuteReader();
-                    while (fileReader.Read())
-                    {
-                        plugin.Files.Add(new FileInfo
-                        {
-                            Filename = fileReader.GetString(fileReader.GetOrdinal("Filename")),
-                            RelativePath = fileReader.GetString(fileReader.GetOrdinal("RelativePath")),
-                            DTStamp = fileReader.GetString(fileReader.GetOrdinal("DTStamp")),
-                            HASH = fileReader.GetString(fileReader.GetOrdinal("HASH")),
-                            IsArchive = fileReader.GetInt32(fileReader.GetOrdinal("IsArchive")) == 1
-                        });
-                    }
-                }
-
-                return plugin;
+                // Load Files if necessary
+                plugin.EnsureFilesList();
             }
-            return null;
+
+            return plugin;
         }
+
+ 
 
 
 
@@ -312,7 +287,7 @@ namespace ZO.LoadOrderManager
     
 
 
-    public void WriteMod()
+public void WriteMod()
         {
             App.LogDebug($"Plugin.WriteMod: Writing plugin: {PluginName}");
             EnsureFilesList(); // Ensure the Files list is not empty
@@ -320,7 +295,6 @@ namespace ZO.LoadOrderManager
             PluginName = PluginName.ToLowerInvariant(); // Normalize case before inserting
 
             using var connection = DbManager.Instance.GetConnection();
-            
 
             App.LogDebug($"WriteMod Begin Transaction");
             using var transaction = connection.BeginTransaction();
@@ -354,8 +328,8 @@ namespace ZO.LoadOrderManager
                         {
                             // Insert new plugin
                             command.CommandText = @"
-                                INSERT INTO Plugins (PluginName, Description, Achievements, DTStamp, Version, GroupID, GroupOrdinal)
-                                VALUES (LOWER(@PluginName), @Description, @Achievements, @DTStamp, @Version, @GroupID, @GroupOrdinal)
+                                INSERT INTO Plugins (PluginName, Description, Achievements, DTStamp, Version, GroupID, GroupOrdinal, State)
+                                VALUES (LOWER(@PluginName), @Description, @Achievements, @DTStamp, @Version, @GroupID, @GroupOrdinal, @State)
                                 RETURNING PluginID;";
                             command.Parameters.Clear();
                             command.Parameters.AddWithValue("@PluginName", this.PluginName);
@@ -365,6 +339,7 @@ namespace ZO.LoadOrderManager
                             command.Parameters.AddWithValue("@Version", this.Version);
                             command.Parameters.AddWithValue("@GroupID", this.GroupID);
                             command.Parameters.AddWithValue("@GroupOrdinal", this.GroupOrdinal);
+                            command.Parameters.AddWithValue("@State", (int)this.State);
                             this.PluginID = Convert.ToInt32(command.ExecuteScalar());
                             App.LogDebug($"Inserting New Plugin: {this.PluginName} (ID: {this.PluginID}, GroupID: {this.GroupID})");
                         }
@@ -379,7 +354,8 @@ namespace ZO.LoadOrderManager
                                 DTStamp = COALESCE(@DTStamp, DTStamp),
                                 Version = COALESCE(@Version, Version),
                                 GroupID = COALESCE(@GroupID, GroupID),
-                                GroupOrdinal = @GroupOrdinal
+                                GroupOrdinal = @GroupOrdinal,
+                                State = @State
                             WHERE PluginID = @PluginID";
                             command.Parameters.Clear();
                             command.Parameters.AddWithValue("@PluginName", this.PluginName);
@@ -389,6 +365,7 @@ namespace ZO.LoadOrderManager
                             command.Parameters.AddWithValue("@Version", this.Version);
                             command.Parameters.AddWithValue("@GroupID", this.GroupID);
                             command.Parameters.AddWithValue("@GroupOrdinal", this.GroupOrdinal);
+                            command.Parameters.AddWithValue("@State", (int)this.State);
                             command.Parameters.AddWithValue("@PluginID", this.PluginID);
                             command.ExecuteNonQuery();
 
@@ -403,6 +380,16 @@ namespace ZO.LoadOrderManager
                     // Insert or update into ExternalIDs table using INSERT OR REPLACE
                     if (!string.IsNullOrEmpty(this.BethesdaID) || !string.IsNullOrEmpty(this.NexusID))
                     {
+                        // Set the appropriate flags
+                        if (!string.IsNullOrEmpty(this.BethesdaID))
+                        {
+                            this.State |= ModState.Bethesda;
+                        }
+                        if (!string.IsNullOrEmpty(this.NexusID))
+                        {
+                            this.State |= ModState.Nexus;
+                        }
+
                         command.CommandText = @"
                             INSERT OR REPLACE INTO ExternalIDs (PluginID, BethesdaID, NexusID)
                             VALUES (@PluginID, COALESCE(@BethesdaID, (SELECT BethesdaID FROM ExternalIDs WHERE PluginID = @PluginID)), COALESCE(@NexusID, (SELECT NexusID FROM ExternalIDs WHERE PluginID = @PluginID)))";

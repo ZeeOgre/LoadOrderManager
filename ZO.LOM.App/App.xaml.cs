@@ -144,17 +144,38 @@ namespace ZO.LoadOrderManager
 
             try
             {
+                // Show the loading window on the UI thread
                 Dispatcher.Invoke(() =>
                 {
                     loadingWindow = new LoadingWindow();
                     loadingWindow.Show();
                 });
 
+                // Set progress callback
                 InitializationManager.SetProgressCallback((progress, message) =>
                 {
-                    Dispatcher.Invoke(() => loadingWindow.UpdateProgress(progress, message));
+                    try
+                    {
+                        if (Application.Current != null && Application.Current.Dispatcher != null && !Application.Current.Dispatcher.HasShutdownStarted)
+                        {
+                            App.LogDebug($"Setting progress: {progress} - {message}");
+                            Application.Current.Dispatcher.Invoke(() =>
+                            {
+                                loadingWindow?.UpdateProgress(progress, message);
+                            });
+                        }
+                    }
+                    catch (TaskCanceledException ex)
+                    {
+                        App.LogDebug($"Task canceled during progress update: {ex.Message}");
+                    }
+                    catch (Exception ex)
+                    {
+                        App.LogDebug($"Unexpected exception during progress update: {ex.Message}");
+                    }
                 });
 
+                // Run initialization tasks in a background thread
                 Task.Run(() =>
                 {
                     try
@@ -164,29 +185,20 @@ namespace ZO.LoadOrderManager
                         Config.Initialize();
                         InitializationManager.ReportProgress(20, "Configuration initialized");
                         InitializationManager.EndInitialization(nameof(Config));
-                        App.LogDebug("Configuration initialized.");
 
                         App.LogDebug("Initializing database manager...");
                         InitializationManager.StartInitialization(nameof(DbManager));
                         DbManager.Instance.Initialize();
                         InitializationManager.ReportProgress(40, "Database manager initialized");
                         InitializationManager.EndInitialization(nameof(DbManager));
-                        App.LogDebug("Database manager initialized.");
-
-                        //App.LogDebug("Initializing AggLoadInfo from database...");
-                        //InitializationManager.StartInitialization(nameof(AggLoadInfo));
-                        //AggLoadInfo.Instance.InitFromDatabase();
-                        //InitializationManager.ReportProgress(60, "AggLoadInfo initialized from database");
-                        //InitializationManager.EndInitialization(nameof(AggLoadInfo));
-                        //App.LogDebug("AggLoadInfo initialized from database.");
 
                         App.LogDebug("Initializing file manager...");
                         InitializationManager.StartInitialization(nameof(FileManager));
                         FileManager.Initialize();
                         InitializationManager.ReportProgress(80, "File manager initialized");
                         InitializationManager.EndInitialization(nameof(FileManager));
-                        App.LogDebug("File manager initialized.");
 
+                        // Show the main window on the UI thread
                         Dispatcher.Invoke(() =>
                         {
                             try
@@ -204,7 +216,7 @@ namespace ZO.LoadOrderManager
                                 App.LogDebug("Attempting to show LoadOrderWindow...");
                                 _mainWindow.Show();
                                 App.LogDebug("LoadOrderWindow successfully shown.");
-                                loadingWindow.UpdateProgress(100, "LoadOrderWindow successfully shown");
+                                loadingWindow?.UpdateProgress(100, "LoadOrderWindow successfully shown");
                             }
                             catch (Exception ex)
                             {
@@ -213,15 +225,23 @@ namespace ZO.LoadOrderManager
                             }
                         });
                     }
+                    catch (TaskCanceledException ex)
+                    {
+                        App.LogDebug($"Task canceled: {ex.Message}");
+                    }
                     catch (Exception ex)
                     {
                         App.LogDebug($"Exception in HandleNormalMode: {ex.Message}");
-                        _ = MessageBox.Show($"An error occurred in normal mode: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                        Shutdown();
+                        Dispatcher.Invoke(() =>
+                        {
+                            _ = MessageBox.Show($"An error occurred in normal mode: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                            Shutdown();
+                        });
                     }
                     finally
                     {
-                        Dispatcher.Invoke(() =>
+                        // Close the loading window on the UI thread
+                        Dispatcher.InvokeAsync(() =>
                         {
                             loadingWindow?.Close();
                         });
@@ -235,6 +255,9 @@ namespace ZO.LoadOrderManager
                 Shutdown();
             }
         }
+
+
+
 
         private async static void RestartApplication()
         {

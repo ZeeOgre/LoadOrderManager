@@ -26,8 +26,9 @@ namespace ZO.LoadOrderManager
 
                 if (existingPlugin != null)
                 {
-                    // Update DTStamp for the existing plugin
+                    // Update DTStamp and set the installed flag for the existing plugin
                     existingPlugin.DTStamp = dtStamp;
+                    existingPlugin.State |= ModState.GameFolder; // Set the installed flag
                     existingPlugin.WriteMod();
 
                     // Update FileInfo record
@@ -57,7 +58,8 @@ namespace ZO.LoadOrderManager
                         PluginName = pluginName,
                         DTStamp = dtStamp,
                         GroupID = groupId,
-                        GroupOrdinal = groupOrdinalTracker[groupId] // Assign the next ordinal
+                        GroupOrdinal = groupOrdinalTracker[groupId], // Assign the next ordinal
+                        State = ModState.GameFolder // Set the installed flag
                     };
                     newPlugin.WriteMod();
                     AggLoadInfo.Instance.Plugins.Add(newPlugin);
