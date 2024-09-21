@@ -13,11 +13,24 @@ namespace ZO.LoadOrderManager
         // Add GroupSet property
         public GroupSet GroupSet { get; set; }
 
+        // Default constructor
         public LoadOut()
         {
             Plugins = new ObservableCollection<PluginViewModel>();
             enabledPlugins = new HashSet<int>();
-            GroupSet = GroupSet.LoadGroupSet(0) ?? new GroupSet(0, "Default", GroupFlags.None); // Load existing or initialize with default values
+
+            // Load GroupSet with ID 2 or initialize with a new GroupSet if not found
+            GroupSet = new GroupSet(2, "New Working Set", GroupFlags.Uninitialized);
+        }
+
+        // Parameterized constructor
+        public LoadOut(GroupSet groupSet)
+        {
+            Plugins = new ObservableCollection<PluginViewModel>();
+            enabledPlugins = new HashSet<int>();
+
+            // Use the provided GroupSet
+            GroupSet = groupSet;
         }
 
         public void LoadPlugins(IEnumerable<Plugin> plugins)
@@ -29,7 +42,7 @@ namespace ZO.LoadOrderManager
             }
         }
 
-        public void WriteProfile()
+        public int WriteProfile()
         {
             App.LogDebug("Writing profile to database");
             using var connection = DbManager.Instance.GetConnection();
@@ -43,8 +56,8 @@ namespace ZO.LoadOrderManager
                     App.LogDebug($"Updating LoadOutProfiles table for {this.Name}");
                     // Update the LoadOutProfiles table
                     command.CommandText = @"
-                            INSERT OR REPLACE INTO LoadOutProfiles (ProfileID, ProfileName, GroupSetID)
-                            VALUES (@ProfileID, @ProfileName, @GroupSetID)";
+                                INSERT OR REPLACE INTO LoadOutProfiles (ProfileID, ProfileName, GroupSetID)
+                                VALUES (@ProfileID, @ProfileName, @GroupSetID)";
                     command.Parameters.AddWithValue("@ProfileID", this.ProfileID);
                     command.Parameters.AddWithValue("@ProfileName", this.Name);
                     command.Parameters.AddWithValue("@GroupSetID", this.GroupSet.GroupSetID);
@@ -52,8 +65,8 @@ namespace ZO.LoadOrderManager
 
                     // Insert or replace ProfilePlugins entries
                     command.CommandText = @"
-                            INSERT OR REPLACE INTO ProfilePlugins (ProfileID, PluginID)
-                            VALUES (@ProfileID, @PluginID)";
+                                INSERT OR REPLACE INTO ProfilePlugins (ProfileID, PluginID)
+                                VALUES (@ProfileID, @PluginID)";
                     foreach (var plugin in this.Plugins.Where(p => p.IsEnabled))
                     {
                         App.LogDebug($"Updating ProfilePlugins table for {plugin.Plugin.PluginID}");
@@ -68,18 +81,20 @@ namespace ZO.LoadOrderManager
                     var activePluginsList = string.Join(",", activePluginIds);
                     App.LogDebug($"Removing ProfilePlugins entries not in ActivePlugins: {activePluginsList}");
                     command.CommandText = $@"
-                            DELETE FROM ProfilePlugins
-                            WHERE ProfileID = @ProfileID AND PluginID NOT IN ({activePluginsList})";
+                                DELETE FROM ProfilePlugins
+                                WHERE ProfileID = @ProfileID AND PluginID NOT IN ({activePluginsList})";
                     command.Parameters.Clear();
                     command.Parameters.AddWithValue("@ProfileID", this.ProfileID);
                     command.ExecuteNonQuery();
                 }
 
                 // Save the GroupSet
-                GroupSet.SaveGroupSet();
+             
 
                 App.LogDebug("LoadOut Commit Transaction");
                 transaction.Commit();
+                //GroupSet.SaveGroupSet();
+                return this.ProfileID;
             }
             catch (Exception ex)
             {
@@ -97,14 +112,14 @@ namespace ZO.LoadOrderManager
             if (isEnabled)
             {
                 command.CommandText = @"
-                        INSERT OR IGNORE INTO ProfilePlugins (ProfileID, PluginID)
-                        VALUES (@ProfileID, @PluginID)";
+                            INSERT OR IGNORE INTO ProfilePlugins (ProfileID, PluginID)
+                            VALUES (@ProfileID, @PluginID)";
             }
             else
             {
                 command.CommandText = @"
-                        DELETE FROM ProfilePlugins
-                        WHERE ProfileID = @ProfileID AND PluginID = @PluginID";
+                            DELETE FROM ProfilePlugins
+                            WHERE ProfileID = @ProfileID AND PluginID = @PluginID";
             }
             command.Parameters.AddWithValue("@ProfileID", profileID);
             command.Parameters.AddWithValue("@PluginID", pluginID);
@@ -133,11 +148,6 @@ namespace ZO.LoadOrderManager
         public bool IsPluginEnabled(int pluginID)
         {
             return enabledPlugins.Contains(pluginID);
-        }
-
-        public void LoadGroupSet(int groupSetID)
-        {
-            GroupSet = GroupSet.LoadGroupSet(groupSetID) ?? throw new InvalidOperationException("GroupSet not found.");
         }
     }
 }

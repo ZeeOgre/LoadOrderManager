@@ -1,5 +1,7 @@
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Data.SQLite;
+using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using YamlDotNet.Serialization;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.ListView;
@@ -116,27 +118,17 @@ namespace ZO.LoadOrderManager
 
             return yaml;
         }
+        
+
 
         public ModGroup WriteGroup()
         {
-            // Normalize GroupName and Description by replacing non-alphanumeric characters with spaces
-            string normalizedGroupName = NormalizeString(GroupName);
-            string normalizedDescription = NormalizeString(Description);
-
-            // Check for reserved words in normalized GroupName or Description
-            var matchingGroup = ReservedWords.FirstOrDefault(word => normalizedGroupName.Contains(word, StringComparison.OrdinalIgnoreCase) || normalizedDescription.Contains(word, StringComparison.OrdinalIgnoreCase));
-            if (GroupID == -999 || GroupID == -998 || GroupID == -997 || GroupID == 1 || matchingGroup != null)
+            var existingMatch = this.FindMatchingModGroup();
+            if (existingMatch != null)
             {
-                // Normalize the GroupName and Description of each ModGroup in the collection
-                var matchingModGroup = AggLoadInfo.Instance.Groups
-                    .FirstOrDefault(g => g.GroupID == GroupID || (NormalizeString(g.GroupName).Replace(" ", "").Contains(normalizedGroupName, StringComparison.OrdinalIgnoreCase) || NormalizeString(g.Description).Replace(" ", "").Contains(normalizedDescription, StringComparison.OrdinalIgnoreCase)));
-
-                if (matchingModGroup != null)
-                {
-                    App.LogDebug($"Returning existing group: GroupID={matchingModGroup.GroupID}, GroupName={matchingModGroup.GroupName}, Description={matchingModGroup.Description}");
-                    return matchingModGroup;
-                }
+                return existingMatch;
             }
+
 
             using var connection = DbManager.Instance.GetConnection();
             
@@ -145,22 +137,23 @@ namespace ZO.LoadOrderManager
 
             if (this.GroupID == 0)
             {
-                // Check if a group with the same name and description already exists
-                command.CommandText = "SELECT GroupID FROM ModGroups WHERE GroupName = @GroupName AND Description = @Description";
+                // Check if a group with the same name and description already exists in the GroupSet
+                command.CommandText = "SELECT GroupID FROM ModGroups WHERE GroupName = @GroupName AND Description = @Description AND GroupSetID = @GroupSetID";
                 command.Parameters.AddWithValue("@GroupName", this.GroupName);
                 command.Parameters.AddWithValue("@Description", this.Description);
+                command.Parameters.AddWithValue("@GroupSetID", this.GroupSetID);
                 var existingGroupID = command.ExecuteScalar();
                 if (existingGroupID != null)
                 {
-                    App.LogDebug($"Group already exists: {this.GroupName} (ID: {existingGroupID})");
+                    App.LogDebug($"Group already exists: {this.GroupName} (ID: {existingGroupID}) (GroupSet: {GroupSetID}");
                     this.GroupID = Convert.ToInt32(existingGroupID);
                     return AggLoadInfo.Instance.Groups.FirstOrDefault(g => g.GroupID == this.GroupID);
                 }
 
                 // Prepare insert command for new group (GroupID is auto-generated)
                 command.CommandText = @"
-                    INSERT INTO ModGroups (Ordinal, Description, GroupName, ParentID)
-                    VALUES (@Ordinal, @Description, @GroupName, @ParentID)
+                    INSERT INTO ModGroups (Ordinal, Description, GroupName, ParentID, GroupSetID)
+                    VALUES (@Ordinal, @Description, @GroupName, @ParentID, @GroupSetID)
                     RETURNING GroupID;";  // Use RETURNING clause to get the GroupID
 
                 // Add parameters
@@ -168,7 +161,8 @@ namespace ZO.LoadOrderManager
                 command.Parameters.AddWithValue("@Description", this.Description ?? (object)DBNull.Value);
                 command.Parameters.AddWithValue("@GroupName", this.GroupName ?? (object)DBNull.Value);
                 command.Parameters.AddWithValue("@ParentID", this.ParentID ?? (object)DBNull.Value);
-               
+                command.Parameters.AddWithValue("@GroupSetID", this.GroupSetID ?? (object)DBNull.Value);
+
                 try
                 {
                     // Execute command and retrieve the newly inserted GroupID
@@ -196,7 +190,7 @@ namespace ZO.LoadOrderManager
                 command.CommandText = @"
                     UPDATE ModGroups
                     SET Ordinal = @Ordinal, Description = COALESCE(@Description, ''), GroupName = COALESCE(@GroupName, ''), ParentID = @ParentID
-                    WHERE GroupID = @GroupID";
+                    WHERE GroupID = @GroupID AND GroupSetID =  @GroupSetID";
 
                 // Add parameters
                 command.Parameters.AddWithValue("@GroupID", this.GroupID);
@@ -204,6 +198,7 @@ namespace ZO.LoadOrderManager
                 command.Parameters.AddWithValue("@Description", this.Description ?? (object)DBNull.Value);
                 command.Parameters.AddWithValue("@GroupName", this.GroupName ?? (object)DBNull.Value);
                 command.Parameters.AddWithValue("@ParentID", this.ParentID ?? (object)DBNull.Value);
+                command.Parameters.AddWithValue("@GroupSetID", this.GroupSetID ?? (object)DBNull.Value);
 
                 try
                 {
@@ -427,8 +422,98 @@ namespace ZO.LoadOrderManager
             return modGroups;
         }
 
+        public ModGroup? FindMatchingModGroup()
+        {
+            // Normalize GroupName and Description by replacing non-alphanumeric characters with spaces
+            string normalizedGroupName = NormalizeString(GroupName);
+            string normalizedDescription = NormalizeString(Description);
+
+            // Check for reserved words in normalized GroupName or Description
+            var matchingGroup = ReservedWords.FirstOrDefault(word => normalizedGroupName.Contains(word, StringComparison.OrdinalIgnoreCase) || normalizedDescription.Contains(word, StringComparison.OrdinalIgnoreCase));
+
+            if (matchingGroup != null)
+            {
+                // Assuming 'this' is the calling ModGroup object
+                int thisGroupSetID = this.GroupSetID ?? 0;
+
+                // Load the GroupSet for the current GroupSetID
+                GroupSet? groupSet = GroupSet.LoadGroupSet(thisGroupSetID);
+                if (groupSet == null)
+                {
+                    // Handle the case where the GroupSet is not found
+                    return null;
+                }
+
+                // Initialize GroupSetViewModel with the loaded GroupSet
+                var groupSetViewModel = new GroupSetViewModel(groupSet);
+
+                // Normalize the GroupName and Description of the calling ModGroup
+                normalizedGroupName = normalizedGroupName.Replace(" ", "");
+                normalizedDescription = normalizedDescription.Replace(" ", "");
+
+                // Search for matching ModGroup within the same GroupSetID
+                var matchingModGroupViewModel = groupSetViewModel.ModGroups
+                    .FirstOrDefault(g => g.GroupID == this.GroupID ||
+                                         NormalizeString(g.GroupName).Replace(" ", "").Contains(normalizedGroupName, StringComparison.OrdinalIgnoreCase) ||
+                                         NormalizeString(g.ModGroup.Description).Replace(" ", "").Contains(normalizedDescription, StringComparison.OrdinalIgnoreCase));
+
+                if (matchingModGroupViewModel != null)
+                {
+                    App.LogDebug($"Returning existing group: GroupID={matchingModGroupViewModel.GroupID}, GroupName={matchingModGroupViewModel.GroupName}, Description={matchingModGroupViewModel.ModGroup.Description}");
+                    return matchingModGroupViewModel.ModGroup;
+                }
+            }
+
+            return null;
+        }
 
 
+    }
 
+    public class ModGroupViewModel : INotifyPropertyChanged
+    {
+        private ModGroup _modGroup;
+
+        public ModGroupViewModel(ModGroup modGroup)
+        {
+            _modGroup = modGroup;
+        }
+
+        public int GroupID
+        {
+            get => _modGroup.GroupID;
+            set
+            {
+                if (_modGroup.GroupID != value)
+                {
+                    _modGroup.GroupID = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        public string GroupName
+        {
+            get => _modGroup.GroupName ?? string.Empty;
+            set
+            {
+                if (_modGroup.GroupName != value)
+                {
+                    _modGroup.GroupName = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        public ObservableCollection<Plugin> Plugins => _modGroup.Plugins ?? new ObservableCollection<Plugin>();
+
+        public ModGroup ModGroup => _modGroup;
+
+        public event PropertyChangedEventHandler? PropertyChanged = delegate { };
+
+        protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
     }
 }

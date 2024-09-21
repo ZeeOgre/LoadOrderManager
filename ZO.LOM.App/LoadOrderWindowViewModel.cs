@@ -57,6 +57,7 @@ namespace ZO.LoadOrderManager
             set
             {
                 _selectedLoadOut = value;
+                AggLoadInfo.Instance.ActiveLoadOutID = _selectedLoadOut.ProfileID;
                 OnPropertyChanged(nameof(SelectedLoadOut));
             }
         }
@@ -411,18 +412,27 @@ namespace ZO.LoadOrderManager
             OnPropertyChanged(nameof(Groups));
         }
 
-        private void ImportPlugins(string pluginsFile, string mode)
+        private void ImportPlugins(AggLoadInfo aggLoadInfo = null, string pluginsFile = null)
         {
-            var newLoadOut = FileManager.ParsePluginsTxt(pluginsFile, SelectedLoadOut);
-            //if (mode == "new")
-            //{
-            //    LoadOuts.Add(newLoadOut);
-            //}
-            //else
-            //{
-            //    SelectedLoadOut = newLoadOut;
-            //}
-            //RefreshData();
+            // If no AggLoadInfo is provided, use the singleton instance
+            aggLoadInfo ??= AggLoadInfo.Instance;
+
+            // Ensure the selected loadout is set in the AggLoadInfo object
+            if (_selectedLoadOut != null)
+            {
+                aggLoadInfo.UpdateFromLoadOut(_selectedLoadOut);
+                aggLoadInfo.ActiveLoadOutID = _selectedLoadOut.ProfileID;
+            }
+            else
+            {
+                throw new InvalidOperationException("No loadout selected for importing plugins.");
+            }
+
+            // Perform the import
+            aggLoadInfo.LoadFiles(pluginsFile,null,true);
+
+            // Update the UI or any other necessary components
+            RefreshData();
         }
 
 
@@ -542,6 +552,7 @@ namespace ZO.LoadOrderManager
             if (SelectedProfileId.HasValue)
             {
                 var currentLoadOut = SelectedLoadOut;
+                AggLoadInfo.Instance.ActiveLoadOutID = _selectedLoadOut.ProfileID;
                 if (currentLoadOut == null)
                 {
                     StatusMessage = "Selected profile not found.";

@@ -5,6 +5,7 @@ using YamlDotNet.Serialization;
 using System.ComponentModel;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 
 namespace ZO.LoadOrderManager
 {
@@ -32,6 +33,7 @@ namespace ZO.LoadOrderManager
         public string NexusID { get; set; } = string.Empty;
         public int? GroupID { get; set; } = 1; // Default group ID
         public int? GroupOrdinal { get; set; }
+        public int? GroupSetID { get; set; }
 
         public Plugin()
         {
@@ -45,7 +47,7 @@ namespace ZO.LoadOrderManager
         {
             return $"PluginID: {PluginID}, Name: {PluginName}, Description: {Description}, Achievements: {Achievements}, " +
                    $"DTStamp: {DTStamp}, Version: {Version}, GroupID: {GroupID}, GroupOrdinal: {GroupOrdinal}, " +
-                   $"BethesdaID: {BethesdaID}, NexusID: {NexusID}";
+                   $"BethesdaID: {BethesdaID}, NexusID: {NexusID} GroupSetID: {GroupSetID}";
         }
 
         public string ToPluginsString(bool isEnabled)
@@ -86,7 +88,8 @@ namespace ZO.LoadOrderManager
                 NexusID,
                 Version,
                 GroupID,
-                GroupOrdinal
+                GroupOrdinal,
+                GroupSetID
             });
 
             return yaml;
@@ -122,7 +125,7 @@ namespace ZO.LoadOrderManager
 
             using var connection = DbManager.Instance.GetConnection();
             using var command = new SQLiteCommand(connection);
-            command.CommandText = "SELECT * FROM Plugins WHERE PluginID = @modID OR PluginName = @modName";
+            command.CommandText = "SELECT DISTINCT * FROM Plugins WHERE PluginID = @modID OR PluginName = @modName";
             command.Parameters.AddWithValue("@modID", (object?)modID ?? DBNull.Value);
             command.Parameters.AddWithValue("@modName", (object?)modName ?? DBNull.Value);
 
@@ -150,16 +153,6 @@ namespace ZO.LoadOrderManager
 
             return plugin;
         }
-
-
-
-
-
-
-
-
-
-
 
 
         public Plugin(string fileName, int groupId, int ordinal)
@@ -288,7 +281,7 @@ namespace ZO.LoadOrderManager
 
 
 
-        public void WriteMod()
+        public Plugin WriteMod()
         {
             App.LogDebug($"Plugin.WriteMod: Writing plugin: {PluginName}");
             EnsureFilesList(); // Ensure the Files list is not empty
@@ -411,6 +404,7 @@ namespace ZO.LoadOrderManager
                         FileInfo.InsertFileInfo(file, this.PluginID); // Assume InsertFileInfo is a static method in FileInfo class
                     }
                 }
+                return this;    
             }
             catch (Exception ex)
             {

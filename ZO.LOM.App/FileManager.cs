@@ -39,37 +39,38 @@ namespace ZO.LoadOrderManager
                     InitializationManager.StartInitialization(nameof(FileManager));
                     App.LogDebug("FileManager: Starting initialization...");
 
-                    // Attempt to load from the database
-                    App.LogDebug("FileManager: Attempting to load from the database...");
+                    // Retrieve the singleton GroupSet and LoadOut from the database
+                    App.LogDebug("FileManager: Retrieving singleton GroupSet and LoadOut from the database...");
+                    var singletonGroupSet = GroupSet.LoadGroupSet(2);
+                    if (singletonGroupSet == null)
+                    {
+                        throw new InvalidOperationException("FileManager: Failed to load singleton GroupSet from the database.");
+                    }
+
+                    var singletonLoadOut = AggLoadInfo.Instance.LoadOuts.FirstOrDefault(lo => lo.ProfileID == 2);
+                    if (singletonLoadOut == null)
+                    {
+                        throw new InvalidOperationException("FileManager: Failed to load singleton LoadOut from the database.");
+                    }
+
+                    AggLoadInfo.Instance.ActiveLoadOutID = 2;
+                    App.LogDebug("FileManager: Singleton GroupSet and LoadOut retrieved successfully.");
+
+                    // Load data from the database into the AggLoadInfo instance
+                    App.LogDebug("FileManager: Attempting to load additional data from the database...");
                     AggLoadInfo.Instance.InitFromDatabase();
                     App.LogDebug("FileManager: Database load completed.");
 
-                    // Check if we are working from an empty set
-                    App.LogDebug("FileManager: Checking if working from an empty set...");
-                    if (AggLoadInfo.Instance.Plugins.Count == 9 && (AggLoadInfo.Instance.Groups.Count == 4 && AggLoadInfo.Instance.LoadOuts.Count == 1))
-                    {
-                        App.LogDebug("FileManager: Working from an empty set. Loading plugins and content catalog...");
-                        FileManager.ParsePluginsTxt(PluginsFile);
-                        FileManager.ParseContentCatalogTxt();   
-                        FileManager.ScanGameDirectoryForStrays();
-                    }
-                    else if (AggLoadInfo.Instance.Plugins.Count > 9 && AggLoadInfo.Instance.Groups.Count >= 4 && AggLoadInfo.Instance.LoadOuts.Count >= 1)
-                    {
-                        App.LogDebug("FileManager: Valid data loaded from the database. Proceeding with initialization...");
-                    }
-                    else
-                    {
-                        App.LogDebug("FileManager: Invalid data state detected. Shutting down application...");
+                    // Update the flags to indicate the singleton is ready to load
+                    App.LogDebug("FileManager: Updating singleton LoadOut flags to ReadyToLoad...");
+                    singletonGroupSet.GroupSetFlags = GroupFlags.ReadyToLoad;
+                    singletonGroupSet.SaveGroupSet();
 
-                        // Safely shutdown application via dispatcher
-                        Application.Current.Dispatcher.Invoke(() =>
-                        {
-                            MessageBox.Show("Invalid data state detected. The application will shut down.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                            Application.Current.Shutdown();
-                        });
-
-                        return; // Immediately return after shutdown to avoid continuing execution
-                    }
+                    App.LogDebug("FileManager: Singleton LoadOut is now ready to load. Proceeding with initialization...");
+                    FileManager.ParsePluginsTxt(AggLoadInfo.Instance, PluginsFile);
+                    FileManager.ParseContentCatalogTxt();
+                    FileManager.ScanGameDirectoryForStrays();
+                    FileManager.MarkLoadOutComplete(AggLoadInfo.Instance);
 
                     _initialized = true;
                     App.LogDebug("FileManager: Initialization completed successfully.");
@@ -86,7 +87,15 @@ namespace ZO.LoadOrderManager
             }
         }
 
-
+        public static void MarkLoadOutComplete(AggLoadInfo aggLoadInfo)
+        {
+            var activeLoadOut = aggLoadInfo.LoadOuts.FirstOrDefault(loadOut => loadOut.ProfileID == aggLoadInfo.ActiveLoadOutID);
+            if (activeLoadOut != null)
+            {
+                activeLoadOut.GroupSet.GroupSetFlags |= GroupFlags.FilesLoaded;
+                activeLoadOut.GroupSet.GroupSetFlags &= ~GroupFlags.ReadyToLoad;
+            }
+        }
 
         public static List<ZO.LoadOrderManager.FileInfo> LoadFilesByPlugin(int pluginID, SQLiteConnection connection)
         {
@@ -113,7 +122,5 @@ namespace ZO.LoadOrderManager
 
             return files;
         }
-
-       
     }
 }

@@ -6,6 +6,8 @@ using System.Data.SQLite;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
+using YamlDotNet.Serialization;
+using YamlDotNet.Serialization.NamingConventions;
 
 namespace ZO.LoadOrderManager
 {
@@ -13,13 +15,12 @@ namespace ZO.LoadOrderManager
     [Flags]
     public enum GroupFlags
     {
-        None = 0,
-        DefaultGroup = 1 << 0, // 1
-        ReadOnly = 1 << 1,     // 2
-        Hidden = 1 << 2,       // 4
-        Archived = 1 << 3,     // 8
-        Favorite = 1 << 4,     // 16
-                               // Add other characteristics as needed
+        Uninitialized = 0,
+        DefaultGroup = 1,
+        ReadOnly = 2,
+        Favorite = 4,
+        ReadyToLoad = 8,
+        FilesLoaded = 16
     }
 
 
@@ -30,29 +31,94 @@ namespace ZO.LoadOrderManager
         public GroupFlags GroupSetFlags { get; set; }
         public ObservableCollection<ModGroup> ModGroups { get; set; } = new ObservableCollection<ModGroup>();
 
+        public bool IsUninitialized => (GroupSetFlags & GroupFlags.DefaultGroup) == GroupFlags.Uninitialized;
+        public bool IsDefaultGroup => (GroupSetFlags & GroupFlags.DefaultGroup) == GroupFlags.DefaultGroup;
+        public bool IsReadOnly => (GroupSetFlags & GroupFlags.ReadOnly) == GroupFlags.ReadOnly;
+        public bool IsFavorite => (GroupSetFlags & GroupFlags.Favorite) == GroupFlags.Favorite;
+        public bool IsReadyToLoad => (GroupSetFlags & GroupFlags.ReadyToLoad) == GroupFlags.ReadyToLoad;
+        public bool AreFilesLoaded => (GroupSetFlags & GroupFlags.FilesLoaded) == GroupFlags.FilesLoaded;
+
+
+
         public GroupSet(int groupSetID, string groupSetName, GroupFlags groupSetFlags)
         {
             GroupSetID = groupSetID;
             GroupSetName = groupSetName;
             GroupSetFlags = groupSetFlags;
+            
 
             // Ensure the default GroupSet has the correct flags
-            if (GroupSetID == 1)
+            if (IsDefaultGroup || GroupSetID == 1)
             {
-                if (GroupSetFlags != (GroupFlags.DefaultGroup | GroupFlags.ReadOnly))
-                {
-                    throw new ArgumentException("GroupSet 1 must have flags set to DefaultGroup and ReadOnly.");
-                }
-            }
-            else
-            {
-                // Include the default GroupSet in all other GroupSets
                 var defaultGroupSet = LoadGroupSet(1);
-                if (defaultGroupSet != null)
+                if (defaultGroupSet == null)
                 {
-                    Merge(defaultGroupSet);
+                    throw new InvalidOperationException("Default GroupSet with ID 1 not found in the database.");
+                }
+                App.LogDebug("GroupSet 1 loaded as default.");
+                return;
+            }
+
+            if (IsReadOnly)
+            {
+                var readOnlyGroupSet = LoadGroupSet(groupSetID);
+                if (readOnlyGroupSet == null)
+                {
+                    // Create a new ReadOnly group and insert it into the database
+                    InsertReadOnlyGroupSet();
+                    App.LogDebug("New ReadOnly GroupSet created and inserted into the database.");
+                }
+                else
+                {
+                    App.LogDebug("GroupSet with ReadOnly flag loaded.");
+                    return;
                 }
             }
+           
+        }
+
+        private void InsertReadOnlyGroupSet()
+        {
+            using var connection = DbManager.Instance.GetConnection();
+            using var command = new SQLiteCommand(connection);
+            command.CommandText = @"
+                INSERT INTO GroupSet (GroupSetID, GroupSetName, GroupSetFlags)
+                VALUES (@GroupSetID, @GroupSetName, @GroupSetFlags)";
+            command.Parameters.AddWithValue("@GroupSetID", GroupSetID);
+            command.Parameters.AddWithValue("@GroupSetName", GroupSetName);
+            command.Parameters.AddWithValue("@GroupSetFlags", (int)GroupSetFlags);
+
+            command.ExecuteNonQuery();
+        }
+
+        public GroupSet(string loadoutName)
+        {
+            GroupSetName = $"{loadoutName}_";
+            GroupSetFlags = GroupFlags.Uninitialized;
+            ModGroups = new ObservableCollection<ModGroup>();
+
+            // Insert into database, get the GroupSetID, and update GroupSetName in one query
+            using var connection = DbManager.Instance.GetConnection();
+            using var command = new SQLiteCommand(connection);
+            command.CommandText = @"
+                    INSERT INTO GroupSet (GroupSetName, GroupSetFlags)
+                    VALUES (@GroupSetName, @GroupSetFlags)
+                    RETURNING GroupSetID;
+                ";
+            command.Parameters.AddWithValue("@GroupSetName", GroupSetName);
+            command.Parameters.AddWithValue("@GroupSetFlags", (int)GroupSetFlags);
+            GroupSetID = Convert.ToInt32(command.ExecuteScalar());
+
+            // Update GroupSetName to include GroupSetID
+            GroupSetName = $"{loadoutName}_{GroupSetID}";
+            command.CommandText = @"
+                    UPDATE GroupSet
+                    SET GroupSetName = @UpdatedGroupSetName
+                    WHERE GroupSetID = @GroupSetID;
+                ";
+            command.Parameters.AddWithValue("@UpdatedGroupSetName", GroupSetName);
+            command.Parameters.AddWithValue("@GroupSetID", GroupSetID);
+            command.ExecuteNonQuery();
         }
 
         public void AddModGroup(ModGroup modGroup)
@@ -61,14 +127,12 @@ namespace ZO.LoadOrderManager
             {
                 throw new InvalidOperationException("ModGroup already exists in this GroupSet.");
             }
+
+            // Set the GroupSetID of the modGroup to the current GroupSetID
+            modGroup.GroupSetID = this.GroupSetID;
+
             ModGroups.Add(modGroup);
         }
-
-        public bool IsDefaultGroup => (GroupSetFlags & GroupFlags.DefaultGroup) == GroupFlags.DefaultGroup;
-        public bool IsReadOnly => (GroupSetFlags & GroupFlags.ReadOnly) == GroupFlags.ReadOnly;
-        public bool IsHidden => (GroupSetFlags & GroupFlags.Hidden) == GroupFlags.Hidden;
-        public bool IsArchived => (GroupSetFlags & GroupFlags.Archived) == GroupFlags.Archived;
-        public bool IsFavorite => (GroupSetFlags & GroupFlags.Favorite) == GroupFlags.Favorite;
 
         // Method to clone the GroupSet
         public GroupSet Clone()
@@ -82,16 +146,16 @@ namespace ZO.LoadOrderManager
         }
 
         // Method to merge another GroupSet into this one
-        public void Merge(GroupSet otherGroupSet)
-        {
-            foreach (var modGroup in otherGroupSet.ModGroups)
-            {
-                if (!this.ModGroups.Any(mg => mg.GroupID == modGroup.GroupID))
-                {
-                    this.ModGroups.Add(modGroup.Clone());
-                }
-            }
-        }
+        //public void Merge(GroupSet otherGroupSet)
+        //{
+        //    foreach (var modGroup in otherGroupSet.ModGroups)
+        //    {
+        //        if (!this.ModGroups.Any(mg => mg.GroupID == modGroup.GroupID))
+        //        {
+        //            this.ModGroups.Add(modGroup.Clone());
+        //        }
+        //    }
+        //}
 
         // Method to load GroupSet from the database
         public static GroupSet? LoadGroupSet(int groupSetID)
@@ -118,8 +182,13 @@ namespace ZO.LoadOrderManager
         }
 
         // Method to save GroupSet to the database
-        public void SaveGroupSet()
+        public GroupSet SaveGroupSet()
         {
+            if (IsReadOnly)
+            {
+                throw new InvalidOperationException("Cannot update a ReadOnly GroupSet.");
+            }
+
             using var connection = DbManager.Instance.GetConnection();
             using var command = new SQLiteCommand(connection);
 
@@ -130,12 +199,10 @@ namespace ZO.LoadOrderManager
             var existingFlags = command.ExecuteScalar();
             if (existingFlags != null)
             {
-                // Compare existing flags with new flags
                 var existingGroupSetFlags = (GroupFlags)(int)existingFlags;
                 if (existingGroupSetFlags != GroupSetFlags)
                 {
-                    // Handle flag conflict (e.g., log a warning, throw an exception, or merge flags)
-                    throw new InvalidOperationException($"GroupSet with ID {GroupSetID} already exists with different flags.");
+                    GroupSetFlags |= existingGroupSetFlags;
                 }
             }
 
@@ -151,8 +218,10 @@ namespace ZO.LoadOrderManager
             // Save ModGroups
             foreach (var modGroup in ModGroups)
             {
+                modGroup.GroupSetID = GroupSetID;   
                 modGroup.WriteGroup();
             }
+            return this;
         }
     }
 
@@ -222,7 +291,10 @@ namespace ZO.LoadOrderManager
 
         private void AddModGroup(object? parameter)
         {
-            var newModGroup = new ModGroup();
+            var newModGroup = new ModGroup
+            {
+                GroupSetID = _groupSet.GroupSetID // Set the GroupSetID of the new ModGroup
+            };
             _groupSet.AddModGroup(newModGroup);
             ModGroups.Add(new ModGroupViewModel(newModGroup));
         }
@@ -235,52 +307,7 @@ namespace ZO.LoadOrderManager
         }
     }
 
-    public class ModGroupViewModel : INotifyPropertyChanged
-    {
-        private ModGroup _modGroup;
 
-        public ModGroupViewModel(ModGroup modGroup)
-        {
-            _modGroup = modGroup;
-        }
-
-        public int GroupID
-        {
-            get => _modGroup.GroupID;
-            set
-            {
-                if (_modGroup.GroupID != value)
-                {
-                    _modGroup.GroupID = value;
-                    OnPropertyChanged();
-                }
-            }
-        }
-
-        public string GroupName
-        {
-            get => _modGroup.GroupName ?? string.Empty;
-            set
-            {
-                if (_modGroup.GroupName != value)
-                {
-                    _modGroup.GroupName = value;
-                    OnPropertyChanged();
-                }
-            }
-        }
-
-        public ObservableCollection<Plugin> Plugins => _modGroup.Plugins ?? new ObservableCollection<Plugin>();
-
-        public ModGroup ModGroup => _modGroup;
-
-        public event PropertyChangedEventHandler? PropertyChanged = delegate { };
-
-        protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
-    }
 
 
 }

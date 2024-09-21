@@ -8,10 +8,16 @@ namespace ZO.LoadOrderManager
 {
     public static partial class FileManager
     {
-        public static LoadOut ParsePluginsTxt(string pluginsFile, LoadOut? incomingLoadOut = null)
+        public static AggLoadInfo ParsePluginsTxt(AggLoadInfo? incomingAggLoadInfo = null, string? pluginsFile = null)
         {
+            // Use the provided AggLoadInfo or the current singleton instance
+            var aggLoadInfo = incomingAggLoadInfo ?? AggLoadInfo.Instance;
+
+            // Use the provided plugins file path or the default path
+            var pluginsFilePath = pluginsFile ?? FileManager.PluginsFile;
+
             // Use AggLoadInfo to retrieve the default root group (GroupID 1)
-            var defaultModGroup = AggLoadInfo.Instance.Groups.FirstOrDefault(g => g.GroupID == 1);
+            var defaultModGroup = aggLoadInfo.Groups.FirstOrDefault(g => g.GroupID == 1);
             if (defaultModGroup == null)
             {
 #if WINDOWS
@@ -20,8 +26,10 @@ namespace ZO.LoadOrderManager
                 throw new Exception("Default ModGroup not found in AggLoadInfo.");
             }
 
-            var loadOut = incomingLoadOut ?? AggLoadInfo.Instance.LoadOuts.First(l => l.ProfileID == 1);
-            
+            // Use the ActiveLoadOutID property to get the active loadout
+            var loadOut = aggLoadInfo.LoadOuts.First(l => l.ProfileID == aggLoadInfo.ActiveLoadOutID);
+            var groupSet = loadOut.GroupSet;
+
             var enabledPlugins = new HashSet<int>(); // Using HashSet for faster lookups
             ModGroup currentGroup = defaultModGroup;
 
@@ -33,15 +41,15 @@ namespace ZO.LoadOrderManager
 
             // Dictionary to track ordinals for each parent group (for groups)
             var groupOrdinalTracker = new Dictionary<int, int>
-                {
-                    { 1, 1 }
-                };
+            {
+                { 1, 1 }
+            };
 
             // Dictionary to track ordinals for each group (for plugins)
             var pluginOrdinalTracker = new Dictionary<int, int>();
 
             // Consolidate initialization of group and plugin ordinals
-            foreach (var group in AggLoadInfo.Instance.Groups)
+            foreach (var group in aggLoadInfo.Groups)
             {
                 var maxGroupOrdinal = DbManager.GetNextOrdinal(EntityType.Group, group.GroupID);
                 var maxPluginOrdinal = DbManager.GetNextOrdinal(EntityType.Plugin, group.GroupID);
@@ -51,7 +59,7 @@ namespace ZO.LoadOrderManager
 
             try
             {
-                var lines = File.ReadAllLines(pluginsFile);
+                var lines = File.ReadAllLines(pluginsFilePath);
 
                 foreach (var line in lines)
                 {
@@ -73,7 +81,7 @@ namespace ZO.LoadOrderManager
                         if (level == 3)
                         {
                             // For level 3, the parent group is always the root group (GroupID 1)
-                            parentGroup = AggLoadInfo.Instance.Groups.FirstOrDefault(g => g.GroupID == 1);
+                            parentGroup = aggLoadInfo.Groups.FirstOrDefault(g => g.GroupID == 1);
                         }
                         else
                         {
@@ -95,19 +103,60 @@ namespace ZO.LoadOrderManager
                         }
 
                         // Check for existing group by name
-                        var existingGroup = AggLoadInfo.Instance.Groups.FirstOrDefault(g => g.GroupName == groupName);
+                        var existingGroup = aggLoadInfo.Groups.FirstOrDefault(g => g.GroupName == groupName);
                         if (existingGroup != null)
                         {
-                            // Update existing group
-                            existingGroup.Description = groupDescription;
-                            currentGroup = existingGroup;
+                            // Check if the group is a member of GroupSet 1 and is not read-only
+                         
+                                if (existingGroup.GroupSetID == groupSet.GroupSetID)
+                                {
+                                    // Update existing group
+                                    existingGroup.Description = groupDescription;
+                                    currentGroup = existingGroup;
+                                }
+                                else
+                                {
+                                    // Clone the existing group and update the GroupSetID
+                                    var newGroup = existingGroup.Clone(groupSet);
+                                    newGroup.Description = groupDescription;
+
+                                    // Write the new group to the database
+                                    var completeGroup = newGroup.WriteGroup();
+                                    if (completeGroup != null)
+                                    {
+                                        groupParentMapping[level] = completeGroup; // Set this group as the parent for the next level
+                                        currentGroup = completeGroup;
+
+                                        // Increment the ordinal for this parent group
+                                        groupOrdinalTracker[parentGroup.GroupID]++;
+
+                                        // Reset pluginOrdinal for the new group
+                                        if (!pluginOrdinalTracker.ContainsKey(currentGroup.GroupID))
+                                        {
+                                            pluginOrdinalTracker[currentGroup.GroupID] = 1; // Initialize ordinal for this new group
+                                        }
+#if WINDOWS
+                                        App.LogDebug($"Successfully added group: {newGroup.GroupName} to group {parentGroup.GroupName} with ordinal {newGroup.Ordinal}.");
+#endif
+                                        // Add the new group to AggLoadInfo
+                                        //aggLoadInfo.Groups.Add(completeGroup);
+                                    }
+                                    else
+                                    {
+#if WINDOWS
+                                        App.LogDebug($"Error: Failed to write group: {groupName}.");
+#endif
+                                    }
+                                }
+                            
                         }
                         else
                         {
                             // Create and write the new group to the database with the incremented ordinal
                             var newGroup = new ModGroup(parentGroup, groupDescription, groupName)
                             {
-                                Ordinal = groupOrdinalTracker[parentGroup.GroupID] // Assign ordinal
+                                Ordinal = groupOrdinalTracker[parentGroup.GroupID], // Assign ordinal
+                                GroupSetID = groupSet.GroupSetID
                             };
 
                             // Write the new group to the database
@@ -129,7 +178,7 @@ namespace ZO.LoadOrderManager
                                 App.LogDebug($"Successfully added group: {newGroup.GroupName} to group {parentGroup.GroupName} with ordinal {newGroup.Ordinal}.");
 #endif
                                 // Add the new group to AggLoadInfo
-                                //AggLoadInfo.Instance.Groups.Add(completeGroup);
+                                //aggLoadInfo.Groups.Add(completeGroup);
                             }
                             else
                             {
@@ -147,7 +196,7 @@ namespace ZO.LoadOrderManager
                     string pluginName = line.TrimStart('*').Trim();
 
                     // Check for existing plugin by name
-                    var existingPlugin = AggLoadInfo.Instance.Plugins.FirstOrDefault(p => p.PluginName == pluginName);
+                    var existingPlugin = aggLoadInfo.Plugins.FirstOrDefault(p => p.PluginName == pluginName);
                     if (existingPlugin != null)
                     {
                         // Update existing plugin
@@ -184,33 +233,21 @@ namespace ZO.LoadOrderManager
                             }
 
                             // Add the new plugin to AggLoadInfo
-                            AggLoadInfo.Instance.Plugins.Add(completePlugin);
+                            aggLoadInfo.Plugins.Add(completePlugin);
                         }
                     }
                 }
 
-                // Update LoadOut plugins with the correct state
-                //loadOut.Plugins.Clear();
-                //foreach (int pluginID in enabledPlugins)
-                //{
-                //    var completePlugin = Plugin.LoadPlugin(pluginID); // Pass pluginID as an integer
-                //    loadOut.Plugins.Add(new PluginViewModel
-                //    {
-                //        Plugin = completePlugin,
-                //        IsEnabled = true // Ensure the plugin is enabled
-                //    });
-                //}
-
-                // Save the loadout profile
-                loadOut.WriteProfile();
+                // Save the loadout profile and get the ProfileID
+                var profileID = loadOut.WriteProfile();
 
                 // Ensure the LoadOut is updated in AggLoadInfo.Instance.LoadOuts
-                var existingLoadOut = AggLoadInfo.Instance.LoadOuts.FirstOrDefault(l => l.ProfileID == loadOut.ProfileID);
+                var existingLoadOut = aggLoadInfo.LoadOuts.FirstOrDefault(l => l.ProfileID == loadOut.ProfileID);
                 if (existingLoadOut != null)
                 {
-                    AggLoadInfo.Instance.LoadOuts.Remove(existingLoadOut);
+                    aggLoadInfo.LoadOuts.Remove(existingLoadOut);
                 }
-                AggLoadInfo.Instance.LoadOuts.Add(loadOut);
+                aggLoadInfo.LoadOuts.Add(loadOut);
 
             }
             catch (Exception ex)
@@ -220,10 +257,10 @@ namespace ZO.LoadOrderManager
 #endif
             }
 
-            return loadOut;
+            return aggLoadInfo;
         }
-    
-    public static void ProducePluginsTxt(LoadOut incomingLoadOut, string? outputFileName = null)
+
+        public static void ProducePluginsTxt(LoadOut incomingLoadOut, string? outputFileName = null)
     {
         var loadOut = incomingLoadOut;
         var profileName = loadOut.Name;
