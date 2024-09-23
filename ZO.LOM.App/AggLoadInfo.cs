@@ -1,307 +1,185 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Configuration;
+using System.ComponentModel;
 using System.Data.SQLite;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Input;
 
 namespace ZO.LoadOrderManager
 {
-    public class AggLoadInfo
+    public class AggLoadInfo : INotifyPropertyChanged
     {
-        private static readonly Lazy<AggLoadInfo> instance = new Lazy<AggLoadInfo>(() => new AggLoadInfo());
-        private static bool _initialized = false;
-        private static readonly object _lock = new object();
+        // Singleton Instance with Lazy Initialization
+        private static readonly Lazy<AggLoadInfo> _instance = new Lazy<AggLoadInfo>(() => new AggLoadInfo());
+        public static AggLoadInfo Instance => _instance.Value;
 
-        public static AggLoadInfo Instance => instance.Value;
-
+        // Observable Collections for core entities
         public ObservableCollection<Plugin> Plugins { get; set; } = new ObservableCollection<Plugin>();
         public ObservableCollection<ModGroup> Groups { get; set; } = new ObservableCollection<ModGroup>();
         public ObservableCollection<LoadOut> LoadOuts { get; set; } = new ObservableCollection<LoadOut>();
 
-        public int GroupCount => Groups?.Count ?? 0;
-        public int ActiveLoadOutID { get; set; } = 1;
+        // Collections for GroupSet Mappings and Relationships
+        public GroupSetGroupCollection GroupSetGroups { get; set; } = new GroupSetGroupCollection();
+        public GroupSetPluginCollection GroupSetPlugins { get; set; } = new GroupSetPluginCollection();
+        public ProfilePluginCollection ProfilePlugins { get; set; } = new ProfilePluginCollection();
 
-        public int? ActiveGroupSetID()
-        {
-            var activeLoadOut = LoadOuts.FirstOrDefault(lo => lo.ProfileID == ActiveLoadOutID);
-            return activeLoadOut?.GroupSet?.GroupSetID;
-        }
+        // Current active LoadOut and GroupSet
+        public LoadOut ActiveLoadOut { get; set; }
+        public GroupSet ActiveGroupSet { get; set; }
 
+        // Boolean flag to indicate initialization state
+        private static bool _initialized = false;
+        private static readonly object _lock = new object();
+
+        // Private constructor for Singleton pattern
         private AggLoadInfo() { }
 
-        public AggLoadInfo(LoadOut loadOut)
-        {
-            UpdateFromLoadOut(loadOut);
-        }
-
-        // Constructor to take a LoadOut and a GroupSet as arguments
-        public AggLoadInfo(LoadOut loadOut, GroupSet groupSet)
-        {
-            UpdateFromLoadOut(loadOut);
-            Groups.Clear();
-            foreach (var modGroup in groupSet.ModGroups)
-            {
-                Groups.Add(modGroup);
-            }
-        }
-
-        public void UpdateFromLoadOut(LoadOut loadOut)
-        {
-            // Update the singleton's state based on the selected LoadOut
-            this.Plugins = new ObservableCollection<Plugin>(loadOut.Plugins.Select(pvm => pvm.Plugin));
-            this.Groups = loadOut.GroupSet.ModGroups;
-            this.LoadOuts = new ObservableCollection<LoadOut> { loadOut };
-            // Update other properties as needed
-        }
-
-        public void LoadFromPluginsTxt(string filePath = null)
-        {
-            FileManager.ParsePluginsTxt(this, filePath);
-        }
-
-
-
-
-
-
-
+        // Method to initialize from the database
         public void InitFromDatabase()
         {
-            bool shouldInitialize = !_initialized;
-
-            if (!shouldInitialize)
-            {
-                var groupSet = GroupSet.LoadGroupSet(ActiveLoadOutID);
-                if (groupSet != null)
-                {
-                    if ((groupSet.GroupSetFlags & (GroupFlags.DefaultGroup | GroupFlags.ReadOnly | GroupFlags.FilesLoaded | GroupFlags.ReadyToLoad)) != 0)
-                    {
-                        // Abort if any of these flags are set
-                        return;
-                    }
-                }
-            }
+            // Only proceed if not already initialized
+            if (_initialized) return;
 
             lock (_lock)
             {
-                if (!shouldInitialize) return;
-
-                InitializationManager.StartInitialization("Database");
+                if (_initialized) return;
 
                 Plugins.Clear();
                 Groups.Clear();
-                //LoadOuts.Clear();
+                LoadOuts.Clear();
+                GroupSetGroups.Items.Clear();
+                GroupSetPlugins.Items.Clear();
+                ProfilePlugins.Items.Clear();
 
+                // Load data from the database into the respective collections
                 using var connection = DbManager.Instance.GetConnection();
-                using (var command = new SQLiteCommand(@"
-                        SELECT *
-                        FROM vwPluginGrpUnion
-                        WHERE GroupSetID IN (@GroupSetID, 1)", connection)) // Include default ID (1)
-                {
-                    command.Parameters.AddWithValue("@GroupSetID",this.ActiveGroupSetID());
-                    using (var reader = command.ExecuteReader())
-                    {
-                        var pluginDict = new Dictionary<int, Plugin>();
-                        var groupDict = new Dictionary<int, ModGroup>();
+                LoadGroupSetState(connection);
 
-                        while (reader.Read())
-                        {
-                            var pluginID = reader.IsDBNull(reader.GetOrdinal("PluginID")) ? (int?)null : reader.GetInt32(reader.GetOrdinal("PluginID"));
-                            var groupID = reader.GetInt32(reader.GetOrdinal("GroupID"));
-                            //var profileID = reader.IsDBNull(reader.GetOrdinal("ProfileID")) ? (int?)null : reader.GetInt32(reader.GetOrdinal("ProfileID"));
-                            var profileID = ActiveLoadOutID;
-
-                            if (pluginID.HasValue && !pluginDict.ContainsKey(pluginID.Value))
-                            {
-                                var plugin = new Plugin
-                                {
-                                    PluginID = pluginID.Value,
-                                    PluginName = reader.IsDBNull(reader.GetOrdinal("PluginName")) ? string.Empty : reader.GetString(reader.GetOrdinal("PluginName")),
-                                    Description = reader.IsDBNull(reader.GetOrdinal("Description")) ? string.Empty : reader.GetString(reader.GetOrdinal("Description")),
-                                    Achievements = !reader.IsDBNull(reader.GetOrdinal("Achievements")) && reader.GetInt64(reader.GetOrdinal("Achievements")) != 0,
-                                    DTStamp = reader.IsDBNull(reader.GetOrdinal("DTStamp")) ? string.Empty : reader.GetString(reader.GetOrdinal("DTStamp")),
-                                    Version = reader.IsDBNull(reader.GetOrdinal("Version")) ? string.Empty : reader.GetString(reader.GetOrdinal("Version")),
-                                    State = reader.IsDBNull(reader.GetOrdinal("State")) ? (ModState)0 : (ModState)reader.GetInt32(reader.GetOrdinal("State")),
-                                    BethesdaID = reader.IsDBNull(reader.GetOrdinal("BethesdaID")) ? string.Empty : reader.GetString(reader.GetOrdinal("BethesdaID")),
-                                    NexusID = reader.IsDBNull(reader.GetOrdinal("NexusID")) ? string.Empty : reader.GetString(reader.GetOrdinal("NexusID")),
-                                    GroupID = reader.IsDBNull(reader.GetOrdinal("PluginGroupID")) ? (int?)null : reader.GetInt32(reader.GetOrdinal("PluginGroupID")),
-                                    GroupOrdinal = reader.IsDBNull(reader.GetOrdinal("GroupOrdinal")) ? (int?)null : reader.GetInt32(reader.GetOrdinal("GroupOrdinal"))
-                                };
-
-                                plugin.Files = new FileInfo().LoadFilesByPlugin(plugin.PluginID);
-
-                                pluginDict[pluginID.Value] = plugin;
-                                Plugins.Add(plugin);
-                            }
-
-                            if (!groupDict.ContainsKey(groupID))
-                            {
-                                var modGroup = new ModGroup
-                                {
-                                    GroupID = groupID,
-                                    GroupName = reader.GetString(reader.GetOrdinal("GroupName")),
-                                    Description = reader.IsDBNull(reader.GetOrdinal("GroupDescription")) ? string.Empty : reader.GetString(reader.GetOrdinal("GroupDescription")),
-                                    ParentID = reader.IsDBNull(reader.GetOrdinal("ParentID")) ? (int?)null : reader.GetInt32(reader.GetOrdinal("ParentID")),
-                                    GroupSetID = this.ActiveGroupSetID(),
-                                    Plugins = new ObservableCollection<Plugin>()
-                                };
-                                groupDict[groupID] = modGroup;
-                                Groups.Add(modGroup);
-                            }
-
-                            if (pluginID.HasValue && groupDict.ContainsKey(groupID))
-                            {
-                                var plugin = pluginDict[pluginID.Value];
-                                var modGroup = groupDict[groupID];
-                                modGroup.Plugins.Add(plugin);
-                            }
-
-                            // Since ProfileID is now an int, we don't need to check for HasValue
-                            var loadOut = LoadOuts.FirstOrDefault(l => l.ProfileID == profileID);
-                            if (loadOut != null && pluginID.HasValue)
-                            {
-                                var plugin = pluginDict[pluginID.Value];
-                                loadOut.Plugins.Add(new PluginViewModel(plugin, loadOut));
-                            }
-                        }
-                    }
-                }
-
-                if (!LoadOuts.Any())
-                {
-                    var nextLoadOutID = GetNextAvailableLoadOutID();
-                    ActiveLoadOutID = nextLoadOutID;
-                    var newLoadOut = new LoadOut
-                    {
-                        ProfileID = nextLoadOutID,
-                        Name = $"New LoadOut_{nextLoadOutID}",
-                        GroupSet = null // or set to 1 if you want to use the default GroupSet
-                    };
-                    LoadOuts.Add(newLoadOut);
-                }
-                else
-                {
-                    var activeLoadOut = LoadOuts.First();
-                    // Ensure ReadyToLoad flag is set
-                    activeLoadOut.GroupSet.GroupSetFlags |= GroupFlags.ReadyToLoad;
-                }
-
-                App.LogDebug("Init From Database Complete");
+                // Mark as initialized
                 _initialized = true;
-
-                SaveToDatabase();
             }
         }
 
-        private int GetNextAvailableLoadOutID()
+        // Load GroupSet data including plugins, groups, and profiles
+        private void LoadGroupSetState(SQLiteConnection connection)
         {
-            using var connection = DbManager.Instance.GetConnection();
-            using (var command = new SQLiteCommand("SELECT IFNULL(MAX(ProfileID), 0) + 1 FROM LoadOutProfiles", connection))
+            // Load core entities from vwPluginGrpUnion based on GroupSetID
+            using var command = new SQLiteCommand(@"
+                SELECT * 
+                FROM vwPluginGrpUnion
+                WHERE GroupSetID = @GroupSetID", connection);
+            command.Parameters.AddWithValue("@GroupSetID", ActiveGroupSet.GroupSetID);
+
+            using var reader = command.ExecuteReader();
+            var pluginDict = new Dictionary<int, Plugin>();
+            var groupDict = new Dictionary<int, ModGroup>();
+
+            while (reader.Read())
             {
-                var result = command.ExecuteScalar();
-                return Convert.ToInt32(result);
+                // Load Plugins
+                LoadPluginFromReader(reader, pluginDict);
+
+                // Load Groups
+                LoadGroupFromReader(reader, groupDict);
+
+                // Associate Plugins with Groups
+                AssociatePluginsWithGroups(reader, pluginDict, groupDict);
             }
+
+            // Load GroupSetGroups, GroupSetPlugins, and ProfilePlugins for Active GroupSet
+            GroupSetGroups.LoadGroupSetGroups(ActiveGroupSet.GroupSetID, connection);
+            GroupSetPlugins.LoadGroupSetPlugins(ActiveGroupSet.GroupSetID, connection);
+            ProfilePlugins.LoadProfilePlugins(ActiveGroupSet.GroupSetID, connection);
         }
 
-        public void SaveToDatabase()
+        // Load a plugin from the data reader
+        private void LoadPluginFromReader(SQLiteDataReader reader, Dictionary<int, Plugin> pluginDict)
         {
-            //bool textLoggingEnabled = bool.TryParse(ConfigurationManager.AppSettings["TextLogging"], out bool result) && result;
-            bool textLoggingEnabled = false;
-            if (textLoggingEnabled)
+            var pluginID = reader.GetInt32(reader.GetOrdinal("PluginID"));
+            if (!pluginDict.ContainsKey(pluginID))
             {
-                SaveToDatabaseWithBackup();
-            }
-            else
-            {
-                PerformSaveToDatabase();
+                var plugin = new Plugin
+                {
+                    PluginID = pluginID,
+                    PluginName = reader.GetString(reader.GetOrdinal("PluginName")),
+                    Description = reader.IsDBNull(reader.GetOrdinal("Description")) ? string.Empty : reader.GetString(reader.GetOrdinal("Description")),
+                    Achievements = reader.GetBoolean(reader.GetOrdinal("Achievements")),
+                    DTStamp = reader.GetString(reader.GetOrdinal("DTStamp")),
+                    Version = reader.GetString(reader.GetOrdinal("Version")),
+                    State = reader.IsDBNull(reader.GetOrdinal("State")) ? ModState.None : (ModState)reader.GetInt32(reader.GetOrdinal("State")),
+                    BethesdaID = reader.IsDBNull(reader.GetOrdinal("BethesdaID")) ? string.Empty : reader.GetString(reader.GetOrdinal("BethesdaID")),
+                    NexusID = reader.IsDBNull(reader.GetOrdinal("NexusID")) ? string.Empty : reader.GetString(reader.GetOrdinal("NexusID")),
+                    GroupID = reader.IsDBNull(reader.GetOrdinal("PluginGroupID")) ? (int?)null : reader.GetInt32(reader.GetOrdinal("PluginGroupID")),
+                    GroupOrdinal = reader.IsDBNull(reader.GetOrdinal("GroupOrdinal")) ? (int?)null : reader.GetInt32(reader.GetOrdinal("GroupOrdinal")),
+                };
+
+                Plugins.Add(plugin);
+                pluginDict[pluginID] = plugin;
             }
         }
 
-        private void PerformSaveToDatabase()
+        // Load a group from the data reader
+        private void LoadGroupFromReader(SQLiteDataReader reader, Dictionary<int, ModGroup> groupDict)
         {
-            
-            var pluginsCopy = Plugins.ToList(); // Create a copy of the Plugins collection
-            var groupsCopy = Groups.ToList();   // Create a copy of the Groups collection
-            var loadOutsCopy = LoadOuts.ToList(); // Create a copy of the LoadOuts collection
-
-            foreach (var plugin in pluginsCopy)
+            var groupID = reader.GetInt32(reader.GetOrdinal("GroupID"));
+            if (!groupDict.ContainsKey(groupID))
             {
-                plugin.WriteMod();
-            }
+                var modGroup = new ModGroup
+                {
+                    GroupID = groupID,
+                    GroupName = reader.GetString(reader.GetOrdinal("GroupName")),
+                    Description = reader.IsDBNull(reader.GetOrdinal("GroupDescription")) ? string.Empty : reader.GetString(reader.GetOrdinal("GroupDescription")),
+                    ParentID = reader.IsDBNull(reader.GetOrdinal("ParentID")) ? (int?)null : reader.GetInt32(reader.GetOrdinal("ParentID")),
+                    GroupSetID = ActiveGroupSet.GroupSetID,
+                    Plugins = new ObservableCollection<Plugin>()
+                };
 
-            foreach (var group in groupsCopy)
-            {
-                group.WriteGroup();
-            }
-
-            foreach (var loadout in loadOutsCopy)
-            {
-                loadout.WriteProfile();
+                Groups.Add(modGroup);
+                groupDict[groupID] = modGroup;
             }
         }
 
-        // Clone method
+        // Associate plugins with groups based on the data reader
+        private void AssociatePluginsWithGroups(SQLiteDataReader reader, Dictionary<int, Plugin> pluginDict, Dictionary<int, ModGroup> groupDict)
+        {
+            var pluginID = reader.GetInt32(reader.GetOrdinal("PluginID"));
+            var groupID = reader.GetInt32(reader.GetOrdinal("GroupID"));
+
+            if (pluginDict.ContainsKey(pluginID) && groupDict.ContainsKey(groupID))
+            {
+                var plugin = pluginDict[pluginID];
+                var modGroup = groupDict[groupID];
+                if (!modGroup.Plugins.Contains(plugin))
+                {
+                    modGroup.Plugins.Add(plugin);
+                }
+            }
+        }
+
+        // Clone method to create a copy of the current AggLoadInfo
         public AggLoadInfo Clone()
         {
             return new AggLoadInfo
             {
                 Plugins = new ObservableCollection<Plugin>(this.Plugins),
                 Groups = new ObservableCollection<ModGroup>(this.Groups),
-                LoadOuts = new ObservableCollection<LoadOut>(this.LoadOuts)
+                LoadOuts = new ObservableCollection<LoadOut>(this.LoadOuts),
+                GroupSetGroups = new GroupSetGroupCollection { Items = new ObservableCollection<(int, int, int?, int)>(this.GroupSetGroups.Items) },
+                GroupSetPlugins = new GroupSetPluginCollection { Items = new ObservableCollection<(int, int, int, int)>(this.GroupSetPlugins.Items) },
+                ProfilePlugins = new ProfilePluginCollection { Items = new ObservableCollection<(int, int)>(this.ProfilePlugins.Items) },
+                ActiveLoadOut = this.ActiveLoadOut,
+                ActiveGroupSet = this.ActiveGroupSet
             };
         }
 
-        public void SaveToDatabaseWithBackup(string? preSaveBackupPath = null, string? postSaveBackupPath = null)
+        // INotifyPropertyChanged implementation
+        public event PropertyChangedEventHandler PropertyChanged;
+        protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
-            // Create a backup before saving to the database if not provided
-            preSaveBackupPath ??= DbManager.Instance.BackupDB();
-
-            // Proceed with the save operation
-            PerformSaveToDatabase();
-
-            // Create a backup after saving to the database if not provided
-            postSaveBackupPath ??= DbManager.Instance.BackupDB();
-
-            if (!string.IsNullOrEmpty(preSaveBackupPath) && !string.IsNullOrEmpty(postSaveBackupPath))
-            {
-                // Compute hashes for comparison
-                string preSaveHash = FileInfo.ComputeHash(preSaveBackupPath);
-                string postSaveHash = FileInfo.ComputeHash(postSaveBackupPath);
-
-                if (preSaveHash == postSaveHash)
-                {
-                    Console.WriteLine("The database state is unchanged after the save operation.");
-                }
-                else
-                {
-                    Console.WriteLine("The database state has changed after the save operation.");
-                }
-            }
-        }
-
-        public void LoadFiles(string pluginsFile = null, string contentCatalog = null, bool scanGameFolder = false)
-        {
-            App.LogDebug("FileManager: LoadOut is initialized and in the ready to load state. Proceeding with initialization...");
-
-            // Pass the current AggLoadInfo instance to ParsePluginsTxt
-            FileManager.ParsePluginsTxt(this, pluginsFile);
-
-            // Parse the content catalog if provided
-            FileManager.ParseContentCatalogTxt(contentCatalog);
-
-            // Scan the game directory for strays if requested
-            if (scanGameFolder)
-            {
-                FileManager.ScanGameDirectoryForStrays();
-            }
-
-            // Mark the loadout as complete
-            FileManager.MarkLoadOutComplete(this);
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
     }
-
 }

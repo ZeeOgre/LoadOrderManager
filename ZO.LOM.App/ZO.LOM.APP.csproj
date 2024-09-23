@@ -91,6 +91,7 @@
 
   <ItemGroup>
     <None Remove="LoadOrderWindow.bak" />
+    <None Remove="ModGroup - Copy.bakcs" />
   </ItemGroup>
 
   <Target Name="RearrangeOutputFiles" AfterTargets="Build;Publish" BeforeTargets="PostBuildEvent">

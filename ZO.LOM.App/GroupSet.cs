@@ -162,7 +162,7 @@ namespace ZO.LoadOrderManager
         {
             using var connection = DbManager.Instance.GetConnection();
             using var command = new SQLiteCommand(connection);
-            command.CommandText = "SELECT * FROM GroupSet WHERE GroupSetID = @GroupSetID";
+            command.CommandText = "SELECT * FROM GroupSets WHERE GroupSetID = @GroupSetID";
             command.Parameters.AddWithValue("@GroupSetID", groupSetID);
 
             using var reader = command.ExecuteReader();
@@ -222,6 +222,24 @@ namespace ZO.LoadOrderManager
                 modGroup.WriteGroup();
             }
             return this;
+        }
+
+        public static GroupSet CreateEmptyGroupSet()
+        {
+            using var connection = DbManager.Instance.GetConnection();
+            using var command = new SQLiteCommand(connection);
+            command.CommandText = @"
+                INSERT INTO GroupSet (GroupSetName, GroupSetFlags)
+                VALUES (@GroupSetName, @GroupSetFlags)
+                RETURNING GroupSetID;
+            ";
+            command.Parameters.AddWithValue("@GroupSetName", "EmptyGroupSet");
+            command.Parameters.AddWithValue("@GroupSetFlags", (int)GroupFlags.Uninitialized);
+
+            int groupSetID = Convert.ToInt32(command.ExecuteScalar());
+            
+            return new GroupSet(groupSetID, "EmptyGroupSet", GroupFlags.Uninitialized);
+
         }
     }
 

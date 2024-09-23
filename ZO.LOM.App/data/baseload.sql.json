@@ -1,0 +1,1164 @@
+{
+    "type": "database",
+    "name": "LoadOrderManager_SOURCE",
+    "objects": [
+        {
+            "type": "table",
+            "database": null,
+            "name": "Config",
+            "withoutRowId": false,
+            "strict": false,
+            "ddl": "CREATE TABLE [Config] ( \r\n  [GameFolder] TEXT NOT NULL, \r\n  [AutoCheckForUpdates] INTEGER NULL \r\n)",
+            "columns": [
+                {
+                    "name": "GameFolder",
+                    "type": "TEXT",
+                    "constraints": [
+                        {
+                            "type": "NOT NULL",
+                            "definition": "NOT NULL"
+                        }
+                    ]
+                },
+                {
+                    "name": "AutoCheckForUpdates",
+                    "type": "INTEGER",
+                    "constraints": [
+                        {
+                            "type": null,
+                            "definition": "NULL \r\n"
+                        }
+                    ]
+                }
+            ],
+            "rows": [
+            ]
+        },
+        {
+            "type": "table",
+            "database": null,
+            "name": "ExternalIDs",
+            "withoutRowId": false,
+            "strict": false,
+            "ddl": "CREATE TABLE [ExternalIDs] ( \r\n  [ExternalID] INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, \r\n  [PluginID] INTEGER NULL, \r\n  [BethesdaID] TEXT NULL, \r\n  [NexusID] TEXT NULL, \r\n  CONSTRAINT [FK_ExternalIDs_PluginID] FOREIGN KEY ([PluginID]) REFERENCES [Plugins] ([PluginID]) ON DELETE NO ACTION ON UPDATE NO ACTION \r\n)",
+            "columns": [
+                {
+                    "name": "ExternalID",
+                    "type": "INTEGER",
+                    "constraints": [
+                        {
+                            "type": "PRIMARY KEY",
+                            "definition": "PRIMARY KEY AUTOINCREMENT "
+                        },
+                        {
+                            "type": "NOT NULL",
+                            "definition": "NOT NULL"
+                        }
+                    ]
+                },
+                {
+                    "name": "PluginID",
+                    "type": "INTEGER",
+                    "constraints": [
+                        {
+                            "type": null,
+                            "definition": "NULL"
+                        }
+                    ]
+                },
+                {
+                    "name": "BethesdaID",
+                    "type": "TEXT",
+                    "constraints": [
+                        {
+                            "type": null,
+                            "definition": "NULL"
+                        }
+                    ]
+                },
+                {
+                    "name": "NexusID",
+                    "type": "TEXT",
+                    "constraints": [
+                        {
+                            "type": null,
+                            "definition": "NULL"
+                        }
+                    ]
+                }
+            ],
+            "constraints": [
+                {
+                    "type": "FOREIGN KEY",
+                    "definition": "FOREIGN KEY ([PluginID]) REFERENCES [Plugins] ([PluginID]) ON DELETE NO ACTION ON UPDATE NO ACTION \r\n"
+                }
+            ],
+            "rows": [
+                [
+                    1,
+                    10,
+                    null,
+                    "10189"
+                ]
+            ]
+        },
+        {
+            "type": "table",
+            "database": null,
+            "name": "FileInfo",
+            "withoutRowId": false,
+            "strict": false,
+            "ddl": "CREATE TABLE [FileInfo] ( \r\n  [FileID] INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, \r\n  [PluginID] INTEGER NULL, \r\n  [Filename] TEXT NOT NULL, \r\n  [RelativePath] TEXT NULL, \r\n  [DTStamp] TEXT NOT NULL, \r\n  [HASH] TEXT NULL, \r\n  [IsArchive] INTEGER NOT NULL, \r\n  CONSTRAINT [FK_FileInfo_PluginID] FOREIGN KEY ([PluginID]) REFERENCES [Plugins] ([PluginID]) ON DELETE NO ACTION ON UPDATE NO ACTION \r\n)",
+            "columns": [
+                {
+                    "name": "FileID",
+                    "type": "INTEGER",
+                    "constraints": [
+                        {
+                            "type": "PRIMARY KEY",
+                            "definition": "PRIMARY KEY AUTOINCREMENT "
+                        },
+                        {
+                            "type": "NOT NULL",
+                            "definition": "NOT NULL"
+                        }
+                    ]
+                },
+                {
+                    "name": "PluginID",
+                    "type": "INTEGER",
+                    "constraints": [
+                        {
+                            "type": null,
+                            "definition": "NULL"
+                        }
+                    ]
+                },
+                {
+                    "name": "Filename",
+                    "type": "TEXT",
+                    "constraints": [
+                        {
+                            "type": "NOT NULL",
+                            "definition": "NOT NULL"
+                        }
+                    ]
+                },
+                {
+                    "name": "RelativePath",
+                    "type": "TEXT",
+                    "constraints": [
+                        {
+                            "type": null,
+                            "definition": "NULL"
+                        }
+                    ]
+                },
+                {
+                    "name": "DTStamp",
+                    "type": "TEXT",
+                    "constraints": [
+                        {
+                            "type": "NOT NULL",
+                            "definition": "NOT NULL"
+                        }
+                    ]
+                },
+                {
+                    "name": "HASH",
+                    "type": "TEXT",
+                    "constraints": [
+                        {
+                            "type": null,
+                            "definition": "NULL"
+                        }
+                    ]
+                },
+                {
+                    "name": "IsArchive",
+                    "type": "INTEGER",
+                    "constraints": [
+                        {
+                            "type": "NOT NULL",
+                            "definition": "NOT NULL"
+                        }
+                    ]
+                }
+            ],
+            "constraints": [
+                {
+                    "type": "FOREIGN KEY",
+                    "definition": "FOREIGN KEY ([PluginID]) REFERENCES [Plugins] ([PluginID]) ON DELETE NO ACTION ON UPDATE NO ACTION \r\n"
+                }
+            ],
+            "rows": [
+            ]
+        },
+        {
+            "type": "table",
+            "database": null,
+            "name": "GroupSetGroups",
+            "withoutRowId": false,
+            "strict": false,
+            "ddl": "CREATE TABLE GroupSetGroups (GroupSetGroupID INTEGER PRIMARY KEY AUTOINCREMENT, GroupID INTEGER, GroupSetID INTEGER, ParentID INTEGER, Ordinal INTEGER, FOREIGN KEY (GroupID) REFERENCES ModGroups (GroupID), FOREIGN KEY (ParentID) REFERENCES ModGroups (GroupID), UNIQUE (GroupID, GroupSetID))",
+            "columns": [
+                {
+                    "name": "GroupSetGroupID",
+                    "type": "INTEGER",
+                    "constraints": [
+                        {
+                            "type": "PRIMARY KEY",
+                            "definition": "PRIMARY KEY AUTOINCREMENT"
+                        }
+                    ]
+                },
+                {
+                    "name": "GroupID",
+                    "type": "INTEGER"
+                },
+                {
+                    "name": "GroupSetID",
+                    "type": "INTEGER"
+                },
+                {
+                    "name": "ParentID",
+                    "type": "INTEGER"
+                },
+                {
+                    "name": "Ordinal",
+                    "type": "INTEGER"
+                }
+            ],
+            "constraints": [
+                {
+                    "type": "FOREIGN KEY",
+                    "definition": "FOREIGN KEY (GroupID) REFERENCES ModGroups (GroupID)"
+                },
+                {
+                    "type": "FOREIGN KEY",
+                    "definition": "FOREIGN KEY (ParentID) REFERENCES ModGroups (GroupID)"
+                },
+                {
+                    "type": "UNIQUE",
+                    "definition": "UNIQUE (GroupID, GroupSetID)"
+                }
+            ],
+            "rows": [
+                [
+                    1,
+                    -999,
+                    1,
+                    1,
+                    9999
+                ],
+                [
+                    2,
+                    -999,
+                    2,
+                    1,
+                    9999
+                ],
+                [
+                    3,
+                    -998,
+                    1,
+                    1,
+                    9998
+                ],
+                [
+                    4,
+                    -998,
+                    2,
+                    1,
+                    9998
+                ],
+                [
+                    5,
+                    -997,
+                    1,
+                    1,
+                    9997
+                ],
+                [
+                    6,
+                    -997,
+                    2,
+                    1,
+                    9997
+                ],
+                [
+                    7,
+                    1,
+                    1,
+                    0,
+                    0
+                ],
+                [
+                    8,
+                    1,
+                    2,
+                    0,
+                    0
+                ]
+            ]
+        },
+        {
+            "type": "table",
+            "database": null,
+            "name": "GroupSetPlugins",
+            "withoutRowId": false,
+            "strict": false,
+            "ddl": "CREATE TABLE GroupSetPlugins (GroupSetID INTEGER NOT NULL, GroupID INTEGER NOT NULL, PluginID INTEGER NOT NULL, Ordinal INTEGER NOT NULL, CONSTRAINT PK_GroupSetPlugins PRIMARY KEY (GroupSetID, GroupID, PluginID), CONSTRAINT FK_GroupSetPlugins_GroupSetID FOREIGN KEY (GroupSetID) REFERENCES GroupSets (GroupSetID) ON DELETE NO ACTION ON UPDATE NO ACTION, CONSTRAINT FK_GroupSetPlugins_GroupID FOREIGN KEY (GroupID) REFERENCES ModGroups (GroupID) ON DELETE NO ACTION ON UPDATE NO ACTION, CONSTRAINT FK_GroupSetPlugins_PluginID FOREIGN KEY (PluginID) REFERENCES Plugins (PluginID) ON DELETE NO ACTION ON UPDATE NO ACTION)",
+            "columns": [
+                {
+                    "name": "GroupSetID",
+                    "type": "INTEGER",
+                    "constraints": [
+                        {
+                            "type": "NOT NULL",
+                            "definition": "NOT NULL"
+                        }
+                    ]
+                },
+                {
+                    "name": "GroupID",
+                    "type": "INTEGER",
+                    "constraints": [
+                        {
+                            "type": "NOT NULL",
+                            "definition": "NOT NULL"
+                        }
+                    ]
+                },
+                {
+                    "name": "PluginID",
+                    "type": "INTEGER",
+                    "constraints": [
+                        {
+                            "type": "NOT NULL",
+                            "definition": "NOT NULL"
+                        }
+                    ]
+                },
+                {
+                    "name": "Ordinal",
+                    "type": "INTEGER",
+                    "constraints": [
+                        {
+                            "type": "NOT NULL",
+                            "definition": "NOT NULL"
+                        }
+                    ]
+                }
+            ],
+            "constraints": [
+                {
+                    "type": "PRIMARY KEY",
+                    "definition": "PRIMARY KEY (GroupSetID, GroupID, PluginID)"
+                },
+                {
+                    "type": "FOREIGN KEY",
+                    "definition": "FOREIGN KEY (GroupSetID) REFERENCES GroupSets (GroupSetID) ON DELETE NO ACTION ON UPDATE NO ACTION"
+                },
+                {
+                    "type": "FOREIGN KEY",
+                    "definition": "FOREIGN KEY (GroupID) REFERENCES ModGroups (GroupID) ON DELETE NO ACTION ON UPDATE NO ACTION"
+                },
+                {
+                    "type": "FOREIGN KEY",
+                    "definition": "FOREIGN KEY (PluginID) REFERENCES Plugins (PluginID) ON DELETE NO ACTION ON UPDATE NO ACTION"
+                }
+            ],
+            "rows": [
+                [
+                    1,
+                    -999,
+                    1,
+                    1
+                ],
+                [
+                    1,
+                    -999,
+                    2,
+                    2
+                ],
+                [
+                    1,
+                    -999,
+                    3,
+                    3
+                ],
+                [
+                    1,
+                    -999,
+                    4,
+                    4
+                ],
+                [
+                    1,
+                    -999,
+                    5,
+                    5
+                ],
+                [
+                    1,
+                    -999,
+                    6,
+                    6
+                ],
+                [
+                    1,
+                    -999,
+                    7,
+                    7
+                ],
+                [
+                    1,
+                    -999,
+                    8,
+                    8
+                ],
+                [
+                    1,
+                    -999,
+                    9,
+                    9
+                ],
+                [
+                    1,
+                    -998,
+                    10,
+                    1
+                ],
+                [
+                    2,
+                    -999,
+                    1,
+                    1
+                ],
+                [
+                    2,
+                    -999,
+                    2,
+                    2
+                ],
+                [
+                    2,
+                    -999,
+                    3,
+                    3
+                ],
+                [
+                    2,
+                    -999,
+                    4,
+                    4
+                ],
+                [
+                    2,
+                    -999,
+                    5,
+                    5
+                ],
+                [
+                    2,
+                    -999,
+                    6,
+                    6
+                ],
+                [
+                    2,
+                    -999,
+                    7,
+                    7
+                ],
+                [
+                    2,
+                    -999,
+                    8,
+                    8
+                ],
+                [
+                    2,
+                    -999,
+                    9,
+                    9
+                ],
+                [
+                    2,
+                    -998,
+                    10,
+                    1
+                ]
+            ]
+        },
+        {
+            "type": "table",
+            "database": null,
+            "name": "GroupSets",
+            "withoutRowId": false,
+            "strict": false,
+            "ddl": "CREATE TABLE GroupSets ( \r\n    GroupSetID INTEGER PRIMARY KEY AUTOINCREMENT, \r\n    GroupSetName TEXT, \r\n    GroupSetFlags INTEGER \r\n)",
+            "columns": [
+                {
+                    "name": "GroupSetID",
+                    "type": "INTEGER",
+                    "constraints": [
+                        {
+                            "type": "PRIMARY KEY",
+                            "definition": "PRIMARY KEY AUTOINCREMENT"
+                        }
+                    ]
+                },
+                {
+                    "name": "GroupSetName",
+                    "type": "TEXT"
+                },
+                {
+                    "name": "GroupSetFlags",
+                    "type": "INTEGER"
+                }
+            ],
+            "rows": [
+                [
+                    1,
+                    "BASELINE_GS",
+                    9
+                ],
+                [
+                    2,
+                    "SINGLETON_GS",
+                    12
+                ]
+            ]
+        },
+        {
+            "type": "table",
+            "database": null,
+            "name": "InitializationStatus",
+            "withoutRowId": false,
+            "strict": false,
+            "ddl": "CREATE TABLE [InitializationStatus] ( \r\n  [Id] INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, \r\n  [IsInitialized] INTEGER NOT NULL, \r\n  [InitializationTime] TEXT NOT NULL \r\n)",
+            "columns": [
+                {
+                    "name": "Id",
+                    "type": "INTEGER",
+                    "constraints": [
+                        {
+                            "type": "PRIMARY KEY",
+                            "definition": "PRIMARY KEY AUTOINCREMENT "
+                        },
+                        {
+                            "type": "NOT NULL",
+                            "definition": "NOT NULL"
+                        }
+                    ]
+                },
+                {
+                    "name": "IsInitialized",
+                    "type": "INTEGER",
+                    "constraints": [
+                        {
+                            "type": "NOT NULL",
+                            "definition": "NOT NULL"
+                        }
+                    ]
+                },
+                {
+                    "name": "InitializationTime",
+                    "type": "TEXT",
+                    "constraints": [
+                        {
+                            "type": "NOT NULL",
+                            "definition": "NOT NULL \r\n"
+                        }
+                    ]
+                }
+            ],
+            "rows": [
+            ]
+        },
+        {
+            "type": "table",
+            "database": null,
+            "name": "LoadOutProfiles",
+            "withoutRowId": false,
+            "strict": false,
+            "ddl": "CREATE TABLE [LoadOutProfiles] ( \r\n  [ProfileID] INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, \r\n  [ProfileName] TEXT NOT NULL, \r\n  [GroupSetID] INTEGER NULL \r\n)",
+            "columns": [
+                {
+                    "name": "ProfileID",
+                    "type": "INTEGER",
+                    "constraints": [
+                        {
+                            "type": "PRIMARY KEY",
+                            "definition": "PRIMARY KEY AUTOINCREMENT "
+                        },
+                        {
+                            "type": "NOT NULL",
+                            "definition": "NOT NULL"
+                        }
+                    ]
+                },
+                {
+                    "name": "ProfileName",
+                    "type": "TEXT",
+                    "constraints": [
+                        {
+                            "type": "NOT NULL",
+                            "definition": "NOT NULL"
+                        }
+                    ]
+                },
+                {
+                    "name": "GroupSetID",
+                    "type": "INTEGER",
+                    "constraints": [
+                        {
+                            "type": null,
+                            "definition": "NULL \r\n"
+                        }
+                    ]
+                }
+            ],
+            "rows": [
+                [
+                    1,
+                    "Baseline",
+                    1
+                ],
+                [
+                    2,
+                    "(Default)",
+                    1
+                ]
+            ]
+        },
+        {
+            "type": "table",
+            "database": null,
+            "name": "ModGroups",
+            "withoutRowId": false,
+            "strict": false,
+            "ddl": "CREATE TABLE ModGroups (GroupID INTEGER PRIMARY KEY AUTOINCREMENT, GroupName TEXT, Description TEXT)",
+            "columns": [
+                {
+                    "name": "GroupID",
+                    "type": "INTEGER",
+                    "constraints": [
+                        {
+                            "type": "PRIMARY KEY",
+                            "definition": "PRIMARY KEY AUTOINCREMENT"
+                        }
+                    ]
+                },
+                {
+                    "name": "GroupName",
+                    "type": "TEXT"
+                },
+                {
+                    "name": "Description",
+                    "type": "TEXT"
+                }
+            ],
+            "rows": [
+                [
+                    -999,
+                    "CoreGameFiles",
+                    "This is a reserved group for mods that are an integral part of the game and can't be controlled by the player"
+                ],
+                [
+                    -998,
+                    "NeverLoad",
+                    "This is a reserved group for mods which should never be loaded"
+                ],
+                [
+                    -997,
+                    "Uncategorized",
+                    "This is a reserved group to temporarily hold uncategorized mods"
+                ],
+                [
+                    1,
+                    "(Default Root)",
+                    "This is the Default Root group which holds all the other groups"
+                ]
+            ]
+        },
+        {
+            "type": "table",
+            "database": null,
+            "name": "Plugins",
+            "withoutRowId": false,
+            "strict": false,
+            "ddl": "CREATE TABLE [Plugins] ( \r\n  [PluginID] INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, \r\n  [PluginName] TEXT NOT NULL, \r\n  [Description] TEXT NULL, \r\n  [Achievements] INTEGER NOT NULL, \r\n  [DTStamp] TEXT NOT NULL, \r\n  [Version] TEXT NULL, \r\n  [State] INTEGER NULL \r\n)",
+            "columns": [
+                {
+                    "name": "PluginID",
+                    "type": "INTEGER",
+                    "constraints": [
+                        {
+                            "type": "PRIMARY KEY",
+                            "definition": "PRIMARY KEY AUTOINCREMENT "
+                        },
+                        {
+                            "type": "NOT NULL",
+                            "definition": "NOT NULL"
+                        }
+                    ]
+                },
+                {
+                    "name": "PluginName",
+                    "type": "TEXT",
+                    "constraints": [
+                        {
+                            "type": "NOT NULL",
+                            "definition": "NOT NULL"
+                        }
+                    ]
+                },
+                {
+                    "name": "Description",
+                    "type": "TEXT",
+                    "constraints": [
+                        {
+                            "type": null,
+                            "definition": "NULL"
+                        }
+                    ]
+                },
+                {
+                    "name": "Achievements",
+                    "type": "INTEGER",
+                    "constraints": [
+                        {
+                            "type": "NOT NULL",
+                            "definition": "NOT NULL"
+                        }
+                    ]
+                },
+                {
+                    "name": "DTStamp",
+                    "type": "TEXT",
+                    "constraints": [
+                        {
+                            "type": "NOT NULL",
+                            "definition": "NOT NULL"
+                        }
+                    ]
+                },
+                {
+                    "name": "Version",
+                    "type": "TEXT",
+                    "constraints": [
+                        {
+                            "type": null,
+                            "definition": "NULL"
+                        }
+                    ]
+                },
+                {
+                    "name": "State",
+                    "type": "INTEGER",
+                    "constraints": [
+                        {
+                            "type": null,
+                            "definition": "NULL \r\n"
+                        }
+                    ]
+                }
+            ],
+            "rows": [
+                [
+                    1,
+                    "blueprintships-starfield.esm",
+                    "Core game file containing all the ship models (We think!)",
+                    1,
+                    "2024-08-20 18:18:57",
+                    null,
+                    1
+                ],
+                [
+                    2,
+                    "constellation.esm",
+                    "Premium Edition Content",
+                    1,
+                    "2024-06-28 00:43:13",
+                    null,
+                    1
+                ],
+                [
+                    3,
+                    "oldmars.esm",
+                    "Premium Edition - Old Mars Skins",
+                    1,
+                    "2024-09-19",
+                    null,
+                    1
+                ],
+                [
+                    4,
+                    "sfbgs003.esm",
+                    "Tracker's Alliance update",
+                    1,
+                    "2024-08-20 18:18:57",
+                    null,
+                    1
+                ],
+                [
+                    5,
+                    "sfbgs004.esm",
+                    "REV-8 Vehicle",
+                    1,
+                    "2024-08-20 18:19:01",
+                    null,
+                    1
+                ],
+                [
+                    6,
+                    "sfbgs006.esm",
+                    "Empty Ship Habs and Decorations",
+                    1,
+                    "2024-06-28 00:22:40",
+                    null,
+                    1
+                ],
+                [
+                    7,
+                    "sfbgs007.esm",
+                    "Add \"GamePlay Options\" Menu",
+                    1,
+                    "2024-08-20 18:19:16",
+                    null,
+                    1
+                ],
+                [
+                    8,
+                    "sfbgs008.esm",
+                    "New Map design (3d maps)",
+                    1,
+                    "2024-08-20 18:18:57",
+                    null,
+                    1
+                ],
+                [
+                    9,
+                    "starfield.esm",
+                    "The core Starfield game",
+                    1,
+                    "2024-08-20 18:18:57",
+                    null,
+                    1
+                ],
+                [
+                    10,
+                    "A1_EMPTY_STUB_XXXXXXXXXX.esm",
+                    "JMPz11's stub for converting mods between xEdit and Creation Kit, WILL crash your game if you try to load it.",
+                    0,
+                    "2024-06-24 19:53:00",
+                    null,
+                    4
+                ]
+            ]
+        },
+        {
+            "type": "table",
+            "database": null,
+            "name": "ProfilePlugins",
+            "withoutRowId": false,
+            "strict": false,
+            "ddl": "CREATE TABLE [ProfilePlugins] ( \r\n  [ProfileID] INTEGER NOT NULL, \r\n  [PluginID] INTEGER NOT NULL, \r\n  CONSTRAINT [PK_ProfilePlugins] PRIMARY KEY ([ProfileID], [PluginID]), \r\n  CONSTRAINT [FK_ProfilePlugins_PluginID] FOREIGN KEY ([PluginID]) REFERENCES [Plugins] ([PluginID]) ON DELETE CASCADE ON UPDATE NO ACTION, \r\n  CONSTRAINT [FK_ProfilePlugins_ProfileID] FOREIGN KEY ([ProfileID]) REFERENCES [LoadOutProfiles] ([ProfileID]) ON DELETE CASCADE ON UPDATE NO ACTION \r\n)",
+            "columns": [
+                {
+                    "name": "ProfileID",
+                    "type": "INTEGER",
+                    "constraints": [
+                        {
+                            "type": "NOT NULL",
+                            "definition": "NOT NULL"
+                        }
+                    ]
+                },
+                {
+                    "name": "PluginID",
+                    "type": "INTEGER",
+                    "constraints": [
+                        {
+                            "type": "NOT NULL",
+                            "definition": "NOT NULL"
+                        }
+                    ]
+                }
+            ],
+            "constraints": [
+                {
+                    "type": "PRIMARY KEY",
+                    "definition": "PRIMARY KEY ([ProfileID], [PluginID])"
+                },
+                {
+                    "type": "FOREIGN KEY",
+                    "definition": "FOREIGN KEY ([PluginID]) REFERENCES [Plugins] ([PluginID]) ON DELETE CASCADE ON UPDATE NO ACTION"
+                },
+                {
+                    "type": "FOREIGN KEY",
+                    "definition": "FOREIGN KEY ([ProfileID]) REFERENCES [LoadOutProfiles] ([ProfileID]) ON DELETE CASCADE ON UPDATE NO ACTION \r\n"
+                }
+            ],
+            "rows": [
+                [
+                    1,
+                    1
+                ],
+                [
+                    2,
+                    1
+                ],
+                [
+                    1,
+                    2
+                ],
+                [
+                    2,
+                    2
+                ],
+                [
+                    1,
+                    3
+                ],
+                [
+                    2,
+                    3
+                ],
+                [
+                    1,
+                    4
+                ],
+                [
+                    2,
+                    4
+                ],
+                [
+                    1,
+                    5
+                ],
+                [
+                    2,
+                    5
+                ],
+                [
+                    1,
+                    6
+                ],
+                [
+                    2,
+                    6
+                ],
+                [
+                    1,
+                    7
+                ],
+                [
+                    2,
+                    7
+                ],
+                [
+                    1,
+                    8
+                ],
+                [
+                    2,
+                    8
+                ],
+                [
+                    1,
+                    9
+                ],
+                [
+                    2,
+                    9
+                ]
+            ]
+        },
+        {
+            "type": "index",
+            "database": null,
+            "name": "Plugins_Plugins_idx_Plugins_PluginName",
+            "unique": true,
+            "ddl": "CREATE UNIQUE INDEX [Plugins_Plugins_idx_Plugins_PluginName] ON [Plugins] ([PluginName] ASC)"
+        },
+        {
+            "type": "trigger",
+            "database": null,
+            "name": "fki_ExternalIDs_PluginID_Plugins_PluginID",
+            "ddl": "CREATE TRIGGER [fki_ExternalIDs_PluginID_Plugins_PluginID] BEFORE Insert ON [ExternalIDs] FOR EACH ROW BEGIN SELECT RAISE(ROLLBACK, 'Insert on table ExternalIDs violates foreign key constraint FK_ExternalIDs_0_0') WHERE NEW.PluginID IS NOT NULL AND(SELECT PluginID FROM Plugins WHERE  PluginID = NEW.PluginID) IS NULL; END",
+            "timing": "BEFORE",
+            "action": "INSERT",
+            "table": "ExternalIDs",
+            "code": "SELECT RAISE(ROLLBACK, 'Insert on table ExternalIDs violates foreign key constraint FK_ExternalIDs_0_0') WHERE NEW.PluginID IS NOT NULL AND(SELECT PluginID FROM Plugins WHERE  PluginID = NEW.PluginID) IS NULL"
+        },
+        {
+            "type": "trigger",
+            "database": null,
+            "name": "fki_FileInfo_PluginID_Plugins_PluginID",
+            "ddl": "CREATE TRIGGER [fki_FileInfo_PluginID_Plugins_PluginID] BEFORE Insert ON [FileInfo] FOR EACH ROW BEGIN SELECT RAISE(ROLLBACK, 'Insert on table FileInfo violates foreign key constraint FK_FileInfo_0_0') WHERE NEW.PluginID IS NOT NULL AND(SELECT PluginID FROM Plugins WHERE  PluginID = NEW.PluginID) IS NULL; END",
+            "timing": "BEFORE",
+            "action": "INSERT",
+            "table": "FileInfo",
+            "code": "SELECT RAISE(ROLLBACK, 'Insert on table FileInfo violates foreign key constraint FK_FileInfo_0_0') WHERE NEW.PluginID IS NOT NULL AND(SELECT PluginID FROM Plugins WHERE  PluginID = NEW.PluginID) IS NULL"
+        },
+        {
+            "type": "trigger",
+            "database": null,
+            "name": "fki_ProfilePlugins_PluginID_Plugins_PluginID",
+            "ddl": "CREATE TRIGGER [fki_ProfilePlugins_PluginID_Plugins_PluginID] BEFORE Insert ON [ProfilePlugins] FOR EACH ROW BEGIN SELECT RAISE(ROLLBACK, 'Insert on table ProfilePlugins violates foreign key constraint FK_ProfilePlugins_0_0') WHERE (SELECT PluginID FROM Plugins WHERE  PluginID = NEW.PluginID) IS NULL; END",
+            "timing": "BEFORE",
+            "action": "INSERT",
+            "table": "ProfilePlugins",
+            "code": "SELECT RAISE(ROLLBACK, 'Insert on table ProfilePlugins violates foreign key constraint FK_ProfilePlugins_0_0') WHERE (SELECT PluginID FROM Plugins WHERE  PluginID = NEW.PluginID) IS NULL"
+        },
+        {
+            "type": "trigger",
+            "database": null,
+            "name": "fki_ProfilePlugins_ProfileID_LoadOutProfiles_ProfileID",
+            "ddl": "CREATE TRIGGER [fki_ProfilePlugins_ProfileID_LoadOutProfiles_ProfileID] BEFORE Insert ON [ProfilePlugins] FOR EACH ROW BEGIN SELECT RAISE(ROLLBACK, 'Insert on table ProfilePlugins violates foreign key constraint FK_ProfilePlugins_1_0') WHERE (SELECT ProfileID FROM LoadOutProfiles WHERE  ProfileID = NEW.ProfileID) IS NULL; END",
+            "timing": "BEFORE",
+            "action": "INSERT",
+            "table": "ProfilePlugins",
+            "code": "SELECT RAISE(ROLLBACK, 'Insert on table ProfilePlugins violates foreign key constraint FK_ProfilePlugins_1_0') WHERE (SELECT ProfileID FROM LoadOutProfiles WHERE  ProfileID = NEW.ProfileID) IS NULL"
+        },
+        {
+            "type": "trigger",
+            "database": null,
+            "name": "fku_ExternalIDs_PluginID_Plugins_PluginID",
+            "ddl": "CREATE TRIGGER [fku_ExternalIDs_PluginID_Plugins_PluginID] BEFORE Update ON [ExternalIDs] FOR EACH ROW BEGIN SELECT RAISE(ROLLBACK, 'Update on table ExternalIDs violates foreign key constraint FK_ExternalIDs_0_0') WHERE NEW.PluginID IS NOT NULL AND(SELECT PluginID FROM Plugins WHERE  PluginID = NEW.PluginID) IS NULL; END",
+            "timing": "BEFORE",
+            "action": "UPDATE",
+            "table": "ExternalIDs",
+            "code": "SELECT RAISE(ROLLBACK, 'Update on table ExternalIDs violates foreign key constraint FK_ExternalIDs_0_0') WHERE NEW.PluginID IS NOT NULL AND(SELECT PluginID FROM Plugins WHERE  PluginID = NEW.PluginID) IS NULL"
+        },
+        {
+            "type": "trigger",
+            "database": null,
+            "name": "fku_FileInfo_PluginID_Plugins_PluginID",
+            "ddl": "CREATE TRIGGER [fku_FileInfo_PluginID_Plugins_PluginID] BEFORE Update ON [FileInfo] FOR EACH ROW BEGIN SELECT RAISE(ROLLBACK, 'Update on table FileInfo violates foreign key constraint FK_FileInfo_0_0') WHERE NEW.PluginID IS NOT NULL AND(SELECT PluginID FROM Plugins WHERE  PluginID = NEW.PluginID) IS NULL; END",
+            "timing": "BEFORE",
+            "action": "UPDATE",
+            "table": "FileInfo",
+            "code": "SELECT RAISE(ROLLBACK, 'Update on table FileInfo violates foreign key constraint FK_FileInfo_0_0') WHERE NEW.PluginID IS NOT NULL AND(SELECT PluginID FROM Plugins WHERE  PluginID = NEW.PluginID) IS NULL"
+        },
+        {
+            "type": "trigger",
+            "database": null,
+            "name": "fku_ProfilePlugins_PluginID_Plugins_PluginID",
+            "ddl": "CREATE TRIGGER [fku_ProfilePlugins_PluginID_Plugins_PluginID] BEFORE Update ON [ProfilePlugins] FOR EACH ROW BEGIN SELECT RAISE(ROLLBACK, 'Update on table ProfilePlugins violates foreign key constraint FK_ProfilePlugins_0_0') WHERE (SELECT PluginID FROM Plugins WHERE  PluginID = NEW.PluginID) IS NULL; END",
+            "timing": "BEFORE",
+            "action": "UPDATE",
+            "table": "ProfilePlugins",
+            "code": "SELECT RAISE(ROLLBACK, 'Update on table ProfilePlugins violates foreign key constraint FK_ProfilePlugins_0_0') WHERE (SELECT PluginID FROM Plugins WHERE  PluginID = NEW.PluginID) IS NULL"
+        },
+        {
+            "type": "trigger",
+            "database": null,
+            "name": "fku_ProfilePlugins_ProfileID_LoadOutProfiles_ProfileID",
+            "ddl": "CREATE TRIGGER [fku_ProfilePlugins_ProfileID_LoadOutProfiles_ProfileID] BEFORE Update ON [ProfilePlugins] FOR EACH ROW BEGIN SELECT RAISE(ROLLBACK, 'Update on table ProfilePlugins violates foreign key constraint FK_ProfilePlugins_1_0') WHERE (SELECT ProfileID FROM LoadOutProfiles WHERE  ProfileID = NEW.ProfileID) IS NULL; END",
+            "timing": "BEFORE",
+            "action": "UPDATE",
+            "table": "ProfilePlugins",
+            "code": "SELECT RAISE(ROLLBACK, 'Update on table ProfilePlugins violates foreign key constraint FK_ProfilePlugins_1_0') WHERE (SELECT ProfileID FROM LoadOutProfiles WHERE  ProfileID = NEW.ProfileID) IS NULL"
+        },
+        {
+            "type": "trigger",
+            "database": null,
+            "name": "trgInsteadOfInsert_vwLoadOuts",
+            "ddl": "CREATE TRIGGER trgInsteadOfInsert_vwLoadOuts \r\nINSTEAD OF INSERT ON vwLoadOuts \r\nFOR EACH ROW \r\nBEGIN \r\n    -- Insert into LoadOutProfiles table \r\n    INSERT INTO LoadOutProfiles (ProfileID, ProfileName, GroupSetID) \r\n    VALUES (NEW.ProfileID, NEW.ProfileName, NEW.GroupSetID) \r\n    ON CONFLICT(ProfileID) DO UPDATE SET  \r\n        ProfileName = excluded.ProfileName, \r\n        GroupSetID = excluded.GroupSetID; \r\n \r\n    -- Insert into Plugins table \r\n    INSERT INTO Plugins (PluginID, PluginName, Description, Achievements, DTStamp, Version, State) \r\n    VALUES (NEW.PluginID, NEW.PluginName, NEW.Description, NEW.Achievements, NEW.TimeStamp, NEW.Version, NEW.State) \r\n    ON CONFLICT(PluginID) DO UPDATE SET  \r\n        PluginName = excluded.PluginName, \r\n        Description = excluded.Description, \r\n        Achievements = excluded.Achievements, \r\n        DTStamp = excluded.DTStamp, \r\n        Version = excluded.Version, \r\n        State = excluded.State; \r\n \r\n    -- Insert into ProfilePlugins table \r\n    INSERT INTO ProfilePlugins (ProfileID, PluginID) \r\n    VALUES (NEW.ProfileID, NEW.PluginID) \r\n    ON CONFLICT(ProfileID, PluginID) DO NOTHING; \r\n \r\n    -- Insert into GroupSetPlugins table \r\n    INSERT INTO GroupSetPlugins (GroupSetID, GroupID, PluginID, Ordinal) \r\n    VALUES (NEW.GroupSetID, NEW.GroupID, NEW.PluginID, NEW.GroupOrdinal) \r\n    ON CONFLICT(GroupSetID, GroupID, PluginID) DO UPDATE SET  \r\n        Ordinal = excluded.Ordinal; \r\n \r\n    -- Insert into ExternalIDs table \r\n    INSERT INTO ExternalIDs (PluginID, BethesdaID, NexusID) \r\n    VALUES (NEW.PluginID, NEW.BethesdaID, NEW.NexusID) \r\n    ON CONFLICT(PluginID) DO UPDATE SET  \r\n        BethesdaID = excluded.BethesdaID, \r\n        NexusID = excluded.NexusID; \r\nEND",
+            "timing": "INSTEAD OF",
+            "action": "INSERT",
+            "view": "vwLoadOuts",
+            "code": "INSERT INTO LoadOutProfiles (ProfileID, ProfileName, GroupSetID) \r\n    VALUES (NEW.ProfileID, NEW.ProfileName, NEW.GroupSetID) \r\n    ON CONFLICT(ProfileID) DO UPDATE SET  \r\n        ProfileName = excluded.ProfileName, \r\n        GroupSetID = excluded.GroupSetID\nINSERT INTO Plugins (PluginID, PluginName, Description, Achievements, DTStamp, Version, State) \r\n    VALUES (NEW.PluginID, NEW.PluginName, NEW.Description, NEW.Achievements, NEW.TimeStamp, NEW.Version, NEW.State) \r\n    ON CONFLICT(PluginID) DO UPDATE SET  \r\n        PluginName = excluded.PluginName, \r\n        Description = excluded.Description, \r\n        Achievements = excluded.Achievements, \r\n        DTStamp = excluded.DTStamp, \r\n        Version = excluded.Version, \r\n        State = excluded.State\nINSERT INTO ProfilePlugins (ProfileID, PluginID) \r\n    VALUES (NEW.ProfileID, NEW.PluginID) \r\n    ON CONFLICT(ProfileID, PluginID) DO NOTHING\nINSERT INTO GroupSetPlugins (GroupSetID, GroupID, PluginID, Ordinal) \r\n    VALUES (NEW.GroupSetID, NEW.GroupID, NEW.PluginID, NEW.GroupOrdinal) \r\n    ON CONFLICT(GroupSetID, GroupID, PluginID) DO UPDATE SET  \r\n        Ordinal = excluded.Ordinal\nINSERT INTO ExternalIDs (PluginID, BethesdaID, NexusID) \r\n    VALUES (NEW.PluginID, NEW.BethesdaID, NEW.NexusID) \r\n    ON CONFLICT(PluginID) DO UPDATE SET  \r\n        BethesdaID = excluded.BethesdaID, \r\n        NexusID = excluded.NexusID"
+        },
+        {
+            "type": "trigger",
+            "database": null,
+            "name": "trgInsteadOfInsert_vwModGroups",
+            "ddl": "CREATE TRIGGER trgInsteadOfInsert_vwModGroups \r\nINSTEAD OF INSERT ON vwModGroups \r\nFOR EACH ROW \r\nBEGIN \r\n    -- Insert into ModGroups table \r\n    INSERT INTO ModGroups (GroupID, Ordinal, GroupName, Description, ParentID) \r\n    VALUES ( \r\n        NEW.GroupID, \r\n        NEW.Ordinal, \r\n        NEW.GroupName, \r\n        NEW.GroupDescription, \r\n        NEW.ParentID \r\n    ) \r\n    ON CONFLICT(GroupID) DO UPDATE SET  \r\n        Ordinal = COALESCE(excluded.Ordinal, ModGroups.Ordinal), \r\n        GroupName = COALESCE(excluded.GroupName, ModGroups.GroupName), \r\n        Description = COALESCE(excluded.Description, ModGroups.Description), \r\n        ParentID = COALESCE(excluded.ParentID, ModGroups.ParentID); \r\n \r\n    -- Insert into GroupSetPlugins table \r\n    INSERT INTO GroupSetPlugins (GroupSetID, GroupID, PluginID, Ordinal) \r\n    VALUES ( \r\n        NEW.GroupSetID, \r\n        NEW.GroupID, \r\n        NEW.PluginID, \r\n        NEW.GroupOrdinal \r\n    ) \r\n    ON CONFLICT(GroupID, PluginID) DO UPDATE SET  \r\n        GroupSetID = COALESCE(excluded.GroupSetID, GroupSetPlugins.GroupSetID), \r\n        Ordinal = COALESCE(excluded.Ordinal, GroupSetPlugins.Ordinal); \r\n \r\n    -- Insert into Plugins table \r\n    INSERT INTO Plugins (PluginID, PluginName, Description, Achievements, DTStamp, Version, State) \r\n    VALUES ( \r\n        NEW.PluginID, \r\n        NEW.PluginName, \r\n        NEW.PluginDescription, \r\n        NEW.Achievements, \r\n        NEW.TimeStamp, \r\n        NEW.Version, \r\n        NEW.State \r\n    ) \r\n    ON CONFLICT(PluginID) DO UPDATE SET  \r\n        PluginName = COALESCE(excluded.PluginName, Plugins.PluginName), \r\n        Description = COALESCE(excluded.Description, Plugins.Description), \r\n        Achievements = COALESCE(excluded.Achievements, Plugins.Achievements), \r\n        DTStamp = COALESCE(excluded.DTStamp, Plugins.DTStamp), \r\n        Version = COALESCE(excluded.Version, Plugins.Version), \r\n        State = COALESCE(excluded.State, Plugins.State); \r\n \r\n    -- Insert into ExternalIDs table \r\n    INSERT INTO ExternalIDs (PluginID, BethesdaID, NexusID) \r\n    VALUES ( \r\n        NEW.PluginID, \r\n        NEW.BethesdaID, \r\n        NEW.NexusID \r\n    ) \r\n    ON CONFLICT(PluginID) DO UPDATE SET  \r\n        BethesdaID = COALESCE(excluded.BethesdaID, ExternalIDs.BethesdaID), \r\n        NexusID = COALESCE(excluded.NexusID, ExternalIDs.NexusID); \r\nEND",
+            "timing": "INSTEAD OF",
+            "action": "INSERT",
+            "view": "vwModGroups",
+            "code": "INSERT INTO ModGroups (GroupID, Ordinal, GroupName, Description, ParentID) \r\n    VALUES ( \r\n        NEW.GroupID, \r\n        NEW.Ordinal, \r\n        NEW.GroupName, \r\n        NEW.GroupDescription, \r\n        NEW.ParentID \r\n    ) \r\n    ON CONFLICT(GroupID) DO UPDATE SET  \r\n        Ordinal = COALESCE(excluded.Ordinal, ModGroups.Ordinal), \r\n        GroupName = COALESCE(excluded.GroupName, ModGroups.GroupName), \r\n        Description = COALESCE(excluded.Description, ModGroups.Description), \r\n        ParentID = COALESCE(excluded.ParentID, ModGroups.ParentID)\nINSERT INTO GroupSetPlugins (GroupSetID, GroupID, PluginID, Ordinal) \r\n    VALUES ( \r\n        NEW.GroupSetID, \r\n        NEW.GroupID, \r\n        NEW.PluginID, \r\n        NEW.GroupOrdinal \r\n    ) \r\n    ON CONFLICT(GroupID, PluginID) DO UPDATE SET  \r\n        GroupSetID = COALESCE(excluded.GroupSetID, GroupSetPlugins.GroupSetID), \r\n        Ordinal = COALESCE(excluded.Ordinal, GroupSetPlugins.Ordinal)\nINSERT INTO Plugins (PluginID, PluginName, Description, Achievements, DTStamp, Version, State) \r\n    VALUES ( \r\n        NEW.PluginID, \r\n        NEW.PluginName, \r\n        NEW.PluginDescription, \r\n        NEW.Achievements, \r\n        NEW.TimeStamp, \r\n        NEW.Version, \r\n        NEW.State \r\n    ) \r\n    ON CONFLICT(PluginID) DO UPDATE SET  \r\n        PluginName = COALESCE(excluded.PluginName, Plugins.PluginName), \r\n        Description = COALESCE(excluded.Description, Plugins.Description), \r\n        Achievements = COALESCE(excluded.Achievements, Plugins.Achievements), \r\n        DTStamp = COALESCE(excluded.DTStamp, Plugins.DTStamp), \r\n        Version = COALESCE(excluded.Version, Plugins.Version), \r\n        State = COALESCE(excluded.State, Plugins.State)\nINSERT INTO ExternalIDs (PluginID, BethesdaID, NexusID) \r\n    VALUES ( \r\n        NEW.PluginID, \r\n        NEW.BethesdaID, \r\n        NEW.NexusID \r\n    ) \r\n    ON CONFLICT(PluginID) DO UPDATE SET  \r\n        BethesdaID = COALESCE(excluded.BethesdaID, ExternalIDs.BethesdaID), \r\n        NexusID = COALESCE(excluded.NexusID, ExternalIDs.NexusID)"
+        },
+        {
+            "type": "trigger",
+            "database": null,
+            "name": "trgInsteadOfInsert_vwPluginFiles",
+            "ddl": "CREATE TRIGGER trgInsteadOfInsert_vwPluginFiles \r\nINSTEAD OF INSERT ON vwPluginFiles \r\nFOR EACH ROW \r\nBEGIN \r\n    -- Insert into Plugins table \r\n    INSERT INTO Plugins (PluginID, PluginName) \r\n    VALUES (NEW.PluginID, NEW.PluginName) \r\n    ON CONFLICT(PluginID) DO UPDATE SET  \r\n        PluginName = COALESCE(excluded.PluginName, Plugins.PluginName); \r\n \r\n    -- Insert into FileInfo table \r\n    INSERT INTO FileInfo (FileID, PluginID, Filename, RelativePath, DTStamp, HASH, IsArchive) \r\n    VALUES ( \r\n        NEW.FileID, \r\n        NEW.PluginID, \r\n        NEW.Filename, \r\n        NEW.RelativePath, \r\n        NEW.DTStamp, \r\n        NEW.HASH, \r\n        NEW.IsArchive \r\n    ) \r\n    ON CONFLICT(FileID) DO UPDATE SET \r\n        PluginID = COALESCE(excluded.PluginID, FileInfo.PluginID), \r\n        Filename = COALESCE(excluded.Filename, FileInfo.Filename), \r\n        RelativePath = COALESCE(excluded.RelativePath, FileInfo.RelativePath), \r\n        DTStamp = COALESCE(excluded.DTStamp, FileInfo.DTStamp), \r\n        HASH = COALESCE(excluded.HASH, FileInfo.HASH), \r\n        IsArchive = COALESCE(excluded.IsArchive, FileInfo.IsArchive); \r\nEND",
+            "timing": "INSTEAD OF",
+            "action": "INSERT",
+            "view": "vwPluginFiles",
+            "code": "INSERT INTO Plugins (PluginID, PluginName) \r\n    VALUES (NEW.PluginID, NEW.PluginName) \r\n    ON CONFLICT(PluginID) DO UPDATE SET  \r\n        PluginName = COALESCE(excluded.PluginName, Plugins.PluginName)\nINSERT INTO FileInfo (FileID, PluginID, Filename, RelativePath, DTStamp, HASH, IsArchive) \r\n    VALUES ( \r\n        NEW.FileID, \r\n        NEW.PluginID, \r\n        NEW.Filename, \r\n        NEW.RelativePath, \r\n        NEW.DTStamp, \r\n        NEW.HASH, \r\n        NEW.IsArchive \r\n    ) \r\n    ON CONFLICT(FileID) DO UPDATE SET \r\n        PluginID = COALESCE(excluded.PluginID, FileInfo.PluginID), \r\n        Filename = COALESCE(excluded.Filename, FileInfo.Filename), \r\n        RelativePath = COALESCE(excluded.RelativePath, FileInfo.RelativePath), \r\n        DTStamp = COALESCE(excluded.DTStamp, FileInfo.DTStamp), \r\n        HASH = COALESCE(excluded.HASH, FileInfo.HASH), \r\n        IsArchive = COALESCE(excluded.IsArchive, FileInfo.IsArchive)"
+        },
+        {
+            "type": "trigger",
+            "database": null,
+            "name": "trgInsteadOfInsert_vwPlugins",
+            "ddl": "CREATE TRIGGER trgInsteadOfInsert_vwPlugins \r\nINSTEAD OF INSERT ON vwPlugins \r\nFOR EACH ROW \r\nBEGIN \r\n    -- Insert into Plugins table \r\n    INSERT INTO Plugins (PluginID, PluginName, Description, Achievements, DTStamp, Version, BethesdaID, NexusID, GroupID, GroupOrdinal, GroupSetID) \r\n    VALUES ( \r\n        NEW.PluginID, \r\n        NEW.PluginName, \r\n        NEW.Description, \r\n        NEW.Achievements, \r\n        NEW.DTStamp, \r\n        NEW.Version, \r\n        NEW.BethesdaID, \r\n        NEW.NexusID, \r\n        NEW.GroupID, \r\n        NEW.GroupOrdinal, \r\n        NEW.GroupSetID \r\n    ) \r\n    ON CONFLICT(PluginID) DO UPDATE SET  \r\n        PluginName = COALESCE(excluded.PluginName, Plugins.PluginName), \r\n        Description = COALESCE(excluded.Description, Plugins.Description), \r\n        Achievements = COALESCE(excluded.Achievements, Plugins.Achievements), \r\n        DTStamp = COALESCE(excluded.DTStamp, Plugins.DTStamp), \r\n        Version = COALESCE(excluded.Version, Plugins.Version), \r\n        BethesdaID = COALESCE(excluded.BethesdaID, Plugins.BethesdaID), \r\n        NexusID = COALESCE(excluded.NexusID, Plugins.NexusID), \r\n        GroupID = COALESCE(excluded.GroupID, Plugins.GroupID), \r\n        GroupOrdinal = COALESCE(excluded.GroupOrdinal, Plugins.GroupOrdinal), \r\n        GroupSetID = COALESCE(excluded.GroupSetID, Plugins.GroupSetID); \r\nEND",
+            "timing": "INSTEAD OF",
+            "action": "INSERT",
+            "view": "vwPlugins",
+            "code": "INSERT INTO Plugins (PluginID, PluginName, Description, Achievements, DTStamp, Version, BethesdaID, NexusID, GroupID, GroupOrdinal, GroupSetID) \r\n    VALUES ( \r\n        NEW.PluginID, \r\n        NEW.PluginName, \r\n        NEW.Description, \r\n        NEW.Achievements, \r\n        NEW.DTStamp, \r\n        NEW.Version, \r\n        NEW.BethesdaID, \r\n        NEW.NexusID, \r\n        NEW.GroupID, \r\n        NEW.GroupOrdinal, \r\n        NEW.GroupSetID \r\n    ) \r\n    ON CONFLICT(PluginID) DO UPDATE SET  \r\n        PluginName = COALESCE(excluded.PluginName, Plugins.PluginName), \r\n        Description = COALESCE(excluded.Description, Plugins.Description), \r\n        Achievements = COALESCE(excluded.Achievements, Plugins.Achievements), \r\n        DTStamp = COALESCE(excluded.DTStamp, Plugins.DTStamp), \r\n        Version = COALESCE(excluded.Version, Plugins.Version), \r\n        BethesdaID = COALESCE(excluded.BethesdaID, Plugins.BethesdaID), \r\n        NexusID = COALESCE(excluded.NexusID, Plugins.NexusID), \r\n        GroupID = COALESCE(excluded.GroupID, Plugins.GroupID), \r\n        GroupOrdinal = COALESCE(excluded.GroupOrdinal, Plugins.GroupOrdinal), \r\n        GroupSetID = COALESCE(excluded.GroupSetID, Plugins.GroupSetID)"
+        },
+        {
+            "type": "trigger",
+            "database": null,
+            "name": "trgInsteadOfUpdate_vwLoadOuts",
+            "ddl": "CREATE TRIGGER trgInsteadOfUpdate_vwLoadOuts \r\nINSTEAD OF UPDATE ON vwLoadOuts \r\nFOR EACH ROW \r\nBEGIN \r\n    -- Update LoadOutProfiles table \r\n    UPDATE LoadOutProfiles \r\n    SET ProfileName = NEW.ProfileName, \r\n        GroupSetID = NEW.GroupSetID \r\n    WHERE ProfileID = OLD.ProfileID; \r\n \r\n    -- Update Plugins table \r\n    UPDATE Plugins \r\n    SET PluginName = NEW.PluginName, \r\n        Description = NEW.Description, \r\n        Achievements = NEW.Achievements, \r\n        DTStamp = NEW.TimeStamp, \r\n        Version = NEW.Version, \r\n        State = NEW.State \r\n    WHERE PluginID = OLD.PluginID; \r\n \r\n    -- Update ProfilePlugins table \r\n    UPDATE ProfilePlugins \r\n    SET PluginID = NEW.PluginID \r\n    WHERE ProfileID = OLD.ProfileID AND PluginID = OLD.PluginID; \r\n \r\n    -- Update GroupSetPlugins table \r\n    UPDATE GroupSetPlugins \r\n    SET GroupID = NEW.GroupID, \r\n        Ordinal = NEW.GroupOrdinal \r\n    WHERE GroupSetID = OLD.GroupSetID AND PluginID = OLD.PluginID; \r\n \r\n    -- Update ExternalIDs table \r\n    UPDATE ExternalIDs \r\n    SET BethesdaID = NEW.BethesdaID, \r\n        NexusID = NEW.NexusID \r\n    WHERE PluginID = OLD.PluginID; \r\nEND",
+            "timing": "INSTEAD OF",
+            "action": "UPDATE",
+            "view": "vwLoadOuts",
+            "code": "UPDATE LoadOutProfiles \r\n    SET ProfileName = NEW.ProfileName, \r\n        GroupSetID = NEW.GroupSetID \r\n    WHERE ProfileID = OLD.ProfileID\nUPDATE Plugins \r\n    SET PluginName = NEW.PluginName, \r\n        Description = NEW.Description, \r\n        Achievements = NEW.Achievements, \r\n        DTStamp = NEW.TimeStamp, \r\n        Version = NEW.Version, \r\n        State = NEW.State \r\n    WHERE PluginID = OLD.PluginID\nUPDATE ProfilePlugins \r\n    SET PluginID = NEW.PluginID \r\n    WHERE ProfileID = OLD.ProfileID AND PluginID = OLD.PluginID\nUPDATE GroupSetPlugins \r\n    SET GroupID = NEW.GroupID, \r\n        Ordinal = NEW.GroupOrdinal \r\n    WHERE GroupSetID = OLD.GroupSetID AND PluginID = OLD.PluginID\nUPDATE ExternalIDs \r\n    SET BethesdaID = NEW.BethesdaID, \r\n        NexusID = NEW.NexusID \r\n    WHERE PluginID = OLD.PluginID"
+        },
+        {
+            "type": "trigger",
+            "database": null,
+            "name": "trgInsteadOfUpdate_vwModGroups",
+            "ddl": "CREATE TRIGGER trgInsteadOfUpdate_vwModGroups \r\nINSTEAD OF UPDATE ON vwModGroups \r\nFOR EACH ROW \r\nBEGIN \r\n    -- Update ModGroups table \r\n    UPDATE ModGroups \r\n    SET \r\n        Ordinal = NEW.Ordinal, \r\n        GroupName = NEW.GroupName, \r\n        Description = NEW.GroupDescription, \r\n        ParentID = NEW.ParentID \r\n    WHERE GroupID = OLD.GroupID; \r\n \r\n    -- Update GroupSetPlugins table \r\n    UPDATE GroupSetPlugins \r\n    SET \r\n        GroupSetID = NEW.GroupSetID, \r\n        Ordinal = NEW.GroupOrdinal \r\n    WHERE GroupID = OLD.GroupID AND PluginID = OLD.PluginID; \r\n \r\n    -- Update Plugins table \r\n    UPDATE Plugins \r\n    SET \r\n        PluginName = NEW.PluginName, \r\n        Description = NEW.PluginDescription, \r\n        Achievements = NEW.Achievements, \r\n        DTStamp = NEW.TimeStamp, \r\n        Version = NEW.Version, \r\n        State = NEW.State \r\n    WHERE PluginID = OLD.PluginID; \r\n \r\n    -- Update ExternalIDs table \r\n    UPDATE ExternalIDs \r\n    SET \r\n        BethesdaID = NEW.BethesdaID, \r\n        NexusID = NEW.NexusID \r\n    WHERE PluginID = OLD.PluginID; \r\nEND",
+            "timing": "INSTEAD OF",
+            "action": "UPDATE",
+            "view": "vwModGroups",
+            "code": "UPDATE ModGroups \r\n    SET \r\n        Ordinal = NEW.Ordinal, \r\n        GroupName = NEW.GroupName, \r\n        Description = NEW.GroupDescription, \r\n        ParentID = NEW.ParentID \r\n    WHERE GroupID = OLD.GroupID\nUPDATE GroupSetPlugins \r\n    SET \r\n        GroupSetID = NEW.GroupSetID, \r\n        Ordinal = NEW.GroupOrdinal \r\n    WHERE GroupID = OLD.GroupID AND PluginID = OLD.PluginID\nUPDATE Plugins \r\n    SET \r\n        PluginName = NEW.PluginName, \r\n        Description = NEW.PluginDescription, \r\n        Achievements = NEW.Achievements, \r\n        DTStamp = NEW.TimeStamp, \r\n        Version = NEW.Version, \r\n        State = NEW.State \r\n    WHERE PluginID = OLD.PluginID\nUPDATE ExternalIDs \r\n    SET \r\n        BethesdaID = NEW.BethesdaID, \r\n        NexusID = NEW.NexusID \r\n    WHERE PluginID = OLD.PluginID"
+        },
+        {
+            "type": "view",
+            "database": null,
+            "name": "vwLoadOuts",
+            "ddl": "CREATE VIEW vwLoadOuts AS       \r\nSELECT       \r\n    l.ProfileID,       \r\n    l.ProfileName,       \r\n    p.PluginID,       \r\n    p.PluginName,       \r\n    p.Description,       \r\n    p.Achievements,       \r\n    p.DTStamp AS TimeStamp,       \r\n    p.Version,       \r\n    p.State,       \r\n    e.BethesdaID,       \r\n    e.NexusID,       \r\n    gsp.GroupID,       \r\n    gsp.Ordinal AS GroupOrdinal,       \r\n    l.GroupSetID, \r\n    CASE  \r\n        WHEN EXISTS ( \r\n            SELECT 1  \r\n            FROM ProfilePlugins pp  \r\n            WHERE pp.ProfileID = l.ProfileID  \r\n            AND pp.PluginID = p.PluginID \r\n        )  \r\n        THEN 1 ELSE 0  \r\n    END AS IsEnabled \r\nFROM       \r\n    LoadOutProfiles l       \r\nLEFT JOIN       \r\n    ProfilePlugins pp ON l.ProfileID = pp.ProfileID       \r\nLEFT JOIN       \r\n    Plugins p ON pp.PluginID = p.PluginID       \r\nLEFT JOIN       \r\n    GroupSetPlugins gsp ON p.PluginID = gsp.PluginID AND l.GroupSetID = gsp.GroupSetID       \r\nLEFT JOIN       \r\n    ModGroups g ON gsp.GroupID = g.GroupID       \r\nLEFT JOIN       \r\n    ExternalIDs e ON p.PluginID = e.PluginID       \r\nORDER BY l.ProfileID, gsp.GroupID, gsp.Ordinal",
+            "select": "SELECT       \r\n    l.ProfileID,       \r\n    l.ProfileName,       \r\n    p.PluginID,       \r\n    p.PluginName,       \r\n    p.Description,       \r\n    p.Achievements,       \r\n    p.DTStamp AS TimeStamp,       \r\n    p.Version,       \r\n    p.State,       \r\n    e.BethesdaID,       \r\n    e.NexusID,       \r\n    gsp.GroupID,       \r\n    gsp.Ordinal AS GroupOrdinal,       \r\n    l.GroupSetID, \r\n    CASE  \r\n        WHEN EXISTS ( \r\n            SELECT 1  \r\n            FROM ProfilePlugins pp  \r\n            WHERE pp.ProfileID = l.ProfileID  \r\n            AND pp.PluginID = p.PluginID \r\n        )  \r\n        THEN 1 ELSE 0  \r\n    END AS IsEnabled \r\nFROM       \r\n    LoadOutProfiles l       \r\nLEFT JOIN       \r\n    ProfilePlugins pp ON l.ProfileID = pp.ProfileID       \r\nLEFT JOIN       \r\n    Plugins p ON pp.PluginID = p.PluginID       \r\nLEFT JOIN       \r\n    GroupSetPlugins gsp ON p.PluginID = gsp.PluginID AND l.GroupSetID = gsp.GroupSetID       \r\nLEFT JOIN       \r\n    ModGroups g ON gsp.GroupID = g.GroupID       \r\nLEFT JOIN       \r\n    ExternalIDs e ON p.PluginID = e.PluginID       \r\nORDER BY l.ProfileID, gsp.GroupID, gsp.Ordinal"
+        },
+        {
+            "type": "view",
+            "database": null,
+            "name": "vwModGroups",
+            "ddl": "CREATE VIEW vwModGroups AS SELECT        \n    g.GroupID,        \n    gsg.Ordinal,        \n    g.GroupName,        \n    g.Description AS GroupDescription,        \n    gsg.ParentID,        \n    gsg.GroupSetID,        \n    p.PluginID,        \n    p.PluginName,        \n    p.Description AS PluginDescription,        \n    p.Achievements,        \n    p.DTStamp AS TimeStamp,        \n    p.Version,        \n    p.State,        \n    e.BethesdaID,        \n    e.NexusID,        \n    gsp.Ordinal AS GroupOrdinal        \nFROM        \n    ModGroups g        \nLEFT JOIN        \n    GroupSetGroups gsg ON g.GroupID = gsg.GroupID        \nLEFT JOIN        \n    GroupSetPlugins gsp ON gsg.GroupID = gsp.GroupID AND gsg.GroupSetID = gsp.GroupSetID        \nLEFT JOIN        \n    Plugins p ON gsp.PluginID = p.PluginID        \nLEFT JOIN        \n    ExternalIDs e ON p.PluginID = e.PluginID        \nORDER BY\n    gsg.GroupSetID,    -- Group by GroupSetID\n    gsg.ParentID,      -- Sort by ParentID\n    gsg.Ordinal,       -- Sort by Ordinal within ParentID\n    gsp.Ordinal",
+            "select": "SELECT        \n    g.GroupID,        \n    gsg.Ordinal,        \n    g.GroupName,        \n    g.Description AS GroupDescription,        \n    gsg.ParentID,        \n    gsg.GroupSetID,        \n    p.PluginID,        \n    p.PluginName,        \n    p.Description AS PluginDescription,        \n    p.Achievements,        \n    p.DTStamp AS TimeStamp,        \n    p.Version,        \n    p.State,        \n    e.BethesdaID,        \n    e.NexusID,        \n    gsp.Ordinal AS GroupOrdinal        \nFROM        \n    ModGroups g        \nLEFT JOIN        \n    GroupSetGroups gsg ON g.GroupID = gsg.GroupID        \nLEFT JOIN        \n    GroupSetPlugins gsp ON gsg.GroupID = gsp.GroupID AND gsg.GroupSetID = gsp.GroupSetID        \nLEFT JOIN        \n    Plugins p ON gsp.PluginID = p.PluginID        \nLEFT JOIN        \n    ExternalIDs e ON p.PluginID = e.PluginID        \nORDER BY\n    gsg.GroupSetID,    -- Group by GroupSetID\n    gsg.ParentID,      -- Sort by ParentID\n    gsg.Ordinal,       -- Sort by Ordinal within ParentID\n    gsp.Ordinal"
+        },
+        {
+            "type": "view",
+            "database": null,
+            "name": "vwPluginFiles",
+            "ddl": "CREATE VIEW vwPluginFiles AS      \r\nSELECT      \r\n    fi.FileID,      \r\n    p.PluginID,      \r\n    p.PluginName,      \r\n    fi.Filename,      \r\n    fi.RelativePath,      \r\n    fi.DTStamp,      \r\n    fi.HASH,      \r\n    fi.IsArchive      \r\nFROM      \r\n    Plugins p      \r\nJOIN      \r\n    FileInfo fi ON p.PluginID = fi.PluginID",
+            "select": "SELECT      \r\n    fi.FileID,      \r\n    p.PluginID,      \r\n    p.PluginName,      \r\n    fi.Filename,      \r\n    fi.RelativePath,      \r\n    fi.DTStamp,      \r\n    fi.HASH,      \r\n    fi.IsArchive      \r\nFROM      \r\n    Plugins p      \r\nJOIN      \r\n    FileInfo fi ON p.PluginID = fi.PluginID"
+        },
+        {
+            "type": "view",
+            "database": null,
+            "name": "vwPluginGrpUnion",
+            "ddl": "CREATE VIEW vwPluginGrpUnion AS SELECT\n    COALESCE(p.PluginID, NULL) AS PluginID,\n    COALESCE(p.PluginName, NULL) AS PluginName,\n    COALESCE(p.Description, NULL) AS Description,\n    COALESCE(p.Achievements, NULL) AS Achievements,\n    COALESCE(p.DTStamp, NULL) AS DTStamp,\n    COALESCE(p.Version, NULL) AS Version,\n    COALESCE(p.State, NULL) AS State,\n    gsg.GroupID AS GroupID,\n    g.GroupName AS GroupName,\n    g.Description AS GroupDescription,\n    gsg.ParentID,\n    gsg.Ordinal AS GroupOrdinal,\n    COALESCE(pp.ProfileID, NULL) AS ProfileID,\n    COALESCE(e.BethesdaID, NULL) AS BethesdaID,\n    COALESCE(e.NexusID, NULL) AS NexusID,\n    gsg.GroupSetID,\n    gs.GroupSetName,\n    CASE\n        WHEN pp.ProfileID IS NOT NULL THEN 1\n        ELSE 0\n    END AS IsEnabled  -- Check if Plugin is enabled for the profile\nFROM\n    GroupSets gs\nLEFT JOIN\n    GroupSetGroups gsg ON gs.GroupSetID = gsg.GroupSetID\nLEFT JOIN\n    ModGroups g ON gsg.GroupID = g.GroupID\nLEFT JOIN\n    GroupSetPlugins gsp ON gsg.GroupID = gsp.GroupID AND gsg.GroupSetID = gsp.GroupSetID\nLEFT JOIN\n    Plugins p ON gsp.PluginID = p.PluginID\nLEFT JOIN\n    ProfilePlugins pp ON p.PluginID = pp.PluginID AND pp.ProfileID = 1  -- Example ProfileID filter\nLEFT JOIN\n    LoadOutProfiles l ON gsg.GroupSetID = l.GroupSetID\nLEFT JOIN\n    ExternalIDs e ON p.PluginID = e.PluginID\nORDER BY\n    gs.GroupSetID,  -- Group by GroupSetID\n    l.ProfileID,\n    gsg.ParentID,\n    gsg.Ordinal,  -- Order by Group Ordinal\n    p.PluginID  -- Order by Plugin ID",
+            "select": "SELECT\n    COALESCE(p.PluginID, NULL) AS PluginID,\n    COALESCE(p.PluginName, NULL) AS PluginName,\n    COALESCE(p.Description, NULL) AS Description,\n    COALESCE(p.Achievements, NULL) AS Achievements,\n    COALESCE(p.DTStamp, NULL) AS DTStamp,\n    COALESCE(p.Version, NULL) AS Version,\n    COALESCE(p.State, NULL) AS State,\n    gsg.GroupID AS GroupID,\n    g.GroupName AS GroupName,\n    g.Description AS GroupDescription,\n    gsg.ParentID,\n    gsg.Ordinal AS GroupOrdinal,\n    COALESCE(pp.ProfileID, NULL) AS ProfileID,\n    COALESCE(e.BethesdaID, NULL) AS BethesdaID,\n    COALESCE(e.NexusID, NULL) AS NexusID,\n    gsg.GroupSetID,\n    gs.GroupSetName,\n    CASE\n        WHEN pp.ProfileID IS NOT NULL THEN 1\n        ELSE 0\n    END AS IsEnabled  -- Check if Plugin is enabled for the profile\nFROM\n    GroupSets gs\nLEFT JOIN\n    GroupSetGroups gsg ON gs.GroupSetID = gsg.GroupSetID\nLEFT JOIN\n    ModGroups g ON gsg.GroupID = g.GroupID\nLEFT JOIN\n    GroupSetPlugins gsp ON gsg.GroupID = gsp.GroupID AND gsg.GroupSetID = gsp.GroupSetID\nLEFT JOIN\n    Plugins p ON gsp.PluginID = p.PluginID\nLEFT JOIN\n    ProfilePlugins pp ON p.PluginID = pp.PluginID AND pp.ProfileID = 1  -- Example ProfileID filter\nLEFT JOIN\n    LoadOutProfiles l ON gsg.GroupSetID = l.GroupSetID\nLEFT JOIN\n    ExternalIDs e ON p.PluginID = e.PluginID\nORDER BY\n    gs.GroupSetID,  -- Group by GroupSetID\n    l.ProfileID,\n    gsg.ParentID,\n    gsg.Ordinal,  -- Order by Group Ordinal\n    p.PluginID  -- Order by Plugin ID"
+        },
+        {
+            "type": "view",
+            "database": null,
+            "name": "vwPlugins",
+            "ddl": "CREATE VIEW vwPlugins AS       \r\n-- Script Date: 9\/21\/2024 1:49 AM  - ErikEJ.SqlCeScripting version 3.5.2.95  \r\nSELECT         \r\n     p.PluginID,         \r\n     p.PluginName,         \r\n     p.Description,         \r\n     p.Achievements,         \r\n     p.DTStamp,         \r\n     p.Version,       \r\n     p.State,       \r\n     gsp.GroupSetID,      \r\n     gsp.GroupID,         \r\n     gsp.Ordinal AS GroupOrdinal,         \r\n     g.GroupName,         \r\n     e.BethesdaID,         \r\n     e.NexusID         \r\n FROM         \r\n     Plugins p         \r\n LEFT JOIN         \r\n     GroupSetPlugins gsp ON p.PluginID = gsp.PluginID     \r\n LEFT JOIN         \r\n     ModGroups g ON gsp.GroupID = g.GroupID     \r\n LEFT JOIN         \r\n     ExternalIDs e ON p.PluginID = e.PluginID",
+            "select": "SELECT         \r\n     p.PluginID,         \r\n     p.PluginName,         \r\n     p.Description,         \r\n     p.Achievements,         \r\n     p.DTStamp,         \r\n     p.Version,       \r\n     p.State,       \r\n     gsp.GroupSetID,      \r\n     gsp.GroupID,         \r\n     gsp.Ordinal AS GroupOrdinal,         \r\n     g.GroupName,         \r\n     e.BethesdaID,         \r\n     e.NexusID         \r\n FROM         \r\n     Plugins p         \r\n LEFT JOIN         \r\n     GroupSetPlugins gsp ON p.PluginID = gsp.PluginID     \r\n LEFT JOIN         \r\n     ModGroups g ON gsp.GroupID = g.GroupID     \r\n LEFT JOIN         \r\n     ExternalIDs e ON p.PluginID = e.PluginID"
+        }
+    ]
+}

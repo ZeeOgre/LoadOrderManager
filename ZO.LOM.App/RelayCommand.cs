@@ -16,7 +16,19 @@ namespace ZO.LoadOrderManager
 
         public bool CanExecute(object? parameter) => _canExecute?.Invoke(parameter) ?? true;
 
-        public void Execute(object? parameter) => _execute(parameter);
+        public void Execute(object? parameter)
+        {
+            try
+            {
+                _execute(parameter);
+            }
+            catch (Exception ex)
+            {
+                // Log or handle exceptions as needed
+                // Example: Logger.LogError(ex);
+                throw;
+            }
+        }
 
         public event EventHandler? CanExecuteChanged
         {
@@ -43,7 +55,19 @@ namespace ZO.LoadOrderManager
 
         public bool CanExecute(object? parameter) => _canExecute?.Invoke(parameter ?? new object()) ?? true;
 
-        public void Execute(object? parameter) => _execute(parameter ?? new object());
+        public void Execute(object? parameter)
+        {
+            try
+            {
+                _execute(parameter ?? new object());
+            }
+            catch (Exception ex)
+            {
+                // Log or handle exceptions as needed
+                // Example: Logger.LogError(ex);
+                throw;
+            }
+        }
 
         public event EventHandler? CanExecuteChanged
         {
@@ -68,9 +92,29 @@ namespace ZO.LoadOrderManager
             _canExecute = canExecute;
         }
 
-        public bool CanExecute(object? parameter) => _canExecute?.Invoke((T)parameter!) ?? true;
+        public bool CanExecute(object? parameter)
+        {
+            if (parameter is T param)
+                return _canExecute?.Invoke(param) ?? true;
+            return false;
+        }
 
-        public void Execute(object? parameter) => _execute((T)parameter!);
+        public void Execute(object? parameter)
+        {
+            if (parameter is T param)
+            {
+                try
+                {
+                    _execute(param);
+                }
+                catch (Exception ex)
+                {
+                    // Log or handle exceptions as needed
+                    // Example: Logger.LogError(ex);
+                    throw;
+                }
+            }
+        }
 
         public event EventHandler? CanExecuteChanged
         {

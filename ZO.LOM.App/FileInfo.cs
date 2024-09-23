@@ -63,7 +63,12 @@ namespace ZO.LoadOrderManager
             var fileInfos = new List<FileInfo>();
 
             using var connection = DbManager.Instance.GetConnection();
-            
+            connection.Open();
+
+            using (var pragmaCommand = new SQLiteCommand("PRAGMA read_uncommitted = true;", connection))
+            {
+                pragmaCommand.ExecuteNonQuery();
+            }
 
             using var command = new SQLiteCommand(
                 "SELECT FileID, Filename, RelativePath, DTStamp, HASH, IsArchive " +
@@ -92,8 +97,11 @@ namespace ZO.LoadOrderManager
         public static void InsertFileInfo(FileInfo fileInfo, long pluginId)
         {
             using var connection = DbManager.Instance.GetConnection();
-            
+
+#if WINDOWS
             App.LogDebug($"Fileinfo Begin Transaction");
+#endif
+
             using var transaction = connection.BeginTransaction();
 
             try
@@ -138,12 +146,17 @@ namespace ZO.LoadOrderManager
                     command.ExecuteNonQuery();
                 }
 
+#if WINDOWS
                 App.LogDebug($"Fileinfo Commit Transaction");
+#endif
+
                 transaction.Commit();
             }
             catch (Exception ex)
             {
+#if WINDOWS
                 App.LogDebug($"Error inserting/updating file info: {ex.Message}");
+#endif
                 transaction.Rollback();
                 throw;
             }

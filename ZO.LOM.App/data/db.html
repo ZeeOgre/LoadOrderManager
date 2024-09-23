@@ -1,422 +1,316 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html>
-  <head>
-    <META http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <title>LoadOrderManager.db Database Schema</title>
-    <meta http-equiv="content-type" content="text/html; charset=utf-8">
-    <style type="text/css">
-                    body { background-color: #fff; color: #000; font-family: Consolas, monospace}
-                    a:link { color: #03d; }
-                    a:visited { color: #039; }
-                    a:hover { color: #09f; }
-                    table { border-collapse: collapse; width: 100%; }
-                    table caption { color: #666; text-align: right; font-size: 65%; margin-bottom: .5ex; }
-                    table td, table th { border: solid 1px #666; border-collapse: collapse; padding: .3ex .5ex; vertical-align: top; }
-                    table tbody tr:hover { background-color: #ffc; }
-                    table thead th { text-align: left; background-color: #ccc; }
-                    table tbody th { text-align: left; white-space: nowrap; }
-                    .table { page-break-inside: avoid; }
-                    .pk { float: right; cursor: arrow; color: #999; }
-                    .type { white-space: nowrap; }
-                    .null { text-align: center; }
-                    .flag { white-space: nowrap; font-size: 70%; display: inline-block; border: solid 1px #ccc; padding: .25ex .5ex; background-color: #ddd; margin-right: 1ex; }
-                    .tocref { float: right; text-decoration: none; font-weight: normal; }
-                    .footer { text-align: center; margin-top: 1em; font-size: 80%;}
-                    li.view:before { content: "VIEW"; font-size: 70%; display: inline-block; border: solid 1px #ccc; padding: .25ex .5ex; background-color: #ddd; margin-right: 1ex; }
-                    @media print {
-                    body { font-size: .8em; }
-                    #toc, .tocref { display: none; }
-                    a:link, a:visited { color: #000; text-decoration: none; }
-                    }
-                </style>
-  </head>
-  <body>
-    <h1>LoadOrderManager.db Database Schema</h1>
-    <div id="toc">
-      <ul>
-        <li class="table"><a href="#Config">Config</a></li>
-        <li class="table"><a href="#ExternalIDs">ExternalIDs</a></li>
-        <li class="table"><a href="#FileInfo">FileInfo</a></li>
-        <li class="table"><a href="#InitializationStatus">InitializationStatus</a></li>
-        <li class="table"><a href="#LoadOutProfiles">LoadOutProfiles</a></li>
-        <li class="table"><a href="#ModGroups">ModGroups</a></li>
-        <li class="table"><a href="#Plugins">Plugins</a></li>
-        <li class="table"><a href="#ProfilePlugins">ProfilePlugins</a></li>
-      </ul>
-    </div>
-    <div class="table">
-      <h2 id=""><a href="#toc" class="tocref">⇧</a>
-        Database Properties
-      </h2>
-      <table>
-        <thead>
-          <tr>
-            <th>Property</th>
-            <th>Value</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td class="type">Database</td>
-            <td class="type">M:\ZO_Repos\ZO.Applications\ZO.LoadOrderManager\ZO.LOM.App\data\LoadOrderManager.db</td>
-          </tr>
-          <tr>
-            <td class="type">ServerVersion</td>
-            <td class="type">3.40.0</td>
-          </tr>
-          <tr>
-            <td class="type">DatabaseSize</td>
-            <td class="type">96 KB</td>
-          </tr>
-          <tr>
-            <td class="type">Created</td>
-            <td class="type">9/14/2024 5:33 PM</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-    <div class="table">
-      <h2 id="Config"><a href="#toc" class="tocref">⇧</a>Table Config</h2>
-      <table>
-        <thead>
-          <tr>
-            <th style="width:30ex">Name</th>
-            <th style="width:20ex">Type</th>
-            <th style="width:4ex">NULL</th>
-            <th>Comment</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <th>GameFolder</th>
-            <td class="type">text</td>
-            <td class="null">☐</td>
-            <td>
-            </td>
-          </tr>
-          <tr>
-            <th>AutoCheckForUpdates</th>
-            <td class="type">bigint</td>
-            <td class="null">☒</td>
-            <td>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-    <div class="table">
-      <h2 id="ExternalIDs"><a href="#toc" class="tocref">⇧</a>Table ExternalIDs</h2>
-      <table>
-        <thead>
-          <tr>
-            <th style="width:30ex">Name</th>
-            <th style="width:20ex">Type</th>
-            <th style="width:4ex">NULL</th>
-            <th>Comment</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <th><span class="pk" title="PRIMARY KEY sqlite_master_PK_ExternalIDs">◆</span>ExternalID</th>
-            <td class="type">bigint</td>
-            <td class="null">☐</td>
-            <td><span class="flag">IDENTITY (1,1)</span></td>
-          </tr>
-          <tr>
-            <th>PluginID</th>
-            <td class="type">bigint</td>
-            <td class="null">☒</td>
-            <td><span class="flag" title="FK_ExternalIDs_0_0">⇨ <a href="#Plugins">Plugins</a>.PluginID</span></td>
-          </tr>
-          <tr>
-            <th>BethesdaID</th>
-            <td class="type">text</td>
-            <td class="null">☒</td>
-            <td>
-            </td>
-          </tr>
-          <tr>
-            <th>NexusID</th>
-            <td class="type">text</td>
-            <td class="null">☒</td>
-            <td>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-    <div class="table">
-      <h2 id="FileInfo"><a href="#toc" class="tocref">⇧</a>Table FileInfo</h2>
-      <table>
-        <thead>
-          <tr>
-            <th style="width:30ex">Name</th>
-            <th style="width:20ex">Type</th>
-            <th style="width:4ex">NULL</th>
-            <th>Comment</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <th><span class="pk" title="PRIMARY KEY sqlite_master_PK_FileInfo">◆</span>FileID</th>
-            <td class="type">bigint</td>
-            <td class="null">☐</td>
-            <td><span class="flag">IDENTITY (1,1)</span></td>
-          </tr>
-          <tr>
-            <th>PluginID</th>
-            <td class="type">bigint</td>
-            <td class="null">☒</td>
-            <td><span class="flag" title="FK_FileInfo_0_0">⇨ <a href="#Plugins">Plugins</a>.PluginID</span></td>
-          </tr>
-          <tr>
-            <th>Filename</th>
-            <td class="type">text</td>
-            <td class="null">☐</td>
-            <td>
-            </td>
-          </tr>
-          <tr>
-            <th>RelativePath</th>
-            <td class="type">text</td>
-            <td class="null">☒</td>
-            <td>
-            </td>
-          </tr>
-          <tr>
-            <th>DTStamp</th>
-            <td class="type">datetime</td>
-            <td class="null">☐</td>
-            <td>
-            </td>
-          </tr>
-          <tr>
-            <th>HASH</th>
-            <td class="type">text</td>
-            <td class="null">☒</td>
-            <td>
-            </td>
-          </tr>
-          <tr>
-            <th>IsArchive</th>
-            <td class="type">bigint</td>
-            <td class="null">☐</td>
-            <td>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-    <div class="table">
-      <h2 id="InitializationStatus"><a href="#toc" class="tocref">⇧</a>Table InitializationStatus</h2>
-      <table>
-        <thead>
-          <tr>
-            <th style="width:30ex">Name</th>
-            <th style="width:20ex">Type</th>
-            <th style="width:4ex">NULL</th>
-            <th>Comment</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <th><span class="pk" title="PRIMARY KEY sqlite_autoindex_InitializationStatus_1">◆</span>Id</th>
-            <td class="type">bigint</td>
-            <td class="null">☐</td>
-            <td>
-            </td>
-          </tr>
-          <tr>
-            <th>IsInitialized</th>
-            <td class="type">bigint</td>
-            <td class="null">☐</td>
-            <td>
-            </td>
-          </tr>
-          <tr>
-            <th>InitializationTime</th>
-            <td class="type">text</td>
-            <td class="null">☐</td>
-            <td>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-    <div class="table">
-      <h2 id="LoadOutProfiles"><a href="#toc" class="tocref">⇧</a>Table LoadOutProfiles</h2>
-      <table>
-        <thead>
-          <tr>
-            <th style="width:30ex">Name</th>
-            <th style="width:20ex">Type</th>
-            <th style="width:4ex">NULL</th>
-            <th>Comment</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <th><span class="pk" title="PRIMARY KEY sqlite_master_PK_LoadOutProfiles">◆</span>ProfileID</th>
-            <td class="type">bigint</td>
-            <td class="null">☐</td>
-            <td><span class="flag">IDENTITY (1,1)</span></td>
-          </tr>
-          <tr>
-            <th>ProfileName</th>
-            <td class="type">text</td>
-            <td class="null">☐</td>
-            <td>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-    <div class="table">
-      <h2 id="ModGroups"><a href="#toc" class="tocref">⇧</a>Table ModGroups</h2>
-      <table>
-        <thead>
-          <tr>
-            <th style="width:30ex">Name</th>
-            <th style="width:20ex">Type</th>
-            <th style="width:4ex">NULL</th>
-            <th>Comment</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <th><span class="pk" title="PRIMARY KEY sqlite_master_PK_ModGroups">◆</span>GroupID</th>
-            <td class="type">bigint</td>
-            <td class="null">☐</td>
-            <td><span class="flag">IDENTITY (1,1)</span></td>
-          </tr>
-          <tr>
-            <th>Ordinal</th>
-            <td class="type">bigint</td>
-            <td class="null">☒</td>
-            <td>
-            </td>
-          </tr>
-          <tr>
-            <th>GroupName</th>
-            <td class="type">text</td>
-            <td class="null">☒</td>
-            <td>
-            </td>
-          </tr>
-          <tr>
-            <th>Description</th>
-            <td class="type">text</td>
-            <td class="null">☒</td>
-            <td>
-            </td>
-          </tr>
-          <tr>
-            <th>ParentID</th>
-            <td class="type">bigint</td>
-            <td class="null">☒</td>
-            <td><span class="flag" title="FK_ModGroups_0_0">⇨ <a href="#ModGroups">ModGroups</a>.GroupID</span></td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-    <div class="table">
-      <h2 id="Plugins"><a href="#toc" class="tocref">⇧</a>Table Plugins</h2>
-      <table>
-        <thead>
-          <tr>
-            <th style="width:30ex">Name</th>
-            <th style="width:20ex">Type</th>
-            <th style="width:4ex">NULL</th>
-            <th>Comment</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <th><span class="pk" title="PRIMARY KEY sqlite_master_PK_Plugins">◆</span>PluginID</th>
-            <td class="type">bigint</td>
-            <td class="null">☐</td>
-            <td><span class="flag">IDENTITY (1,1)</span></td>
-          </tr>
-          <tr>
-            <th>PluginName</th>
-            <td class="type">text</td>
-            <td class="null">☐</td>
-            <td>
-            </td>
-          </tr>
-          <tr>
-            <th>Description</th>
-            <td class="type">text</td>
-            <td class="null">☒</td>
-            <td>
-            </td>
-          </tr>
-          <tr>
-            <th>Achievements</th>
-            <td class="type">bigint</td>
-            <td class="null">☐</td>
-            <td>
-            </td>
-          </tr>
-          <tr>
-            <th>DTStamp</th>
-            <td class="type">text</td>
-            <td class="null">☐</td>
-            <td>
-            </td>
-          </tr>
-          <tr>
-            <th>Version</th>
-            <td class="type">text</td>
-            <td class="null">☒</td>
-            <td>
-            </td>
-          </tr>
-          <tr>
-            <th>GroupID</th>
-            <td class="type">bigint</td>
-            <td class="null">☒</td>
-            <td><span class="flag" title="FK_Plugins_0_0">⇨ <a href="#ModGroups">ModGroups</a>.GroupID</span></td>
-          </tr>
-          <tr>
-            <th>GroupOrdinal</th>
-            <td class="type">bigint</td>
-            <td class="null">☒</td>
-            <td>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-    <div class="table">
-      <h2 id="ProfilePlugins"><a href="#toc" class="tocref">⇧</a>Table ProfilePlugins</h2>
-      <table>
-        <thead>
-          <tr>
-            <th style="width:30ex">Name</th>
-            <th style="width:20ex">Type</th>
-            <th style="width:4ex">NULL</th>
-            <th>Comment</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <th><span class="pk" title="PRIMARY KEY sqlite_autoindex_ProfilePlugins_1">◆</span>ProfileID</th>
-            <td class="type">bigint</td>
-            <td class="null">☐</td>
-            <td><span class="flag" title="FK_ProfilePlugins_1_0">⇨ <a href="#LoadOutProfiles">LoadOutProfiles</a>.ProfileID</span></td>
-          </tr>
-          <tr>
-            <th><span class="pk" title="PRIMARY KEY sqlite_autoindex_ProfilePlugins_1">◆</span>PluginID</th>
-            <td class="type">bigint</td>
-            <td class="null">☐</td>
-            <td><span class="flag" title="FK_ProfilePlugins_0_0">⇨ <a href="#Plugins">Plugins</a>.PluginID</span></td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-    <div class="footer">
-                    Generated by <a href="http://SqlDbDoc.codeplex.com/">DB&gt;doc</a> and <a href="https://github.com/ErikEJ/SqlCeToolbox">SQLite/SQL Server Compact Toolbox</a> on
-                    September 14, 2024, 23:10:39</div>
-  </body>
-</html>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+<html><meta http-equiv="Content-Type" content="text/html; charset=System"/><title>Exported database: LoadOrderManager_SOURCE</title><style type="text/css">table{border-style:solid;border-width:1px;border-color:black;border-collapse:collapse;}table tr{background-color:white;}table tr.header{background-color:#DDDDDD;}table tr.title{background-color:#EEEEEE;}table tr td{padding:0px 3px 0px 3px;border-style:solid;border-width:1px;border-color:#666666;}table tr td.null{color:#999999;text-align:center;padding:0px 3px 0px 3px;border-style:solid;border-width:1px;border-color:#666666;}table tr td.separator{padding:0px 3px 0px 3px;border-style:solid;border-width:1px;border-color:#666666;background-color:#DDDDDD;}table tr td.rownum{padding:0px 3px 0px 3px;border-style:solid;border-width:1px;border-color:#666666;background-color:#DDDDDD;text-align:right;}</style><body><table><tr class="title"><td colspan="2" align="center">Table: Config</td></tr><tr class="header"><td><b>GameFolder</b><br/>TEXT</td><td><b>AutoCheckForUpdates</b><br/>INTEGER</td></tr></table><br/><br/><table><tr class="title"><td colspan="4" align="center">Table: ExternalIDs</td></tr><tr class="header"><td><b>ExternalID</b><br/>INTEGER</td><td><b>PluginID</b><br/>INTEGER</td><td><b>BethesdaID</b><br/>TEXT</td><td><b>NexusID</b><br/>TEXT</td></tr></table><br/><br/><table><tr class="title"><td colspan="7" align="center">Table: FileInfo</td></tr><tr class="header"><td><b>FileID</b><br/>INTEGER</td><td><b>PluginID</b><br/>INTEGER</td><td><b>Filename</b><br/>TEXT</td><td><b>RelativePath</b><br/>TEXT</td><td><b>DTStamp</b><br/>TEXT</td><td><b>HASH</b><br/>TEXT</td><td><b>IsArchive</b><br/>INTEGER</td></tr></table><br/><br/><table><tr class="title"><td colspan="5" align="center">Table: GroupSetGroups</td></tr><tr class="header"><td><b>GroupSetGroupID</b><br/>INTEGER</td><td><b>GroupID</b><br/>INTEGER</td><td><b>GroupSetID</b><br/>INTEGER</td><td><b>ParentID</b><br/>INTEGER</td><td><b>Ordinal</b><br/>INTEGER</td></tr></table><br/><br/><table><tr class="title"><td colspan="4" align="center">Table: GroupSetPlugins</td></tr><tr class="header"><td><b>GroupSetID</b><br/>INTEGER</td><td><b>GroupID</b><br/>INTEGER</td><td><b>PluginID</b><br/>INTEGER</td><td><b>Ordinal</b><br/>INTEGER</td></tr></table><br/><br/><table><tr class="title"><td colspan="3" align="center">Table: GroupSets</td></tr><tr class="header"><td><b>GroupSetID</b><br/>INTEGER</td><td><b>GroupSetName</b><br/>TEXT</td><td><b>GroupSetFlags</b><br/>INTEGER</td></tr></table><br/><br/><table><tr class="title"><td colspan="3" align="center">Table: InitializationStatus</td></tr><tr class="header"><td><b>Id</b><br/>INTEGER</td><td><b>IsInitialized</b><br/>INTEGER</td><td><b>InitializationTime</b><br/>TEXT</td></tr></table><br/><br/><table><tr class="title"><td colspan="3" align="center">Table: LoadOutProfiles</td></tr><tr class="header"><td><b>ProfileID</b><br/>INTEGER</td><td><b>ProfileName</b><br/>TEXT</td><td><b>GroupSetID</b><br/>INTEGER</td></tr></table><br/><br/><table><tr class="title"><td colspan="3" align="center">Table: ModGroups</td></tr><tr class="header"><td><b>GroupID</b><br/>INTEGER</td><td><b>GroupName</b><br/>TEXT</td><td><b>Description</b><br/>TEXT</td></tr></table><br/><br/><table><tr class="title"><td colspan="7" align="center">Table: Plugins</td></tr><tr class="header"><td><b>PluginID</b><br/>INTEGER</td><td><b>PluginName</b><br/>TEXT</td><td><b>Description</b><br/>TEXT</td><td><b>Achievements</b><br/>INTEGER</td><td><b>DTStamp</b><br/>TEXT</td><td><b>Version</b><br/>TEXT</td><td><b>State</b><br/>INTEGER</td></tr></table><br/><br/><table><tr class="title"><td colspan="2" align="center">Table: ProfilePlugins</td></tr><tr class="header"><td><b>ProfileID</b><br/>INTEGER</td><td><b>PluginID</b><br/>INTEGER</td></tr></table><br/><br/><table><tr class="title"><td align="center" colspan="3">Index: <b>Plugins_Plugins_idx_Plugins_PluginName</b></td></tr><tr><td align="right" class="rownum">For table:</td><td colspan="2">Plugins</td></tr><tr><td align="right" class="rownum">Unique:</td><td colspan="2">Yes</td></tr><tr class="header"><td><b>Column</b></td><td><b>Collating</b></td><td><b>Sort order</b></td></tr><tr><td>PluginName</td><td align="center">&nbsp;</td><td align="center">ASC</td></tr></table><br/><br/><table><tr class="title"><td align="center" colspan="2">Trigger: <b>fki_ExternalIDs_PluginID_Plugins_PluginID</b></td></tr><tr><td align="right" class="rownum">Activated:</td><td><code>BEFORE</code></td></tr><tr><td align="right" class="rownum">Action:</td><td><code>INSERT</code></td></tr><tr><td align="right" class="rownum">On table:</td><td><code>ExternalIDs</code></td></tr><tr><td align="right" class="rownum">Activate condition:</td><td><code></code></td></tr><tr><td colspan="2" class="separator">Code executed:</td></tr><tr><td colspan="2"><pre>SELECT RAISE(ROLLBACK, 'Insert on table ExternalIDs violates foreign key constraint FK_ExternalIDs_0_0') WHERE NEW.PluginID IS NOT NULL AND(SELECT PluginID FROM Plugins WHERE  PluginID = NEW.PluginID) IS NULL</pre></td></tr></table><br/><br/><table><tr class="title"><td align="center" colspan="2">Trigger: <b>fki_FileInfo_PluginID_Plugins_PluginID</b></td></tr><tr><td align="right" class="rownum">Activated:</td><td><code>BEFORE</code></td></tr><tr><td align="right" class="rownum">Action:</td><td><code>INSERT</code></td></tr><tr><td align="right" class="rownum">On table:</td><td><code>FileInfo</code></td></tr><tr><td align="right" class="rownum">Activate condition:</td><td><code></code></td></tr><tr><td colspan="2" class="separator">Code executed:</td></tr><tr><td colspan="2"><pre>SELECT RAISE(ROLLBACK, 'Insert on table FileInfo violates foreign key constraint FK_FileInfo_0_0') WHERE NEW.PluginID IS NOT NULL AND(SELECT PluginID FROM Plugins WHERE  PluginID = NEW.PluginID) IS NULL</pre></td></tr></table><br/><br/><table><tr class="title"><td align="center" colspan="2">Trigger: <b>fki_ProfilePlugins_PluginID_Plugins_PluginID</b></td></tr><tr><td align="right" class="rownum">Activated:</td><td><code>BEFORE</code></td></tr><tr><td align="right" class="rownum">Action:</td><td><code>INSERT</code></td></tr><tr><td align="right" class="rownum">On table:</td><td><code>ProfilePlugins</code></td></tr><tr><td align="right" class="rownum">Activate condition:</td><td><code></code></td></tr><tr><td colspan="2" class="separator">Code executed:</td></tr><tr><td colspan="2"><pre>SELECT RAISE(ROLLBACK, 'Insert on table ProfilePlugins violates foreign key constraint FK_ProfilePlugins_0_0') WHERE (SELECT PluginID FROM Plugins WHERE  PluginID = NEW.PluginID) IS NULL</pre></td></tr></table><br/><br/><table><tr class="title"><td align="center" colspan="2">Trigger: <b>fki_ProfilePlugins_ProfileID_LoadOutProfiles_ProfileID</b></td></tr><tr><td align="right" class="rownum">Activated:</td><td><code>BEFORE</code></td></tr><tr><td align="right" class="rownum">Action:</td><td><code>INSERT</code></td></tr><tr><td align="right" class="rownum">On table:</td><td><code>ProfilePlugins</code></td></tr><tr><td align="right" class="rownum">Activate condition:</td><td><code></code></td></tr><tr><td colspan="2" class="separator">Code executed:</td></tr><tr><td colspan="2"><pre>SELECT RAISE(ROLLBACK, 'Insert on table ProfilePlugins violates foreign key constraint FK_ProfilePlugins_1_0') WHERE (SELECT ProfileID FROM LoadOutProfiles WHERE  ProfileID = NEW.ProfileID) IS NULL</pre></td></tr></table><br/><br/><table><tr class="title"><td align="center" colspan="2">Trigger: <b>fku_ExternalIDs_PluginID_Plugins_PluginID</b></td></tr><tr><td align="right" class="rownum">Activated:</td><td><code>BEFORE</code></td></tr><tr><td align="right" class="rownum">Action:</td><td><code>UPDATE</code></td></tr><tr><td align="right" class="rownum">On table:</td><td><code>ExternalIDs</code></td></tr><tr><td align="right" class="rownum">Activate condition:</td><td><code></code></td></tr><tr><td colspan="2" class="separator">Code executed:</td></tr><tr><td colspan="2"><pre>SELECT RAISE(ROLLBACK, 'Update on table ExternalIDs violates foreign key constraint FK_ExternalIDs_0_0') WHERE NEW.PluginID IS NOT NULL AND(SELECT PluginID FROM Plugins WHERE  PluginID = NEW.PluginID) IS NULL</pre></td></tr></table><br/><br/><table><tr class="title"><td align="center" colspan="2">Trigger: <b>fku_FileInfo_PluginID_Plugins_PluginID</b></td></tr><tr><td align="right" class="rownum">Activated:</td><td><code>BEFORE</code></td></tr><tr><td align="right" class="rownum">Action:</td><td><code>UPDATE</code></td></tr><tr><td align="right" class="rownum">On table:</td><td><code>FileInfo</code></td></tr><tr><td align="right" class="rownum">Activate condition:</td><td><code></code></td></tr><tr><td colspan="2" class="separator">Code executed:</td></tr><tr><td colspan="2"><pre>SELECT RAISE(ROLLBACK, 'Update on table FileInfo violates foreign key constraint FK_FileInfo_0_0') WHERE NEW.PluginID IS NOT NULL AND(SELECT PluginID FROM Plugins WHERE  PluginID = NEW.PluginID) IS NULL</pre></td></tr></table><br/><br/><table><tr class="title"><td align="center" colspan="2">Trigger: <b>fku_ProfilePlugins_PluginID_Plugins_PluginID</b></td></tr><tr><td align="right" class="rownum">Activated:</td><td><code>BEFORE</code></td></tr><tr><td align="right" class="rownum">Action:</td><td><code>UPDATE</code></td></tr><tr><td align="right" class="rownum">On table:</td><td><code>ProfilePlugins</code></td></tr><tr><td align="right" class="rownum">Activate condition:</td><td><code></code></td></tr><tr><td colspan="2" class="separator">Code executed:</td></tr><tr><td colspan="2"><pre>SELECT RAISE(ROLLBACK, 'Update on table ProfilePlugins violates foreign key constraint FK_ProfilePlugins_0_0') WHERE (SELECT PluginID FROM Plugins WHERE  PluginID = NEW.PluginID) IS NULL</pre></td></tr></table><br/><br/><table><tr class="title"><td align="center" colspan="2">Trigger: <b>fku_ProfilePlugins_ProfileID_LoadOutProfiles_ProfileID</b></td></tr><tr><td align="right" class="rownum">Activated:</td><td><code>BEFORE</code></td></tr><tr><td align="right" class="rownum">Action:</td><td><code>UPDATE</code></td></tr><tr><td align="right" class="rownum">On table:</td><td><code>ProfilePlugins</code></td></tr><tr><td align="right" class="rownum">Activate condition:</td><td><code></code></td></tr><tr><td colspan="2" class="separator">Code executed:</td></tr><tr><td colspan="2"><pre>SELECT RAISE(ROLLBACK, 'Update on table ProfilePlugins violates foreign key constraint FK_ProfilePlugins_1_0') WHERE (SELECT ProfileID FROM LoadOutProfiles WHERE  ProfileID = NEW.ProfileID) IS NULL</pre></td></tr></table><br/><br/><table><tr class="title"><td align="center" colspan="2">Trigger: <b>trgInsteadOfInsert_vwLoadOuts</b></td></tr><tr><td align="right" class="rownum">Activated:</td><td><code>INSTEAD OF</code></td></tr><tr><td align="right" class="rownum">Action:</td><td><code>INSERT</code></td></tr><tr><td align="right" class="rownum">On view:</td><td><code>vwLoadOuts</code></td></tr><tr><td align="right" class="rownum">Activate condition:</td><td><code></code></td></tr><tr><td colspan="2" class="separator">Code executed:</td></tr><tr><td colspan="2"><pre>INSERT INTO LoadOutProfiles (ProfileID, ProfileName, GroupSetID) 
+    VALUES (NEW.ProfileID, NEW.ProfileName, NEW.GroupSetID) 
+    ON CONFLICT(ProfileID) DO UPDATE SET  
+        ProfileName = excluded.ProfileName, 
+        GroupSetID = excluded.GroupSetID<br/>INSERT INTO Plugins (PluginID, PluginName, Description, Achievements, DTStamp, Version, State) 
+    VALUES (NEW.PluginID, NEW.PluginName, NEW.Description, NEW.Achievements, NEW.TimeStamp, NEW.Version, NEW.State) 
+    ON CONFLICT(PluginID) DO UPDATE SET  
+        PluginName = excluded.PluginName, 
+        Description = excluded.Description, 
+        Achievements = excluded.Achievements, 
+        DTStamp = excluded.DTStamp, 
+        Version = excluded.Version, 
+        State = excluded.State<br/>INSERT INTO ProfilePlugins (ProfileID, PluginID) 
+    VALUES (NEW.ProfileID, NEW.PluginID) 
+    ON CONFLICT(ProfileID, PluginID) DO NOTHING<br/>INSERT INTO GroupSetPlugins (GroupSetID, GroupID, PluginID, Ordinal) 
+    VALUES (NEW.GroupSetID, NEW.GroupID, NEW.PluginID, NEW.GroupOrdinal) 
+    ON CONFLICT(GroupSetID, GroupID, PluginID) DO UPDATE SET  
+        Ordinal = excluded.Ordinal<br/>INSERT INTO ExternalIDs (PluginID, BethesdaID, NexusID) 
+    VALUES (NEW.PluginID, NEW.BethesdaID, NEW.NexusID) 
+    ON CONFLICT(PluginID) DO UPDATE SET  
+        BethesdaID = excluded.BethesdaID, 
+        NexusID = excluded.NexusID</pre></td></tr></table><br/><br/><table><tr class="title"><td align="center" colspan="2">Trigger: <b>trgInsteadOfInsert_vwModGroups</b></td></tr><tr><td align="right" class="rownum">Activated:</td><td><code>INSTEAD OF</code></td></tr><tr><td align="right" class="rownum">Action:</td><td><code>INSERT</code></td></tr><tr><td align="right" class="rownum">On view:</td><td><code>vwModGroups</code></td></tr><tr><td align="right" class="rownum">Activate condition:</td><td><code></code></td></tr><tr><td colspan="2" class="separator">Code executed:</td></tr><tr><td colspan="2"><pre>INSERT INTO ModGroups (GroupID, Ordinal, GroupName, Description, ParentID) 
+    VALUES ( 
+        NEW.GroupID, 
+        NEW.Ordinal, 
+        NEW.GroupName, 
+        NEW.GroupDescription, 
+        NEW.ParentID 
+    ) 
+    ON CONFLICT(GroupID) DO UPDATE SET  
+        Ordinal = COALESCE(excluded.Ordinal, ModGroups.Ordinal), 
+        GroupName = COALESCE(excluded.GroupName, ModGroups.GroupName), 
+        Description = COALESCE(excluded.Description, ModGroups.Description), 
+        ParentID = COALESCE(excluded.ParentID, ModGroups.ParentID)<br/>INSERT INTO GroupSetPlugins (GroupSetID, GroupID, PluginID, Ordinal) 
+    VALUES ( 
+        NEW.GroupSetID, 
+        NEW.GroupID, 
+        NEW.PluginID, 
+        NEW.GroupOrdinal 
+    ) 
+    ON CONFLICT(GroupID, PluginID) DO UPDATE SET  
+        GroupSetID = COALESCE(excluded.GroupSetID, GroupSetPlugins.GroupSetID), 
+        Ordinal = COALESCE(excluded.Ordinal, GroupSetPlugins.Ordinal)<br/>INSERT INTO Plugins (PluginID, PluginName, Description, Achievements, DTStamp, Version, State) 
+    VALUES ( 
+        NEW.PluginID, 
+        NEW.PluginName, 
+        NEW.PluginDescription, 
+        NEW.Achievements, 
+        NEW.TimeStamp, 
+        NEW.Version, 
+        NEW.State 
+    ) 
+    ON CONFLICT(PluginID) DO UPDATE SET  
+        PluginName = COALESCE(excluded.PluginName, Plugins.PluginName), 
+        Description = COALESCE(excluded.Description, Plugins.Description), 
+        Achievements = COALESCE(excluded.Achievements, Plugins.Achievements), 
+        DTStamp = COALESCE(excluded.DTStamp, Plugins.DTStamp), 
+        Version = COALESCE(excluded.Version, Plugins.Version), 
+        State = COALESCE(excluded.State, Plugins.State)<br/>INSERT INTO ExternalIDs (PluginID, BethesdaID, NexusID) 
+    VALUES ( 
+        NEW.PluginID, 
+        NEW.BethesdaID, 
+        NEW.NexusID 
+    ) 
+    ON CONFLICT(PluginID) DO UPDATE SET  
+        BethesdaID = COALESCE(excluded.BethesdaID, ExternalIDs.BethesdaID), 
+        NexusID = COALESCE(excluded.NexusID, ExternalIDs.NexusID)</pre></td></tr></table><br/><br/><table><tr class="title"><td align="center" colspan="2">Trigger: <b>trgInsteadOfInsert_vwPluginFiles</b></td></tr><tr><td align="right" class="rownum">Activated:</td><td><code>INSTEAD OF</code></td></tr><tr><td align="right" class="rownum">Action:</td><td><code>INSERT</code></td></tr><tr><td align="right" class="rownum">On view:</td><td><code>vwPluginFiles</code></td></tr><tr><td align="right" class="rownum">Activate condition:</td><td><code></code></td></tr><tr><td colspan="2" class="separator">Code executed:</td></tr><tr><td colspan="2"><pre>INSERT INTO Plugins (PluginID, PluginName) 
+    VALUES (NEW.PluginID, NEW.PluginName) 
+    ON CONFLICT(PluginID) DO UPDATE SET  
+        PluginName = COALESCE(excluded.PluginName, Plugins.PluginName)<br/>INSERT INTO FileInfo (FileID, PluginID, Filename, RelativePath, DTStamp, HASH, IsArchive) 
+    VALUES ( 
+        NEW.FileID, 
+        NEW.PluginID, 
+        NEW.Filename, 
+        NEW.RelativePath, 
+        NEW.DTStamp, 
+        NEW.HASH, 
+        NEW.IsArchive 
+    ) 
+    ON CONFLICT(FileID) DO UPDATE SET 
+        PluginID = COALESCE(excluded.PluginID, FileInfo.PluginID), 
+        Filename = COALESCE(excluded.Filename, FileInfo.Filename), 
+        RelativePath = COALESCE(excluded.RelativePath, FileInfo.RelativePath), 
+        DTStamp = COALESCE(excluded.DTStamp, FileInfo.DTStamp), 
+        HASH = COALESCE(excluded.HASH, FileInfo.HASH), 
+        IsArchive = COALESCE(excluded.IsArchive, FileInfo.IsArchive)</pre></td></tr></table><br/><br/><table><tr class="title"><td align="center" colspan="2">Trigger: <b>trgInsteadOfInsert_vwPlugins</b></td></tr><tr><td align="right" class="rownum">Activated:</td><td><code>INSTEAD OF</code></td></tr><tr><td align="right" class="rownum">Action:</td><td><code>INSERT</code></td></tr><tr><td align="right" class="rownum">On view:</td><td><code>vwPlugins</code></td></tr><tr><td align="right" class="rownum">Activate condition:</td><td><code></code></td></tr><tr><td colspan="2" class="separator">Code executed:</td></tr><tr><td colspan="2"><pre>INSERT INTO Plugins (PluginID, PluginName, Description, Achievements, DTStamp, Version, BethesdaID, NexusID, GroupID, GroupOrdinal, GroupSetID) 
+    VALUES ( 
+        NEW.PluginID, 
+        NEW.PluginName, 
+        NEW.Description, 
+        NEW.Achievements, 
+        NEW.DTStamp, 
+        NEW.Version, 
+        NEW.BethesdaID, 
+        NEW.NexusID, 
+        NEW.GroupID, 
+        NEW.GroupOrdinal, 
+        NEW.GroupSetID 
+    ) 
+    ON CONFLICT(PluginID) DO UPDATE SET  
+        PluginName = COALESCE(excluded.PluginName, Plugins.PluginName), 
+        Description = COALESCE(excluded.Description, Plugins.Description), 
+        Achievements = COALESCE(excluded.Achievements, Plugins.Achievements), 
+        DTStamp = COALESCE(excluded.DTStamp, Plugins.DTStamp), 
+        Version = COALESCE(excluded.Version, Plugins.Version), 
+        BethesdaID = COALESCE(excluded.BethesdaID, Plugins.BethesdaID), 
+        NexusID = COALESCE(excluded.NexusID, Plugins.NexusID), 
+        GroupID = COALESCE(excluded.GroupID, Plugins.GroupID), 
+        GroupOrdinal = COALESCE(excluded.GroupOrdinal, Plugins.GroupOrdinal), 
+        GroupSetID = COALESCE(excluded.GroupSetID, Plugins.GroupSetID)</pre></td></tr></table><br/><br/><table><tr class="title"><td align="center" colspan="2">Trigger: <b>trgInsteadOfUpdate_vwLoadOuts</b></td></tr><tr><td align="right" class="rownum">Activated:</td><td><code>INSTEAD OF</code></td></tr><tr><td align="right" class="rownum">Action:</td><td><code>UPDATE</code></td></tr><tr><td align="right" class="rownum">On view:</td><td><code>vwLoadOuts</code></td></tr><tr><td align="right" class="rownum">Activate condition:</td><td><code></code></td></tr><tr><td colspan="2" class="separator">Code executed:</td></tr><tr><td colspan="2"><pre>UPDATE LoadOutProfiles 
+    SET ProfileName = NEW.ProfileName, 
+        GroupSetID = NEW.GroupSetID 
+    WHERE ProfileID = OLD.ProfileID<br/>UPDATE Plugins 
+    SET PluginName = NEW.PluginName, 
+        Description = NEW.Description, 
+        Achievements = NEW.Achievements, 
+        DTStamp = NEW.TimeStamp, 
+        Version = NEW.Version, 
+        State = NEW.State 
+    WHERE PluginID = OLD.PluginID<br/>UPDATE ProfilePlugins 
+    SET PluginID = NEW.PluginID 
+    WHERE ProfileID = OLD.ProfileID AND PluginID = OLD.PluginID<br/>UPDATE GroupSetPlugins 
+    SET GroupID = NEW.GroupID, 
+        Ordinal = NEW.GroupOrdinal 
+    WHERE GroupSetID = OLD.GroupSetID AND PluginID = OLD.PluginID<br/>UPDATE ExternalIDs 
+    SET BethesdaID = NEW.BethesdaID, 
+        NexusID = NEW.NexusID 
+    WHERE PluginID = OLD.PluginID</pre></td></tr></table><br/><br/><table><tr class="title"><td align="center" colspan="2">Trigger: <b>trgInsteadOfUpdate_vwModGroups</b></td></tr><tr><td align="right" class="rownum">Activated:</td><td><code>INSTEAD OF</code></td></tr><tr><td align="right" class="rownum">Action:</td><td><code>UPDATE</code></td></tr><tr><td align="right" class="rownum">On view:</td><td><code>vwModGroups</code></td></tr><tr><td align="right" class="rownum">Activate condition:</td><td><code></code></td></tr><tr><td colspan="2" class="separator">Code executed:</td></tr><tr><td colspan="2"><pre>UPDATE ModGroups 
+    SET 
+        Ordinal = NEW.Ordinal, 
+        GroupName = NEW.GroupName, 
+        Description = NEW.GroupDescription, 
+        ParentID = NEW.ParentID 
+    WHERE GroupID = OLD.GroupID<br/>UPDATE GroupSetPlugins 
+    SET 
+        GroupSetID = NEW.GroupSetID, 
+        Ordinal = NEW.GroupOrdinal 
+    WHERE GroupID = OLD.GroupID AND PluginID = OLD.PluginID<br/>UPDATE Plugins 
+    SET 
+        PluginName = NEW.PluginName, 
+        Description = NEW.PluginDescription, 
+        Achievements = NEW.Achievements, 
+        DTStamp = NEW.TimeStamp, 
+        Version = NEW.Version, 
+        State = NEW.State 
+    WHERE PluginID = OLD.PluginID<br/>UPDATE ExternalIDs 
+    SET 
+        BethesdaID = NEW.BethesdaID, 
+        NexusID = NEW.NexusID 
+    WHERE PluginID = OLD.PluginID</pre></td></tr></table><br/><br/><table><tr class="title"><td align="center">View: <b>vwLoadOuts</b></td></tr><tr><td><pre>SELECT       
+    l.ProfileID,       
+    l.ProfileName,       
+    p.PluginID,       
+    p.PluginName,       
+    p.Description,       
+    p.Achievements,       
+    p.DTStamp AS TimeStamp,       
+    p.Version,       
+    p.State,       
+    e.BethesdaID,       
+    e.NexusID,       
+    gsp.GroupID,       
+    gsp.Ordinal AS GroupOrdinal,       
+    l.GroupSetID, 
+    CASE  
+        WHEN EXISTS ( 
+            SELECT 1  
+            FROM ProfilePlugins pp  
+            WHERE pp.ProfileID = l.ProfileID  
+            AND pp.PluginID = p.PluginID 
+        )  
+        THEN 1 ELSE 0  
+    END AS IsEnabled 
+FROM       
+    LoadOutProfiles l       
+LEFT JOIN       
+    ProfilePlugins pp ON l.ProfileID = pp.ProfileID       
+LEFT JOIN       
+    Plugins p ON pp.PluginID = p.PluginID       
+LEFT JOIN       
+    GroupSetPlugins gsp ON p.PluginID = gsp.PluginID AND l.GroupSetID = gsp.GroupSetID       
+LEFT JOIN       
+    ModGroups g ON gsp.GroupID = g.GroupID       
+LEFT JOIN       
+    ExternalIDs e ON p.PluginID = e.PluginID       
+ORDER BY l.ProfileID, gsp.GroupID, gsp.Ordinal</pre></td></tr></table><br/><br/><table><tr class="title"><td align="center">View: <b>vwModGroups</b></td></tr><tr><td><pre>SELECT        
+    g.GroupID,        
+    gsg.Ordinal,        
+    g.GroupName,        
+    g.Description AS GroupDescription,        
+    gsg.ParentID,        
+    gsg.GroupSetID,        
+    p.PluginID,        
+    p.PluginName,        
+    p.Description AS PluginDescription,        
+    p.Achievements,        
+    p.DTStamp AS TimeStamp,        
+    p.Version,        
+    p.State,        
+    e.BethesdaID,        
+    e.NexusID,        
+    gsp.Ordinal AS GroupOrdinal        
+FROM        
+    ModGroups g        
+LEFT JOIN        
+    GroupSetGroups gsg ON g.GroupID = gsg.GroupID        
+LEFT JOIN        
+    GroupSetPlugins gsp ON gsg.GroupID = gsp.GroupID AND gsg.GroupSetID = gsp.GroupSetID        
+LEFT JOIN        
+    Plugins p ON gsp.PluginID = p.PluginID        
+LEFT JOIN        
+    ExternalIDs e ON p.PluginID = e.PluginID        
+ORDER BY
+    gsg.GroupSetID,    -- Group by GroupSetID
+    gsg.ParentID,      -- Sort by ParentID
+    gsg.Ordinal,       -- Sort by Ordinal within ParentID
+    gsp.Ordinal</pre></td></tr></table><br/><br/><table><tr class="title"><td align="center">View: <b>vwPluginFiles</b></td></tr><tr><td><pre>SELECT      
+    fi.FileID,      
+    p.PluginID,      
+    p.PluginName,      
+    fi.Filename,      
+    fi.RelativePath,      
+    fi.DTStamp,      
+    fi.HASH,      
+    fi.IsArchive      
+FROM      
+    Plugins p      
+JOIN      
+    FileInfo fi ON p.PluginID = fi.PluginID</pre></td></tr></table><br/><br/><table><tr class="title"><td align="center">View: <b>vwPluginGrpUnion</b></td></tr><tr><td><pre>SELECT
+    -- Plugin Details
+    p.PluginID,
+    p.PluginName,
+    p.Description AS PluginDescription,
+    p.Achievements,
+    p.DTStamp,
+    p.Version,
+    p.State,
+    
+    -- Group Details
+    g.GroupID,
+    g.GroupName,
+    g.Description AS GroupDescription,
+    gsg.ParentID,
+    gsg.Ordinal AS GroupOrdinal,
+    
+    -- LoadOutProfile Details
+    l.ProfileID AS LoadOutID,
+    l.ProfileName AS LoadOutName,
+    CASE
+        WHEN pp.PluginID IS NOT NULL THEN 1
+        ELSE 0
+    END AS IsEnabled,
+    
+    -- GroupSet Details
+    gsg.GroupSetID,
+    gs.GroupSetName,
+    
+    -- External Identifiers
+    e.BethesdaID,
+    e.NexusID
+    
+FROM
+    -- Groupset and Groups are the base tables for the view to ensure all groups and groupsets are included
+    GroupSetGroups gsg
+
+    -- Join ModGroups for Group Information
+    LEFT JOIN ModGroups g ON gsg.GroupID = g.GroupID
+    
+    -- Join Plugins via GroupSetPlugins (Show all plugins in the group or unassigned)
+    LEFT JOIN GroupSetPlugins gsp ON gsg.GroupID = gsp.GroupID AND gsg.GroupSetID = gsp.GroupSetID
+    LEFT JOIN Plugins p ON gsp.PluginID = p.PluginID
+    
+    -- ExternalIDs for Bethesda and Nexus mappings
+    LEFT JOIN ExternalIDs e ON p.PluginID = e.PluginID
+    
+    -- LoadOutProfiles to identify LoadOuts and their mappings
+    LEFT JOIN LoadOutProfiles l ON l.GroupSetID = gsg.GroupSetID
+    
+    -- ProfilePlugins links LoadOutProfiles with Plugins (For enabling state)
+    LEFT JOIN ProfilePlugins pp ON pp.ProfileID = l.ProfileID AND pp.PluginID = p.PluginID
+    
+    -- GroupSet Information
+    LEFT JOIN GroupSets gs ON gsg.GroupSetID = gs.GroupSetID
+
+WHERE
+    -- Ensure that entries are associated with either a GroupSet or a LoadOut
+    gsg.GroupSetID IS NOT NULL OR l.ProfileID IS NOT NULL
+    
+ORDER BY
+    gsg.GroupSetID, -- Group by GroupSetID
+    l.ProfileID, -- Sort by LoadOuts within the GroupSet
+    gsg.ParentID, -- Sort by ParentID
+    gsg.Ordinal, -- Sort by Group Ordinal within the GroupSet
+    gsp.Ordinal</pre></td></tr></table><br/><br/><table><tr class="title"><td align="center">View: <b>vwPlugins</b></td></tr><tr><td><pre>SELECT         
+     p.PluginID,         
+     p.PluginName,         
+     p.Description,         
+     p.Achievements,         
+     p.DTStamp,         
+     p.Version,       
+     p.State,       
+     gsp.GroupSetID,      
+     gsp.GroupID,         
+     gsp.Ordinal AS GroupOrdinal,         
+     g.GroupName,         
+     e.BethesdaID,         
+     e.NexusID         
+ FROM         
+     Plugins p         
+ LEFT JOIN         
+     GroupSetPlugins gsp ON p.PluginID = gsp.PluginID     
+ LEFT JOIN         
+     ModGroups g ON gsp.GroupID = g.GroupID     
+ LEFT JOIN         
+     ExternalIDs e ON p.PluginID = e.PluginID</pre></td></tr></table><br/><br/><i>Document generated by SQLiteStudio v3.4.4 on Sun Sep 22 15:46:34 2024</i></body></html>

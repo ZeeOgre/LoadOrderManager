@@ -57,7 +57,7 @@ namespace ZO.LoadOrderManager
             set
             {
                 _selectedLoadOut = value;
-                AggLoadInfo.Instance.ActiveLoadOutID = _selectedLoadOut.ProfileID;
+                AggLoadInfo.Instance.ActiveLoadOut = value;
                 OnPropertyChanged(nameof(SelectedLoadOut));
             }
         }
@@ -420,8 +420,7 @@ namespace ZO.LoadOrderManager
             // Ensure the selected loadout is set in the AggLoadInfo object
             if (_selectedLoadOut != null)
             {
-                aggLoadInfo.UpdateFromLoadOut(_selectedLoadOut);
-                aggLoadInfo.ActiveLoadOutID = _selectedLoadOut.ProfileID;
+                aggLoadInfo.ActiveLoadOut = _selectedLoadOut;
             }
             else
             {
@@ -429,7 +428,7 @@ namespace ZO.LoadOrderManager
             }
 
             // Perform the import
-            aggLoadInfo.LoadFiles(pluginsFile,null,true);
+            FileManager.;
 
             // Update the UI or any other necessary components
             RefreshData();
@@ -551,15 +550,15 @@ namespace ZO.LoadOrderManager
             Save(this);
             if (SelectedProfileId.HasValue)
             {
-                var currentLoadOut = SelectedLoadOut;
-                AggLoadInfo.Instance.ActiveLoadOutID = _selectedLoadOut.ProfileID;
-                if (currentLoadOut == null)
+                //var currentLoadOut = SelectedLoadOut;
+                AggLoadInfo.Instance.ActiveLoadOut = SelectedLoadOut;
+                if (AggLoadInfo.Instance.ActiveLoadOut == null)
                 {
                     StatusMessage = "Selected profile not found.";
                     return;
                 }
 
-                var profileName = currentLoadOut.Name;
+                var profileName = AggLoadInfo.Instance.ActiveLoadOut.Name;
                 var defaultFileName = $"Plugins_{profileName}.txt";
                 var defaultFilePath = Path.Combine(FileManager.AppDataFolder, defaultFileName);
 
@@ -583,7 +582,7 @@ namespace ZO.LoadOrderManager
                     }
                 }
 
-                FileManager.ProducePluginsTxt(currentLoadOut, outputFileName);
+                FileManager.ProducePluginsTxt(AggLoadInfo.Instance.ActiveLoadOut, outputFileName);
                 StatusMessage = "Plugins.txt file has been successfully created.";
             }
             else

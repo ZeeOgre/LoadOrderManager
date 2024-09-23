@@ -2,22 +2,138 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Data.SQLite;
 using System.Runtime.CompilerServices;
+using System.Text;
 using System.Text.RegularExpressions;
+using System.Windows.Input;
 using YamlDotNet.Serialization;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.ListView;
-
 
 namespace ZO.LoadOrderManager
 {
-    public class ModGroup
+    public class ModGroup : INotifyPropertyChanged
     {
-        public int GroupID { get; set; }
-        public int? Ordinal { get; set; }
-        public string? Description { get; set; }
-        public string? GroupName { get; set; }
+        // Core Properties
+        public int? GroupID { get; set; }
+        public string GroupName { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
         public int? ParentID { get; set; }
+        public int? Ordinal { get; set; }
         public int? GroupSetID { get; set; }
-        public ObservableCollection<Plugin>? Plugins { get; set; } = new ObservableCollection<Plugin>();
+        public string DisplayName => $"{GroupName} ({GroupSetID}) | {Description}";
+
+        // Path-to-root structure for hierarchy navigation
+        public List<int> PathToRoot { get; private set; } = new List<int>();
+
+        // PluginID HashSet for quick lookup and manipulation
+        private HashSet<int> _pluginIDs = new HashSet<int>();
+        public IReadOnlyCollection<int> PluginIDs => _pluginIDs;
+
+        // Observable collection of plugins associated with the group
+        private ObservableCollection<Plugin> _plugins = new ObservableCollection<Plugin>();
+        public ObservableCollection<Plugin> Plugins
+        {
+            get => _plugins;
+            set
+            {
+                if (_plugins != value)
+                {
+                    _plugins = value;
+                    OnPropertyChanged(nameof(Plugins));
+                }
+            }
+        }
+
+        // Property for tracking if the group is a reserved/special group
+        private bool _isReservedGroup;
+        public bool IsReservedGroup
+        {
+            get => _isReservedGroup;
+            private set
+            {
+                if (_isReservedGroup != value)
+                {
+                    _isReservedGroup = value;
+                    OnPropertyChanged(nameof(IsReservedGroup));
+                }
+            }
+        }
+
+        // Event for property changes (WPF binding support)
+        public event PropertyChangedEventHandler PropertyChanged;
+        protected void OnPropertyChanged(string propertyName) =>
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+
+        // Constructor
+        public ModGroup()
+        {
+        }
+
+        public ModGroup(int? groupID, string groupName, string description, int? parentID, int? ordinal, int? groupSetID)
+        {
+            GroupID = groupID; // Set to 0 if null, assuming 0 is a placeholder for new entries
+            GroupName = groupName;
+            Description = description;
+            ParentID = parentID;
+            Ordinal = ordinal;
+            GroupSetID = groupSetID;
+            InitializeReservedStatus(); // Initialize reserved status based on GroupID
+        }
+
+
+        // Initialization method to set the reserved status based on GroupID
+        private void InitializeReservedStatus()
+        {
+            if (GroupID < 0)
+            {
+                // Mark group as reserved if it's one of the special groups
+                switch (GroupID)
+                {
+                    case -999: // Core game files, typically reserved
+                        IsReservedGroup = true;
+                        break;
+                    case -998: // Unassigned plugins group
+                    case -997: // Placeholder for mods not yet categorized
+                        IsReservedGroup = false;
+                        break;
+                    default: // Other negative IDs are reserved by default
+                        IsReservedGroup = true;
+                        break;
+                }
+            }
+            else
+            {
+                IsReservedGroup = false; // Positive GroupIDs are user-defined, not reserved
+            }
+        }
+
+        // Method to add a plugin to the group
+        public void AddPlugin(Plugin plugin)
+        {
+            if (plugin == null) throw new ArgumentNullException(nameof(plugin));
+
+            if (IsReservedGroup && GroupID != -998 && GroupID != -997)
+            {
+                throw new InvalidOperationException("Cannot add plugins to a reserved group.");
+            }
+
+            _plugins.Add(plugin);
+            _pluginIDs.Add(plugin.PluginID);
+            OnPropertyChanged(nameof(Plugins));
+        }
+
+        // Method to remove a plugin from the group
+        public void RemovePlugin(Plugin plugin)
+        {
+            if (plugin == null) throw new ArgumentNullException(nameof(plugin));
+
+            if (IsReservedGroup && GroupID != -998 && GroupID != -997)
+            {
+                throw new InvalidOperationException("Cannot remove plugins from a reserved group.");
+            }
+
+            _plugins.Remove(plugin);
+            _pluginIDs.Remove(plugin.PluginID);
+            OnPropertyChanged(nameof(Plugins));
+        }
 
         private static readonly HashSet<string> ReservedWords = new HashSet<string>
             {
@@ -26,10 +142,77 @@ namespace ZO.LoadOrderManager
                 "never_load",
                 "unassigned",
                 "neverload",
-                "CoreGameFiles"
+                "CoreGameFiles",
+                "inactive",
             };
 
-        public string DisplayName => $"{GroupName} | {Description}";
+        public void ChangeGroup(int newParentId)
+        {
+            // Disallow reserved groups as parents
+            if (newParentId < 0)
+            {
+                throw new InvalidOperationException("Cannot change to a reserved group as parent.");
+            }
+
+            // Retrieve the AggLoadInfo singleton instance
+            var aggLoadInfoInstance = AggLoadInfo.Instance;
+
+            // Step 1: Decrement ordinals of sibling groups under the current parent
+            var currentParentGroup = aggLoadInfoInstance.Groups.FirstOrDefault(g => g.GroupID == this.ParentID);
+            if (currentParentGroup != null)
+            {
+                // Only decrement ordinals of siblings with greater ordinal values
+                var siblingsToDecrement = currentParentGroup.Plugins?.Where(p => p.GroupOrdinal > this.Ordinal).ToList();
+                if (siblingsToDecrement != null)
+                {
+                    foreach (var sibling in siblingsToDecrement)
+                    {
+                        sibling.GroupOrdinal--;
+                    }
+                }
+            }
+
+            // Step 2: Find the maximum ordinal of the new parent's children
+            int maxOrdinal = 0;
+            var newParentGroup = aggLoadInfoInstance.Groups.FirstOrDefault(g => g.GroupID == newParentId);
+            if (newParentGroup != null)
+            {
+                maxOrdinal = newParentGroup.Plugins?.Max(p => p.GroupOrdinal) ?? 0;
+            }
+
+            // Step 3: Update the ParentID and GroupOrdinal of the group being moved
+            this.ParentID = newParentId;
+            this.Ordinal = maxOrdinal + 1;
+
+            // Optional: Update AggLoadInfo instance if necessary
+            // aggLoadInfoInstance.UpdateGroup(this); // This depends on the implementation of AggLoadInfo
+        }
+
+
+        // Constructor for quick initialization from database view row
+        public ModGroup(Dictionary<string, object> row)
+        {
+            GroupID = Convert.ToInt32(row["GroupID"]);
+            GroupName = row["GroupName"].ToString();
+            Description = row["GroupDescription"].ToString();
+            ParentID = row["ParentID"] != DBNull.Value ? Convert.ToInt32(row["ParentID"]) : (int?)null;
+            Ordinal = row["GroupOrdinal"] != DBNull.Value ? Convert.ToInt32(row["GroupOrdinal"]) : (int?)null;
+            GroupSetID = row["GroupSetID"] != DBNull.Value ? Convert.ToInt32(row["GroupSetID"]) : (int?)null;
+        }
+
+        // Clone Constructor
+        public ModGroup(ModGroup source)
+        {
+            GroupID = source.GroupID;
+            GroupName = source.GroupName;
+            Description = source.Description;
+            ParentID = source.ParentID;
+            Ordinal = source.Ordinal;
+            GroupSetID = source.GroupSetID;
+            IsReservedGroup = source.IsReservedGroup;
+            PathToRoot = new List<int>(source.PathToRoot);
+            _pluginIDs = new HashSet<int>(source._pluginIDs);
+        }
 
         public ModGroup Clone()
         {
@@ -41,204 +224,365 @@ namespace ZO.LoadOrderManager
                 GroupName = this.GroupName,
                 ParentID = this.ParentID,
                 GroupSetID = this.GroupSetID,
-                Plugins = new ObservableCollection<Plugin>(this.Plugins?.Select(p => p.Clone()) ?? Enumerable.Empty<Plugin>())
+                Plugins = new ObservableCollection<Plugin>(this.Plugins?.Select(p => p.Clone()) ?? Enumerable.Empty<Plugin>()),
             };
             return clonedModGroup;
         }
-
 
         public ModGroup Clone(string groupName)
         {
             return new ModGroup
             {
                 GroupID = this.GroupID,
-                Ordinal = this.Ordinal,
+                Ordinal = GetMaxOrdinalForNewGroup(this.ParentID), // Set to max ordinal of siblings within the current GroupSet
                 Description = this.Description,
-                GroupName = groupName,
+                GroupName = groupName, // Set the new name
                 ParentID = this.ParentID,
-                GroupSetID = this.GroupSetID,   
-                Plugins = new ObservableCollection<Plugin>(this.Plugins?.Select(p => p.Clone()) ?? Enumerable.Empty<Plugin>())
+                GroupSetID = this.GroupSetID,
+                Plugins = new ObservableCollection<Plugin>(this.Plugins?.Select(p => p.Clone()) ?? Enumerable.Empty<Plugin>()),
             };
         }
-
 
         public ModGroup Clone(GroupSet groupSet)
         {
+            var newOrdinal = GetMaxOrdinalFromDatabase(null, groupSet.GroupSetID); // Get the max ordinal directly from the database
+
             return new ModGroup
             {
                 GroupID = this.GroupID,
-                Ordinal = this.Ordinal,
+                Ordinal = newOrdinal, // Use the retrieved max ordinal
                 Description = this.Description,
                 GroupName = this.GroupName,
-                ParentID = this.ParentID,
+                ParentID = null, // Root level for new group set
                 GroupSetID = groupSet.GroupSetID,
-                Plugins = new ObservableCollection<Plugin>(this.Plugins?.Select(p => p.Clone()) ?? Enumerable.Empty<Plugin>())
+                Plugins = new ObservableCollection<Plugin>(this.Plugins?.Select(p =>
+                {
+                    var clonedPlugin = p.Clone();
+                    clonedPlugin.GroupSetID = groupSet.GroupSetID;
+                    return clonedPlugin;
+                }) ?? Enumerable.Empty<Plugin>()),
             };
         }
-
-
-        public override string ToString()
+        public static ModGroup? LoadModGroup(int groupId, int groupSetID)
         {
-            return $"GroupID: {GroupID}, GroupName: {GroupName}, Description: {Description}, Ordinal: {Ordinal}, ParentID: {ParentID}, GroupSet: {GroupSetID}";
-        }
+            using var connection = DbManager.Instance.GetConnection();
+            using var command = new SQLiteCommand(connection);
 
-        public string ToPluginsString()
-        {
-            int level = 0;
-            var currentGroup = this;
+            // Query vwModGroups directly without unnecessary joins
+            command.CommandText = @"
+SELECT
+    GroupID,
+    Ordinal AS GroupOrdinal, -- Group order within parent
+    GroupName,
+    Description AS GroupDescription,
+    ParentID,
+    GroupSetID,
+    PluginID,
+    PluginName,
+    PluginDescription,
+    Achievements,
+    TimeStamp,
+    Version,
+    State,
+    BethesdaID,
+    NexusID,
+    GroupOrdinal -- Plugin order within group
+FROM vwModGroups
+WHERE GroupID = @GroupID AND GroupSetID = @GroupSetID
+ORDER BY GroupOrdinal"; // Correct ordering based on the group
 
-            // Traverse up the hierarchy to determine the level
-            while (currentGroup.ParentID != null && currentGroup.ParentID >= 1)
+            command.Parameters.AddWithValue("@GroupID", groupId);
+            command.Parameters.AddWithValue("@GroupSetID", groupSetID);
+
+            using var reader = command.ExecuteReader();
+            if (reader.Read())
             {
-                level++;
-                currentGroup = ModGroup.LoadModGroup(currentGroup.ParentID.Value);
-                if (currentGroup == null)
+                var newModGroup = new ModGroup
                 {
-                    break;
+                    GroupID = reader.GetInt32(reader.GetOrdinal("GroupID")),
+                    Ordinal = reader.IsDBNull(reader.GetOrdinal("GroupOrdinal")) ? null : reader.GetInt32(reader.GetOrdinal("GroupOrdinal")),
+                    Description = reader.IsDBNull(reader.GetOrdinal("GroupDescription")) ? null : reader.GetString(reader.GetOrdinal("GroupDescription")),
+                    GroupName = reader.IsDBNull(reader.GetOrdinal("GroupName")) ? null : reader.GetString(reader.GetOrdinal("GroupName")),
+                    ParentID = reader.IsDBNull(reader.GetOrdinal("ParentID")) ? null : reader.GetInt32(reader.GetOrdinal("ParentID")),
+                    GroupSetID = reader.IsDBNull(reader.GetOrdinal("GroupSetID")) ? null : reader.GetInt32(reader.GetOrdinal("GroupSetID")),
+                    Plugins = new ObservableCollection<Plugin>(),
+                    PathToRoot = new List<int>() // Initialize the path to root list
+                };
+
+                // Populate the path to root
+                int? currentParentID = newModGroup.ParentID;
+                while (currentParentID != null)
+                {
+                    newModGroup.PathToRoot.Insert(0, currentParentID.Value);
+                    currentParentID = GetParentIDFromDatabase(currentParentID.Value); // Utility method to get the parent ID
                 }
+
+                // Ensure the current group is included in the path to root
+                newModGroup.PathToRoot.Add(newModGroup.GroupID ?? 0);
+
+                // Load Plugin details (important for maintaining plugin order)
+                do
+                {
+                    if (!reader.IsDBNull(reader.GetOrdinal("PluginID")))
+                    {
+                        var plugin = new Plugin
+                        {
+                            PluginID = reader.GetInt32(reader.GetOrdinal("PluginID")),
+                            PluginName = reader.IsDBNull(reader.GetOrdinal("PluginName")) ? string.Empty : reader.GetString(reader.GetOrdinal("PluginName")),
+                            Description = reader.IsDBNull(reader.GetOrdinal("PluginDescription")) ? string.Empty : reader.GetString(reader.GetOrdinal("PluginDescription")),
+                            Achievements = reader.IsDBNull(reader.GetOrdinal("Achievements")) ? false : reader.GetInt32(reader.GetOrdinal("Achievements")) == 1,
+                            DTStamp = reader.IsDBNull(reader.GetOrdinal("TimeStamp")) ? string.Empty : reader.GetString(reader.GetOrdinal("TimeStamp")),
+                            Version = reader.IsDBNull(reader.GetOrdinal("Version")) ? string.Empty : reader.GetString(reader.GetOrdinal("Version")),
+                            BethesdaID = reader.IsDBNull(reader.GetOrdinal("BethesdaID")) ? string.Empty : reader.GetString(reader.GetOrdinal("BethesdaID")),
+                            NexusID = reader.IsDBNull(reader.GetOrdinal("NexusID")) ? string.Empty : reader.GetString(reader.GetOrdinal("NexusID")),
+                            State = reader.IsDBNull(reader.GetOrdinal("State")) ? ModState.None : (ModState)reader.GetInt32(reader.GetOrdinal("State")),
+                            GroupOrdinal = reader.IsDBNull(reader.GetOrdinal("GroupOrdinal")) ? (int?)null : reader.GetInt32(reader.GetOrdinal("GroupOrdinal")),
+                            GroupID = newModGroup.GroupID, // Assign GroupID to the Plugin
+                            GroupSetID = newModGroup.GroupSetID // Assign GroupSetID to the Plugin
+                        };
+                        newModGroup.Plugins.Add(plugin);
+                    }
+                } while (reader.Read());
+
+                return newModGroup;
             }
 
-            // Create the appropriate number of # based on the level
-            string hashMarks = new string('#', level + 2); // +2 to account for the base level
+            return null;
+        }
 
-            return $"{hashMarks} {GroupName} @@ {Description}";
+        public ModGroup WriteGroup()
+        {
+            // Check for an existing match based on GroupName, Description, ParentID, and GroupSetID.
+            var existingMatch = this.FindMatchingModGroup();
+            if (existingMatch != null)
+            {
+                return existingMatch; // Avoid re-insertion if match found
+            }
+
+            using var connection = DbManager.Instance.GetConnection();
+            using var transaction = connection.BeginTransaction(); // Start a transaction to ensure atomic updates
+            using var command = new SQLiteCommand(connection);
+
+            // Step 1: Insert or Update the ModGroup
+            if (!this.GroupID.HasValue) // If GroupID is null, it's a new entry
+            {
+                // Insert a new group
+                command.CommandText = @"
+        INSERT INTO ModGroups (GroupName, Description)
+        VALUES (@GroupName, @Description)
+        RETURNING GroupID;"; // Retrieve the new GroupID
+
+                command.Parameters.AddWithValue("@GroupName", this.GroupName ?? (object)DBNull.Value);
+                command.Parameters.AddWithValue("@Description", this.Description ?? (object)DBNull.Value);
+
+                try
+                {
+                    this.GroupID = Convert.ToInt32(command.ExecuteScalar());
+                    App.LogDebug($"New ModGroup inserted into database: GroupID={this.GroupID}, GroupName={this.GroupName}, Description={this.Description}");
+                }
+                catch (SQLiteException ex)
+                {
+                    transaction.Rollback();
+                    App.LogDebug($"Error inserting new ModGroup: {ex.Message}");
+                    throw; // Re-throw the exception after logging
+                }
+            }
+            else
+            {
+                // Update an existing group
+                command.CommandText = @"
+        UPDATE ModGroups
+        SET GroupName = COALESCE(@GroupName, GroupName),
+            Description = COALESCE(@Description, Description)
+        WHERE GroupID = @GroupID;";
+
+                command.Parameters.AddWithValue("@GroupID", this.GroupID);
+                command.Parameters.AddWithValue("@GroupName", this.GroupName ?? (object)DBNull.Value);
+                command.Parameters.AddWithValue("@Description", this.Description ?? (object)DBNull.Value);
+
+                command.ExecuteNonQuery();
+                App.LogDebug($"ModGroup updated in database: {this.ToString()}");
+            }
+
+            // Step 2: Insert or Update the GroupSetGroups entry
+            command.CommandText = @"
+    INSERT INTO GroupSetGroups (GroupID, GroupSetID, ParentID, Ordinal)
+    VALUES (@GroupID, @GroupSetID, @ParentID, @Ordinal)
+    ON CONFLICT(GroupID, GroupSetID) DO UPDATE SET
+        ParentID = COALESCE(@ParentID, ParentID),
+        Ordinal = COALESCE(@Ordinal, Ordinal);";
+
+            command.Parameters.Clear();
+            command.Parameters.AddWithValue("@GroupID", this.GroupID);
+            command.Parameters.AddWithValue("@GroupSetID", this.GroupSetID ?? (object)DBNull.Value);
+            command.Parameters.AddWithValue("@ParentID", this.ParentID ?? (object)DBNull.Value);
+            command.Parameters.AddWithValue("@Ordinal", this.Ordinal);
+
+            command.ExecuteNonQuery();
+
+            // Step 3: Sync Plugins in GroupSetPlugins Table
+            SyncPluginsWithDatabase(command);
+
+            // Commit the transaction
+            transaction.Commit();
+            App.LogDebug($"Transaction committed successfully.");
+
+            // Return the updated ModGroup object
+            return this;
+        }
+
+
+
+        /// <summary>
+        /// Builds and validates the path to root for the given group and parent.
+        /// Ensures the path is valid and does not create circular references.
+        /// </summary>
+        /// <param name="newParentId">The ID of the new parent group.</param>
+        /// <returns>A list representing the path to root.</returns>
+
+        public List<int> BuildPathToRoot()
+        {
+            // Check if the path is already available in memory
+            if (AggLoadInfo.Instance.GroupSetGroups.Items.Any(gsg => gsg.GroupID == this.GroupID))
+            {
+                // Create a path list to store the parent-child relationship
+                var pathToRoot = new List<int>();
+                int? currentParentID = this.ParentID;
+
+                // Traverse the in-memory GroupSetGroups collection to build the path to root
+                while (currentParentID != null)
+                {
+                    // Find the parent group in the GroupSetGroups collection
+                    var parentGroup = AggLoadInfo.Instance.GroupSetGroups.Items
+                        .FirstOrDefault(gsg => gsg.GroupID == currentParentID && gsg.GroupSetID == this.GroupSetID);
+
+                    if (parentGroup != default)
+                    {
+                        pathToRoot.Add(currentParentID.Value);
+                        currentParentID = parentGroup.ParentID; // Move to the next parent in the path
+                    }
+                    else
+                    {
+                        break; // If no parent is found, exit the loop
+                    }
+                }
+
+                return pathToRoot;
+            }
+
+            // Fallback logic if the GroupID is not found in GroupSetGroups collection
+            return new List<int> { this.GroupID ?? 0 };
+        }
+
+
+        private static int? GetParentIDFromDatabase(int groupId)
+        {
+            // This method should check the database for the parent ID of a given groupId
+            using var connection = DbManager.Instance.GetConnection();
+            using var command = new SQLiteCommand(connection);
+
+            command.CommandText = "SELECT ParentID FROM GroupSetGroups WHERE GroupID = @GroupID";
+            command.Parameters.AddWithValue("@GroupID", groupId);
+
+            using var reader = command.ExecuteReader();
+            if (reader.Read())
+            {
+                return reader.IsDBNull(reader.GetOrdinal("ParentID")) ? null : reader.GetInt32(reader.GetOrdinal("ParentID"));
+            }
+            return null;
+        }
+
+        private int GetMaxOrdinalForNewGroup(int? parentID)
+        {
+            // Use the GroupSetID of the current ModGroup, defaulting to 0 if null.
+            var currentGroupSetID = this.GroupSetID ?? 0;
+
+            // Try to get the max ordinal from the in-memory instance first
+            var siblingGroups = AggLoadInfo.Instance?.Groups
+                .Where(g => g.ParentID == parentID && g.GroupSetID == currentGroupSetID)
+                .Select(g => g.Ordinal ?? 0)
+                .DefaultIfEmpty(-1); // Using -1 to indicate an empty set
+
+            var maxOrdinal = siblingGroups.Max();
+
+            // If the max ordinal is -1, that means no siblings were found in the in-memory structure
+            if (maxOrdinal == -1)
+            {
+                // Fall back to querying the database
+                maxOrdinal = GetMaxOrdinalFromDatabase(parentID, currentGroupSetID);
+            }
+
+            return maxOrdinal + 1;
+        }
+
+        private int GetMaxOrdinalFromDatabase(int? parentID, int groupSetID)
+        {
+            using var connection = DbManager.Instance.GetConnection();
+            using var command = new SQLiteCommand(connection);
+
+            command.CommandText = @"
+    SELECT COALESCE(MAX(Ordinal), 0)
+    FROM GroupSetGroups
+    WHERE ParentID = @ParentID AND GroupSetID = @GroupSetID";
+            command.Parameters.AddWithValue("@ParentID", (object?)parentID ?? DBNull.Value);
+            command.Parameters.AddWithValue("@GroupSetID", groupSetID);
+
+            return Convert.ToInt32(command.ExecuteScalar());
+        }
+
+        // Method to add a plugin to the group
+        public void AddPluginID(int pluginID)
+        {
+            if (!_pluginIDs.Contains(pluginID))
+            {
+                _pluginIDs.Add(pluginID);
+                OnPropertyChanged(nameof(PluginIDs));
+            }
+        }
+
+        // Method to remove a plugin from the group
+        public void RemovePluginID(int pluginID)
+        {
+            if (_pluginIDs.Contains(pluginID))
+            {
+                _pluginIDs.Remove(pluginID);
+                OnPropertyChanged(nameof(PluginIDs));
+            }
+        }
+
+        // Method to calculate and set path to root using only ParentID references
+        public void CalculatePathToRoot(Dictionary<int, ModGroup> groupMap)
+        {
+            PathToRoot.Clear();
+            var currentGroupID = this.GroupID;
+
+            while (currentGroupID.HasValue && currentGroupID.Value != 0 && groupMap.ContainsKey(currentGroupID.Value))
+            {
+                PathToRoot.Add(currentGroupID.Value);
+                currentGroupID = groupMap[currentGroupID.Value].ParentID ?? 0;
+            }
+
+            PathToRoot.Reverse(); // Reverse to get path from root to this group
+        }
+
+        // Method to get the parent group from the map using ParentID
+        public ModGroup GetParentGroup(Dictionary<int, ModGroup> groupMap)
+        {
+            return ParentID.HasValue && groupMap.ContainsKey(ParentID.Value)
+                ? groupMap[ParentID.Value]
+                : null;
+        }
+
+        // Override ToString for better debugging and logging
+        public override string ToString()
+        {
+            return $"{GroupName} (ID: {GroupID}, ParentID: {ParentID}, Ordinal: {Ordinal}, GroupSetID: {GroupSetID})";
         }
 
         public string ToYAMLObject()
         {
             var serializer = new SerializerBuilder().Build();
-            var yaml = serializer.Serialize(new
-            {
-                GroupID,
-                GroupName,
-                Description,
-                Ordinal,
-                ParentID
-            });
-
-            return yaml;
-        }
-        
-
-
-        public ModGroup WriteGroup()
-        {
-            var existingMatch = this.FindMatchingModGroup();
-            if (existingMatch != null)
-            {
-                return existingMatch;
-            }
-
-
-            using var connection = DbManager.Instance.GetConnection();
-            
-
-            using var command = new SQLiteCommand(connection);
-
-            if (this.GroupID == 0)
-            {
-                // Check if a group with the same name and description already exists in the GroupSet
-                command.CommandText = "SELECT GroupID FROM ModGroups WHERE GroupName = @GroupName AND Description = @Description AND GroupSetID = @GroupSetID";
-                command.Parameters.AddWithValue("@GroupName", this.GroupName);
-                command.Parameters.AddWithValue("@Description", this.Description);
-                command.Parameters.AddWithValue("@GroupSetID", this.GroupSetID);
-                var existingGroupID = command.ExecuteScalar();
-                if (existingGroupID != null)
-                {
-                    App.LogDebug($"Group already exists: {this.GroupName} (ID: {existingGroupID}) (GroupSet: {GroupSetID}");
-                    this.GroupID = Convert.ToInt32(existingGroupID);
-                    return AggLoadInfo.Instance.Groups.FirstOrDefault(g => g.GroupID == this.GroupID);
-                }
-
-                // Prepare insert command for new group (GroupID is auto-generated)
-                command.CommandText = @"
-                    INSERT INTO ModGroups (Ordinal, Description, GroupName, ParentID, GroupSetID)
-                    VALUES (@Ordinal, @Description, @GroupName, @ParentID, @GroupSetID)
-                    RETURNING GroupID;";  // Use RETURNING clause to get the GroupID
-
-                // Add parameters
-                command.Parameters.AddWithValue("@Ordinal", this.Ordinal);
-                command.Parameters.AddWithValue("@Description", this.Description ?? (object)DBNull.Value);
-                command.Parameters.AddWithValue("@GroupName", this.GroupName ?? (object)DBNull.Value);
-                command.Parameters.AddWithValue("@ParentID", this.ParentID ?? (object)DBNull.Value);
-                command.Parameters.AddWithValue("@GroupSetID", this.GroupSetID ?? (object)DBNull.Value);
-
-                try
-                {
-                    // Execute command and retrieve the newly inserted GroupID
-                    this.GroupID = Convert.ToInt32(command.ExecuteScalar());
-                    App.LogDebug($"New ModGroup inserted into database: GroupID={this.GroupID}, GroupName={this.GroupName}, Description={this.Description}");
-                    AggLoadInfo.Instance.Groups.Add(this);
-                }
-                catch (SQLiteException ex)
-                {
-                    App.LogDebug($"SQLiteException: {ex.Message}, ResultCode: {ex.ResultCode}");
-                    if (ex.ResultCode == SQLiteErrorCode.Constraint)
-                    {
-                        App.LogDebug($"Constraint violation: {ex.Message}");
-                        throw new InvalidOperationException("A group with the same name and description already exists.", ex);
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-            }
-            else
-            {
-                // Prepare update command for existing group
-                command.CommandText = @"
-                    UPDATE ModGroups
-                    SET Ordinal = @Ordinal, Description = COALESCE(@Description, ''), GroupName = COALESCE(@GroupName, ''), ParentID = @ParentID
-                    WHERE GroupID = @GroupID AND GroupSetID =  @GroupSetID";
-
-                // Add parameters
-                command.Parameters.AddWithValue("@GroupID", this.GroupID);
-                command.Parameters.AddWithValue("@Ordinal", this.Ordinal);
-                command.Parameters.AddWithValue("@Description", this.Description ?? (object)DBNull.Value);
-                command.Parameters.AddWithValue("@GroupName", this.GroupName ?? (object)DBNull.Value);
-                command.Parameters.AddWithValue("@ParentID", this.ParentID ?? (object)DBNull.Value);
-                command.Parameters.AddWithValue("@GroupSetID", this.GroupSetID ?? (object)DBNull.Value);
-
-                try
-                {
-                    // Execute update command
-                    command.ExecuteNonQuery();
-                    App.LogDebug($"ModGroup updated in database: {this.ToString()}");
-                    var updatedGroup = LoadModGroup(this.GroupID);
-                    if (updatedGroup != null)
-                    {
-                        // ...
-
-                        var index = AggLoadInfo.Instance.Groups.ToList().FindIndex(g => g.GroupID == this.GroupID);
-                        if (index >= 0)
-                        {
-                            AggLoadInfo.Instance.Groups[index] = updatedGroup;
-                        }
-                        else
-                        {
-                            AggLoadInfo.Instance.Groups.Add(updatedGroup);
-                        }
-                    }
-
-                    return updatedGroup ?? this;
-                }
-                catch (SQLiteException ex)
-                {
-                    App.LogDebug($"SQLiteException: {ex.Message}, ResultCode: {ex.ResultCode}");
-                    if (ex.ResultCode == SQLiteErrorCode.Constraint)
-                    {
-                        App.LogDebug($"Constraint violation: {ex.Message}");
-                        throw new InvalidOperationException("A group with the same name and description already exists.", ex);
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-            }
-
-            return this;
+            return serializer.Serialize(this);
         }
 
         private string NormalizeString(string? input)
@@ -252,120 +596,54 @@ namespace ZO.LoadOrderManager
             return Regex.Replace(input, @"[^a-zA-Z0-9]", "").Trim();
         }
 
-        // Constructor with parent group, description, and group name
-        public ModGroup(ModGroup parentGroup, string description, string groupName)
+        public string ToPluginsString()
         {
-            ParentID = parentGroup.GroupID;
-            Description = description;
-            GroupName = groupName;
-            Ordinal = null; // Ordinal is set to null initially
-        }
-
-        // Parameterless constructor
-        public ModGroup()
-        {
-            // Default values can be set here if needed
-        }
-
-        // Method to load ModGroup by GroupID
-        public static ModGroup? LoadModGroup(int groupId)
-        {
-            // Retrieve the AggLoadInfo singleton instance
-            var aggLoadInfoInstance = ZO.LoadOrderManager.AggLoadInfo.Instance;
-
-            // Search for the group in the Groups collection
-            var modGroup = aggLoadInfoInstance.Groups.FirstOrDefault(g => g.GroupID == groupId);
-            if (modGroup != null)
+            // If pathToRoot is empty or null, indicate no path is available
+            if (PathToRoot == null || PathToRoot.Count == 0)
             {
-                return modGroup;
+                return "No path to root available.";
             }
 
-            // If not found in AggLoadInfo, query the database
-            using var connection = DbManager.Instance.GetConnection();
-            using var command = new SQLiteCommand(connection);
-            command.CommandText = "SELECT * FROM ModGroups WHERE GroupID = @GroupID";
-            command.Parameters.AddWithValue("@GroupID", groupId);
+            var sb = new StringBuilder();
 
-            using var reader = command.ExecuteReader();
-            if (reader.Read())
+            // Iterate through the pathToRoot to build the group hierarchy string
+            for (int i = 0; i < PathToRoot.Count; i++)
             {
-                var newModGroup = new ModGroup
-                {
-                    GroupID = reader.GetInt32(reader.GetOrdinal("GroupID")),
-                    Ordinal = reader.IsDBNull(reader.GetOrdinal("Ordinal")) ? null : reader.GetInt32(reader.GetOrdinal("Ordinal")),
-                    Description = reader.IsDBNull(reader.GetOrdinal("Description")) ? null : reader.GetString(reader.GetOrdinal("Description")),
-                    GroupName = reader.IsDBNull(reader.GetOrdinal("GroupName")) ? null : reader.GetString(reader.GetOrdinal("GroupName")),
-                    ParentID = reader.IsDBNull(reader.GetOrdinal("ParentID")) ? null : reader.GetInt32(reader.GetOrdinal("ParentID")),
-                    Plugins = new ObservableCollection<Plugin>()
-                };
+                var groupID = PathToRoot[i];
 
-                // Load plugins associated with this ModGroup
-                command.CommandText = "SELECT * FROM Plugins WHERE GroupID = @GroupID";
-                command.Parameters.Clear();
-                command.Parameters.AddWithValue("@GroupID", groupId);
+                // Find the group in AggLoadInfo or fall back to database lookup
+                var group = AggLoadInfo.Instance?.Groups.FirstOrDefault(g => g.GroupID == groupID);
 
-                using var pluginReader = command.ExecuteReader();
-                while (pluginReader.Read())
+                if (group == null)
                 {
-                    var plugin = new Plugin
+                    // If the group is not found in memory, attempt to load it from the database
+                    group = LoadModGroup(groupID, this.GroupSetID ?? 0);
+
+                    if (group == null)
                     {
-                        PluginID = pluginReader.GetInt32(pluginReader.GetOrdinal("PluginID")),
-                        PluginName = pluginReader.GetString(pluginReader.GetOrdinal("PluginName")),
-                        Description = pluginReader.GetString(pluginReader.GetOrdinal("Description")),
-                        Achievements = pluginReader.GetBoolean(pluginReader.GetOrdinal("Achievements")),
-                        DTStamp = pluginReader.GetString(pluginReader.GetOrdinal("DTStamp")),
-                        Version = pluginReader.GetString(pluginReader.GetOrdinal("Version")),
-                        BethesdaID = pluginReader.GetString(pluginReader.GetOrdinal("BethesdaID")),
-                        NexusID = pluginReader.GetString(pluginReader.GetOrdinal("NexusID")),
-                        GroupID = pluginReader.GetInt32(pluginReader.GetOrdinal("GroupID")),
-                        GroupOrdinal = pluginReader.GetInt32(pluginReader.GetOrdinal("GroupOrdinal")),
-                        Files = new FileInfo().LoadFilesByPlugin(pluginReader.GetInt32(pluginReader.GetOrdinal("PluginID")))
-                    };
-
-                    newModGroup.Plugins.Add(plugin);
-                }
-
-                return newModGroup;
-            }
-            return null;
-        }
-
-        public void ChangeGroup(int newParentId)
-        {
-            // Disallow reserved groups as parents
-            if (newParentId < 0)
-            {
-                throw new InvalidOperationException("Cannot change to a reserved group as parent.");
-            }
-
-            // Retrieve the AggLoadInfo singleton instance
-            var aggLoadInfoInstance = AggLoadInfo.Instance;
-
-            // Step 1: Find all siblings with an Ordinal greater than the current Ordinal and decrement their Ordinal
-            var currentParentGroup = aggLoadInfoInstance.Groups.FirstOrDefault(g => g.GroupID == this.ParentID);
-            if (currentParentGroup != null)
-            {
-                var siblings = currentParentGroup.Plugins?.Where(p => p.GroupOrdinal > this.Ordinal).ToList();
-                if (siblings != null)
-                {
-                    foreach (var sibling in siblings)
-                    {
-                        sibling.GroupOrdinal--;
+                        // If the group still cannot be found, skip this ID
+                        continue;
                     }
                 }
+
+                // Calculate the indentation based on depth in hierarchy
+                string indent = new string('#', i + 3); // #### for root children, ##### for grandchildren, etc.
+
+                // Build the line with group details
+                if (string.IsNullOrEmpty(group.Description))
+                {
+                    // If no description, just use the group name
+                    sb.AppendLine($"{indent} {group.GroupName}");
+                }
+                else
+                {
+                    // Include group name and description
+                    sb.AppendLine($"{indent} {group.GroupName} @@ {group.Description}");
+                }
             }
 
-            // Step 2: Find the maximum Ordinal value among the new parent's children
-            int maxOrdinal = 0;
-            var targetGroup = aggLoadInfoInstance.Groups.FirstOrDefault(g => g.GroupID == newParentId);
-            if (targetGroup != null)
-            {
-                maxOrdinal = targetGroup.Plugins?.Max(p => p.GroupOrdinal) ?? 0;
-            }
-
-            // Step 3: Update the ParentID and set the Ordinal to the maximum Ordinal value plus one
-            this.ParentID = newParentId;
-            this.Ordinal = maxOrdinal + 1;
+            // Return the complete string representation of the group hierarchy
+            return sb.ToString();
         }
 
         public static List<ModGroup> LoadModGroupsByGroupSet(int groupSetID)
@@ -374,53 +652,95 @@ namespace ZO.LoadOrderManager
 
             using var connection = DbManager.Instance.GetConnection();
             using var command = new SQLiteCommand(connection);
-            command.CommandText = "SELECT * FROM ModGroups WHERE GroupSetID = @GroupSetID";
+            command.CommandText = @"
+                SELECT GroupID
+                FROM GroupSetGroups
+                WHERE GroupSetID = @GroupSetID
+                ORDER BY ParentID, Ordinal";
             command.Parameters.AddWithValue("@GroupSetID", groupSetID);
 
             using var reader = command.ExecuteReader();
             while (reader.Read())
             {
-                var modGroup = new ModGroup
+                int groupId = reader.GetInt32(reader.GetOrdinal("GroupID"));
+                var modGroup = LoadModGroup(groupId, groupSetID);
+                if (modGroup != null)
                 {
-                    GroupID = reader.GetInt32(reader.GetOrdinal("GroupID")),
-                    Ordinal = reader.IsDBNull(reader.GetOrdinal("Ordinal")) ? null : reader.GetInt32(reader.GetOrdinal("Ordinal")),
-                    Description = reader.IsDBNull(reader.GetOrdinal("Description")) ? null : reader.GetString(reader.GetOrdinal("Description")),
-                    GroupName = reader.IsDBNull(reader.GetOrdinal("GroupName")) ? null : reader.GetString(reader.GetOrdinal("GroupName")),
-                    ParentID = reader.IsDBNull(reader.GetOrdinal("ParentID")) ? null : reader.GetInt32(reader.GetOrdinal("ParentID")),
-                    Plugins = new ObservableCollection<Plugin>()
-                };
-
-                // Load plugins associated with this ModGroup
-                command.CommandText = "SELECT * FROM Plugins WHERE GroupID = @GroupID";
-                command.Parameters.Clear();
-                command.Parameters.AddWithValue("@GroupID", modGroup.GroupID);
-
-                using var pluginReader = command.ExecuteReader();
-                while (pluginReader.Read())
-                {
-                    var plugin = new Plugin
-                    {
-                        PluginID = pluginReader.GetInt32(pluginReader.GetOrdinal("PluginID")),
-                        PluginName = pluginReader.GetString(pluginReader.GetOrdinal("PluginName")),
-                        Description = pluginReader.GetString(pluginReader.GetOrdinal("Description")),
-                        Achievements = pluginReader.GetBoolean(pluginReader.GetOrdinal("Achievements")),
-                        DTStamp = pluginReader.GetString(pluginReader.GetOrdinal("DTStamp")),
-                        Version = pluginReader.GetString(pluginReader.GetOrdinal("Version")),
-                        BethesdaID = pluginReader.GetString(pluginReader.GetOrdinal("BethesdaID")),
-                        NexusID = pluginReader.GetString(pluginReader.GetOrdinal("NexusID")),
-                        GroupID = pluginReader.GetInt32(pluginReader.GetOrdinal("GroupID")),
-                        GroupOrdinal = pluginReader.GetInt32(pluginReader.GetOrdinal("GroupOrdinal")),
-                        Files = new FileInfo().LoadFilesByPlugin(pluginReader.GetInt32(pluginReader.GetOrdinal("PluginID")))
-                    };
-
-                    modGroup.Plugins.Add(plugin);
+                    modGroups.Add(modGroup);
                 }
-
-                modGroups.Add(modGroup);
             }
 
             return modGroups;
         }
+        private void SyncPluginsWithDatabase(SQLiteCommand command)
+        {
+            // Step 3: Sync Plugins in GroupSetPlugins Table
+
+            // Step 3.1: Retrieve existing plugins in the database for this group and group set
+            var pluginIDsInDb = new HashSet<int>();
+            command.CommandText = @"
+        SELECT PluginID
+        FROM GroupSetPlugins
+        WHERE GroupID = @GroupID AND GroupSetID = @GroupSetID;";
+            command.Parameters.Clear();
+            command.Parameters.AddWithValue("@GroupID", this.GroupID);
+            command.Parameters.AddWithValue("@GroupSetID", this.GroupSetID);
+
+            using (var reader = command.ExecuteReader())
+            {
+                while (reader.Read())
+                {
+                    pluginIDsInDb.Add(reader.GetInt32(0)); // Store existing PluginIDs in the database
+                }
+            }
+
+            // Step 3.2: Add or update plugins in the database based on the local collection
+            foreach (var plugin in Plugins)
+            {
+                if (pluginIDsInDb.Contains(plugin.PluginID))
+                {
+                    // Plugin already exists in the database, update its ordinal
+                    command.CommandText = @"
+                UPDATE GroupSetPlugins
+                SET Ordinal = @Ordinal
+                WHERE GroupID = @GroupID AND GroupSetID = @GroupSetID AND PluginID = @PluginID;";
+                }
+                else
+                {
+                    // Plugin does not exist, insert it
+                    command.CommandText = @"
+                INSERT INTO GroupSetPlugins (GroupSetID, GroupID, PluginID, Ordinal)
+                VALUES (@GroupSetID, @GroupID, @PluginID, @Ordinal);";
+                }
+
+                command.Parameters.Clear();
+                command.Parameters.AddWithValue("@GroupSetID", this.GroupSetID);
+                command.Parameters.AddWithValue("@GroupID", this.GroupID);
+                command.Parameters.AddWithValue("@PluginID", plugin.PluginID);
+                command.Parameters.AddWithValue("@Ordinal", plugin.GroupOrdinal ?? 0);
+
+                command.ExecuteNonQuery();
+            }
+
+            // Step 3.3: Remove any plugins from the database that are no longer in the local collection
+            foreach (var pluginID in pluginIDsInDb)
+            {
+                if (!Plugins.Any(p => p.PluginID == pluginID))
+                {
+                    command.CommandText = @"
+                DELETE FROM GroupSetPlugins
+                WHERE GroupSetID = @GroupSetID AND GroupID = @GroupID AND PluginID = @PluginID;";
+
+                    command.Parameters.Clear();
+                    command.Parameters.AddWithValue("@GroupSetID", this.GroupSetID);
+                    command.Parameters.AddWithValue("@GroupID", this.GroupID);
+                    command.Parameters.AddWithValue("@PluginID", pluginID);
+
+                    command.ExecuteNonQuery();
+                }
+            }
+        }
+
 
         public ModGroup? FindMatchingModGroup()
         {
@@ -467,21 +787,20 @@ namespace ZO.LoadOrderManager
             return null;
         }
 
-
     }
 
-    public class ModGroupViewModel : INotifyPropertyChanged
-    {
-        private ModGroup _modGroup;
-
-        public ModGroupViewModel(ModGroup modGroup)
+        public class ModGroupViewModel : INotifyPropertyChanged
         {
-            _modGroup = modGroup;
-        }
+            private ModGroup _modGroup;
+
+            public ModGroupViewModel(ModGroup modGroup)
+            {
+                _modGroup = modGroup ?? throw new ArgumentNullException(nameof(modGroup));
+            }
 
         public int GroupID
         {
-            get => _modGroup.GroupID;
+            get => _modGroup.GroupID ?? 0;
             set
             {
                 if (_modGroup.GroupID != value)
@@ -492,28 +811,101 @@ namespace ZO.LoadOrderManager
             }
         }
 
-        public string GroupName
-        {
-            get => _modGroup.GroupName ?? string.Empty;
-            set
+            public string GroupName
             {
-                if (_modGroup.GroupName != value)
+                get => _modGroup.GroupName;
+                set
                 {
-                    _modGroup.GroupName = value;
-                    OnPropertyChanged();
+                    if (_modGroup.GroupName != value)
+                    {
+                        _modGroup.GroupName = value;
+                        OnPropertyChanged();
+                    }
                 }
+            }
+
+            public string Description
+            {
+                get => _modGroup.Description;
+                set
+                {
+                    if (_modGroup.Description != value)
+                    {
+                        _modGroup.Description = value;
+                        OnPropertyChanged();
+                    }
+                }
+            }
+
+            public int? ParentID
+            {
+                get => _modGroup.ParentID;
+                set
+                {
+                    if (_modGroup.ParentID != value)
+                    {
+                        _modGroup.ParentID = value;
+                        OnPropertyChanged();
+                    }
+                }
+            }
+
+            public int? Ordinal
+            {
+                get => _modGroup.Ordinal;
+                set
+                {
+                    if (_modGroup.Ordinal != value)
+                    {
+                        _modGroup.Ordinal = value;
+                        OnPropertyChanged();
+                    }
+                }
+            }
+
+            public int? GroupSetID
+            {
+                get => _modGroup.GroupSetID;
+                set
+                {
+                    if (_modGroup.GroupSetID != value)
+                    {
+                        _modGroup.GroupSetID = value;
+                        OnPropertyChanged();
+                    }
+                }
+            }
+
+            // Expose the PluginIDs property as an ObservableCollection for data binding
+            public ObservableCollection<int> PluginIDs => new ObservableCollection<int>(_modGroup.PluginIDs);
+
+            // Commands for ViewModel actions
+            public ICommand SaveCommand => new RelayCommand<object?>(SaveModGroup);
+            public ICommand DeleteCommand => new RelayCommand<object?>(DeleteModGroup);
+
+            private void SaveModGroup(object? parameter)
+            {
+                _modGroup.WriteGroup();
+                OnPropertyChanged(nameof(GroupName));
+                OnPropertyChanged(nameof(Description));
+                OnPropertyChanged(nameof(ParentID));
+                OnPropertyChanged(nameof(Ordinal));
+                OnPropertyChanged(nameof(GroupSetID));
+            }
+
+            private void DeleteModGroup(object? parameter)
+            {
+                // Implement deletion logic as per your requirements
+            }
+
+            public ModGroup ModGroup => _modGroup;
+
+            public event PropertyChangedEventHandler? PropertyChanged = delegate { };
+
+            protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+            {
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
             }
         }
 
-        public ObservableCollection<Plugin> Plugins => _modGroup.Plugins ?? new ObservableCollection<Plugin>();
-
-        public ModGroup ModGroup => _modGroup;
-
-        public event PropertyChangedEventHandler? PropertyChanged = delegate { };
-
-        protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
-    }
 }

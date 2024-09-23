@@ -47,13 +47,14 @@ namespace ZO.LoadOrderManager
                         throw new InvalidOperationException("FileManager: Failed to load singleton GroupSet from the database.");
                     }
 
-                    var singletonLoadOut = AggLoadInfo.Instance.LoadOuts.FirstOrDefault(lo => lo.ProfileID == 2);
+                    var singletonLoadOut = LoadOut.Load(2);
                     if (singletonLoadOut == null)
                     {
                         throw new InvalidOperationException("FileManager: Failed to load singleton LoadOut from the database.");
                     }
 
-                    AggLoadInfo.Instance.ActiveLoadOutID = 2;
+                    AggLoadInfo.Instance.ActiveLoadOut = singletonLoadOut;
+                    AggLoadInfo.Instance.ActiveGroupSet = singletonGroupSet;
                     App.LogDebug("FileManager: Singleton GroupSet and LoadOut retrieved successfully.");
 
                     // Load data from the database into the AggLoadInfo instance
@@ -89,11 +90,11 @@ namespace ZO.LoadOrderManager
 
         public static void MarkLoadOutComplete(AggLoadInfo aggLoadInfo)
         {
-            var activeLoadOut = aggLoadInfo.LoadOuts.FirstOrDefault(loadOut => loadOut.ProfileID == aggLoadInfo.ActiveLoadOutID);
-            if (activeLoadOut != null)
+            var activeGroupSet = aggLoadInfo.ActiveGroupSet;
+            if (activeGroupSet != null)
             {
-                activeLoadOut.GroupSet.GroupSetFlags |= GroupFlags.FilesLoaded;
-                activeLoadOut.GroupSet.GroupSetFlags &= ~GroupFlags.ReadyToLoad;
+                activeGroupSet.GroupSetFlags |= GroupFlags.FilesLoaded;
+                activeGroupSet.GroupSetFlags &= ~GroupFlags.ReadyToLoad;
             }
         }
 

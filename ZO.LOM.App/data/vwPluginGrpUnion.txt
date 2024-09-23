@@ -1,0 +1,41 @@
+CREATE VIEW vwPluginGrpUnion AS
+    SELECT COALESCE(p.PluginID, NULL) AS PluginID,
+           COALESCE(p.PluginName, NULL) AS PluginName,
+           COALESCE(p.Description, NULL) AS Description,
+           COALESCE(p.Achievements, NULL) AS Achievements,
+           COALESCE(p.DTStamp, NULL) AS DTStamp,
+           COALESCE(p.Version, NULL) AS Version,
+           COALESCE(p.State, NULL) AS State,
+           gsg.GroupID AS GroupID,
+           g.GroupName AS GroupName,
+           g.Description AS GroupDescription,
+           gsg.ParentID,
+           gsg.Ordinal AS GroupOrdinal,
+           COALESCE(pp.ProfileID, NULL) AS ProfileID,
+           COALESCE(e.BethesdaID, NULL) AS BethesdaID,
+           COALESCE(e.NexusID, NULL) AS NexusID,
+           gsg.GroupSetID,
+           gs.GroupSetName,
+           CASE WHEN pp.ProfileID IS NOT NULL THEN 1 ELSE 0 END AS IsEnabled-- Check if Plugin is enabled for the profile
+      FROM GroupSets gs
+           LEFT JOIN
+           GroupSetGroups gsg ON gs.GroupSetID = gsg.GroupSetID
+           LEFT JOIN
+           ModGroups g ON gsg.GroupID = g.GroupID
+           LEFT JOIN
+           GroupSetPlugins gsp ON gsg.GroupID = gsp.GroupID AND 
+                                  gsg.GroupSetID = gsp.GroupSetID
+           LEFT JOIN
+           Plugins p ON gsp.PluginID = p.PluginID
+           LEFT JOIN
+           ProfilePlugins pp ON p.PluginID = pp.PluginID AND 
+                                pp.ProfileID = 1-- Example ProfileID filter
+           LEFT JOIN
+           LoadOutProfiles l ON gsg.GroupSetID = l.GroupSetID
+           LEFT JOIN
+           ExternalIDs e ON p.PluginID = e.PluginID
+     ORDER BY gs.GroupSetID,-- Group by GroupSetID
+              l.ProfileID,
+              gsg.ParentID,
+              gsg.Ordinal,-- Order by Group Ordinal
+              p.PluginID/* Order by Plugin ID; */;
