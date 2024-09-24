@@ -7,7 +7,7 @@ namespace ZO.LoadOrderManager
     {
         private static readonly HashSet<string> InitializingComponents = new HashSet<string>();
         private static readonly object Lock = new object();
-        private static Action<int, string>? _progressCallback;
+        private static Action<long, string>? _progressCallback;
 
         public static void StartInitialization(string componentName)
         {
@@ -39,12 +39,12 @@ namespace ZO.LoadOrderManager
             }
         }
 
-        public static void SetProgressCallback(Action<int, string> progressCallback)
+        public static void SetProgressCallback(Action<long, string> progressCallback)
         {
             _progressCallback = progressCallback;
         }
 
-        public static void ReportProgress(int progress, string message)
+        public static void ReportProgress(long progress, string message)
         {
             // Ensure the callback runs on the UI thread
             Application.Current.Dispatcher.Invoke(() =>

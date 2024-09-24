@@ -11,14 +11,14 @@ namespace ZO.LoadOrderManager
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            if (value is int groupId)
+            if (value is long groupID)
             {
                 // Ensure reserved negative group IDs are always at the bottom
-                if (groupId < 0)
+                if (groupID < 0)
                 {
-                    return int.MaxValue + groupId;
+                    return long.MaxValue + groupID;
                 }
-                return groupId;
+                return groupID;
             }
             return value;
         }
@@ -31,8 +31,8 @@ namespace ZO.LoadOrderManager
 
     public class GroupItemStyleSelector : StyleSelector
     {
-        public Style GroupStyle { get; set; }
-        public Style DefaultStyle { get; set; }
+        public Style GroupStyle { get; set; } = null!;
+        public Style DefaultStyle { get; set; } = null!;
 
         public override Style SelectStyle(object item, DependencyObject container)
         {
@@ -63,7 +63,6 @@ namespace ZO.LoadOrderManager
             return "zip"; // Default to zip if no match
         }
 
-
         public object? ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         {
             if (value is string format)
@@ -72,7 +71,6 @@ namespace ZO.LoadOrderManager
             }
             return null; // or return a default if needed
         }
-
     }
 
     public class BethesdaUrlConverter : IValueConverter
@@ -111,7 +109,7 @@ namespace ZO.LoadOrderManager
                     var uri = new Uri(url);
                     return uri.Segments.Last().TrimEnd('/');
                 }
-                else if (int.TryParse(url, out _))
+                else if (long.TryParse(url, out _))
                 {
                     return $"https://www.nexusmods.com/starfield/mods/{url}";
                 }

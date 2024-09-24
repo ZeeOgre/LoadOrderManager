@@ -57,18 +57,19 @@ namespace ZO.LoadOrderManager
                     AggLoadInfo.Instance.ActiveGroupSet = singletonGroupSet;
                     App.LogDebug("FileManager: Singleton GroupSet and LoadOut retrieved successfully.");
 
-                    // Load data from the database into the AggLoadInfo instance
+                    // Load data from the database INTO the AggLoadInfo instance
                     App.LogDebug("FileManager: Attempting to load additional data from the database...");
                     AggLoadInfo.Instance.InitFromDatabase();
                     App.LogDebug("FileManager: Database load completed.");
 
                     // Update the flags to indicate the singleton is ready to load
                     App.LogDebug("FileManager: Updating singleton LoadOut flags to ReadyToLoad...");
-                    singletonGroupSet.GroupSetFlags = GroupFlags.ReadyToLoad;
+                    singletonGroupSet.GroupSetFlags |= GroupFlags.ReadyToLoad;
                     singletonGroupSet.SaveGroupSet();
 
                     App.LogDebug("FileManager: Singleton LoadOut is now ready to load. Proceeding with initialization...");
                     FileManager.ParsePluginsTxt(AggLoadInfo.Instance, PluginsFile);
+
                     FileManager.ParseContentCatalogTxt();
                     FileManager.ScanGameDirectoryForStrays();
                     FileManager.MarkLoadOutComplete(AggLoadInfo.Instance);
@@ -98,7 +99,7 @@ namespace ZO.LoadOrderManager
             }
         }
 
-        public static List<ZO.LoadOrderManager.FileInfo> LoadFilesByPlugin(int pluginID, SQLiteConnection connection)
+        public static List<ZO.LoadOrderManager.FileInfo> LoadFilesByPlugin(long pluginID, SQLiteConnection connection)
         {
             var files = new List<ZO.LoadOrderManager.FileInfo>();
 
@@ -110,12 +111,12 @@ namespace ZO.LoadOrderManager
                 {
                     var file = new ZO.LoadOrderManager.FileInfo
                     {
-                        FileID = reader.GetInt32(reader.GetOrdinal("FileID")),
+                        FileID = reader.GetInt64(reader.GetOrdinal("FileID")),
                         Filename = reader.GetString(reader.GetOrdinal("Filename")),
                         RelativePath = reader.IsDBNull(reader.GetOrdinal("RelativePath")) ? null : reader.GetString(reader.GetOrdinal("RelativePath")),
                         DTStamp = reader.GetString(reader.GetOrdinal("DTStamp")),
                         HASH = reader.IsDBNull(reader.GetOrdinal("HASH")) ? null : reader.GetString(reader.GetOrdinal("HASH")),
-                        IsArchive = reader.GetInt32(reader.GetOrdinal("IsArchive")) == 1
+                        IsArchive = reader.GetInt64(reader.GetOrdinal("IsArchive")) == 1
                     };
                     files.Add(file);
                 }

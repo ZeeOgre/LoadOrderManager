@@ -18,11 +18,14 @@ namespace ZO.LoadOrderManager
         private bool isSaved;
         private Timer cooldownTimer;
         private object? _selectedItem;
-        private int? _selectedProfileId;
+        private long? _selectedProfileId;
         private string _statusMessage;
         private string _searchText;
 
         public event PropertyChangedEventHandler? PropertyChanged;
+
+
+
 
         public object? SelectedItem
         {
@@ -37,7 +40,7 @@ namespace ZO.LoadOrderManager
             }
         }
 
-        public int? SelectedProfileId
+        public long? SelectedProfileId
         {
             get => _selectedProfileId;
             set
@@ -166,19 +169,62 @@ namespace ZO.LoadOrderManager
             {
                 if (AggLoadInfo.Instance != null)
                 {
+                    // Load initial collections from AggLoadInfo
                     Groups = new ObservableCollection<ModGroup>(AggLoadInfo.Instance.Groups);
                     Plugins = new ObservableCollection<Plugin>(AggLoadInfo.Instance.Plugins);
                     LoadOuts = new ObservableCollection<LoadOut>(AggLoadInfo.Instance.LoadOuts);
 
+                    // Clear existing items
                     Items.Clear();
+
+                    // Check if there is a LoadOut available
                     SelectedLoadOut = LoadOuts.FirstOrDefault();
 
+                    if (SelectedLoadOut == null)
+                    {
+                        // Prompt the user to create a new LoadOut
+                        var result = MessageBox.Show(
+                            "No LoadOut found. Would you like to create a new LoadOut?",
+                            "Create New LoadOut",
+                            MessageBoxButton.YesNo,
+                            MessageBoxImage.Question);
+
+                        if (result == MessageBoxResult.Yes)
+                        {
+                            // Create a new LoadOut if the user agrees
+                            var newLoadOutName = "New LoadOut";
+                            var newLoadOut = new LoadOut
+                            {
+                                Name = newLoadOutName,
+                                ProfileID = GenerateNewProfileID(), // Generate a new profile ID
+                                enabledPlugins = new HashSet<long>()
+                            };
+
+                            LoadOuts.Add(newLoadOut);
+                            AggLoadInfo.Instance.LoadOuts.Add(newLoadOut); // Add to AggLoadInfo
+
+                            SelectedLoadOut = newLoadOut;
+                            StatusMessage = $"Created new LoadOut: {newLoadOut.Name}";
+                        }
+                        else
+                        {
+                            StatusMessage = "No LoadOut selected. Please create a new LoadOut.";
+                            return;
+                        }
+                    }
+
+                    // Use the enabledPlugins hashset directly from SelectedLoadOut
+                    var enabledPluginIds = SelectedLoadOut.enabledPlugins;
+
+                    // Iterate over each group and create the group view models
                     foreach (var group in Groups)
                     {
                         var groupViewModel = CreateGroupViewModel(group);
+
+                        // Iterate over each plugin in the group and determine if it is enabled
                         foreach (var plugin in group.Plugins ?? Enumerable.Empty<Plugin>())
                         {
-                            var isEnabled = SelectedLoadOut.Plugins.Any(pvm => pvm.Plugin.PluginID == plugin.PluginID);
+                            var isEnabled = enabledPluginIds.Contains(plugin.PluginID); // Simplified check
                             groupViewModel.Children.Add(new LoadOrderItemViewModel
                             {
                                 PluginData = plugin,
@@ -186,16 +232,33 @@ namespace ZO.LoadOrderManager
                                 EntityType = EntityType.Plugin
                             });
                         }
+
+                        // Add the group view model to the Items collection
                         Items.Add(groupViewModel);
                     }
+
+                    // Update the status message
+                    StatusMessage = $"Loaded plugins for profile: {SelectedLoadOut.Name}";
+                    UpdateStatus(StatusMessage);
                 }
             }
             finally
             {
+                // Ensure initialization is marked as complete
                 InitializationManager.EndInitialization(nameof(LoadOrderWindowViewModel));
             }
         }
-    
+
+        // Helper method to generate a new ProfileID
+        private long GenerateNewProfileID()
+        {
+            // Logic to generate a unique ProfileID, for example, incrementing the maximum existing ID
+            return LoadOuts.Any() ? LoadOuts.Max(lo => lo.ProfileID) + 1 : 1;
+        }
+
+
+
+
 
         private void UpdateStatusMessage()
         {
@@ -260,18 +323,37 @@ namespace ZO.LoadOrderManager
 
             if (SelectedLoadOut != null)
             {
-                Plugins = new ObservableCollection<Plugin>(SelectedLoadOut.Plugins.Select(pvm => pvm.Plugin));
+                // Directly using the enabledPlugins hashset from SelectedLoadOut
+                var enabledPluginIds = SelectedLoadOut.enabledPlugins;
 
                 Items.Clear();
                 foreach (var group in Groups)
                 {
-                    Items.Add(CreateGroupViewModel(group));
+                    var groupViewModel = CreateGroupViewModel(group);
+
+                    foreach (var plugin in group.Plugins ?? Enumerable.Empty<Plugin>())
+                    {
+                        var isEnabled = enabledPluginIds.Contains(plugin.PluginID); // Simplified check
+                        groupViewModel.Children.Add(new LoadOrderItemViewModel
+                        {
+                            PluginData = plugin,
+                            IsEnabled = isEnabled,
+                            EntityType = EntityType.Plugin
+                        });
+                    }
+                    Items.Add(groupViewModel);
                 }
 
                 StatusMessage = $"Loaded plugins for profile: {SelectedLoadOut.Name}";
                 UpdateStatus(StatusMessage);
             }
+            else
+            {
+                UpdateStatus("No LoadOut selected.");
+            }
         }
+
+
 
         private bool CanExecuteSave()
         {
@@ -305,13 +387,13 @@ namespace ZO.LoadOrderManager
                 var group = Groups.FirstOrDefault(g => g.Plugins != null && g.Plugins.Contains(selectedPlugin));
                 if (group != null)
                 {
-                    int index = group.Plugins.IndexOf(selectedPlugin);
+                    long index = group.Plugins.IndexOf(selectedPlugin);
                     return index > 0;
                 }
             }
             else if (SelectedItem is ModGroup selectedGroup)
             {
-                int index = Groups.IndexOf(selectedGroup);
+                long index = Groups.IndexOf(selectedGroup);
                 return index > 0;
             }
             return false;
@@ -329,13 +411,13 @@ namespace ZO.LoadOrderManager
                 var group = Groups.FirstOrDefault(g => g.Plugins != null && g.Plugins.Contains(selectedPlugin));
                 if (group != null)
                 {
-                    int index = group.Plugins.IndexOf(selectedPlugin);
+                    long index = group.Plugins.IndexOf(selectedPlugin);
                     return index < group.Plugins.Count - 1;
                 }
             }
             else if (SelectedItem is ModGroup selectedGroup)
             {
-                int index = Groups.IndexOf(selectedGroup);
+                long index = Groups.IndexOf(selectedGroup);
                 return index < Groups.Count - 1;
             }
             return false;
@@ -352,7 +434,7 @@ namespace ZO.LoadOrderManager
                     var previousPlugin = group.Plugins[index - 1];
 
                     // Swap ordinals
-                    int tempOrdinal = selectedPlugin.GroupOrdinal ?? 0;
+                    long tempOrdinal = selectedPlugin.GroupOrdinal ?? 0;
                     selectedPlugin.GroupOrdinal = previousPlugin.GroupOrdinal;
                     previousPlugin.GroupOrdinal = tempOrdinal;
 
@@ -366,7 +448,7 @@ namespace ZO.LoadOrderManager
                 var previousGroup = Groups[index - 1];
 
                 // Swap ordinals
-                int tempOrdinal = selectedGroup.Ordinal ?? 0;
+                long tempOrdinal = selectedGroup.Ordinal ?? 0;
                 selectedGroup.Ordinal = previousGroup.Ordinal;
                 previousGroup.Ordinal = tempOrdinal;
 
@@ -387,7 +469,7 @@ namespace ZO.LoadOrderManager
                     var nextPlugin = group.Plugins[index + 1];
 
                     // Swap ordinals
-                    int tempOrdinal = selectedPlugin.GroupOrdinal ?? 0;
+                    long tempOrdinal = selectedPlugin.GroupOrdinal ?? 0;
                     selectedPlugin.GroupOrdinal = nextPlugin.GroupOrdinal;
                     nextPlugin.GroupOrdinal = tempOrdinal;
 
@@ -402,7 +484,7 @@ namespace ZO.LoadOrderManager
                 var nextGroup = Groups[index + 1];
 
                 // Swap ordinals
-                int tempOrdinal = selectedGroup.Ordinal ?? 0;
+                long tempOrdinal = selectedGroup.Ordinal ?? 0;
                 selectedGroup.Ordinal = nextGroup.Ordinal;
                 nextGroup.Ordinal = tempOrdinal;
 
@@ -428,7 +510,7 @@ namespace ZO.LoadOrderManager
             }
 
             // Perform the import
-            FileManager.;
+            FileManager.ParsePluginsTxt(AggLoadInfo.Instance, pluginsFile);
 
             // Update the UI or any other necessary components
             RefreshData();
@@ -720,11 +802,11 @@ namespace ZO.LoadOrderManager
         {
             if (SelectedItem is ModGroup modGroup)
             {
-                modGroup.ChangeGroup((int)parameter); // Cast parameter to int
+                modGroup.ChangeGroup((long)parameter); // Cast parameter to long
             }
             else if (SelectedItem is Plugin plugin)
             {
-                plugin.ChangeGroup((int)parameter); // Cast parameter to int
+                plugin.ChangeGroup((long)parameter); // Cast parameter to long
             }
         }
 
@@ -736,11 +818,11 @@ namespace ZO.LoadOrderManager
             {
                 if (pluginViewModel.IsEnabled)
                 {
-                    SelectedLoadOut.Plugins.Remove(pluginViewModel);
+                    LoadOut.SetPluginEnabled(SelectedLoadOut.ProfileID, pluginViewModel.pluginID, false);
                 }
                 else
                 {
-                    SelectedLoadOut.Plugins.Add(pluginViewModel);
+                    LoadOut.SetPluginEnabled(SelectedLoadOut.ProfileID, pluginViewModel.pluginID, true);
                 }
 
                 pluginViewModel.IsEnabled = !pluginViewModel.IsEnabled;
@@ -750,6 +832,7 @@ namespace ZO.LoadOrderManager
                 UpdateStatus("No loadout or plugin selected.");
             }
         }
+
 
         private bool CanExecuteToggleEnable(object parameter)
         {

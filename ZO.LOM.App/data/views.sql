@@ -11,7 +11,7 @@ CREATE TRIGGER trgInsteadOfInsert_vwLoadOuts
     INSTEAD OF INSERT
             ON vwLoadOuts
       FOR EACH ROW
-BEGIN-- Insert into LoadOutProfiles table
+BEGIN-- Insert INTO LoadOutProfiles table
     INSERT INTO LoadOutProfiles (
                                     ProfileID,
                                     ProfileName,
@@ -26,7 +26,7 @@ BEGIN-- Insert into LoadOutProfiles table
                                     ProfileID
                                 )
                                 DO UPDATE SET ProfileName = excluded.ProfileName,
-                                GroupSetID = excluded.GroupSetID;-- Insert into Plugins table
+                                GroupSetID = excluded.GroupSetID;-- Insert INTO Plugins table
     INSERT INTO Plugins (
                             PluginID,
                             PluginName,
@@ -53,7 +53,7 @@ BEGIN-- Insert into LoadOutProfiles table
                         Achievements = excluded.Achievements,
                         DTStamp = excluded.DTStamp,
                         Version = excluded.Version,
-                        State = excluded.State;-- Insert into ProfilePlugins table
+                        State = excluded.State;-- Insert INTO ProfilePlugins table
     INSERT INTO ProfilePlugins (
                                    ProfileID,
                                    PluginID
@@ -66,7 +66,7 @@ BEGIN-- Insert into LoadOutProfiles table
                                    ProfileID,
                                    PluginID
                                )
-                               DO NOTHING;-- Insert into GroupSetPlugins table
+                               DO NOTHING;-- Insert INTO GroupSetPlugins table
     INSERT INTO GroupSetPlugins (
                                     GroupSetID,
                                     GroupID,
@@ -84,7 +84,7 @@ BEGIN-- Insert into LoadOutProfiles table
                                     GroupID,
                                     PluginID
                                 )
-                                DO UPDATE SET Ordinal = excluded.Ordinal;-- Insert into ExternalIDs table
+                                DO UPDATE SET Ordinal = excluded.Ordinal;-- Insert INTO ExternalIDs table
     INSERT INTO ExternalIDs (
                                 PluginID,
                                 BethesdaID,
@@ -108,7 +108,7 @@ CREATE TRIGGER trgInsteadOfInsert_vwModGroups
     INSTEAD OF INSERT
             ON vwModGroups
       FOR EACH ROW
-BEGIN-- Insert into ModGroups table
+BEGIN-- Insert INTO ModGroups table
     INSERT INTO ModGroups (
                               GroupID,
                               Ordinal,
@@ -129,7 +129,7 @@ BEGIN-- Insert into ModGroups table
                           DO UPDATE SET Ordinal = COALESCE(excluded.Ordinal, ModGroups.Ordinal),
                           GroupName = COALESCE(excluded.GroupName, ModGroups.GroupName),
                           Description = COALESCE(excluded.Description, ModGroups.Description),
-                          ParentID = COALESCE(excluded.ParentID, ModGroups.ParentID);-- Insert into GroupSetPlugins table
+                          ParentID = COALESCE(excluded.ParentID, ModGroups.ParentID);-- Insert INTO GroupSetPlugins table
     INSERT INTO GroupSetPlugins (
                                     GroupSetID,
                                     GroupID,
@@ -147,7 +147,7 @@ BEGIN-- Insert into ModGroups table
                                     PluginID
                                 )
                                 DO UPDATE SET GroupSetID = COALESCE(excluded.GroupSetID, GroupSetPlugins.GroupSetID),
-                                Ordinal = COALESCE(excluded.Ordinal, GroupSetPlugins.Ordinal);-- Insert into Plugins table
+                                Ordinal = COALESCE(excluded.Ordinal, GroupSetPlugins.Ordinal);-- Insert INTO Plugins table
     INSERT INTO Plugins (
                             PluginID,
                             PluginName,
@@ -174,7 +174,7 @@ BEGIN-- Insert into ModGroups table
                         Achievements = COALESCE(excluded.Achievements, Plugins.Achievements),
                         DTStamp = COALESCE(excluded.DTStamp, Plugins.DTStamp),
                         Version = COALESCE(excluded.Version, Plugins.Version),
-                        State = COALESCE(excluded.State, Plugins.State);-- Insert into ExternalIDs table
+                        State = COALESCE(excluded.State, Plugins.State);-- Insert INTO ExternalIDs table
     INSERT INTO ExternalIDs (
                                 PluginID,
                                 BethesdaID,
@@ -198,7 +198,7 @@ CREATE TRIGGER trgInsteadOfInsert_vwPluginFiles
     INSTEAD OF INSERT
             ON vwPluginFiles
       FOR EACH ROW
-BEGIN-- Insert into Plugins table
+BEGIN-- Insert INTO Plugins table
     INSERT INTO Plugins (
                             PluginID,
                             PluginName
@@ -210,7 +210,7 @@ BEGIN-- Insert into Plugins table
                         ON CONFLICT (
                             PluginID
                         )
-                        DO UPDATE SET PluginName = COALESCE(excluded.PluginName, Plugins.PluginName);-- Insert into FileInfo table
+                        DO UPDATE SET PluginName = COALESCE(excluded.PluginName, Plugins.PluginName);-- Insert INTO FileInfo table
     INSERT INTO FileInfo (
                              FileID,
                              PluginID,
@@ -246,7 +246,7 @@ CREATE TRIGGER trgInsteadOfInsert_vwPlugins
     INSTEAD OF INSERT
             ON vwPlugins
       FOR EACH ROW
-BEGIN-- Insert into Plugins table
+BEGIN-- Insert INTO Plugins table
     INSERT INTO Plugins (
                             PluginID,
                             PluginName,

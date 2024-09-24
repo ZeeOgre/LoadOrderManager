@@ -5,10 +5,9 @@ namespace ZO.LoadOrderManager
 {
     public class LoadOut
     {
-        public int ProfileID { get; set; }
+        public long ProfileID { get; set; }
         public required string Name { get; set; }
-        public ObservableCollection<PluginViewModel> Plugins { get; set; }
-        private HashSet<int> enabledPlugins;
+        public HashSet<long> enabledPlugins;
 
         // Add GroupSet property
         public GroupSet GroupSet { get; set; }
@@ -16,8 +15,7 @@ namespace ZO.LoadOrderManager
         // Default constructor
         public LoadOut()
         {
-            Plugins = new ObservableCollection<PluginViewModel>();
-            enabledPlugins = new HashSet<int>();
+            enabledPlugins = new HashSet<long>();
 
             // Load GroupSet with ID 2 or initialize with a new GroupSet if not found
             GroupSet = GroupSet.LoadGroupSet(2) ?? GroupSet.CreateEmptyGroupSet();
@@ -30,34 +28,30 @@ namespace ZO.LoadOrderManager
         // Parameterized constructor
         public LoadOut(GroupSet groupSet)
         {
-            Plugins = new ObservableCollection<PluginViewModel>();
-            enabledPlugins = new HashSet<int>();
+            enabledPlugins = new HashSet<long>();
 
             // Use the provided GroupSet
             GroupSet = groupSet;
         }
 
-        
-
         public void LoadPlugins(IEnumerable<Plugin> plugins)
         {
             foreach (var plugin in plugins)
             {
-                var pluginViewModel = new PluginViewModel(plugin, this);
-                Plugins.Add(pluginViewModel);
+                enabledPlugins.Add(plugin.PluginID);
             }
         }
 
-        public static LoadOut Load(int loadOutID)
+        public static LoadOut Load(long loadOutID)
         {
-            App.LogDebug("Loading profile from database");
+            LogDebug("Loading profile from database");
             using var connection = DbManager.Instance.GetConnection();
 
-            App.LogDebug("LoadOut Begin Transaction");
+            LogDebug("LoadOut Begin Transaction");
             using var transaction = connection.BeginTransaction();
             try
             {
-                LoadOut loadOut = null;
+                LoadOut loadOut = null!;
 
                 // Load LoadOutProfiles
                 using (var command = new SQLiteCommand("SELECT * FROM LoadOutProfiles WHERE ProfileID = @ProfileID", connection))
@@ -67,12 +61,12 @@ namespace ZO.LoadOrderManager
                     {
                         if (reader.Read())
                         {
-                            var groupSetID = reader.GetInt32(reader.GetOrdinal("GroupSetID"));
+                            var groupSetID = reader.GetInt64(reader.GetOrdinal("GroupSetID"));
                             var groupSet = GroupSet.LoadGroupSet(groupSetID) ?? GroupSet.LoadGroupSet(1) ?? GroupSet.CreateEmptyGroupSet();
 
                             loadOut = new LoadOut
                             {
-                                ProfileID = reader.GetInt32(reader.GetOrdinal("ProfileID")),
+                                ProfileID = reader.GetInt64(reader.GetOrdinal("ProfileID")),
                                 Name = reader.GetString(reader.GetOrdinal("ProfileName")),
                                 GroupSet = groupSet
                             };
@@ -96,50 +90,43 @@ namespace ZO.LoadOrderManager
                     command.Parameters.AddWithValue("@ProfileID", loadOutID);
                     using (var reader = command.ExecuteReader())
                     {
-                        var plugins = new List<PluginViewModel>();
                         while (reader.Read())
                         {
-                            var pluginID = reader.GetInt32(reader.GetOrdinal("PluginID"));
-                            var plugin = Plugin.LoadPlugin(pluginID);
-                            if (plugin != null)
-                            {
-                                plugins.Add(new PluginViewModel(plugin, loadOut) { IsEnabled = true });
-                            }
+                            var pluginID = reader.GetInt64(reader.GetOrdinal("PluginID"));
+                            loadOut.enabledPlugins.Add(pluginID);
                         }
-                        loadOut.Plugins = new ObservableCollection<PluginViewModel>(plugins);
                     }
                 }
 
                 // Commit the transaction
-                App.LogDebug("LoadOut Commit Transaction");
+                LogDebug("LoadOut Commit Transaction");
                 transaction.Commit();
                 return loadOut;
             }
             catch (Exception ex)
             {
-                App.LogDebug("Error loading profile from database", ex.ToString());
+                LogDebug("Error loading profile from database", ex.ToString());
                 transaction.Rollback();
                 throw;
             }
         }
 
-    
-    public int WriteProfile()
+        public long WriteProfile()
         {
-            App.LogDebug("Writing profile to database");
+            LogDebug("Writing profile to database");
             using var connection = DbManager.Instance.GetConnection();
 
-            App.LogDebug("LoadOut Begin Transaction");
+            LogDebug("LoadOut Begin Transaction");
             using var transaction = connection.BeginTransaction();
             try
             {
                 using (var command = new SQLiteCommand(connection))
                 {
-                    App.LogDebug($"Updating LoadOutProfiles table for {this.Name}");
+                    LogDebug($"Updating LoadOutProfiles table for {this.Name}");
                     // Update the LoadOutProfiles table
                     command.CommandText = @"
-                                    INSERT OR REPLACE INTO LoadOutProfiles (ProfileID, ProfileName, GroupSetID)
-                                    VALUES (@ProfileID, @ProfileName, @GroupSetID)";
+                                INSERT OR REPLACE INTO LoadOutProfiles (ProfileID, ProfileName, GroupSetID)
+                                VALUES (@ProfileID, @ProfileName, @GroupSetID)";
                     command.Parameters.AddWithValue("@ProfileID", this.ProfileID);
                     command.Parameters.AddWithValue("@ProfileName", this.Name);
                     command.Parameters.AddWithValue("@GroupSetID", this.GroupSet.GroupSetID);
@@ -147,46 +134,42 @@ namespace ZO.LoadOrderManager
 
                     // Insert or replace ProfilePlugins entries
                     command.CommandText = @"
-                                    INSERT OR REPLACE INTO ProfilePlugins (ProfileID, PluginID)
-                                    VALUES (@ProfileID, @PluginID)";
-                    foreach (var plugin in this.Plugins.Where(p => p.IsEnabled))
+                                INSERT OR REPLACE INTO ProfilePlugins (ProfileID, PluginID)
+                                VALUES (@ProfileID, @PluginID)";
+                    foreach (var pluginID in this.enabledPlugins)
                     {
-                        App.LogDebug($"Updating ProfilePlugins table for {plugin.Plugin.PluginID}");
+                        LogDebug($"Updating ProfilePlugins table for {pluginID}");
                         command.Parameters.Clear();
                         command.Parameters.AddWithValue("@ProfileID", this.ProfileID);
-                        command.Parameters.AddWithValue("@PluginID", plugin.Plugin.PluginID);
+                        command.Parameters.AddWithValue("@PluginID", pluginID);
                         command.ExecuteNonQuery();
                     }
 
                     // Remove any ProfilePlugins entries not in ActivePlugins
-                    var activePluginIds = this.Plugins.Where(p => p.IsEnabled).Select(p => p.Plugin.PluginID).ToArray();
-                    var activePluginsList = string.Join(",", activePluginIds);
-                    App.LogDebug($"Removing ProfilePlugins entries not in ActivePlugins: {activePluginsList}");
+                    var activePluginsList = string.Join(",", this.enabledPlugins);
+                    LogDebug($"Removing ProfilePlugins entries not in ActivePlugins: {activePluginsList}");
                     command.CommandText = $@"
-                                    DELETE FROM ProfilePlugins
-                                    WHERE ProfileID = @ProfileID AND PluginID NOT IN ({activePluginsList})";
+                                DELETE FROM ProfilePlugins
+                                WHERE ProfileID = @ProfileID AND PluginID NOT IN ({activePluginsList})";
                     command.Parameters.Clear();
                     command.Parameters.AddWithValue("@ProfileID", this.ProfileID);
                     command.ExecuteNonQuery();
                 }
 
-                // Save the GroupSet
-
-
-                App.LogDebug("LoadOut Commit Transaction");
+                // Commit the transaction
+                LogDebug("LoadOut Commit Transaction");
                 transaction.Commit();
-                //GroupSet.SaveGroupSet();
                 return this.ProfileID;
             }
             catch (Exception ex)
             {
-                App.LogDebug("Error writing profile to database", ex.ToString());
+                LogDebug("Error writing profile to database", ex.ToString());
                 transaction.Rollback();
                 throw;
             }
         }
 
-        public static void SetPluginEnabled(int profileID, int pluginID, bool isEnabled)
+        public static void SetPluginEnabled(long profileID, long pluginID, bool isEnabled)
         {
             using var connection = DbManager.Instance.GetConnection();
 
@@ -194,42 +177,50 @@ namespace ZO.LoadOrderManager
             if (isEnabled)
             {
                 command.CommandText = @"
-                                INSERT OR IGNORE INTO ProfilePlugins (ProfileID, PluginID)
-                                VALUES (@ProfileID, @PluginID)";
+                            INSERT OR IGNORE INTO ProfilePlugins (ProfileID, PluginID)
+                            VALUES (@ProfileID, @PluginID)";
             }
             else
             {
                 command.CommandText = @"
-                                DELETE FROM ProfilePlugins
-                                WHERE ProfileID = @ProfileID AND PluginID = @PluginID";
+                            DELETE FROM ProfilePlugins
+                            WHERE ProfileID = @ProfileID AND PluginID = @PluginID";
             }
             command.Parameters.AddWithValue("@ProfileID", profileID);
             command.Parameters.AddWithValue("@PluginID", pluginID);
             command.ExecuteNonQuery();
         }
 
-        public static IEnumerable<PluginViewModel> GetActivePlugins(int profileId)
+        public static IEnumerable<long> GetActivePlugins(long profileId)
         {
             var loadOut = AggLoadInfo.Instance.LoadOuts.FirstOrDefault(l => l.ProfileID == profileId);
             if (loadOut != null)
             {
-                return loadOut.Plugins;
+                return loadOut.enabledPlugins;
             }
-            return Enumerable.Empty<PluginViewModel>();
+            return Enumerable.Empty<long>();
         }
 
-        public void UpdateEnabledPlugins()
+        public void UpdateEnabledPlugins(IEnumerable<long> pluginIDs)
         {
             enabledPlugins.Clear();
-            foreach (var plugin in Plugins.Where(p => p.IsEnabled))
+            foreach (var pluginID in pluginIDs)
             {
-                enabledPlugins.Add(plugin.Plugin.PluginID);
+                enabledPlugins.Add(pluginID);
             }
         }
 
-        public bool IsPluginEnabled(int pluginID)
+        public bool IsPluginEnabled(long pluginID)
         {
             return enabledPlugins.Contains(pluginID);
+        }
+
+        private static void LogDebug(string message, string? details = null)
+        {
+            if (OperatingSystem.IsWindows())
+            {
+                App.LogDebug(message, details);
+            }
         }
     }
 }

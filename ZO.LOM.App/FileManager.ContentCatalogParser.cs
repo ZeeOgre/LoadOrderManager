@@ -17,9 +17,9 @@ namespace ZO.LoadOrderManager
             var json = JObject.Parse(content);
 
             // Initialize the ordinal for the Uncategorized group
-            int groupId = -997; // Uncategorized group
-            int groupOrdinal = DbManager.GetNextOrdinal(EntityType.Plugin, groupId);
-
+            long groupID = -997; // Uncategorized group
+            long groupSetID = 1; // Assign GroupSetID = 1 for Uncategorized group
+            long groupOrdinal = DbManager.GetNextOrdinal(EntityType.Plugin, groupID, groupSetID);
             foreach (var property in json.Properties())
             {
                 if (property.Name.StartsWith("TM_"))
@@ -62,14 +62,18 @@ namespace ZO.LoadOrderManager
                         }
                     }
 
-                    // Create FileInfo objects for each file in the Files array
-                    var files = pluginData["Files"]?.Select(f => new FileInfo(f.ToString())).ToList() ?? new List<FileInfo>();
+                    // Create FileInfo objects for each file in the Files array, ensuring no duplicates
+                    var fileNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                    var files = pluginData["Files"]?.Select(f => f.ToString())
+                        .Where(f => fileNames.Add(f)) // Add to HashSet and filter out duplicates
+                        .Select(f => new FileInfo(f))
+                        .ToList() ?? new List<FileInfo>();
 
                     if (existingPlugin != null)
                     {
                         // Update existing plugin
                         existingPlugin.Achievements = pluginData["AchievementSafe"]?.ToString()?.ToLower() == "true";
-                        existingPlugin.Description = pluginData["Title"]?.ToString().Trim();
+                        existingPlugin.Description = pluginData["Title"]?.ToString()?.Trim() ?? string.Empty;
                         existingPlugin.DTStamp = dtStamp;
                         existingPlugin.Version = version;
                         existingPlugin.BethesdaID = bethesdaID;
@@ -84,20 +88,18 @@ namespace ZO.LoadOrderManager
                         {
                             PluginName = pluginName,
                             Achievements = pluginData["AchievementSafe"]?.ToString()?.ToLower() == "true",
-                            Description = pluginData["Title"]?.ToString().Trim(),
+                            Description = pluginData["Title"]?.ToString()?.Trim() ?? string.Empty,
                             DTStamp = dtStamp,
                             BethesdaID = bethesdaID,
                             Version = version,
-                            GroupID = groupId, // Assign to Uncategorized group by default
-                            GroupOrdinal = groupOrdinal, // Assign the next ordinal
+                            GroupID = -997, // Assign to Uncategorized group by default -997
+                            GroupSetID = 1, // Assign GroupSetID = 1
                             Files = files,
-                            State = ModState.Bethesda // Set the Bethesda flag
+                            State = ModState.Bethesda, // Set the Bethesda flag,
+                            GroupOrdinal = groupOrdinal
                         };
                         newPlugin.WriteMod();
-                        AggLoadInfo.Instance.Plugins.Add(newPlugin); // Add the new plugin to the singleton instance
-
-                        // Increment the ordinal for the group
-                        groupOrdinal++;
+                        AggLoadInfo.Instance.Plugins?.Add(newPlugin); // Add the new plugin to the singleton instance
                     }
                 }
             }

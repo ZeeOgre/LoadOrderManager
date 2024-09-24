@@ -11,7 +11,7 @@ DROP TABLE IF EXISTS Config;
 
 CREATE TABLE IF NOT EXISTS Config (
     GameFolder          TEXT    NOT NULL,
-    AutoCheckForUpdates INTEGER
+    AutoCheckForUpdates longEGER
 );
 
 
@@ -19,12 +19,12 @@ CREATE TABLE IF NOT EXISTS Config (
 DROP TABLE IF EXISTS ExternalIDs;
 
 CREATE TABLE IF NOT EXISTS ExternalIDs (
-    ExternalID INTEGER PRIMARY KEY AUTOINCREMENT
+    ExternalID longEGER PRIMARY KEY AUTOINCREMENT
                        NOT NULL,
-    PluginID   INTEGER,
+    PluginID   longEGER,
     BethesdaID TEXT,
     NexusID    TEXT,
-    CONSTRAINT FK_ExternalIDs_PluginID FOREIGN KEY (
+    CONSTRAlong FK_ExternalIDs_PluginID FOREIGN KEY (
         PluginID
     )
     REFERENCES Plugins (PluginID) ON DELETE NO ACTION
@@ -37,15 +37,15 @@ INSERT INTO ExternalIDs (ExternalID, PluginID, BethesdaID, NexusID) VALUES (1, 1
 DROP TABLE IF EXISTS FileInfo;
 
 CREATE TABLE IF NOT EXISTS FileInfo (
-    FileID       INTEGER PRIMARY KEY AUTOINCREMENT
+    FileID       longEGER PRIMARY KEY AUTOINCREMENT
                          NOT NULL,
-    PluginID     INTEGER,
+    PluginID     longEGER,
     Filename     TEXT    NOT NULL,
     RelativePath TEXT,
     DTStamp      TEXT    NOT NULL,
     HASH         TEXT,
-    IsArchive    INTEGER NOT NULL,
-    CONSTRAINT FK_FileInfo_PluginID FOREIGN KEY (
+    IsArchive    longEGER NOT NULL,
+    CONSTRAlong FK_FileInfo_PluginID FOREIGN KEY (
         PluginID
     )
     REFERENCES Plugins (PluginID) ON DELETE NO ACTION
@@ -57,11 +57,11 @@ CREATE TABLE IF NOT EXISTS FileInfo (
 DROP TABLE IF EXISTS GroupSetGroups;
 
 CREATE TABLE IF NOT EXISTS GroupSetGroups (
-    GroupSetGroupID INTEGER PRIMARY KEY AUTOINCREMENT,
-    GroupID         INTEGER,
-    GroupSetID      INTEGER,
-    ParentID        INTEGER,
-    Ordinal         INTEGER,
+    GroupSetGroupID longEGER PRIMARY KEY AUTOINCREMENT,
+    GroupID         longEGER,
+    GroupSetID      longEGER,
+    ParentID        longEGER,
+    Ordinal         longEGER,
     FOREIGN KEY (
         GroupID
     )
@@ -89,26 +89,26 @@ INSERT INTO GroupSetGroups (GroupSetGroupID, GroupID, GroupSetID, ParentID, Ordi
 DROP TABLE IF EXISTS GroupSetPlugins;
 
 CREATE TABLE IF NOT EXISTS GroupSetPlugins (
-    GroupSetID INTEGER NOT NULL,
-    GroupID    INTEGER NOT NULL,
-    PluginID   INTEGER NOT NULL,
-    Ordinal    INTEGER NOT NULL,
-    CONSTRAINT PK_GroupSetPlugins PRIMARY KEY (
+    GroupSetID longEGER NOT NULL,
+    GroupID    longEGER NOT NULL,
+    PluginID   longEGER NOT NULL,
+    Ordinal    longEGER NOT NULL,
+    CONSTRAlong PK_GroupSetPlugins PRIMARY KEY (
         GroupSetID,
         GroupID,
         PluginID
     ),
-    CONSTRAINT FK_GroupSetPlugins_GroupSetID FOREIGN KEY (
+    CONSTRAlong FK_GroupSetPlugins_GroupSetID FOREIGN KEY (
         GroupSetID
     )
     REFERENCES GroupSets (GroupSetID) ON DELETE NO ACTION
                                       ON UPDATE NO ACTION,
-    CONSTRAINT FK_GroupSetPlugins_GroupID FOREIGN KEY (
+    CONSTRAlong FK_GroupSetPlugins_GroupID FOREIGN KEY (
         GroupID
     )
     REFERENCES ModGroups (GroupID) ON DELETE NO ACTION
                                    ON UPDATE NO ACTION,
-    CONSTRAINT FK_GroupSetPlugins_PluginID FOREIGN KEY (
+    CONSTRAlong FK_GroupSetPlugins_PluginID FOREIGN KEY (
         PluginID
     )
     REFERENCES Plugins (PluginID) ON DELETE NO ACTION
@@ -140,9 +140,9 @@ INSERT INTO GroupSetPlugins (GroupSetID, GroupID, PluginID, Ordinal) VALUES (2, 
 DROP TABLE IF EXISTS GroupSets;
 
 CREATE TABLE IF NOT EXISTS GroupSets (
-    GroupSetID    INTEGER PRIMARY KEY AUTOINCREMENT,
+    GroupSetID    longEGER PRIMARY KEY AUTOINCREMENT,
     GroupSetName  TEXT,
-    GroupSetFlags INTEGER
+    GroupSetFlags longEGER
 );
 
 INSERT INTO GroupSets (GroupSetID, GroupSetName, GroupSetFlags) VALUES (1, 'BASELINE_GS', 9);
@@ -152,9 +152,9 @@ INSERT INTO GroupSets (GroupSetID, GroupSetName, GroupSetFlags) VALUES (2, 'SING
 DROP TABLE IF EXISTS InitializationStatus;
 
 CREATE TABLE IF NOT EXISTS InitializationStatus (
-    Id                 INTEGER PRIMARY KEY AUTOINCREMENT
+    Id                 longEGER PRIMARY KEY AUTOINCREMENT
                                NOT NULL,
-    IsInitialized      INTEGER NOT NULL,
+    IsInitialized      longEGER NOT NULL,
     InitializationTime TEXT    NOT NULL
 );
 
@@ -163,10 +163,10 @@ CREATE TABLE IF NOT EXISTS InitializationStatus (
 DROP TABLE IF EXISTS LoadOutProfiles;
 
 CREATE TABLE IF NOT EXISTS LoadOutProfiles (
-    ProfileID   INTEGER PRIMARY KEY AUTOINCREMENT
+    ProfileID   longEGER PRIMARY KEY AUTOINCREMENT
                         NOT NULL,
     ProfileName TEXT    NOT NULL,
-    GroupSetID  INTEGER
+    GroupSetID  longEGER
 );
 
 INSERT INTO LoadOutProfiles (ProfileID, ProfileName, GroupSetID) VALUES (1, 'Baseline', 1);
@@ -176,12 +176,12 @@ INSERT INTO LoadOutProfiles (ProfileID, ProfileName, GroupSetID) VALUES (2, '(De
 DROP TABLE IF EXISTS ModGroups;
 
 CREATE TABLE IF NOT EXISTS ModGroups (
-    GroupID     INTEGER PRIMARY KEY AUTOINCREMENT,
+    GroupID     longEGER PRIMARY KEY AUTOINCREMENT,
     GroupName   TEXT,
     Description TEXT
 );
 
-INSERT INTO ModGroups (GroupID, GroupName, Description) VALUES (-999, 'CoreGameFiles', 'This is a reserved group for mods that are an integral part of the game and can''t be controlled by the player');
+INSERT INTO ModGroups (GroupID, GroupName, Description) VALUES (-999, 'CoreGameFiles', 'This is a reserved group for mods that are an longegral part of the game and can''t be controlled by the player');
 INSERT INTO ModGroups (GroupID, GroupName, Description) VALUES (-998, 'NeverLoad', 'This is a reserved group for mods which should never be loaded');
 INSERT INTO ModGroups (GroupID, GroupName, Description) VALUES (-997, 'Uncategorized', 'This is a reserved group to temporarily hold uncategorized mods');
 INSERT INTO ModGroups (GroupID, GroupName, Description) VALUES (1, '(Default Root)', 'This is the Default Root group which holds all the other groups');
@@ -190,17 +190,17 @@ INSERT INTO ModGroups (GroupID, GroupName, Description) VALUES (1, '(Default Roo
 DROP TABLE IF EXISTS Plugins;
 
 CREATE TABLE IF NOT EXISTS Plugins (
-    PluginID     INTEGER PRIMARY KEY AUTOINCREMENT
+    PluginID     longEGER PRIMARY KEY AUTOINCREMENT
                          NOT NULL,
     PluginName   TEXT    NOT NULL,
     Description  TEXT,
-    Achievements INTEGER NOT NULL,
+    Achievements longEGER NOT NULL,
     DTStamp      TEXT    NOT NULL,
     Version      TEXT,
-    State        INTEGER
+    State        longEGER
 );
 
-INSERT INTO Plugins (PluginID, PluginName, Description, Achievements, DTStamp, Version, State) VALUES (1, 'blueprintships-starfield.esm', 'Core game file containing all the ship models (We think!)', 1, '2024-08-20 18:18:57', NULL, 1);
+INSERT INTO Plugins (PluginID, PluginName, Description, Achievements, DTStamp, Version, State) VALUES (1, 'blueprlongships-starfield.esm', 'Core game file containing all the ship models (We think!)', 1, '2024-08-20 18:18:57', NULL, 1);
 INSERT INTO Plugins (PluginID, PluginName, Description, Achievements, DTStamp, Version, State) VALUES (2, 'constellation.esm', 'Premium Edition Content', 1, '2024-06-28 00:43:13', NULL, 1);
 INSERT INTO Plugins (PluginID, PluginName, Description, Achievements, DTStamp, Version, State) VALUES (3, 'oldmars.esm', 'Premium Edition - Old Mars Skins', 1, '2024-09-19', NULL, 1);
 INSERT INTO Plugins (PluginID, PluginName, Description, Achievements, DTStamp, Version, State) VALUES (4, 'sfbgs003.esm', 'Tracker''s Alliance update', 1, '2024-08-20 18:18:57', NULL, 1);
@@ -215,18 +215,18 @@ INSERT INTO Plugins (PluginID, PluginName, Description, Achievements, DTStamp, V
 DROP TABLE IF EXISTS ProfilePlugins;
 
 CREATE TABLE IF NOT EXISTS ProfilePlugins (
-    ProfileID INTEGER NOT NULL,
-    PluginID  INTEGER NOT NULL,
-    CONSTRAINT PK_ProfilePlugins PRIMARY KEY (
+    ProfileID longEGER NOT NULL,
+    PluginID  longEGER NOT NULL,
+    CONSTRAlong PK_ProfilePlugins PRIMARY KEY (
         ProfileID,
         PluginID
     ),
-    CONSTRAINT FK_ProfilePlugins_PluginID FOREIGN KEY (
+    CONSTRAlong FK_ProfilePlugins_PluginID FOREIGN KEY (
         PluginID
     )
     REFERENCES Plugins (PluginID) ON DELETE CASCADE
                                   ON UPDATE NO ACTION,
-    CONSTRAINT FK_ProfilePlugins_ProfileID FOREIGN KEY (
+    CONSTRAlong FK_ProfilePlugins_ProfileID FOREIGN KEY (
         ProfileID
     )
     REFERENCES LoadOutProfiles (ProfileID) ON DELETE CASCADE
@@ -267,7 +267,7 @@ CREATE TRIGGER IF NOT EXISTS fki_ExternalIDs_PluginID_Plugins_PluginID
                           ON ExternalIDs
                     FOR EACH ROW
 BEGIN
-    SELECT RAISE(ROLLBACK, "Insert on table ExternalIDs violates foreign key constraint FK_ExternalIDs_0_0") 
+    SELECT RAISE(ROLLBACK, "Insert on table ExternalIDs violates foreign key constralong FK_ExternalIDs_0_0") 
      WHERE NEW.PluginID IS NOT NULL AND 
            (
                SELECT PluginID
@@ -285,7 +285,7 @@ CREATE TRIGGER IF NOT EXISTS fki_FileInfo_PluginID_Plugins_PluginID
                           ON FileInfo
                     FOR EACH ROW
 BEGIN
-    SELECT RAISE(ROLLBACK, "Insert on table FileInfo violates foreign key constraint FK_FileInfo_0_0") 
+    SELECT RAISE(ROLLBACK, "Insert on table FileInfo violates foreign key constralong FK_FileInfo_0_0") 
      WHERE NEW.PluginID IS NOT NULL AND 
            (
                SELECT PluginID
@@ -303,7 +303,7 @@ CREATE TRIGGER IF NOT EXISTS fki_ProfilePlugins_PluginID_Plugins_PluginID
                           ON ProfilePlugins
                     FOR EACH ROW
 BEGIN
-    SELECT RAISE(ROLLBACK, "Insert on table ProfilePlugins violates foreign key constraint FK_ProfilePlugins_0_0") 
+    SELECT RAISE(ROLLBACK, "Insert on table ProfilePlugins violates foreign key constralong FK_ProfilePlugins_0_0") 
      WHERE (
                SELECT PluginID
                  FROM Plugins
@@ -320,7 +320,7 @@ CREATE TRIGGER IF NOT EXISTS fki_ProfilePlugins_ProfileID_LoadOutProfiles_Profil
                           ON ProfilePlugins
                     FOR EACH ROW
 BEGIN
-    SELECT RAISE(ROLLBACK, "Insert on table ProfilePlugins violates foreign key constraint FK_ProfilePlugins_1_0") 
+    SELECT RAISE(ROLLBACK, "Insert on table ProfilePlugins violates foreign key constralong FK_ProfilePlugins_1_0") 
      WHERE (
                SELECT ProfileID
                  FROM LoadOutProfiles
@@ -337,7 +337,7 @@ CREATE TRIGGER IF NOT EXISTS fku_ExternalIDs_PluginID_Plugins_PluginID
                           ON ExternalIDs
                     FOR EACH ROW
 BEGIN
-    SELECT RAISE(ROLLBACK, "Update on table ExternalIDs violates foreign key constraint FK_ExternalIDs_0_0") 
+    SELECT RAISE(ROLLBACK, "Update on table ExternalIDs violates foreign key constralong FK_ExternalIDs_0_0") 
      WHERE NEW.PluginID IS NOT NULL AND 
            (
                SELECT PluginID
@@ -355,7 +355,7 @@ CREATE TRIGGER IF NOT EXISTS fku_FileInfo_PluginID_Plugins_PluginID
                           ON FileInfo
                     FOR EACH ROW
 BEGIN
-    SELECT RAISE(ROLLBACK, "Update on table FileInfo violates foreign key constraint FK_FileInfo_0_0") 
+    SELECT RAISE(ROLLBACK, "Update on table FileInfo violates foreign key constralong FK_FileInfo_0_0") 
      WHERE NEW.PluginID IS NOT NULL AND 
            (
                SELECT PluginID
@@ -373,7 +373,7 @@ CREATE TRIGGER IF NOT EXISTS fku_ProfilePlugins_PluginID_Plugins_PluginID
                           ON ProfilePlugins
                     FOR EACH ROW
 BEGIN
-    SELECT RAISE(ROLLBACK, "Update on table ProfilePlugins violates foreign key constraint FK_ProfilePlugins_0_0") 
+    SELECT RAISE(ROLLBACK, "Update on table ProfilePlugins violates foreign key constralong FK_ProfilePlugins_0_0") 
      WHERE (
                SELECT PluginID
                  FROM Plugins
@@ -390,7 +390,7 @@ CREATE TRIGGER IF NOT EXISTS fku_ProfilePlugins_ProfileID_LoadOutProfiles_Profil
                           ON ProfilePlugins
                     FOR EACH ROW
 BEGIN
-    SELECT RAISE(ROLLBACK, "Update on table ProfilePlugins violates foreign key constraint FK_ProfilePlugins_1_0") 
+    SELECT RAISE(ROLLBACK, "Update on table ProfilePlugins violates foreign key constralong FK_ProfilePlugins_1_0") 
      WHERE (
                SELECT ProfileID
                  FROM LoadOutProfiles
@@ -406,7 +406,7 @@ CREATE TRIGGER IF NOT EXISTS trgInsteadOfInsert_vwLoadOuts
                   INSTEAD OF INSERT
                           ON vwLoadOuts
                     FOR EACH ROW
-BEGIN-- Insert into LoadOutProfiles table
+BEGIN-- Insert INTO LoadOutProfiles table
     INSERT INTO LoadOutProfiles (
                                     ProfileID,
                                     ProfileName,
@@ -421,7 +421,7 @@ BEGIN-- Insert into LoadOutProfiles table
                                     ProfileID
                                 )
                                 DO UPDATE SET ProfileName = excluded.ProfileName,
-                                GroupSetID = excluded.GroupSetID;-- Insert into Plugins table
+                                GroupSetID = excluded.GroupSetID;-- Insert INTO Plugins table
     INSERT INTO Plugins (
                             PluginID,
                             PluginName,
@@ -448,7 +448,7 @@ BEGIN-- Insert into LoadOutProfiles table
                         Achievements = excluded.Achievements,
                         DTStamp = excluded.DTStamp,
                         Version = excluded.Version,
-                        State = excluded.State;-- Insert into ProfilePlugins table
+                        State = excluded.State;-- Insert INTO ProfilePlugins table
     INSERT INTO ProfilePlugins (
                                    ProfileID,
                                    PluginID
@@ -461,7 +461,7 @@ BEGIN-- Insert into LoadOutProfiles table
                                    ProfileID,
                                    PluginID
                                )
-                               DO NOTHING;-- Insert into GroupSetPlugins table
+                               DO NOTHING;-- Insert INTO GroupSetPlugins table
     INSERT INTO GroupSetPlugins (
                                     GroupSetID,
                                     GroupID,
@@ -479,7 +479,7 @@ BEGIN-- Insert into LoadOutProfiles table
                                     GroupID,
                                     PluginID
                                 )
-                                DO UPDATE SET Ordinal = excluded.Ordinal;-- Insert into ExternalIDs table
+                                DO UPDATE SET Ordinal = excluded.Ordinal;-- Insert INTO ExternalIDs table
     INSERT INTO ExternalIDs (
                                 PluginID,
                                 BethesdaID,
@@ -504,7 +504,7 @@ CREATE TRIGGER IF NOT EXISTS trgInsteadOfInsert_vwModGroups
                   INSTEAD OF INSERT
                           ON vwModGroups
                     FOR EACH ROW
-BEGIN-- Insert into ModGroups table
+BEGIN-- Insert INTO ModGroups table
     INSERT INTO ModGroups (
                               GroupID,
                               Ordinal,
@@ -525,7 +525,7 @@ BEGIN-- Insert into ModGroups table
                           DO UPDATE SET Ordinal = COALESCE(excluded.Ordinal, ModGroups.Ordinal),
                           GroupName = COALESCE(excluded.GroupName, ModGroups.GroupName),
                           Description = COALESCE(excluded.Description, ModGroups.Description),
-                          ParentID = COALESCE(excluded.ParentID, ModGroups.ParentID);-- Insert into GroupSetPlugins table
+                          ParentID = COALESCE(excluded.ParentID, ModGroups.ParentID);-- Insert INTO GroupSetPlugins table
     INSERT INTO GroupSetPlugins (
                                     GroupSetID,
                                     GroupID,
@@ -543,7 +543,7 @@ BEGIN-- Insert into ModGroups table
                                     PluginID
                                 )
                                 DO UPDATE SET GroupSetID = COALESCE(excluded.GroupSetID, GroupSetPlugins.GroupSetID),
-                                Ordinal = COALESCE(excluded.Ordinal, GroupSetPlugins.Ordinal);-- Insert into Plugins table
+                                Ordinal = COALESCE(excluded.Ordinal, GroupSetPlugins.Ordinal);-- Insert INTO Plugins table
     INSERT INTO Plugins (
                             PluginID,
                             PluginName,
@@ -570,7 +570,7 @@ BEGIN-- Insert into ModGroups table
                         Achievements = COALESCE(excluded.Achievements, Plugins.Achievements),
                         DTStamp = COALESCE(excluded.DTStamp, Plugins.DTStamp),
                         Version = COALESCE(excluded.Version, Plugins.Version),
-                        State = COALESCE(excluded.State, Plugins.State);-- Insert into ExternalIDs table
+                        State = COALESCE(excluded.State, Plugins.State);-- Insert INTO ExternalIDs table
     INSERT INTO ExternalIDs (
                                 PluginID,
                                 BethesdaID,
@@ -595,7 +595,7 @@ CREATE TRIGGER IF NOT EXISTS trgInsteadOfInsert_vwPluginFiles
                   INSTEAD OF INSERT
                           ON vwPluginFiles
                     FOR EACH ROW
-BEGIN-- Insert into Plugins table
+BEGIN-- Insert INTO Plugins table
     INSERT INTO Plugins (
                             PluginID,
                             PluginName
@@ -607,7 +607,7 @@ BEGIN-- Insert into Plugins table
                         ON CONFLICT (
                             PluginID
                         )
-                        DO UPDATE SET PluginName = COALESCE(excluded.PluginName, Plugins.PluginName);-- Insert into FileInfo table
+                        DO UPDATE SET PluginName = COALESCE(excluded.PluginName, Plugins.PluginName);-- Insert INTO FileInfo table
     INSERT INTO FileInfo (
                              FileID,
                              PluginID,
@@ -644,7 +644,7 @@ CREATE TRIGGER IF NOT EXISTS trgInsteadOfInsert_vwPlugins
                   INSTEAD OF INSERT
                           ON vwPlugins
                     FOR EACH ROW
-BEGIN-- Insert into Plugins table
+BEGIN-- Insert INTO Plugins table
     INSERT INTO Plugins (
                             PluginID,
                             PluginName,

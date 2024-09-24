@@ -21,7 +21,7 @@ namespace ZO.LoadOrderManager
 
     public class Plugin
     {
-        public int PluginID { get; set; }
+        public long PluginID { get; set; }
         public string PluginName { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
         public bool Achievements { get; set; } = false;
@@ -31,9 +31,9 @@ namespace ZO.LoadOrderManager
         public ModState State { get; set; } // Add the State property
         public string BethesdaID { get; set; } = string.Empty;
         public string NexusID { get; set; } = string.Empty;
-        public int? GroupID { get; set; } = 1; // Default group ID
-        public int? GroupOrdinal { get; set; }
-        public int? GroupSetID { get; set; }
+        public long? GroupID { get; set; } = 1; // Default group ID
+        public long? GroupOrdinal { get; set; }
+        public long? GroupSetID { get; set; }
 
         public Plugin()
         {
@@ -100,14 +100,14 @@ namespace ZO.LoadOrderManager
             // Remove any empty or invalid FileInfo entries
             Files.RemoveAll(f => string.IsNullOrWhiteSpace(f.Filename));
 
-            // Remove duplicate FileInfo entries based on Filename while maintaining order
+            // Remove duplicate FileInfo entries based on Filename while malongaining order
             var seenFilenames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             Files = Files.Where(f => seenFilenames.Add(f.Filename)).ToList();
         }
 
 
 
-        public static Plugin? LoadPlugin(int? modID = null, string? modName = null, int? groupSetID = null)
+        public static Plugin? LoadPlugin(long? modID = null, string? modName = null, long? groupSetID = null)
         {
             if (modID == null && modName == null)
             {
@@ -126,7 +126,7 @@ namespace ZO.LoadOrderManager
             SELECT * 
             FROM vwPlugins 
             WHERE (PluginID = @modID OR PluginName = @modName) 
-            AND GroupSetID = @groupSetID
+            AND (GroupSetID = @groupSetID OR GroupID < 0)
             LIMIT 1";
                 command.Parameters.AddWithValue("@groupSetID", groupSetID.Value);
             }
@@ -148,13 +148,13 @@ namespace ZO.LoadOrderManager
                 // Populate the Plugin object with base details
                 plugin = new Plugin
                 {
-                    PluginID = reader.GetInt32(reader.GetOrdinal("PluginID")),
+                    PluginID = reader.GetInt64(reader.GetOrdinal("PluginID")),
                     PluginName = reader.GetString(reader.GetOrdinal("PluginName")),
                     Description = reader.IsDBNull(reader.GetOrdinal("Description")) ? null : reader.GetString(reader.GetOrdinal("Description")),
                     Achievements = reader.GetBoolean(reader.GetOrdinal("Achievements")),
                     DTStamp = reader.GetString(reader.GetOrdinal("DTStamp")),
                     Version = reader.GetString(reader.GetOrdinal("Version")),
-                    State = reader.IsDBNull(reader.GetOrdinal("State")) ? 0 : (ModState)reader.GetInt32(reader.GetOrdinal("State")),
+                    State = reader.IsDBNull(reader.GetOrdinal("State")) ? 0 : (ModState)reader.GetInt64(reader.GetOrdinal("State")),
                     BethesdaID = reader.IsDBNull(reader.GetOrdinal("BethesdaID")) ? null : reader.GetString(reader.GetOrdinal("BethesdaID")),
                     NexusID = reader.IsDBNull(reader.GetOrdinal("NexusID")) ? null : reader.GetString(reader.GetOrdinal("NexusID")),
                     Files = new List<FileInfo>()
@@ -163,9 +163,9 @@ namespace ZO.LoadOrderManager
                 // If groupSetID is provided, populate group-related fields
                 if (groupSetID.HasValue)
                 {
-                    plugin.GroupID = reader.IsDBNull(reader.GetOrdinal("GroupID")) ? (int?)null : reader.GetInt32(reader.GetOrdinal("GroupID"));
-                    plugin.GroupOrdinal = reader.IsDBNull(reader.GetOrdinal("GroupOrdinal")) ? (int?)null : reader.GetInt32(reader.GetOrdinal("GroupOrdinal"));
-                    plugin.GroupSetID = reader.IsDBNull(reader.GetOrdinal("GroupSetID")) ? (int?)null : reader.GetInt32(reader.GetOrdinal("GroupSetID"));
+                    plugin.GroupID = reader.IsDBNull(reader.GetOrdinal("GroupID")) ? (long?)null : reader.GetInt64(reader.GetOrdinal("GroupID"));
+                    plugin.GroupOrdinal = reader.IsDBNull(reader.GetOrdinal("GroupOrdinal")) ? (long?)null : reader.GetInt64(reader.GetOrdinal("GroupOrdinal"));  
+                    plugin.GroupSetID = reader.IsDBNull(reader.GetOrdinal("GroupSetID")) ? (long?)null : reader.GetInt64(reader.GetOrdinal("GroupSetID"));
                 }
 
                 // EnsureFilesList will populate the Files property with relevant file details.
@@ -175,22 +175,23 @@ namespace ZO.LoadOrderManager
             return plugin;
         }
 
-        public Plugin(string fileName, int groupId, int ordinal)
-        {
-            PluginName = fileName.ToLowerInvariant(); // Normalize case before storing
-            Description = PluginName;
-            GroupID = groupId;
-            GroupOrdinal = ordinal;
-            Files = new List<FileInfo>
-            {
-                new FileInfo
-                {
-                    Filename = fileName,
-                    DTStamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
-                    IsArchive = false
-                }
-            };
-        }
+        //public Plugin(string fileName, long groupId, long ordinal)
+        //{
+        //    PluginName = fileName.ToLowerInvariant(); // Normalize case before storing
+        //    Description = PluginName;
+        //    GroupID = groupId;
+        //    GroupOrdinal = ordinal;
+        //    GroupSetID = 1; // Default to GroupSetID 1  
+        //    Files = new List<FileInfo>
+        //    {
+        //        new FileInfo
+        //        {
+        //            Filename = fileName,
+        //            DTStamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
+        //            IsArchive = false
+        //        }
+        //    };
+        //}
 
         public Plugin(string bethesdaID, JObject pluginData)
         {
@@ -256,7 +257,7 @@ namespace ZO.LoadOrderManager
             };
         }
 
-        public Plugin(int pluginID, string pluginName, string description, bool achievements, string dtStamp, string version, string bethesdaID, string nexusID, int groupID, int groupOrdinal, int groupSetID, List<FileInfo> files)
+        public Plugin(long pluginID, string pluginName, string description, bool achievements, string dtStamp, string version, string bethesdaID, string nexusID, long groupID, long groupOrdinal, long groupSetID, List<FileInfo> files)
         {
             PluginID = pluginID;
             PluginName = pluginName.ToLowerInvariant(); // Normalize case before storing
@@ -314,6 +315,13 @@ namespace ZO.LoadOrderManager
 
             try
             {
+
+                // Special handling for GroupID < 0
+                if (this.GroupID < 0)
+                {
+                        this.GroupSetID = 1;
+                }
+
                 using (var command = new SQLiteCommand(connection))
                 {
                     // Check if the plugin already exists in vwPlugins within the given GroupSet
@@ -328,12 +336,12 @@ namespace ZO.LoadOrderManager
                     {
                         if (reader.Read())
                         {
-                            this.PluginID = reader.GetInt32(0);
+                            this.PluginID = reader.GetInt64(0);
 
                             // Use fetched values only if the class properties are null or default
-                            this.GroupID = this.GroupID ?? (reader.IsDBNull(1) ? (int?)null : reader.GetInt32(1));
-                            this.GroupOrdinal = this.GroupOrdinal ?? (reader.IsDBNull(2) ? (int?)null : reader.GetInt32(2));
-                            this.GroupSetID = this.GroupSetID ?? (reader.IsDBNull(3) ? (int?)null : reader.GetInt32(3));
+                            this.GroupID = this.GroupID ?? (reader.IsDBNull(1) ? (long?)null : reader.GetInt64(1));
+                            this.GroupOrdinal = this.GroupOrdinal ?? (reader.IsDBNull(2) ? (long?)null : (long?)reader.GetInt64(2));
+                            this.GroupSetID = this.GroupSetID ?? (reader.IsDBNull(3) ? (long?)null : reader.GetInt64(3));
 
                             // For string properties, use empty string as fallback
                             this.BethesdaID = !string.IsNullOrEmpty(this.BethesdaID) ? this.BethesdaID : (reader.IsDBNull(4) ? string.Empty : reader.GetString(4));
@@ -342,18 +350,17 @@ namespace ZO.LoadOrderManager
                             // Retrieve the existing State value from the database and merge with the new value
                             if (!reader.IsDBNull(6))
                             {
-                                ModState existingState = (ModState)reader.GetInt32(6);
+                                ModState existingState = (ModState)reader.GetInt64(6);
                                 this.State |= existingState; // Merge the current state with the new state using bitwise OR
                             }
 
                             App.LogDebug($"Plugin already exists: {this.PluginName} (ID: {this.PluginID}, GroupSetID: {this.GroupSetID})");
                         }
                     }
-
                     // Insert or update the Plugin based on existence
-                    if (this.PluginID == 0)
+                    if (this.PluginID == 0  && GroupID != -999)
                     {
-                        // Insert new plugin into Plugins table
+                        // Insert new plugin INTO Plugins table
                         command.CommandText = @"
                     INSERT INTO Plugins (PluginName, Description, Achievements, DTStamp, Version, State)
                     VALUES (LOWER(@PluginName), @Description, @Achievements, @DTStamp, @Version, @State)
@@ -365,8 +372,8 @@ namespace ZO.LoadOrderManager
                         command.Parameters.AddWithValue("@Achievements", this.Achievements);
                         command.Parameters.AddWithValue("@DTStamp", string.IsNullOrEmpty(this.DTStamp) ? (object)DBNull.Value : this.DTStamp);
                         command.Parameters.AddWithValue("@Version", string.IsNullOrEmpty(this.Version) ? (object)DBNull.Value : this.Version);
-                        command.Parameters.AddWithValue("@State", (int)this.State);
-                        this.PluginID = Convert.ToInt32(command.ExecuteScalar());
+                        command.Parameters.AddWithValue("@State", (long)this.State);
+                        this.PluginID = Convert.ToInt64(command.ExecuteScalar());
                     }
                     else
                     {
@@ -384,19 +391,18 @@ namespace ZO.LoadOrderManager
                         command.Parameters.AddWithValue("@Achievements", this.Achievements);
                         command.Parameters.AddWithValue("@DTStamp", string.IsNullOrEmpty(this.DTStamp) ? (object)DBNull.Value : this.DTStamp);
                         command.Parameters.AddWithValue("@Version", string.IsNullOrEmpty(this.Version) ? (object)DBNull.Value : this.Version);
-                        command.Parameters.AddWithValue("@State", (int)this.State);
+                        command.Parameters.AddWithValue("@State", (long)this.State);
                         command.Parameters.AddWithValue("@PluginID", this.PluginID);
 
                         command.ExecuteNonQuery();
                     }
-
                     // Insert or update ExternalIDs table
                     command.CommandText = @"
-                INSERT INTO ExternalIDs (PluginID, BethesdaID, NexusID)
-                VALUES (@PluginID, @BethesdaID, @NexusID)
-                ON CONFLICT(PluginID) DO UPDATE 
-                SET BethesdaID = COALESCE(@BethesdaID, BethesdaID), 
-                    NexusID = COALESCE(@NexusID, NexusID)";
+                        INSERT INTO ExternalIDs (PluginID, BethesdaID, NexusID)
+                        VALUES (@PluginID, @BethesdaID, @NexusID)
+                        ON CONFLICT(PluginID) DO UPDATE 
+                        SET BethesdaID = CASE WHEN @BethesdaID IS NOT NULL THEN @BethesdaID ELSE BethesdaID END, 
+                            NexusID = CASE WHEN @NexusID IS NOT NULL THEN @NexusID ELSE NexusID END";
                     command.Parameters.Clear();
                     command.Parameters.AddWithValue("@PluginID", this.PluginID);
                     command.Parameters.AddWithValue("@BethesdaID", string.IsNullOrEmpty(this.BethesdaID) ? (object)DBNull.Value : this.BethesdaID);
@@ -408,13 +414,13 @@ namespace ZO.LoadOrderManager
                     foreach (var file in this.Files)
                     {
                         command.CommandText = @"
-                    INSERT INTO FileInfo (PluginID, Filename, RelativePath, DTStamp, HASH, IsArchive)
-                    VALUES (@PluginID, @Filename, @RelativePath, @DTStamp, @HASH, @IsArchive)
-                    ON CONFLICT(Filename) DO UPDATE 
-                    SET RelativePath = COALESCE(@RelativePath, RelativePath), 
-                        DTStamp = COALESCE(@DTStamp, DTStamp), 
-                        HASH = COALESCE(@HASH, HASH), 
-                        IsArchive = @IsArchive";
+                        INSERT INTO FileInfo (PluginID, Filename, RelativePath, DTStamp, HASH, IsArchive)
+                        VALUES (@PluginID, @Filename, @RelativePath, @DTStamp, @HASH, @IsArchive)
+                        ON CONFLICT(Filename) DO UPDATE 
+                        SET RelativePath = COALESCE(excluded.RelativePath, FileInfo.RelativePath), 
+                            DTStamp = COALESCE(excluded.DTStamp, FileInfo.DTStamp), 
+                            HASH = COALESCE(excluded.HASH, FileInfo.HASH), 
+                            IsArchive = excluded.IsArchive";
                         command.Parameters.Clear();
                         command.Parameters.AddWithValue("@PluginID", this.PluginID);
                         command.Parameters.AddWithValue("@Filename", string.IsNullOrEmpty(file.Filename) ? (object)DBNull.Value : file.Filename);
@@ -453,7 +459,7 @@ namespace ZO.LoadOrderManager
             return this;
         }
 
-        public void ChangeGroup(int newGroupId, int? newGroupSetId = null)
+        public void ChangeGroup(long newGroupId, long? newGroupSetId = null)
         {
             // Prevent adding items to the group with GroupID -999 (Bethesda Core)
             if (newGroupId == -999)
@@ -461,8 +467,14 @@ namespace ZO.LoadOrderManager
                 throw new InvalidOperationException("Cannot add items to the Bethesda Core group.");
             }
 
+            // If the newGroupSetId is less than 0, set it to 1
+            if (newGroupSetId < 0)
+            {
+                newGroupSetId = 1;
+            }
+
             // Use the current GroupSetID if the newGroupSetId is null
-            int effectiveGroupSetId = newGroupSetId ?? this.GroupSetID ?? throw new InvalidOperationException("Current GroupSetID is null.");
+            long effectiveGroupSetId = newGroupSetId ?? this.GroupSetID ?? throw new InvalidOperationException("Current GroupSetID is null.");
 
             // Load the current GroupSet
             var currentGroupSet = GroupSet.LoadGroupSet(this.GroupSetID ?? 0);
@@ -488,27 +500,25 @@ namespace ZO.LoadOrderManager
                 }
             }
 
-            // Load the target GroupSet
-            var targetGroupSet = GroupSet.LoadGroupSet(effectiveGroupSetId);
-            if (targetGroupSet == null)
-            {
-                throw new InvalidOperationException("Target GroupSet not found.");
-            }
-
-            // Step 2: Find the maximum GroupOrdinal value in the target group
-            int maxOrdinal = 0;
-            var targetGroup = targetGroupSet.ModGroups.FirstOrDefault(g => g.GroupID == newGroupId);
-            if (targetGroup != null)
-            {
-                maxOrdinal = targetGroup.Plugins?.Max(p => p.GroupOrdinal) ?? 0;
-            }
-
-            // Step 3: Update the GroupID and GroupSetID, and set the GroupOrdinal to the maximum value plus one
+            // Step 2: Update the GroupID and GroupSetID of the plugin
             this.GroupID = newGroupId;
             this.GroupSetID = effectiveGroupSetId;
-            this.GroupOrdinal = maxOrdinal + 1;
 
-            // Additional logic can be added here to reflect changes in the database, if necessary.
+            // Step 3: Save the changes to the database
+            using (var connection = DbManager.Instance.GetConnection())
+            {
+                using (var command = new SQLiteCommand(connection))
+                {
+                    command.CommandText = @"
+                        UPDATE Plugins
+                        SET GroupID = @GroupID, GroupSetID = @GroupSetID
+                        WHERE PluginID = @PluginID;";
+                    command.Parameters.AddWithValue("@GroupID", this.GroupID);
+                    command.Parameters.AddWithValue("@GroupSetID", this.GroupSetID);
+                    command.Parameters.AddWithValue("@PluginID", this.PluginID);
+                    command.ExecuteNonQuery();
+                }
+            }
         }
 
     }
@@ -600,7 +610,7 @@ namespace ZO.LoadOrderManager
             }
         }
 
-        public int PluginID => _plugin.PluginID;
+        public long pluginID => _plugin.PluginID;
 
         // Constructor that builds using the Plugin object and a specific LoadOut
         public PluginViewModel(Plugin plugin, LoadOut loadOut)

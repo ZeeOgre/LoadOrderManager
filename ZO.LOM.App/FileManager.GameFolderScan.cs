@@ -14,12 +14,22 @@ namespace ZO.LoadOrderManager
                 .ToList();
 
             // Dictionary to track the highest ordinal for each group
-            var groupOrdinalTracker = new Dictionary<int, int>();
+            var groupOrdinalTracker = new Dictionary<long, long>();
+
+            // HashSet to track processed filenames
+            var processedFilenames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
             foreach (var pluginFile in pluginFiles)
             {
                 var fileInfo = new System.IO.FileInfo(pluginFile);
                 var pluginName = fileInfo.Name.ToLowerInvariant();
+
+                // Skip if the filename has already been processed
+                if (!processedFilenames.Add(pluginName))
+                {
+                    continue;
+                }
+
                 var dtStamp = fileInfo.LastWriteTime.ToString("yyyy-MM-dd HH:mm:ss");
 
                 var existingPlugin = AggLoadInfo.Instance.Plugins.FirstOrDefault(p => p.PluginName.Equals(pluginName, StringComparison.OrdinalIgnoreCase));
@@ -44,12 +54,13 @@ namespace ZO.LoadOrderManager
                 else
                 {
                     // Determine the group ID for the new plugin
-                    int groupId = -997; // Unassigned group
+                    long groupID = -997; // Unassigned group
+                    long groupSetID = 1; // Assign GroupSetID = 1 for Uncategorized group
 
                     // Fetch or initialize the ordinal for the group
-                    if (!groupOrdinalTracker.ContainsKey(groupId))
+                    if (!groupOrdinalTracker.ContainsKey(groupID))
                     {
-                        groupOrdinalTracker[groupId] = DbManager.GetNextOrdinal(EntityType.Plugin, groupId);
+                        groupOrdinalTracker[groupID] = DbManager.GetNextOrdinal(EntityType.Plugin, groupID, -1);
                     }
 
                     // Create a new Plugin object
@@ -57,15 +68,16 @@ namespace ZO.LoadOrderManager
                     {
                         PluginName = pluginName,
                         DTStamp = dtStamp,
-                        GroupID = groupId,
-                        GroupOrdinal = groupOrdinalTracker[groupId], // Assign the next ordinal
+                        GroupID = groupID,
+                        GroupSetID = groupSetID,
+                        GroupOrdinal = groupOrdinalTracker[groupID], // Assign the next ordinal
                         State = ModState.GameFolder // Set the installed flag
                     };
                     newPlugin.WriteMod();
                     AggLoadInfo.Instance.Plugins.Add(newPlugin);
 
                     // Increment the ordinal for the group
-                    groupOrdinalTracker[groupId]++;
+                    groupOrdinalTracker[groupID]++;
 
                     // Insert new FileInfo record
                     var newFileInfo = new ZO.LoadOrderManager.FileInfo

@@ -137,7 +137,7 @@ namespace ZO.LoadOrderManager
         {
             using var connection = GetConnection();
             using var command = new SQLiteCommand("SELECT COUNT(*) FROM Config", connection);
-            return Convert.ToInt32(command.ExecuteScalar()) == 0;
+            return Convert.ToInt64(command.ExecuteScalar()) == 0;   
         }
 
         public bool IsDatabaseInitialized()
@@ -156,10 +156,10 @@ namespace ZO.LoadOrderManager
             using var reader = command.ExecuteReader();
             if (reader.Read())
             {
-                bool initStatusExists = reader.GetInt32(0) > 0;
-                bool configTableExists = reader.GetInt32(1) > 0;
-                bool isInitialized = reader.IsDBNull(2) ? false : Convert.ToBoolean(reader.GetInt32(2));
-                int configCount = reader.GetInt32(3);
+                bool initStatusExists = reader.GetInt64(0) > 0;
+                bool configTableExists = reader.GetInt64(1) > 0;
+                bool isInitialized = reader.IsDBNull(2) ? false : Convert.ToBoolean(reader.GetInt64(2));
+                long configCount = reader.GetInt64(3);
 
                 return initStatusExists && configTableExists && isInitialized && configCount > 0;
             }
@@ -167,9 +167,9 @@ namespace ZO.LoadOrderManager
             return false;
         }
 
-        public static int GetNextID(string tableName)
+        public static long GetNextID(string tableName)
         {
-            int maxId = 1; // Default if no records are found
+            long maxId = 1; // Default if no records are found
             string idField;
 
             if (tableName == "ModGroups")
@@ -194,29 +194,51 @@ namespace ZO.LoadOrderManager
                         (SELECT MAX({idField}) +1 FROM {tableName}) AS MaxId
                 ", connection);
             command.Parameters.AddWithValue("@tableName", tableName);
-            return Convert.ToInt32(command.ExecuteScalar());
+            return Convert.ToInt64(command.ExecuteScalar());
         }
 
-        public static int GetNextOrdinal(EntityType type, int groupId)
+        public static long GetNextOrdinal(EntityType type, long groupId, long groupSetId)
         {
-            string query = type switch
+            // Abort if groupId or groupSetId is 0
+            if (groupId == 0 || groupSetId == 0)
             {
-                EntityType.Plugin => "SELECT MAX(GroupOrdinal) + 1  FROM Plugins WHERE GroupID = @GroupID",
-                EntityType.Group => "SELECT MAX(Ordinal) + 1 FROM ModGroups WHERE ParentID = @GroupID",
-                _ => throw new ArgumentException("Invalid type specified.")
-            };
+                return 1;
+            }
+
+            // Force groupSetID to 1 if groupId is less than 0
+            if (groupId < 0)
+            {
+                groupSetId = 1;
+            }
+
+            string query;
+
+            
+                // Regular case with GroupSetID
+                query = type switch
+                {
+                    EntityType.Plugin => "SELECT MAX(GroupOrdinal) + 1 FROM vwPlugins WHERE GroupID = @GroupID AND GroupSetID = @GroupSetID AND GroupID != -999",
+                    EntityType.Group => "SELECT MAX(Ordinal) + 1 FROM vwModGroups WHERE ParentID = @GroupID AND GroupSetID = @GroupSetID AND GroupID != -999",
+                    _ => throw new ArgumentException("Invalid type specified.")
+                };
 
             using var connection = Instance.GetConnection();
             using var command = new SQLiteCommand(query, connection);
             command.Parameters.AddWithValue("@GroupID", groupId);
-            var result = command.ExecuteScalar();
-            if (result != DBNull.Value && Convert.ToInt32(result) > 1)
+            if (groupId != -999)
             {
-                return Convert.ToInt32(result);
+                command.Parameters.AddWithValue("@GroupSetID", groupSetId);
+            }
+            var result = command.ExecuteScalar();
+
+            // Check for DBNull or invalid result
+            if (result == DBNull.Value || Convert.ToInt64(result) <= 1)
+            {
+                return 1;
             }
             else
             {
-                return 1;
+                return Convert.ToInt64(result);
             }
         }
 

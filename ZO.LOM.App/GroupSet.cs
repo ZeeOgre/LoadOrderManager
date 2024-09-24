@@ -26,7 +26,7 @@ namespace ZO.LoadOrderManager
 
     public class GroupSet
     {
-        public int GroupSetID { get; set; }
+        public long GroupSetID { get; set; }
         public string GroupSetName { get; set; }
         public GroupFlags GroupSetFlags { get; set; }
         public ObservableCollection<ModGroup> ModGroups { get; set; } = new ObservableCollection<ModGroup>();
@@ -40,16 +40,15 @@ namespace ZO.LoadOrderManager
 
 
 
-        public GroupSet(int groupSetID, string groupSetName, GroupFlags groupSetFlags)
+        public GroupSet(long groupSetID, string groupSetName, GroupFlags groupSetFlags)
         {
             GroupSetID = groupSetID;
             GroupSetName = groupSetName;
             GroupSetFlags = groupSetFlags;
-            
 
-            // Ensure the default GroupSet has the correct flags
             if (IsDefaultGroup || GroupSetID == 1)
             {
+                // Load the default group set if applicable
                 var defaultGroupSet = LoadGroupSet(1);
                 if (defaultGroupSet == null)
                 {
@@ -61,21 +60,20 @@ namespace ZO.LoadOrderManager
 
             if (IsReadOnly)
             {
+                // Check if the read-only group set exists, or create it
                 var readOnlyGroupSet = LoadGroupSet(groupSetID);
                 if (readOnlyGroupSet == null)
                 {
-                    // Create a new ReadOnly group and insert it into the database
                     InsertReadOnlyGroupSet();
-                    App.LogDebug("New ReadOnly GroupSet created and inserted into the database.");
+                    App.LogDebug("New ReadOnly GroupSet created and inserted INTO the database.");
                 }
                 else
                 {
                     App.LogDebug("GroupSet with ReadOnly flag loaded.");
-                    return;
                 }
             }
-           
         }
+
 
         private void InsertReadOnlyGroupSet()
         {
@@ -86,7 +84,7 @@ namespace ZO.LoadOrderManager
                 VALUES (@GroupSetID, @GroupSetName, @GroupSetFlags)";
             command.Parameters.AddWithValue("@GroupSetID", GroupSetID);
             command.Parameters.AddWithValue("@GroupSetName", GroupSetName);
-            command.Parameters.AddWithValue("@GroupSetFlags", (int)GroupSetFlags);
+            command.Parameters.AddWithValue("@GroupSetFlags", (long)GroupSetFlags);
 
             command.ExecuteNonQuery();
         }
@@ -97,7 +95,7 @@ namespace ZO.LoadOrderManager
             GroupSetFlags = GroupFlags.Uninitialized;
             ModGroups = new ObservableCollection<ModGroup>();
 
-            // Insert into database, get the GroupSetID, and update GroupSetName in one query
+            // Insert INTO database, get the GroupSetID, and update GroupSetName in one query
             using var connection = DbManager.Instance.GetConnection();
             using var command = new SQLiteCommand(connection);
             command.CommandText = @"
@@ -106,8 +104,8 @@ namespace ZO.LoadOrderManager
                     RETURNING GroupSetID;
                 ";
             command.Parameters.AddWithValue("@GroupSetName", GroupSetName);
-            command.Parameters.AddWithValue("@GroupSetFlags", (int)GroupSetFlags);
-            GroupSetID = Convert.ToInt32(command.ExecuteScalar());
+            command.Parameters.AddWithValue("@GroupSetFlags", (long)GroupSetFlags);
+            GroupSetID = Convert.ToInt64(command.ExecuteScalar());
 
             // Update GroupSetName to include GroupSetID
             GroupSetName = $"{loadoutName}_{GroupSetID}";
@@ -145,7 +143,7 @@ namespace ZO.LoadOrderManager
             return clonedGroupSet;
         }
 
-        // Method to merge another GroupSet into this one
+        // Method to merge another GroupSet INTO this one
         //public void Merge(GroupSet otherGroupSet)
         //{
         //    foreach (var modGroup in otherGroupSet.ModGroups)
@@ -158,7 +156,7 @@ namespace ZO.LoadOrderManager
         //}
 
         // Method to load GroupSet from the database
-        public static GroupSet? LoadGroupSet(int groupSetID)
+        public static GroupSet? LoadGroupSet(long groupSetID)
         {
             using var connection = DbManager.Instance.GetConnection();
             using var command = new SQLiteCommand(connection);
@@ -169,9 +167,9 @@ namespace ZO.LoadOrderManager
             if (reader.Read())
             {
                 var groupSet = new GroupSet(
-                    reader.GetInt32(reader.GetOrdinal("GroupSetID")),
+                    reader.GetInt64(reader.GetOrdinal("GroupSetID")),
                     reader.GetString(reader.GetOrdinal("GroupSetName")),
-                    (GroupFlags)reader.GetInt32(reader.GetOrdinal("GroupSetFlags"))
+                    (GroupFlags)reader.GetInt64(reader.GetOrdinal("GroupSetFlags"))
                 );
 
                 var modGroupsList = ModGroup.LoadModGroupsByGroupSet(groupSetID);
@@ -193,36 +191,39 @@ namespace ZO.LoadOrderManager
             using var command = new SQLiteCommand(connection);
 
             // Check if the GroupSet already exists
-            command.CommandText = "SELECT GroupSetFlags FROM GroupSet WHERE GroupSetID = @GroupSetID";
+            command.CommandText = "SELECT GroupSetFlags FROM GroupSets WHERE GroupSetID = @GroupSetID";
             command.Parameters.AddWithValue("@GroupSetID", GroupSetID);
 
             var existingFlags = command.ExecuteScalar();
-            if (existingFlags != null)
+
+            // Validate and cast existingFlags if it is not null or DBNull
+            if (existingFlags != null && existingFlags != DBNull.Value)
             {
-                var existingGroupSetFlags = (GroupFlags)(int)existingFlags;
-                if (existingGroupSetFlags != GroupSetFlags)
-                {
-                    GroupSetFlags |= existingGroupSetFlags;
-                }
+                // Correctly cast to long, then to GroupFlags
+                var existingGroupSetFlags = (GroupFlags)(long)existingFlags;
+                // Merge existing flags with the current flags
+                GroupSetFlags |= existingGroupSetFlags;
             }
 
             // Prepare insert or replace command
             command.CommandText = @"
-                    INSERT OR REPLACE INTO GroupSet (GroupSetID, GroupSetName, GroupSetFlags)
-                    VALUES (@GroupSetID, @GroupSetName, @GroupSetFlags)";
+        INSERT OR REPLACE INTO GroupSets (GroupSetID, GroupSetName, GroupSetFlags)
+        VALUES (@GroupSetID, @GroupSetName, @GroupSetFlags)";
             command.Parameters.AddWithValue("@GroupSetName", GroupSetName);
-            command.Parameters.AddWithValue("@GroupSetFlags", (int)GroupSetFlags);
+            command.Parameters.AddWithValue("@GroupSetFlags", (long)GroupSetFlags);
 
             command.ExecuteNonQuery();
 
-            // Save ModGroups
+            // Save ModGroups to the database
             foreach (var modGroup in ModGroups)
             {
-                modGroup.GroupSetID = GroupSetID;   
+                modGroup.GroupSetID = GroupSetID;
                 modGroup.WriteGroup();
             }
+
             return this;
         }
+
 
         public static GroupSet CreateEmptyGroupSet()
         {
@@ -234,9 +235,9 @@ namespace ZO.LoadOrderManager
                 RETURNING GroupSetID;
             ";
             command.Parameters.AddWithValue("@GroupSetName", "EmptyGroupSet");
-            command.Parameters.AddWithValue("@GroupSetFlags", (int)GroupFlags.Uninitialized);
+            command.Parameters.AddWithValue("@GroupSetFlags", (long)GroupFlags.Uninitialized);
 
-            int groupSetID = Convert.ToInt32(command.ExecuteScalar());
+            long groupSetID = (long)command.ExecuteScalar();
             
             return new GroupSet(groupSetID, "EmptyGroupSet", GroupFlags.Uninitialized);
 
@@ -256,7 +257,7 @@ namespace ZO.LoadOrderManager
             );
         }
 
-        public int GroupSetID
+        public long groupSetID
         {
             get => _groupSet.GroupSetID;
             set

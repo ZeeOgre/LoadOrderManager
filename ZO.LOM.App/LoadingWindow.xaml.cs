@@ -11,7 +11,7 @@ namespace ZO.LoadOrderManager
             InitializeComponent();
         }
 
-        public void UpdateProgress(int progress, string message)
+        public void UpdateProgress(long progress, string message)
         {
             ProgressBar.Value = progress;
             MessageLabel.Content = message;

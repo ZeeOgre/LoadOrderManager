@@ -45,7 +45,7 @@ function Increment-Tag {
         [string]$tag
     )
     if ($tag -match "-m(\d+)$") {
-        $number = [int]$matches[1] + 1
+        $number = [long]$matches[1] + 1
         return $tag -replace "-m\d+$", "-m$number"
     } else {
         return "$tag-m1"
@@ -82,12 +82,12 @@ if ($currentBranch -eq 'master') {
     # Clobber down to dev
     Execute-Command "git checkout dev"
     Execute-Command "git merge -X theirs master"
-    Write-Output "Merged master into dev with conflicts resolved in favor of master."
+    Write-Output "Merged master INTO dev with conflicts resolved in favor of master."
 } elseif ($currentBranch -eq 'dev') {
     # Friendly merge up to master
     Execute-Command "git checkout master"
     Execute-Command "git merge dev"
-    Write-Output "Merged dev into master."
+    Write-Output "Merged dev INTO master."
 }
 
 # Check if there are any changes before committing

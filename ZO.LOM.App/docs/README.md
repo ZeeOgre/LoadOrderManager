@@ -41,8 +41,8 @@ This folder marked with a * must be specified as the *SOURCE* folder in your con
 Under it there must be at least one *PluginName* where you have your files that are in development. For Bethesda games this would be your esp, scripts, textures, etc.
 When you compile it with Creation Kit (or whatever tool you use) it will be saved in the *GAMEFOLDER* folder. When you perform a *Gather* operation, the modified files that weren't originally moved will be copied from the *GAMEFOLDER* to the *SOURCE* folder.
 
-	It's worth a little sidebar here to explain how we interact with Vortex.  Vortex uses junction points to move your ModFiles in and out of the game folders.  
-	What we're doing is creating a directory junction into the Mod Manager (It SHOULD be agnostic as to which one). 
+	It's worth a little sidebar here to explain how we longeract with Vortex.  Vortex uses junction polongs to move your ModFiles in and out of the game folders.  
+	What we're doing is creating a directory junction INTO the Mod Manager (It SHOULD be agnostic as to which one). 
 	We then leverage the Mod Manager to perform the actual movement in and out of the game folder.
 	So, you've move your mod in, run CK, and created a bunch of scripts and textures 
 	- these won't necessarily come back, as the ModManager doesn't know anything about them.  
@@ -55,7 +55,7 @@ Folders marked with a # are those that get created automatically by the tool, an
 Deployed is where we put the mods that are currently in the game folder.  Nexus is where we put the mods that are packaged for deployment to Nexus.
 
 
-The *Target* folder may be an intermediary testing/staging folder, or could be your release folder, you can have as many as you need, but you really need at least one more.
+The *Target* folder may be an longermediary testing/staging folder, or could be your release folder, you can have as many as you need, but you really need at least one more.
 
 Your ModManager does a great job of helping you find these folders. Vortex will show you the game folder, game settings folder etc... when you've got the game selected:
 
@@ -68,13 +68,13 @@ When you're in the overall settings, you can find the mod staging folder:
 ## Configure the config.yaml
 The `config.yaml` distributed with the application will need to be updated with your actual folder paths. The example is set up to support a **DEV**, **TEST** and **RELEASE** folder structure – you can name them whatever you want, but at a minimum your repository folder must contain a <source> folder, with your mods, each in their own folder.  The Mod Name will be derived from this directory name.
 
-The stage names **BACKUP**, **NEXUS** and **DEPLOYED** are reserved, as they’re used internally.
+The stage names **BACKUP**, **NEXUS** and **DEPLOYED** are reserved, as they’re used longernally.
 
 
 The file is well documented with comments for each line
 ```
 repoFolder: <<Your folder where you’re going to store your mods>> ## This is the folder where you're storing your in-development mods'
-useGit: true ## If you're using GitHub, set this to true, today this only enables the button in the main interface, future versions may include git integration to push/pull the repo'
+useGit: true ## If you're using GitHub, set this to true, today this only enables the button in the main longerface, future versions may include git longegration to push/pull the repo'
 gitHubRepo: <<GITHUB REPO>> ## If you're using GitHub, this is the URL to your repository if useGit is true then this is required'
 useModManager: true ## If you're using a mod manager, set this to true'
 modStagingFolder:<<MOD STAGING FOLDER>> #if you're using a mod manager, this is the folder where your mod manager is looking for mods, if useModManager is true then this is required'
@@ -89,7 +89,7 @@ modStages: ## These are the stages that your mod will go through, you can add or
 	## This folder MUST exist in your Repository Folder – it will be scanned for existing mods
 - TEST
 - RELEASE
-- "#NEXUS" ## these folders are archive folders, when a mod is packaged for deployment or deployed into the mod manager, these are primarily here for documentation, and should not be changed, if they are not included that’s OK, they are already present in the database.'
+- "#NEXUS" ## these folders are archive folders, when a mod is packaged for deployment or deployed INTO the mod manager, these are primarily here for documentation, and should not be changed, if they are not included that’s OK, they are already present in the database.'
 - "#DEPLOYED"
 limitFiletypes: true ## You may want to include everything, or you may want to limit the filetypes moved and archived'
 promoteIncludeFiletypes: ## These are the filetypes that will be included when promoting a mod from one stage to another'
@@ -109,7 +109,7 @@ showOverwriteMessage: false ## This will show a message box when a file is about
 nexusAPIKey: <<Your Nexus APIKey – this is not necessary now, but is a placeholder if I build in any direct compatibility in the future.>> ## This is your Nexus API key, at the moment, features using this are not implemented'
 ```
 ---
-# The Interface
+# The longerface
 ---
 ## Main Window
 ![Main Window](./img/dmm_mainwindow.png)
@@ -123,11 +123,11 @@ This will open the settings window, you should see this when you first launch th
 If you close this window without clicking save, it will revert to the previous settings.
 
 ### Backup
-This button will create a backup of any mods in the Source folder.  It will create a timestamped zip/7z file in the Backup folder with the contents of the mod at that point in time.
+This button will create a backup of any mods in the Source folder.  It will create a timestamped zip/7z file in the Backup folder with the contents of the mod at that polong in time.
 
 ![Backup Window](./img/dmm_backupresults.png)
 
-I've experimented with backing up only the files that have changed, but it's not reliable, so I'm backing up the whole thing.  This is a good practice to get into, as it will allow you to roll back to a previous version if you need to.
+I've experimented with backing up only the files that have changed, but it's not reliable, so I'm backing up the whole thing.  This is a good practice to get INTO, as it will allow you to roll back to a previous version if you need to.
 
 ### Launch Mod Manager
 Whether you use Vortex, MO2 or whatever mod manager you use, this will launch it as long as you specified it correctly.  For Vortex in particular, if you need to make a custom game profile, you'll need to specify the launch parameters to get that to work.
@@ -137,12 +137,12 @@ Whether you use Vortex, MO2 or whatever mod manager you use, this will launch it
 ### Launch IDE
 Starfield Creation Kit has a plugin for VSCode so that you can compile papyrus scripts in a much nicer environment than the CK.  This will launch your IDE, so you can work on your scripts. If you prefer Notepad, Notepad++, whatever you've specified, this will launch it for you.
 ### Open Github
-Github has free solutions that anyone can use. You can mark your repositories private, and if you're using VSCode, or another modern IDE, it will integrate with Github, having version controlled backups is always a good idea! If you've specified your Github repository in the config.yaml, this button will open it in your default browser.
+Github has free solutions that anyone can use. You can mark your repositories private, and if you're using VSCode, or another modern IDE, it will longegrate with Github, having version controlled backups is always a good idea! If you've specified your Github repository in the config.yaml, this button will open it in your default browser.
 ### Open Game Folder
 Does what it says on the tin, opens the game folder in Windows Explorer.
 ### Load Order
 Because everyone does it a little different, I've built a Load Order manager of my own. This mixes the information from Plugins.txt and CreationCatalog.txt to provide a more robust view of what you've got installed.
-It's still very much a work in progress, so at this point the buttons don't even work.  I plan on having categories, and the ability to move entire categories up and down, in addition to actually writing the comments/categories into the Plugins.txt (even if it's only there for one go, until the game wipes them out.
+It's still very much a work in progress, so at this polong the buttons don't even work.  I plan on having categories, and the ability to move entire categories up and down, in addition to actually writing the comments/categories INTO the Plugins.txt (even if it's only there for one go, until the game wipes them out.
 )
 
 ![Load Order Window](./img/dmm_loadorder_window.png)
@@ -165,7 +165,7 @@ This button will scan the GameFolder for files that are newer than the ones in t
 This button opens the backup folder for the mod.  This is where the backups are stored, and you can see the timestamped backups here.	
 
 ### Promote
-This will open the promotion interface for your mod. Choose your source and target stages, and click the Promote button.  This will move the mod from one stage to another, and will also create a backup of the mod in the target stage.
+This will open the promotion longerface for your mod. Choose your source and target stages, and click the Promote button.  This will move the mod from one stage to another, and will also create a backup of the mod in the target stage.
 This will only move the "Allowed Filetypes" as specified in the config.yaml/Configuration screen.  If you have other files that need to be moved, you'll need to update these settings for them to get moved. If you've unchecked "Limit File Types" all the files in the folder will move over.
 
 ![Promote Window](./img/dmm_promote_window.png)
@@ -189,7 +189,7 @@ When you look at a mod on Nexus, the URL will look like this:
 
 ![Nexus Address Zohst](img/nexus_address_zohst.png)
 
-The number at the end of the URL is the Nexus ID.  In this case, paste the whole URL into the Nexus URL field.
+The number at the end of the URL is the Nexus ID.  In this case, paste the whole URL INTO the Nexus URL field.
 
 ## Load Order Window
 ---
@@ -221,7 +221,7 @@ Enhanced Load Order Management
 Smarter backup management
 	- Only backup files that have changed
 
-Direct Github integration
+Direct Github longegration
 	- Push/Pull
 	- Tagging
 	- CI/CD release management

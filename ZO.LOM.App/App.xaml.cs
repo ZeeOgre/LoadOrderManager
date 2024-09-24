@@ -13,7 +13,7 @@ using ZO.LoadOrderManager.Properties;
 namespace ZO.LoadOrderManager
 {
     /// <summary>
-    /// Interaction logic for App.xaml
+    /// longeraction logic for App.xaml
     /// </summary>
     [SupportedOSPlatform("windows")]
     public partial class App : Application
@@ -297,7 +297,7 @@ namespace ZO.LoadOrderManager
             return null;
         }
 
-        public static void LogDebug(string message, [CallerFilePath] string filePath = "", [CallerLineNumber] int lineNumber = 0, [CallerMemberName] string memberName = "")
+        public static void LogDebug(string message, [CallerFilePath] string filePath = "", [CallerLineNumber] long lineNumber = 0, [CallerMemberName] string memberName = "")
         {
             string logMessage = $"{Path.GetFileName(filePath)}:{lineNumber} - {memberName}: {message}";
             ActualLogMethod(logMessage);

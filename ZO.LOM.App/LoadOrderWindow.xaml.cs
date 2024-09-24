@@ -18,7 +18,7 @@ namespace ZO.LoadOrderManager
     public partial class LoadOrderWindow
     {
         private bool isSaved;
-        private int SelectedLoadOutID; // Add this line
+        private long SelectedLoadOutID; // Add this line
         private System.Timers.Timer cooldownTimer;
 
         //public ObservableCollection<ModGroup> Groups { get; set; }

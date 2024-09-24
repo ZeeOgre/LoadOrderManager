@@ -25,7 +25,7 @@ public class LoadOrdersViewModel : INotifyPropertyChanged
         var aggLoadInfoInstance = AggLoadInfo.Instance;
         Items = new ObservableCollection<LoadOrderItemViewModel>();
 
-        // Populate Items with data from aggLoadInfo
+        // Populate Items with data from aggLoadInfo for Groups
         foreach (var group in aggLoadInfoInstance.Groups)
         {
             var groupViewModel = new LoadOrderItemViewModel
@@ -36,6 +36,7 @@ public class LoadOrdersViewModel : INotifyPropertyChanged
                 Children = new ObservableCollection<LoadOrderItemViewModel>()
             };
 
+            // Add plugins to the group view model
             foreach (var plugin in group.Plugins)
             {
                 var pluginViewModel = new LoadOrderItemViewModel
@@ -52,6 +53,7 @@ public class LoadOrdersViewModel : INotifyPropertyChanged
             Items.Add(groupViewModel);
         }
 
+        // Populate Items with data from aggLoadInfo for LoadOuts
         foreach (var loadOut in aggLoadInfoInstance.LoadOuts)
         {
             var loadOutViewModel = new LoadOrderItemViewModel
@@ -61,17 +63,26 @@ public class LoadOrdersViewModel : INotifyPropertyChanged
                 Children = new ObservableCollection<LoadOrderItemViewModel>()
             };
 
-            foreach (var plugin in loadOut.Plugins)
+            // Fetch plugins based on enabled plugin IDs in LoadOut
+            var enabledPlugins = loadOut.enabledPlugins; // Directly use enabledPlugins from LoadOut
+
+            foreach (var pluginId in enabledPlugins)
             {
-                var pluginViewModel = new LoadOrderItemViewModel
+                // Find the plugin by ID in the global plugin list
+                var plugin = aggLoadInfoInstance.Plugins.FirstOrDefault(p => p.PluginID == pluginId);
+
+                if (plugin != null)
                 {
-                    DisplayName = plugin.Plugin.PluginName,
-                    PluginData = plugin.Plugin,
-                    IsEnabled = plugin.IsEnabled,
-                    EntityType = EntityType.Plugin,
-                    GroupID = plugin.Plugin.GroupID // Set GroupID for plugin
-                };
-                loadOutViewModel.Children.Add(pluginViewModel);
+                    var pluginViewModel = new LoadOrderItemViewModel
+                    {
+                        DisplayName = plugin.PluginName,
+                        PluginData = plugin,
+                        IsEnabled = true, // Plugin is enabled in this LoadOut
+                        EntityType = EntityType.Plugin,
+                        GroupID = plugin.GroupID // Set GroupID for plugin
+                    };
+                    loadOutViewModel.Children.Add(pluginViewModel);
+                }
             }
 
             Items.Add(loadOutViewModel);
@@ -87,7 +98,7 @@ public class LoadOrdersViewModel : INotifyPropertyChanged
         SortingHelper.SortGroupsAndPlugins(AggLoadInfo.Instance.Groups, AggLoadInfo.Instance.Plugins, Items);
     }
 
-    public event PropertyChangedEventHandler PropertyChanged;
+    public event PropertyChangedEventHandler? PropertyChanged;
 
     protected virtual void OnPropertyChanged(string propertyName)
     {

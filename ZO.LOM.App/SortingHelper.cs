@@ -16,7 +16,7 @@ namespace ZO.LoadOrderManager
             targetCollection.Clear();
 
             // Handle special groups
-            var specialGroups = new Dictionary<int, ModGroup>
+            var specialGroups = new Dictionary<long, ModGroup>
             {
                 { 1, groups.FirstOrDefault(g => g.GroupID == 1) },    // Default root group
                 { -997, groups.FirstOrDefault(g => g.GroupID == -997) },  // Uncategorized
@@ -83,7 +83,7 @@ namespace ZO.LoadOrderManager
         private static void AddSpecialGroups(
             ObservableCollection<LoadOrderItemViewModel> targetCollection,
             IEnumerable<Plugin> sortedPlugins,
-            Dictionary<int, ModGroup> specialGroups)
+            Dictionary<long, ModGroup> specialGroups)
         {
             foreach (var groupId in specialGroups.Keys.Where(id => id < -900))
             {

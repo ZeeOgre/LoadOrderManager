@@ -109,5 +109,5 @@ PlaceDoorsYourself.esm
 zeeogresaiogameplaytweaks.esp
 
 
-### NEVER_LOAD @@ This mod for JMPZ11's automatic cleaning tool, it should never actually load into the game. 
+### NEVER_LOAD @@ This mod for JMPZ11's automatic cleaning tool, it should never actually load INTO the game. 
 A1_EMPTY_STUB_XXXXXXXXXX.esm

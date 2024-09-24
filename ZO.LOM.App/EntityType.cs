@@ -20,7 +20,7 @@ namespace ZO.LoadOrderManager
     public class EntityTypeTemplateSelector : DataTemplateSelector
     {
         public DataTemplate GroupTemplate { get; set; }
-        public DataTemplate PluginTemplate { get; set; }
+        public DataTemplate Pluglongemplate { get; set; }
         public DataTemplate LoadOutTemplate { get; set; }
 
         public override DataTemplate SelectTemplate(object item, DependencyObject container)
@@ -30,7 +30,7 @@ namespace ZO.LoadOrderManager
             return entityType switch
             {
                 EntityType.Group => GroupTemplate,
-                EntityType.Plugin => PluginTemplate,
+                EntityType.Plugin => Pluglongemplate,
                 EntityType.LoadOut => LoadOutTemplate,
                 _ => base.SelectTemplate(item, container),
             };

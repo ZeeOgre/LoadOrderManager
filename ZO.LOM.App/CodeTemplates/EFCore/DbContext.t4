@@ -5,7 +5,7 @@
 <#@ assembly name="Microsoft.Extensions.DependencyInjection.Abstractions" #>
 <#@ parameter name="Model" type="Microsoft.EntityFrameworkCore.Metadata.IModel" #>
 <#@ parameter name="Options" type="Microsoft.EntityFrameworkCore.Scaffolding.ModelCodeGenerationOptions" #>
-<#@ parameter name="NamespaceHint" type="System.String" #>
+<#@ parameter name="NamespaceHlong" type="System.String" #>
 <#@ import namespace="System.Collections.Generic" #>
 <#@ import namespace="System.Linq" #>
 <#@ import namespace="System.Text" #>
@@ -33,16 +33,16 @@
         "Microsoft.EntityFrameworkCore"
     };
 
-    if (NamespaceHint != Options.ModelNamespace
+    if (NamespaceHlong != Options.ModelNamespace
         && !string.IsNullOrEmpty(Options.ModelNamespace))
     {
         usings.Add(Options.ModelNamespace);
     }
 
-    if (!string.IsNullOrEmpty(NamespaceHint))
+    if (!string.IsNullOrEmpty(NamespaceHlong))
     {
 #>
-namespace <#= NamespaceHint #>;
+namespace <#= NamespaceHlong #>;
 
 <#
     }
@@ -110,7 +110,7 @@ public partial class <#= Options.ContextName #> : DbContext
     StringBuilder mainEnvironment;
     foreach (var entityType in Model.GetEntityTypes().Where(e => !e.IsSimpleManyToManyJoinEntityType()))
     {
-        // Save all previously generated code, and start generating into a new temporary environment
+        // Save all previously generated code, and start generating INTO a new temporary environment
         mainEnvironment = GenerationEnvironment;
         GenerationEnvironment = new StringBuilder();
 
@@ -312,7 +312,7 @@ public partial class <#= Options.ContextName #> : DbContext
             anyConfiguration = true;
         }
 
-        // Resume generating code into the main environment
+        // Resume generating code INTO the main environment
         GenerationEnvironment = mainEnvironment;
     }
 

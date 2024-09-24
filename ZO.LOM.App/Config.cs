@@ -87,7 +87,7 @@ namespace ZO.LoadOrderManager
                 using var connection = DbManager.Instance.GetConnection();
                 
                 using var command = new SQLiteCommand("SELECT COUNT(*) FROM Config", connection);
-                var rowCount = Convert.ToInt32(command.ExecuteScalar());
+                var rowCount = Convert.ToInt64(command.ExecuteScalar());
                 return rowCount > 0;
             }
             catch (Exception ex)

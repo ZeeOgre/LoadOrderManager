@@ -4,45 +4,45 @@
     <Node Id="Database" Label="LoadOrderManager.db" Category="Database" Group="Expanded" />
     <Node Id="Config" Label="Config" Category="Table" Group="Collapsed" />
     <Node Id="Config_GameFolder" Label="GameFolder" Category="Field" Description="text" />
-    <Node Id="Config_AutoCheckForUpdates" Label="AutoCheckForUpdates" Category="Field Optional" Description="bigint" />
+    <Node Id="Config_AutoCheckForUpdates" Label="AutoCheckForUpdates" Category="Field Optional" Description="biglong" />
     <Node Id="ExternalIDs" Label="ExternalIDs" Category="Table" Group="Collapsed" />
-    <Node Id="ExternalIDs_ExternalID" Label="ExternalID" Category="Field Primary" Description="bigint" />
-    <Node Id="ExternalIDs_PluginID" Label="PluginID" Category="Field Foreign" Description="bigint" />
+    <Node Id="ExternalIDs_ExternalID" Label="ExternalID" Category="Field Primary" Description="biglong" />
+    <Node Id="ExternalIDs_PluginID" Label="PluginID" Category="Field Foreign" Description="biglong" />
     <Node Id="ExternalIDs_BethesdaID" Label="BethesdaID" Category="Field Optional" Description="text" />
     <Node Id="ExternalIDs_NexusID" Label="NexusID" Category="Field Optional" Description="text" />
     <Node Id="FileInfo" Label="FileInfo" Category="Table" Group="Collapsed" />
-    <Node Id="FileInfo_FileID" Label="FileID" Category="Field Primary" Description="bigint" />
-    <Node Id="FileInfo_PluginID" Label="PluginID" Category="Field Foreign" Description="bigint" />
+    <Node Id="FileInfo_FileID" Label="FileID" Category="Field Primary" Description="biglong" />
+    <Node Id="FileInfo_PluginID" Label="PluginID" Category="Field Foreign" Description="biglong" />
     <Node Id="FileInfo_Filename" Label="Filename" Category="Field" Description="text" />
     <Node Id="FileInfo_RelativePath" Label="RelativePath" Category="Field Optional" Description="text" />
     <Node Id="FileInfo_DTStamp" Label="DTStamp" Category="Field" Description="datetime" />
     <Node Id="FileInfo_HASH" Label="HASH" Category="Field Optional" Description="text" />
-    <Node Id="FileInfo_IsArchive" Label="IsArchive" Category="Field" Description="bigint" />
+    <Node Id="FileInfo_IsArchive" Label="IsArchive" Category="Field" Description="biglong" />
     <Node Id="InitializationStatus" Label="InitializationStatus" Category="Table" Group="Collapsed" />
-    <Node Id="InitializationStatus_Id" Label="Id" Category="Field Primary" Description="bigint" />
-    <Node Id="InitializationStatus_IsInitialized" Label="IsInitialized" Category="Field" Description="bigint" />
+    <Node Id="InitializationStatus_Id" Label="Id" Category="Field Primary" Description="biglong" />
+    <Node Id="InitializationStatus_IsInitialized" Label="IsInitialized" Category="Field" Description="biglong" />
     <Node Id="InitializationStatus_InitializationTime" Label="InitializationTime" Category="Field" Description="text" />
     <Node Id="LoadOutProfiles" Label="LoadOutProfiles" Category="Table" Group="Collapsed" />
-    <Node Id="LoadOutProfiles_ProfileID" Label="ProfileID" Category="Field Primary" Description="bigint" />
+    <Node Id="LoadOutProfiles_ProfileID" Label="ProfileID" Category="Field Primary" Description="biglong" />
     <Node Id="LoadOutProfiles_ProfileName" Label="ProfileName" Category="Field" Description="text" />
     <Node Id="ModGroups" Label="ModGroups" Category="Table" Group="Collapsed" />
-    <Node Id="ModGroups_GroupID" Label="GroupID" Category="Field Primary" Description="bigint" />
-    <Node Id="ModGroups_Ordinal" Label="Ordinal" Category="Field Optional" Description="bigint" />
+    <Node Id="ModGroups_GroupID" Label="GroupID" Category="Field Primary" Description="biglong" />
+    <Node Id="ModGroups_Ordinal" Label="Ordinal" Category="Field Optional" Description="biglong" />
     <Node Id="ModGroups_GroupName" Label="GroupName" Category="Field Optional" Description="text" />
     <Node Id="ModGroups_Description" Label="Description" Category="Field Optional" Description="text" />
-    <Node Id="ModGroups_ParentID" Label="ParentID" Category="Field Foreign" Description="bigint" />
+    <Node Id="ModGroups_ParentID" Label="ParentID" Category="Field Foreign" Description="biglong" />
     <Node Id="Plugins" Label="Plugins" Category="Table" Group="Collapsed" />
-    <Node Id="Plugins_PluginID" Label="PluginID" Category="Field Primary" Description="bigint" />
+    <Node Id="Plugins_PluginID" Label="PluginID" Category="Field Primary" Description="biglong" />
     <Node Id="Plugins_PluginName" Label="PluginName" Category="Field" Description="text" />
     <Node Id="Plugins_Description" Label="Description" Category="Field Optional" Description="text" />
-    <Node Id="Plugins_Achievements" Label="Achievements" Category="Field" Description="bigint" />
+    <Node Id="Plugins_Achievements" Label="Achievements" Category="Field" Description="biglong" />
     <Node Id="Plugins_DTStamp" Label="DTStamp" Category="Field" Description="text" />
     <Node Id="Plugins_Version" Label="Version" Category="Field Optional" Description="text" />
-    <Node Id="Plugins_GroupID" Label="GroupID" Category="Field Foreign" Description="bigint" />
-    <Node Id="Plugins_GroupOrdinal" Label="GroupOrdinal" Category="Field Optional" Description="bigint" />
+    <Node Id="Plugins_GroupID" Label="GroupID" Category="Field Foreign" Description="biglong" />
+    <Node Id="Plugins_GroupOrdinal" Label="GroupOrdinal" Category="Field Optional" Description="biglong" />
     <Node Id="ProfilePlugins" Label="ProfilePlugins" Category="Table" Group="Collapsed" />
-    <Node Id="ProfilePlugins_ProfileID" Label="ProfileID" Category="Field Primary" Description="bigint" />
-    <Node Id="ProfilePlugins_PluginID" Label="PluginID" Category="Field Primary" Description="bigint" />
+    <Node Id="ProfilePlugins_ProfileID" Label="ProfileID" Category="Field Primary" Description="biglong" />
+    <Node Id="ProfilePlugins_PluginID" Label="PluginID" Category="Field Primary" Description="biglong" />
   </Nodes>
   <Links>
     <Link Source="Database" Target="Config" Category="Contains" />

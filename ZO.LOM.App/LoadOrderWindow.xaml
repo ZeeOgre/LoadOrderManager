@@ -24,7 +24,7 @@
             </Grid>
         </HierarchicalDataTemplate>
 
-        <DataTemplate x:Key="PluginTemplate">
+        <DataTemplate x:Key="Pluglongemplate">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="25"/>
@@ -98,7 +98,7 @@
         <!-- EntityTypeTemplateSelector with reference to the defined templates -->
         <local:EntityTypeTemplateSelector x:Key="EntityTypeTemplateSelector"
                                           GroupTemplate="{StaticResource GroupTemplate}"
-                                          PluginTemplate="{StaticResource PluginTemplate}" />
+                                          Pluglongemplate="{StaticResource Pluglongemplate}" />
     </Window.Resources>
 
     <Grid>
@@ -227,7 +227,17 @@
                     <TextBox x:Name="SearchBox" Width="200" Margin="5,5,5,5" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"/>
                     <Button x:Name="SearchButton" Content="Search" Command="{Binding SearchCommand}"/>
                 </StackPanel>
-
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                    <ComboBox   x:Name="cmbGroupSet"
+                                ItemsSource="{Binding GroupSets}" 
+                                SelectedValuePath="GroupSetID" 
+                                DisplayMemberPath="GroupSetName" 
+                                SelectedValue="{Binding SelectedGroupSetId}" 
+                                HorizontalAlignment="Center" 
+                                VerticalAlignment="Top" 
+                                Width="200" Height="30" Margin="300,10,10,10">
+                    </ComboBox>
+                </StackPanel>
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Grid.Column="1">
                     <Button x:Name="SaveButton" Content="Save" Width="50" Margin="5,5,5,5" Command="{Binding SaveLoadOutCommand}"/>
                     <ComboBox  x:Name="cmbProfile"

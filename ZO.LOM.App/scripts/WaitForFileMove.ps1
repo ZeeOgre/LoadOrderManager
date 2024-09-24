@@ -1,6 +1,6 @@
 param (
     [string]$filePath,
-    [int]$timeoutInSeconds = 10
+    [long]$timeoutInSeconds = 10
 )
 
 $endTime = (Get-Date).AddSeconds($timeoutInSeconds)

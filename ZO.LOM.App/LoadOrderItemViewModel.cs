@@ -13,7 +13,7 @@ namespace ZO.LoadOrderManager
         private string displayName;
         private bool isEnabled;
         private Plugin pluginData;
-        private int? groupID;
+        private long? groupID;
 
         public string DisplayName
         {
@@ -46,14 +46,14 @@ namespace ZO.LoadOrderManager
             }
         }
 
-        public int? GroupID
+        public long? GroupID
         {
-            get => groupID;
+            get => GroupID;
             set
             {
-                if (groupID != value)
+                if (GroupID != value)
                 {
-                    groupID = value;
+                    GroupID = value;
                     OnPropertyChanged(nameof(GroupID));
                 }
             }

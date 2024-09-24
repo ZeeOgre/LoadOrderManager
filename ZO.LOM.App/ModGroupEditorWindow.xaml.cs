@@ -34,7 +34,7 @@ namespace ZO.LoadOrderManager
         private void LoadPlugins()
         {
             PluginsGrid.Children.Clear();
-            var pluginIDs = new List<int>();
+            var pluginIDs = new List<long>();
             var pluginNames = new List<string>();
 
             using (var connection = DbManager.Instance.GetConnection())
@@ -49,7 +49,7 @@ namespace ZO.LoadOrderManager
                     {
                         while (reader.Read())
                         {
-                            pluginIDs.Add(reader.GetInt32(0));
+                            pluginIDs.Add(reader.GetInt64(0));
                             pluginNames.Add(reader.GetString(1));
                         }
                     }

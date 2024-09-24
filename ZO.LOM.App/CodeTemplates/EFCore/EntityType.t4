@@ -5,7 +5,7 @@
 <#@ assembly name="Microsoft.Extensions.DependencyInjection.Abstractions" #>
 <#@ parameter name="EntityType" type="Microsoft.EntityFrameworkCore.Metadata.IEntityType" #>
 <#@ parameter name="Options" type="Microsoft.EntityFrameworkCore.Scaffolding.ModelCodeGenerationOptions" #>
-<#@ parameter name="NamespaceHint" type="System.String" #>
+<#@ parameter name="NamespaceHlong" type="System.String" #>
 <#@ import namespace="System.Collections.Generic" #>
 <#@ import namespace="System.ComponentModel.DataAnnotations" #>
 <#@ import namespace="System.Linq" #>
@@ -38,10 +38,10 @@
         usings.Add("Microsoft.EntityFrameworkCore");
     }
 
-    if (!string.IsNullOrEmpty(NamespaceHint))
+    if (!string.IsNullOrEmpty(NamespaceHlong))
     {
 #>
-namespace <#= NamespaceHint #>;
+namespace <#= NamespaceHlong #>;
 
 <#
     }

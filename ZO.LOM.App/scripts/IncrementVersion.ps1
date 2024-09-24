@@ -19,7 +19,7 @@ function Increment-Version {
         throw "Version must have four segments (e.g., 1.0.0.0)"
     }
     
-    $versionSegments[2] = [int]$versionSegments[2] + 1
+    $versionSegments[2] = [long]$versionSegments[2] + 1
     return $versionSegments -join '.'
 }
 

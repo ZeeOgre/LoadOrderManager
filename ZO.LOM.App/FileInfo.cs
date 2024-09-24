@@ -8,7 +8,7 @@ namespace ZO.LoadOrderManager
 {
     public class FileInfo
     {
-        public int FileID { get; set; }
+        public long FileID { get; set; }
         public string Filename { get; set; }
         public string? RelativePath { get; set; }
         public string DTStamp { get; set; }
@@ -81,7 +81,7 @@ namespace ZO.LoadOrderManager
             {
                 var fileInfo = new FileInfo
                 {
-                    FileID = reader.GetInt32(0),
+                    FileID = reader.GetInt64(0),
                     Filename = reader.GetString(1),
                     RelativePath = reader.IsDBNull(2) ? null : reader.GetString(2),
                     DTStamp = reader.GetString(3),
@@ -110,9 +110,13 @@ namespace ZO.LoadOrderManager
                 if (fileInfo.FileID == 0)
                 {
                     command.CommandText = @"
-                    INSERT INTO FileInfo (PluginID, Filename, RelativePath, DTStamp, HASH, IsArchive)
-                    VALUES (@PluginID, @Filename, @RelativePath, @DTStamp, @HASH, @IsArchive)
-                    RETURNING FileID";
+                        INSERT INTO FileInfo (PluginID, Filename, RelativePath, DTStamp, HASH, IsArchive)
+                        VALUES (@PluginID, @Filename, @RelativePath, @DTStamp, @HASH, @IsArchive)
+                        ON CONFLICT(Filename) DO UPDATE 
+                        SET RelativePath = COALESCE(excluded.RelativePath, FileInfo.RelativePath), 
+                            DTStamp = COALESCE(excluded.DTStamp, FileInfo.DTStamp), 
+                            HASH = COALESCE(excluded.HASH, FileInfo.HASH), 
+                            IsArchive = excluded.IsArchive";
 
                     command.Parameters.AddWithValue("@PluginID", pluginId);
                     command.Parameters.AddWithValue("@Filename", fileInfo.Filename);
@@ -121,7 +125,7 @@ namespace ZO.LoadOrderManager
                     command.Parameters.AddWithValue("@HASH", fileInfo.HASH ?? (object)DBNull.Value);
                     command.Parameters.AddWithValue("@IsArchive", fileInfo.IsArchive);
 
-                    fileInfo.FileID = Convert.ToInt32(command.ExecuteScalar());
+                    fileInfo.FileID = Convert.ToInt64(command.ExecuteScalar());
                 }
                 else
                 {
