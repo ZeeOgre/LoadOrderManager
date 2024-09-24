@@ -26,7 +26,7 @@ namespace ZO.LoadOrderManager
 
             var groupParentMapping = new Dictionary<long, ModGroup> { { 0, defaultModGroup } };
             var groupOrdinalTracker = new Dictionary<long, long> { { 1, 1 } };
-            var pluginOrdinalTracker = new Dictionary<long, long>();
+            var pluginOrdinalTracker = new Dictionary<long, long> { { 1, 1 } };
 
             try
             {
@@ -71,9 +71,16 @@ namespace ZO.LoadOrderManager
                             }
                             else
                             {
-                                var newGroup = existingGroup.Clone(groupSet);
-                                newGroup.Description = groupDescription;
-                                currentGroup = newGroup.WriteGroup();
+                                if (existingGroup.GroupID > 0)
+                                {
+                                    var newGroup = existingGroup.Clone(groupSet);
+                                    newGroup.Description = groupDescription;
+                                    currentGroup = newGroup.WriteGroup();
+                                }
+                                else
+                                {
+                                    currentGroup = existingGroup;
+                                }
                                 groupParentMapping[level] = currentGroup;
                                 groupOrdinalTracker[parentGroup.GroupID ?? 1]++;
                                 if (!pluginOrdinalTracker.ContainsKey(currentGroup.GroupID ?? 1))
@@ -136,11 +143,12 @@ namespace ZO.LoadOrderManager
 
                 // Directly update the enabled plugins in the loadOut
                 loadOut.UpdateEnabledPlugins(enabledPlugins);
-                aggLoadInfo.ProfilePlugins.Items.Clear();
+                //aggLoadInfo.ProfilePlugins.Items.Clear();
                 foreach (var pluginID in enabledPlugins)
                 {
                     aggLoadInfo.ProfilePlugins.Items.Add((loadOut.ProfileID, pluginID));
                 }
+               
                 // Refresh GroupSetPlugins, GroupSetGroups, and ProfilePlugins
                 //aggLoadInfo.RefreshMetadataFromDB();
             }

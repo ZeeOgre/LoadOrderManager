@@ -24,7 +24,7 @@ namespace ZO.LoadOrderManager
                 command.CommandText = @"
                     SELECT GroupID, GroupSetID, ParentID, Ordinal
                     FROM GroupSetGroups
-                    WHERE GroupSetID = @GroupSetID";
+                    WHERE GroupSetID = @GroupSetID OR GroupSetID = 1";
                 command.Parameters.AddWithValue("@GroupSetID", groupSetID);
 
                 using var reader = command.ExecuteReader();
@@ -92,7 +92,7 @@ namespace ZO.LoadOrderManager
                 command.CommandText = @"
                     SELECT GroupSetID, GroupID, PluginID, Ordinal
                     FROM GroupSetPlugins
-                    WHERE GroupSetID = @GroupSetID";
+                    WHERE GroupSetID = @GroupSetID OR GroupSetID = 1";
                 command.Parameters.AddWithValue("@GroupSetID", groupSetID);
 
                 using var reader = command.ExecuteReader();
@@ -160,7 +160,7 @@ namespace ZO.LoadOrderManager
                     SELECT pp.ProfileID, pp.PluginID
                     FROM ProfilePlugins pp
                     INNER JOIN LoadOutProfiles lp ON pp.ProfileID = lp.ProfileID
-                    WHERE lp.GroupSetID = @GroupSetID";
+                    WHERE lp.GroupSetID = @GroupSetID OR GroupSetID = 1";
                 command.Parameters.AddWithValue("@GroupSetID", groupSetID);
 
                 using var reader = command.ExecuteReader();

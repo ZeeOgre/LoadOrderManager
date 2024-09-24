@@ -94,12 +94,14 @@ namespace ZO.LoadOrderManager
         // Load GroupSet data including plugins, groups, and profiles
         private void LoadGroupSetState(SQLiteConnection connection)
         {
-            // Load core entities from vwPluginGrpUnion based on GroupSetID or GroupID < 1
+            // Load core entities from vwPlu
             using var command = new SQLiteCommand(@"
-                SELECT DISTINCT * FROM (SELECT *
-                        FROM vwPluginGrpUnion
-                        WHERE GroupSetID = @GroupSetID OR GroupID < 1);", connection);
-            command.Parameters.AddWithValue("@GroupSetID", ActiveGroupSet.GroupSetID);
+   SELECT DISTINCT * FROM (
+        SELECT *
+        FROM vwPluginGrpUnion
+        WHERE GroupSetID = @GroupSetID OR GroupSetID = 1
+    );", connection);
+           command.Parameters.AddWithValue("@GroupSetID", ActiveGroupSet.GroupSetID);
 
             Console.WriteLine($"GroupSetID: {ActiveGroupSet.GroupSetID}");
             Console.WriteLine($"Executing query: {command.CommandText} with GroupSetID = {ActiveGroupSet.GroupSetID}");

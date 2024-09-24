@@ -267,7 +267,11 @@ namespace ZO.LoadOrderManager
         {
             using var connection = DbManager.Instance.GetConnection();
             using var command = new SQLiteCommand(connection);
-
+            if (groupID < 0)
+            {
+                // Reserved groups are not stored in the database
+                groupSetID = 1;
+            }
             // Query vwModGroups directly without unnecessary joins
             command.CommandText = @"
 SELECT
@@ -593,7 +597,7 @@ ORDER BY GroupOrdinal"; // Correct ordering based on the group
             }
 
             // Remove non-alphanumeric characters and trim whitespace
-            return Regex.Replace(input, @"[^a-zA-Z0-9]", "").Trim();
+            return Regex.Replace(input, @"[^a-zA-Z0-9]", "").Trim().ToLowerInvariant();
         }
 
         public string ToPluginsString()
@@ -773,11 +777,11 @@ ORDER BY GroupOrdinal"; // Correct ordering based on the group
                 normalizedGroupName = normalizedGroupName.Replace(" ", "");
                 normalizedDescription = normalizedDescription.Replace(" ", "");
 
-                // Search for matching ModGroup within the same GroupSetID
+                // Search for matching ModGroup within the same GroupSetID using fuzzy matching
                 var matchingModGroupViewModel = groupSetViewModel.ModGroups
                     .FirstOrDefault(g => g.groupID == this.GroupID ||
-                                         NormalizeString(g.GroupName).Replace(" ", "").Contains(normalizedGroupName, StringComparison.OrdinalIgnoreCase) ||
-                                         NormalizeString(g.ModGroup.Description).Replace(" ", "").Contains(normalizedDescription, StringComparison.OrdinalIgnoreCase));
+                                         SortingHelper.FuzzyCompareStrings(NormalizeString(g.GroupName).Replace(" ", ""), normalizedGroupName) < 3 || // Adjust threshold as needed
+                                         SortingHelper.FuzzyCompareStrings(NormalizeString(g.ModGroup.Description).Replace(" ", ""), normalizedDescription) < 3); // Adjust threshold as needed
 
                 if (matchingModGroupViewModel != null)
                 {
