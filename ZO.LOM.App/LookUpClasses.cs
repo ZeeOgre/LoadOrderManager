@@ -141,12 +141,9 @@ namespace ZO.LoadOrderManager
 
     public class ProfilePluginCollection
     {
-        public ObservableCollection<(long ProfileID, long pluginID)> Items { get; set; }
+        public ObservableHashSet<(long ProfileID, long PluginID)> Items { get; set; } = new ObservableHashSet<(long ProfileID, long PluginID)>();
 
-        public ProfilePluginCollection()
-        {
-            Items = new ObservableCollection<(long, long)>();
-        }
+        public ProfilePluginCollection() {}
 
         // Load data from the database for all profiles associated with a specific GroupSetID
         public void LoadProfilePlugins(long groupSetID, SQLiteConnection connection)

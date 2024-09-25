@@ -90,8 +90,8 @@ namespace ZO.LoadOrderManager
                     case -999: // Core game files, typically reserved
                         IsReservedGroup = true;
                         break;
-                    case -998: // Unassigned plugins group
-                    case -997: // Placeholder for mods not yet categorized
+                    case -998: // Never Load
+                    case -997: // Uncategorized
                         IsReservedGroup = false;
                         break;
                     default: // Other negative IDs are reserved by default
@@ -762,6 +762,13 @@ ORDER BY GroupOrdinal"; // Correct ordering based on the group
                 // Assuming 'this' is the calling ModGroup object
                 long thisGroupSetID = this.GroupSetID ?? 0;
 
+                // If GroupID is less than 0, set GroupSetID to 1
+                if (this.GroupID < 0)
+                {
+                    // Load the ModGroup directly with GroupID and GroupSetID 1
+                    return LoadModGroup(this.GroupID ?? 0, 1);
+                }
+
                 // Load the GroupSet for the current GroupSetID
                 GroupSet? groupSet = GroupSet.LoadGroupSet(thisGroupSetID);
                 if (groupSet == null)
@@ -774,28 +781,53 @@ ORDER BY GroupOrdinal"; // Correct ordering based on the group
                 var groupSetViewModel = new GroupSetViewModel(groupSet);
 
                 // Normalize the GroupName and Description of the calling ModGroup
-                normalizedGroupName = normalizedGroupName.Replace(" ", "");
-                normalizedDescription = normalizedDescription.Replace(" ", "");
+                normalizedGroupName = normalizedGroupName.Replace(" ", "").ToLowerInvariant();
+                normalizedDescription = normalizedDescription.Replace(" ", "").ToLowerInvariant();
+
+                // Method to search for matching ModGroup within a GroupSetViewModel
+                ModGroupViewModel? FindMatchingModGroup(GroupSetViewModel viewModel, string name, string description)
+                {
+                    return viewModel.ModGroups.FirstOrDefault(g =>
+                        g.GroupID == this.GroupID ||
+                        SortingHelper.FuzzyCompareStrings(NormalizeString(g.GroupName).Replace(" ", "").ToLowerInvariant(), name) < 3);
+                        // || SortingHelper.FuzzyCompareStrings(NormalizeString(g.ModGroup.Description).Replace(" ", "").ToLowerInvariant(), description) < 3); // Adjust threshold as needed
+                }
 
                 // Search for matching ModGroup within the same GroupSetID using fuzzy matching
-                var matchingModGroupViewModel = groupSetViewModel.ModGroups
-                    .FirstOrDefault(g => g.groupID == this.GroupID ||
-                                         SortingHelper.FuzzyCompareStrings(NormalizeString(g.GroupName).Replace(" ", ""), normalizedGroupName) < 3 || // Adjust threshold as needed
-                                         SortingHelper.FuzzyCompareStrings(NormalizeString(g.ModGroup.Description).Replace(" ", ""), normalizedDescription) < 3); // Adjust threshold as needed
+                var matchingModGroupViewModel = FindMatchingModGroup(groupSetViewModel, normalizedGroupName, normalizedDescription);
 
+                // If no match found in the current GroupSet, search in cached GroupSet 1
+                if (matchingModGroupViewModel == null)
+                {
+                    var cachedGroupSet1 = AggLoadInfo.Instance.GetCachedGroupSet1();
+                    if (cachedGroupSet1 != null)
+                    {
+                        var cachedGroupSetViewModel = new GroupSetViewModel(cachedGroupSet1);
+                        matchingModGroupViewModel = FindMatchingModGroup(cachedGroupSetViewModel, normalizedGroupName, normalizedDescription);
+                    }
+                }
+
+                // If a matching group is found, return it
                 if (matchingModGroupViewModel != null)
                 {
-                    App.LogDebug($"Returning existing group: GroupID={matchingModGroupViewModel.groupID}, GroupName={matchingModGroupViewModel.GroupName}, Description={matchingModGroupViewModel.ModGroup.Description}");
+                    App.LogDebug($"Returning existing group: GroupID={matchingModGroupViewModel.GroupID}, GroupName={matchingModGroupViewModel.GroupName}, Description={matchingModGroupViewModel.ModGroup.Description}");
                     return matchingModGroupViewModel.ModGroup;
                 }
+
+                // If no match is found, you can handle creating a new group or returning null
+                App.LogDebug($"No matching group found for GroupName='{normalizedGroupName}', Description='{normalizedDescription}'.");
+                return null;
             }
 
+            // If no reserved word is found in the initial check, return null or handle accordingly
+            App.LogDebug("No reserved word match found. Returning null.");
             return null;
         }
 
+
     }
 
-        public class ModGroupViewModel : INotifyPropertyChanged
+    public class ModGroupViewModel : INotifyPropertyChanged
         {
             private ModGroup _modGroup;
 
@@ -804,7 +836,7 @@ ORDER BY GroupOrdinal"; // Correct ordering based on the group
                 _modGroup = modGroup ?? throw new ArgumentNullException(nameof(modGroup));
             }
 
-        public long groupID
+        public long GroupID
         {
             get => _modGroup.GroupID ?? 0;
             set
@@ -843,7 +875,7 @@ ORDER BY GroupOrdinal"; // Correct ordering based on the group
                 }
             }
 
-            public long? parentID
+            public long? ParentID
             {
                 get => _modGroup.ParentID;
                 set
@@ -869,7 +901,7 @@ ORDER BY GroupOrdinal"; // Correct ordering based on the group
                 }
             }
 
-            public long? groupSetID
+            public long? GroupSetID
             {
                 get => _modGroup.GroupSetID;
                 set
@@ -894,9 +926,9 @@ ORDER BY GroupOrdinal"; // Correct ordering based on the group
                 _modGroup.WriteGroup();
                 OnPropertyChanged(nameof(GroupName));
                 OnPropertyChanged(nameof(Description));
-                OnPropertyChanged(nameof(parentID));
+                OnPropertyChanged(nameof(ParentID));
                 OnPropertyChanged(nameof(Ordinal));
-                OnPropertyChanged(nameof(groupSetID));
+                OnPropertyChanged(nameof(GroupSetID));
             }
 
             private void DeleteModGroup(object? parameter)

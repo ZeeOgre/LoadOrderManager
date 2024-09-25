@@ -48,12 +48,12 @@ namespace ZO.LoadOrderManager
 
         public long? GroupID
         {
-            get => GroupID;
+            get => groupID;
             set
             {
-                if (GroupID != value)
+                if (groupID != value)
                 {
-                    GroupID = value;
+                    groupID = value;
                     OnPropertyChanged(nameof(GroupID));
                 }
             }
@@ -72,6 +72,9 @@ namespace ZO.LoadOrderManager
             }
         }
 
+        public long? GroupSetID { get; internal set; }
+        public GroupSet GroupSet { get; internal set; }
+
         public LoadOrderItemViewModel()
         {
         }
@@ -88,7 +91,7 @@ namespace ZO.LoadOrderManager
                     DisplayName = p.PluginName,
                     EntityType = EntityType.Plugin,
                     PluginData = p,
-                    IsEnabled = p.Achievements
+                    IsEnabled = AggLoadInfo.Instance.ActiveLoadOut.enabledPlugins.Contains(p.PluginID)
                 }) ?? Enumerable.Empty<LoadOrderItemViewModel>()
             );
         }

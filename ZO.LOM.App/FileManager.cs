@@ -57,11 +57,20 @@ namespace ZO.LoadOrderManager
                     AggLoadInfo.Instance.ActiveGroupSet = singletonGroupSet;
                     App.LogDebug("FileManager: Singleton GroupSet and LoadOut retrieved successfully.");
 
+
+
                     // Load data from the database INTO the AggLoadInfo instance
                     App.LogDebug("FileManager: Attempting to load additional data from the database...");
                     AggLoadInfo.Instance.InitFromDatabase();
                     App.LogDebug("FileManager: Database load completed.");
-
+                   
+                    // Check if files have already been loaded
+                    if (singletonGroupSet.AreFilesLoaded)
+                    {
+                        App.LogDebug("FileManager: Files have already been loaded. Skipping file initialization.");
+                        _initialized = true;
+                        return;
+                    }
                     // Update the flags to indicate the singleton is ready to load
                     App.LogDebug("FileManager: Updating singleton LoadOut flags to ReadyToLoad...");
                     singletonGroupSet.GroupSetFlags |= GroupFlags.ReadyToLoad;
@@ -96,6 +105,7 @@ namespace ZO.LoadOrderManager
             {
                 activeGroupSet.GroupSetFlags |= GroupFlags.FilesLoaded;
                 activeGroupSet.GroupSetFlags &= ~GroupFlags.ReadyToLoad;
+                activeGroupSet.SaveGroupSet(); // Save the updated GroupSet to the database
             }
         }
 

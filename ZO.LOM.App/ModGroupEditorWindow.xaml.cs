@@ -42,8 +42,9 @@ namespace ZO.LoadOrderManager
                 
                 using (var command = new SQLiteCommand(connection))
                 {
-                    command.CommandText = "SELECT PluginID, PluginName FROM Plugins WHERE GroupID = @GroupID ORDER BY GroupOrdinal";
+                    command.CommandText = "SELECT PluginID, PluginName FROM vwPlugins WHERE GroupID = @GroupID and GroupSetID = @GroupSetID ORDER BY GroupOrdinal";
                     command.Parameters.AddWithValue("@GroupID", _tempModGroup.GroupID);
+                    command.Parameters.AddWithValue("@GroupSetID", _tempModGroup.GroupSetID);
 
                     using (var reader = command.ExecuteReader())
                     {

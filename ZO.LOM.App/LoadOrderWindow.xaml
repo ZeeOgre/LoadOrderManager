@@ -9,6 +9,7 @@
     <Window.Resources>
         <local:BethesdaUrlConverter x:Key="BethesdaUrlConverter"/>
         <local:NexusUrlConverter x:Key="NexusUrlConverter"/>
+        <local:GroupIDToIsEnabledConverter x:Key="GroupIDToIsEnabledConverter"/>
         <Style TargetType="TreeViewItem">
             <Setter Property="IsExpanded" Value="True"/>
             <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
@@ -48,29 +49,20 @@
                     </Style>
                 </Grid.Style>
 
-                <!-- Checkbox for IsEnabled, only disabled for GroupID = -999 or -998 -->
+                <!-- Checkbox for IsEnabled, checkbox disabled in reservedGroups -->
                 <CheckBox IsChecked="{Binding IsEnabled}" 
-                        Command="{Binding DataContext.ToggleEnableCommand, RelativeSource={RelativeSource AncestorType=Window}}" 
-                        CommandParameter="{Binding}" 
-                        Grid.Column="0" 
-                        Margin="5" 
-                        HorizontalAlignment="Left">
+                          Command="{Binding DataContext.ToggleEnableCommand, RelativeSource={RelativeSource AncestorType=Window}}" 
+                          CommandParameter="{Binding}" 
+                          Grid.Column="0" 
+                          Margin="5" 
+                          HorizontalAlignment="Left">
                     <CheckBox.Style>
                         <Style TargetType="CheckBox">
                             <Setter Property="IsEnabled" Value="True"/>
                             <Style.Triggers>
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding PluginData.GroupID}" Value="-999"/>
-                                    </MultiDataTrigger.Conditions>
+                                <DataTrigger Binding="{Binding PluginData.GroupID, Converter={StaticResource GroupIDToIsEnabledConverter}}" Value="False">
                                     <Setter Property="IsEnabled" Value="False"/>
-                                </MultiDataTrigger>
-                                <MultiDataTrigger>
-                                    <MultiDataTrigger.Conditions>
-                                        <Condition Binding="{Binding PluginData.GroupID}" Value="-998"/>
-                                    </MultiDataTrigger.Conditions>
-                                    <Setter Property="IsEnabled" Value="False"/>
-                                </MultiDataTrigger>
+                                </DataTrigger>
                             </Style.Triggers>
                         </Style>
                     </CheckBox.Style>

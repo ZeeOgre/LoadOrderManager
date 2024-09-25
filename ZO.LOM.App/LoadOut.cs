@@ -7,7 +7,7 @@ namespace ZO.LoadOrderManager
     {
         public long ProfileID { get; set; }
         public required string Name { get; set; }
-        public HashSet<long> enabledPlugins;
+        public ObservableHashSet<long> enabledPlugins { get; set; } = new ObservableHashSet<long>();
 
         // Add GroupSet property
         public GroupSet GroupSet { get; set; }
@@ -15,7 +15,7 @@ namespace ZO.LoadOrderManager
         // Default constructor
         public LoadOut()
         {
-            enabledPlugins = new HashSet<long>();
+            enabledPlugins = new ObservableHashSet<long>();
 
             // Load GroupSet with ID 2 or initialize with a new GroupSet if not found
             GroupSet = GroupSet.LoadGroupSet(2) ?? GroupSet.CreateEmptyGroupSet();
@@ -28,7 +28,7 @@ namespace ZO.LoadOrderManager
         // Parameterized constructor
         public LoadOut(GroupSet groupSet)
         {
-            enabledPlugins = new HashSet<long>();
+            enabledPlugins = new ObservableHashSet<long>();
 
             // Use the provided GroupSet
             GroupSet = groupSet;
@@ -134,7 +134,7 @@ namespace ZO.LoadOrderManager
 
                     // Insert or replace ProfilePlugins entries
                     command.CommandText = @"
-                                INSERT OR REPLACE INTO ProfilePlugins (ProfileID, PluginID)
+                                INSERT OR IGNORE INTO ProfilePlugins (ProfileID, PluginID)
                                 VALUES (@ProfileID, @PluginID)";
                     foreach (var pluginID in this.enabledPlugins)
                     {
@@ -208,6 +208,7 @@ namespace ZO.LoadOrderManager
             {
                 enabledPlugins.Add(pluginID);
             }
+            WriteProfile();
         }
 
         public bool IsPluginEnabled(long pluginID)

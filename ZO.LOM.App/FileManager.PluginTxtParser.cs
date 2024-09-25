@@ -90,6 +90,7 @@ namespace ZO.LoadOrderManager
                                 aggLoadInfo.Groups.Add(currentGroup); // Add new group to aggLoadInfo.Groups
                             }
                         }
+
                         else
                         {
                             var newGroup = new ModGroup(null, groupName, groupDescription, parentGroup.GroupID, groupOrdinalTracker[parentGroup.GroupID ?? 1], groupSet.GroupSetID);

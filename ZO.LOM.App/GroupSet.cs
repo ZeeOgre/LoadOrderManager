@@ -46,17 +46,17 @@ namespace ZO.LoadOrderManager
             GroupSetName = groupSetName;
             GroupSetFlags = groupSetFlags;
 
-            if (IsDefaultGroup || GroupSetID == 1)
-            {
-                // Load the default group set if applicable
-                var defaultGroupSet = LoadGroupSet(1);
-                if (defaultGroupSet == null)
-                {
-                    throw new InvalidOperationException("Default GroupSet with ID 1 not found in the database.");
-                }
-                App.LogDebug("GroupSet 1 loaded as default.");
-                return;
-            }
+            //if (IsDefaultGroup || GroupSetID == 1)
+            //{
+            //    // Load the default group set if applicable
+            //    var defaultGroupSet = LoadGroupSet(1);
+            //    if (defaultGroupSet == null)
+            //    {
+            //        throw new InvalidOperationException("Default GroupSet with ID 1 not found in the database.");
+            //    }
+            //    App.LogDebug("GroupSet 1 loaded as default.");
+            //    return;
+            //}
 
             if (IsReadOnly)
             {
@@ -217,8 +217,14 @@ namespace ZO.LoadOrderManager
             // Save ModGroups to the database
             foreach (var modGroup in ModGroups)
             {
-                modGroup.GroupSetID = GroupSetID;
-                modGroup.WriteGroup();
+                
+               
+                if (modGroup.GroupSetID != GroupSetID && modGroup.GroupID >= 0) 
+                {
+                    modGroup.GroupID = this.GroupSetID;
+                    modGroup.WriteGroup();
+                }
+                
             }
 
             return this;
@@ -245,84 +251,141 @@ namespace ZO.LoadOrderManager
     }
 
 
+    //public class GroupSetViewModel : INotifyPropertyChanged
+    //{
+    //    private GroupSet _groupSet;
+
+    //    public GroupSetViewModel(GroupSet groupSet)
+    //    {
+    //        _groupSet = groupSet;
+    //        ModGroups = new ObservableCollection<ModGroupViewModel>(
+    //            groupSet.ModGroups.Select(mg => new ModGroupViewModel(mg))
+    //        );
+    //    }
+
+    //    public long groupSetID
+    //    {
+    //        get => _groupSet.GroupSetID;
+    //        set
+    //        {
+    //            if (_groupSet.GroupSetID != value)
+    //            {
+    //                _groupSet.GroupSetID = value;
+    //                OnPropertyChanged();
+    //            }
+    //        }
+    //    }
+
+    //    public string GroupSetName
+    //    {
+    //        get => _groupSet.GroupSetName;
+    //        set
+    //        {
+    //            if (_groupSet.GroupSetName != value)
+    //            {
+    //                _groupSet.GroupSetName = value;
+    //                OnPropertyChanged();
+    //            }
+    //        }
+    //    }
+
+    //    public GroupFlags GroupSetFlags
+    //    {
+    //        get => _groupSet.GroupSetFlags;
+    //        set
+    //        {
+    //            if (_groupSet.GroupSetFlags != value)
+    //            {
+    //                _groupSet.GroupSetFlags = value;
+    //                OnPropertyChanged();
+    //            }
+    //        }
+    //    }
+
+    //    public ObservableCollection<ModGroupViewModel> ModGroups { get; }
+
+    //    public ICommand AddModGroupCommand => new RelayCommand<object?>(AddModGroup);
+    //    public ICommand CloneModGroupCommand => new RelayCommand<ModGroupViewModel>(CloneModGroup);
+
+    //    private void CloneModGroup(ModGroupViewModel modGroupViewModel)
+    //    {
+    //        var clonedModGroup = modGroupViewModel.ModGroup.Clone();
+    //        _groupSet.AddModGroup(clonedModGroup);
+    //        ModGroups.Add(new ModGroupViewModel(clonedModGroup));
+    //    }
+
+    //    private void AddModGroup(object? parameter)
+    //    {
+    //        var newModGroup = new ModGroup
+    //        {
+    //            GroupSetID = _groupSet.GroupSetID // Set the GroupSetID of the new ModGroup
+    //        };
+    //        _groupSet.AddModGroup(newModGroup);
+    //        ModGroups.Add(new ModGroupViewModel(newModGroup));
+    //    }
+
+    //    public event PropertyChangedEventHandler? PropertyChanged = delegate { };
+
+    //    protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+    //    {
+    //        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    //    }
+    //}
+
     public class GroupSetViewModel : INotifyPropertyChanged
     {
         private GroupSet _groupSet;
+        public ObservableCollection<ModGroupViewModel> ModGroups { get; private set; }
+
+        public event PropertyChangedEventHandler PropertyChanged;
 
         public GroupSetViewModel(GroupSet groupSet)
         {
             _groupSet = groupSet;
+
+            // Initialize ModGroups with existing groups from the current GroupSet
             ModGroups = new ObservableCollection<ModGroupViewModel>(
                 groupSet.ModGroups.Select(mg => new ModGroupViewModel(mg))
             );
+
+            // Add common groups from cached GroupSet 1
+            AddCommonGroupsFromCachedGroupSet1();
+
+            OnPropertyChanged(nameof(ModGroups));
         }
 
-        public long groupSetID
+        // Method to add common groups from the cached GroupSet 1
+        private void AddCommonGroupsFromCachedGroupSet1()
         {
-            get => _groupSet.GroupSetID;
-            set
+            var cachedGroupSet1 = AggLoadInfo.Instance.GetCachedGroupSet1();
+            if (cachedGroupSet1 == null)
             {
-                if (_groupSet.GroupSetID != value)
+                App.LogDebug("GroupSet 1 not found in cache. Cannot add common groups.");
+                return;
+            }
+
+            // Iterate through all groups in cached GroupSet 1
+            foreach (var commonGroup in cachedGroupSet1.ModGroups)
+            {
+                if (commonGroup.GroupID < 0 && !ModGroups.Any(g => g.GroupID == commonGroup.GroupID))
                 {
-                    _groupSet.GroupSetID = value;
-                    OnPropertyChanged();
+                    // Add the common group to both the ModGroups collection and the underlying group set
+                    ModGroups.Add(new ModGroupViewModel(commonGroup));
+                    _groupSet.ModGroups.Add(commonGroup);
                 }
             }
         }
 
-        public string GroupSetName
-        {
-            get => _groupSet.GroupSetName;
-            set
-            {
-                if (_groupSet.GroupSetName != value)
-                {
-                    _groupSet.GroupSetName = value;
-                    OnPropertyChanged();
-                }
-            }
-        }
+        // Other existing methods and properties...
 
-        public GroupFlags GroupSetFlags
-        {
-            get => _groupSet.GroupSetFlags;
-            set
-            {
-                if (_groupSet.GroupSetFlags != value)
-                {
-                    _groupSet.GroupSetFlags = value;
-                    OnPropertyChanged();
-                }
-            }
-        }
-
-        public ObservableCollection<ModGroupViewModel> ModGroups { get; }
-
-        public ICommand AddModGroupCommand => new RelayCommand<object?>(AddModGroup);
-        public ICommand CloneModGroupCommand => new RelayCommand<ModGroupViewModel>(CloneModGroup);
-
-        private void CloneModGroup(ModGroupViewModel modGroupViewModel)
-        {
-            var clonedModGroup = modGroupViewModel.ModGroup.Clone();
-            _groupSet.AddModGroup(clonedModGroup);
-            ModGroups.Add(new ModGroupViewModel(clonedModGroup));
-        }
-
-        private void AddModGroup(object? parameter)
-        {
-            var newModGroup = new ModGroup
-            {
-                GroupSetID = _groupSet.GroupSetID // Set the GroupSetID of the new ModGroup
-            };
-            _groupSet.AddModGroup(newModGroup);
-            ModGroups.Add(new ModGroupViewModel(newModGroup));
-        }
-
-        public event PropertyChangedEventHandler? PropertyChanged = delegate { };
-
-        protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+        protected void OnPropertyChanged(string propertyName)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
+        public override string ToString()
+        {
+            return $"GroupSetViewModel: {_groupSet.GroupSetName} with {ModGroups.Count} groups.";
         }
     }
 

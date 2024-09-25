@@ -530,115 +530,96 @@ namespace ZO.LoadOrderManager
         private ObservableCollection<ModGroup> _groups;
         private ObservableCollection<LoadOut> _loadouts;
         private string _files;
-        private Dictionary<string, bool> _loadOutEnabled;  // Track enabled status per loadout
+        private Dictionary<string, bool> _loadOutEnabled;
 
         public Plugin Plugin
         {
-            get => _plugin;
+            get { return _plugin; }
             set
             {
-                if (_plugin != value)
-                {
-                    _plugin = value;
-                    OnPropertyChanged(nameof(Plugin));
-                }
+                _plugin = value;
+                OnPropertyChanged(nameof(Plugin));
             }
         }
 
         public bool IsEnabled
         {
-            get => _isEnabled;
+            get { return _isEnabled; }
             set
             {
-                if (_isEnabled != value)
-                {
-                    _isEnabled = value;
-                    OnPropertyChanged(nameof(IsEnabled));
-                }
+                _isEnabled = value;
+                OnPropertyChanged(nameof(IsEnabled));
             }
         }
 
         public ObservableCollection<ModGroup> Groups
         {
-            get => _groups;
+            get { return _groups; }
             set
             {
-                if (_groups != value)
-                {
-                    _groups = value;
-                    OnPropertyChanged(nameof(Groups));
-                }
+                _groups = value;
+                OnPropertyChanged(nameof(Groups));
             }
         }
 
         public ObservableCollection<LoadOut> Loadouts
         {
-            get => _loadouts;
+            get { return _loadouts; }
             set
             {
-                if (_loadouts != value)
-                {
-                    _loadouts = value;
-                    OnPropertyChanged(nameof(Loadouts));
-                }
+                _loadouts = value;
+                OnPropertyChanged(nameof(Loadouts));
             }
         }
 
-        public Dictionary<string, bool> LoadOutEnabled // This is used to bind the loadout checkbox
+        public Dictionary<string, bool> LoadOutEnabled
         {
-            get => _loadOutEnabled;
+            get { return _loadOutEnabled; }
             set
             {
-                if (_loadOutEnabled != value)
-                {
-                    _loadOutEnabled = value;
-                    OnPropertyChanged(nameof(LoadOutEnabled));
-                }
+                _loadOutEnabled = value;
+                OnPropertyChanged(nameof(LoadOutEnabled));
             }
         }
 
         public string Files
         {
-            get => _files;
+            get { return _files; }
             set
             {
-                if (_files != value)
-                {
-                    _files = value;
-                    OnPropertyChanged(nameof(Files));
-                }
+                _files = value;
+                OnPropertyChanged(nameof(Files));
             }
         }
 
-        public long pluginID => _plugin.PluginID;
-
-        // Constructor that builds using the Plugin object and a specific LoadOut
-        public PluginViewModel(Plugin plugin, LoadOut loadOut)
-        {
-            _plugin = plugin;
-            _groups = AggLoadInfo.Instance.Groups;
-            _loadouts = new ObservableCollection<LoadOut> { loadOut }; // Only the specific loadout
-            _files = string.Join(", ", _plugin.Files.Select(f => f.Filename));
-
-            // Initialize LoadOutEnabled for the specific LoadOut
-            _loadOutEnabled = new Dictionary<string, bool>
-        {
-            { loadOut.Name, true }  // Automatically enable the plugin for this loadout
-        };
-        }
+        public long PluginID => _plugin.PluginID;
 
         public void Save()
         {
-            // Save plugin and update loadout plugin associations
-            foreach (var loadOut in _loadOutEnabled)
-            {
-                if (loadOut.Value) // If the plugin is enabled for this loadout
-                {
-                    LoadOut.SetPluginEnabled(AggLoadInfo.Instance.LoadOuts.First(l => l.Name == loadOut.Key).ProfileID, _plugin.PluginID, true);
-                }
-            }
+            Plugin.WriteMod();
+        }
 
-            _plugin.WriteMod();
+        // Constructor to take a single Plugin object
+        public PluginViewModel(Plugin plugin)
+        {
+            _plugin = plugin ?? new Plugin();
+            _isEnabled = false; // Default value, adjust as needed
+            _groups = new ObservableCollection<ModGroup>();
+            _loadouts = new ObservableCollection<LoadOut>();
+            _files = string.Empty; // Default value, adjust as needed
+            _loadOutEnabled = new Dictionary<string, bool>();
+        }
+
+        // Constructor to take a collection of Plugin objects
+        public PluginViewModel(IEnumerable<Plugin> plugins)
+        {
+            var pluginList = plugins?.ToList() ?? new List<Plugin>();
+            _plugin = pluginList.FirstOrDefault() ?? new Plugin();
+            _isEnabled = false; // Default value, adjust as needed
+            _groups = new ObservableCollection<ModGroup>();
+            _loadouts = new ObservableCollection<LoadOut>();
+            _files = string.Empty; // Default value, adjust as needed
+            _loadOutEnabled = new Dictionary<string, bool>();
         }
 
         protected virtual void OnPropertyChanged(string propertyName)
@@ -647,6 +628,9 @@ namespace ZO.LoadOrderManager
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
+
+
+
     }
 
 }

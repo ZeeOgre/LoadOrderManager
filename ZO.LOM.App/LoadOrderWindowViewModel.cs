@@ -24,6 +24,47 @@ namespace ZO.LoadOrderManager
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
+        public ObservableCollection<GroupSet> GroupSets { get; set; }
+        private GroupSet _selectedGroupSet;
+
+        public GroupSet SelectedGroupSet
+        {
+            get => _selectedGroupSet;
+            set
+            {
+                if (_selectedGroupSet != value)
+                {
+                    _selectedGroupSet = value ?? throw new ArgumentNullException(nameof(value));
+                    OnPropertyChanged(nameof(SelectedGroupSet));
+
+                    // Step 1: Update the AggLoadInfo singleton object to the selected GroupSet
+                    AggLoadInfo.Instance.ActiveGroupSet = _selectedGroupSet;
+
+                    // Step 2: Reload all the other views
+                    ReloadViews();
+
+                    // Step 3: Set the LoadOut to the first listed item in the updated list
+                    if (LoadOuts.Any())
+                    {
+                        SelectedLoadOut = LoadOuts.First();
+                    }
+
+                    // Step 4: Refresh the checkboxes in selected items accordingly
+                    RefreshCheckboxes();
+                }
+            }
+        }
+
+        private void UpdateLoadOrders()
+        {
+            // Load data based on selected GroupSet
+            var selectedGroupSet = GroupSets.FirstOrDefault(gs => gs.GroupSetID == SelectedGroupSet.GroupSetID);
+            if (selectedGroupSet != null)
+            {
+                // Update other properties (e.g., Items) based on selected GroupSet
+                // Items.Clear(); // Clear and repopulate as needed
+            }
+        }
 
 
 
@@ -86,7 +127,7 @@ namespace ZO.LoadOrderManager
         }
 
         public ObservableCollection<ModGroup> Groups { get; set; }
-        public ObservableCollection<Plugin> Plugins { get; set; }
+        public ObservableCollection<PluginViewModel> Plugins { get; set; }
         public ObservableCollection<LoadOut> LoadOuts { get; set; }
         public LoadOrdersViewModel LoadOrders { get; set; }
         public ObservableCollection<LoadOrderItemViewModel> Items { get; }
@@ -125,12 +166,12 @@ namespace ZO.LoadOrderManager
         {
             // Initialize collections and commands
             Groups = new ObservableCollection<ModGroup>();
-            Plugins = new ObservableCollection<Plugin>();
+            Plugins = new ObservableCollection<PluginViewModel>();
             LoadOuts = new ObservableCollection<LoadOut>();
             LoadOrders = new LoadOrdersViewModel();
             Items = new ObservableCollection<LoadOrderItemViewModel>();
+            GroupSets = new ObservableCollection<GroupSet>();
 
-            // Initialize commands
             // Initialize commands
             SearchCommand = new RelayCommand<string?>(Search);
             MoveUpCommand = new RelayCommand<object?>(param => MoveUp(), param => CanMoveUp());
@@ -171,14 +212,18 @@ namespace ZO.LoadOrderManager
                 {
                     // Load initial collections from AggLoadInfo
                     Groups = new ObservableCollection<ModGroup>(AggLoadInfo.Instance.Groups);
-                    Plugins = new ObservableCollection<Plugin>(AggLoadInfo.Instance.Plugins);
+                    Plugins = new ObservableCollection<PluginViewModel>(
+                                AggLoadInfo.Instance.Plugins.Select(plugin => new PluginViewModel(plugin))
+                                                                                                            );
                     LoadOuts = new ObservableCollection<LoadOut>(AggLoadInfo.Instance.LoadOuts);
+                    GroupSets = new ObservableCollection<GroupSet>(AggLoadInfo.Instance.GroupSets);
 
                     // Clear existing items
                     Items.Clear();
 
+                    SelectedGroupSet = AggLoadInfo.Instance.ActiveGroupSet;
                     // Check if there is a LoadOut available
-                    SelectedLoadOut = LoadOuts.FirstOrDefault();
+                    SelectedLoadOut = AggLoadInfo.Instance.ActiveLoadOut;
 
                     if (SelectedLoadOut == null)
                     {
@@ -197,7 +242,7 @@ namespace ZO.LoadOrderManager
                             {
                                 Name = newLoadOutName,
                                 ProfileID = GenerateNewProfileID(), // Generate a new profile ID
-                                enabledPlugins = new HashSet<long>()
+                                enabledPlugins = new ObservableHashSet<long>()
                             };
 
                             LoadOuts.Add(newLoadOut);
@@ -256,7 +301,18 @@ namespace ZO.LoadOrderManager
             return LoadOuts.Any() ? LoadOuts.Max(lo => lo.ProfileID) + 1 : 1;
         }
 
+        public void RefreshCheckboxes()
+        {
+            if (SelectedLoadOut == null)
+            {
+                return;
+            }
 
+            foreach (var plugin in Plugins)
+            {
+                plugin.IsEnabled = SelectedLoadOut.enabledPlugins.Contains(plugin.PluginID);
+            }
+        }
 
 
 
@@ -494,8 +550,12 @@ namespace ZO.LoadOrderManager
             OnPropertyChanged(nameof(Groups));
         }
 
-        private void ImportPlugins(AggLoadInfo aggLoadInfo = null, string pluginsFile = null)
+        private void ImportPlugins(AggLoadInfo? aggLoadInfo = null, string? pluginsFile = null)
         {
+            if (SelectedItem != null)
+            {
+                StatusMessage = SelectedItem.ToString();
+            }
             // If no AggLoadInfo is provided, use the singleton instance
             aggLoadInfo ??= AggLoadInfo.Instance;
 
@@ -818,11 +878,11 @@ namespace ZO.LoadOrderManager
             {
                 if (pluginViewModel.IsEnabled)
                 {
-                    LoadOut.SetPluginEnabled(SelectedLoadOut.ProfileID, pluginViewModel.pluginID, false);
+                    LoadOut.SetPluginEnabled(SelectedLoadOut.ProfileID, pluginViewModel.PluginID, false);
                 }
                 else
                 {
-                    LoadOut.SetPluginEnabled(SelectedLoadOut.ProfileID, pluginViewModel.pluginID, true);
+                    LoadOut.SetPluginEnabled(SelectedLoadOut.ProfileID, pluginViewModel.PluginID, true);
                 }
 
                 pluginViewModel.IsEnabled = !pluginViewModel.IsEnabled;
@@ -917,8 +977,8 @@ namespace ZO.LoadOrderManager
                                       (g.Plugins != null && g.Plugins.Any(p => p.PluginName.Contains(searchText, StringComparison.OrdinalIgnoreCase))))
                 );
 
-                var filteredPlugins = new ObservableCollection<Plugin>(
-                    Plugins.Where(p => p.PluginName.Contains(searchText, StringComparison.OrdinalIgnoreCase))
+                var filteredPlugins = new ObservableCollection<PluginViewModel>(
+                    Plugins.Where(p => p.Plugin.PluginName.Contains(searchText, StringComparison.OrdinalIgnoreCase))
                 );
 
                 // Update the collections
@@ -1001,6 +1061,31 @@ namespace ZO.LoadOrderManager
                     yield return child;
                 }
             }
+        }
+        private void ReloadViews()
+        {
+            // Clear and reload the collections based on the updated AggLoadInfo
+            Groups.Clear();
+            Plugins.Clear();
+            LoadOuts.Clear();
+
+            foreach (var group in AggLoadInfo.Instance.Groups)
+            {
+                Groups.Add(group);
+            }
+
+            foreach (var plugin in AggLoadInfo.Instance.Plugins)
+            {
+                Plugins.Add(new PluginViewModel(plugin));
+            }
+
+            foreach (var loadOut in AggLoadInfo.Instance.LoadOuts)
+            {
+                LoadOuts.Add(loadOut);
+            }
+
+            // Update other properties or views as needed
+            UpdateLoadOrders();
         }
 
     }

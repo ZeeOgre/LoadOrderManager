@@ -20,11 +20,13 @@ namespace ZO.LoadOrderManager
         public ObservableCollection<Plugin> Plugins { get; set; } = new ObservableCollection<Plugin>();
         public ObservableCollection<ModGroup> Groups { get; set; } = new ObservableCollection<ModGroup>();
         public ObservableCollection<LoadOut> LoadOuts { get; set; } = new ObservableCollection<LoadOut>();
+        public ObservableCollection<GroupSet> GroupSets { get; set; } = new ObservableCollection<GroupSet>();
 
         // Collections for GroupSet Mappings and Relationships
         public GroupSetGroupCollection GroupSetGroups { get; set; } = new GroupSetGroupCollection();
         public GroupSetPluginCollection GroupSetPlugins { get; set; } = new GroupSetPluginCollection();
         public ProfilePluginCollection ProfilePlugins { get; set; } = new ProfilePluginCollection();
+
 
         // Current active LoadOut and GroupSet
         public LoadOut ActiveLoadOut
@@ -48,19 +50,54 @@ namespace ZO.LoadOrderManager
         }
 
         private LoadOut _activeLoadOut;
-        public GroupSet ActiveGroupSet { get; set; }
+        public GroupSet ActiveGroupSet
+        {
+            get => _activeGroupSet;
+            set
+            {
+                if (_activeGroupSet != value)
+                {
+                    _activeGroupSet = value ?? throw new ArgumentNullException(nameof(value));
+                    OnPropertyChanged();
+                }
+            }
+        }
+        private GroupSet _activeGroupSet;
 
         // Boolean flag to indicate initialization state
         private static bool _initialized = false;
         private static readonly object _lock = new object();
 
+        private ObservableCollection<GroupSet>? _cachedGroupSets;
+        private ObservableCollection<GroupSet> GetGroupSets()
+        {
+            if (_cachedGroupSets == null)
+            {
+                _cachedGroupSets = LoadGroupSetsFromDatabase();
+            }
+            return _cachedGroupSets;
+        }
+
+        // Cached GroupSet 1
+        private GroupSet? _cachedGroupSet1;
+
+        // Method to get the cached GroupSet 1
+        public GroupSet? GetCachedGroupSet1()
+        {
+            return _cachedGroupSet1;
+        }
+
         // Private constructor for Singleton pattern
-        private AggLoadInfo() { }
+        private AggLoadInfo()
+        {
+            //_activeLoadOut = new LoadOut();
+            //ActiveGroupSet = new GroupSet(0, string.Empty, default);
+            PropertyChanged = null;
+        }                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              
 
         // Method to initialize from the database
         public void InitFromDatabase()
         {
-            // Only proceed if not already initialized
             if (_initialized) return;
 
             lock (_lock)
@@ -72,40 +109,58 @@ namespace ZO.LoadOrderManager
                 LoadOuts.Clear();
 
                 // Re-add the ActiveLoadOut if it exists
-                if (_activeLoadOut != null)
+                if (_activeLoadOut != null && !LoadOuts.Contains(_activeLoadOut))
                 {
                     LoadOuts.Add(_activeLoadOut);
                 }
 
+                if (_activeGroupSet != null && !GroupSets.Contains(_activeGroupSet))
+                {
+                    GroupSets.Add(_activeGroupSet);
+                }
 
                 GroupSetGroups.Items.Clear();
                 GroupSetPlugins.Items.Clear();
                 ProfilePlugins.Items.Clear();
 
-                // Load data from the database INTO the respective collections
+                // Load GroupSets from the database with caching
+                GroupSets = GetGroupSets();
+
+                // Avoid reloading if cached GroupSet 1 is already available
+                if (_cachedGroupSet1 == null)
+                {
+                    _cachedGroupSet1 = GroupSet.LoadGroupSet(1);
+                    if (_cachedGroupSet1 == null)
+                    {
+                        App.LogDebug("Failed to load GroupSet 1.");
+                        return;
+                    }
+                    App.LogDebug("GroupSet 1 loaded into cache.");
+                }
                 using var connection = DbManager.Instance.GetConnection();
                 LoadGroupSetState(connection);
 
-                // Mark as initialized
                 _initialized = true;
             }
         }
 
+
         // Load GroupSet data including plugins, groups, and profiles
         private void LoadGroupSetState(SQLiteConnection connection)
         {
-            // Load core entities from vwPlu
+
+
+
+            // Load core entities from vwPluginGrpUnion
             using var command = new SQLiteCommand(@"
-   SELECT DISTINCT * FROM (
+    SELECT DISTINCT * FROM (
         SELECT *
         FROM vwPluginGrpUnion
-        WHERE GroupSetID = @GroupSetID OR GroupSetID = 1
-    );", connection);
-           command.Parameters.AddWithValue("@GroupSetID", ActiveGroupSet.GroupSetID);
+        WHERE GroupSetID = @GroupSetID);", connection);
+            command.Parameters.AddWithValue("@GroupSetID", ActiveGroupSet.GroupSetID);
 
             Console.WriteLine($"GroupSetID: {ActiveGroupSet.GroupSetID}");
             Console.WriteLine($"Executing query: {command.CommandText} with GroupSetID = {ActiveGroupSet.GroupSetID}");
-
 
             using var reader = command.ExecuteReader();
             var pluginDict = new Dictionary<long, Plugin>();
@@ -118,15 +173,39 @@ namespace ZO.LoadOrderManager
 
                 // Load Groups
                 LoadGroupFromReader(reader, groupDict);
+            }
 
-                // Associate Plugins with Groups
-                AssociatePluginsWithGroups(reader, pluginDict, groupDict);
+            // Check if the loaded groups contain a group with GroupID 1
+            if (!groupDict.ContainsKey(1))
+            {
+                // If not, add a copy of the group with GroupID 1 from the cached GroupSet 1
+                var cachedGroup1 = _cachedGroupSet1?.ModGroups.FirstOrDefault(g => g.GroupID == 1);
+                if (cachedGroup1 != null)
+                {
+                    var clonedGroup = cachedGroup1.Clone();
+                    Groups.Add(clonedGroup);
+                    groupDict[1] = clonedGroup;
+                }
+            }
+
+            // Associate Plugins with Groups
+            foreach (var plugin in pluginDict.Values)
+            {
+                if (plugin.GroupID.HasValue && groupDict.ContainsKey(plugin.GroupID.Value))
+                {
+                    var modGroup = groupDict[plugin.GroupID.Value];
+                    if (!modGroup.Plugins.Contains(plugin))
+                    {
+                        modGroup.Plugins.Add(plugin);
+                    }
+                }
             }
 
             // Load GroupSetGroups, GroupSetPlugins, and ProfilePlugins for Active GroupSet
             GroupSetGroups.LoadGroupSetGroups(ActiveGroupSet.GroupSetID, connection);
             GroupSetPlugins.LoadGroupSetPlugins(ActiveGroupSet.GroupSetID, connection);
             ProfilePlugins.LoadProfilePlugins(ActiveGroupSet.GroupSetID, connection);
+
         }
 
         // Load a plugin from the data reader
@@ -151,8 +230,8 @@ namespace ZO.LoadOrderManager
                     PluginID = pluginID,
                     PluginName = reader.GetString(reader.GetOrdinal("PluginName")),
                     Description = reader.IsDBNull(reader.GetOrdinal("PluginDescription")) ? string.Empty : reader.GetString(reader.GetOrdinal("PluginDescription")),
-                    Achievements = reader.GetInt64(reader.GetOrdinal("Achievements")) == 1, // Simplified boolean conversion
-                    DTStamp = reader.GetString(reader.GetOrdinal("DTStamp")),
+                    Achievements = reader.IsDBNull(reader.GetOrdinal("Achievements")) ? false : reader.GetInt64(reader.GetOrdinal("Achievements")) == 1,
+                    DTStamp = reader.IsDBNull(reader.GetOrdinal("DTStamp")) ? string.Empty : reader.GetString(reader.GetOrdinal("DTStamp")),
                     Version = reader.IsDBNull(reader.GetOrdinal("Version")) ? string.Empty : reader.GetString(reader.GetOrdinal("Version")),
                     State = reader.IsDBNull(reader.GetOrdinal("State")) ? ModState.None : (ModState)reader.GetInt64(reader.GetOrdinal("State")),
                     BethesdaID = reader.IsDBNull(reader.GetOrdinal("BethesdaID")) ? string.Empty : reader.GetString(reader.GetOrdinal("BethesdaID")),
@@ -225,6 +304,27 @@ namespace ZO.LoadOrderManager
                 }
             }
         }
+        public static ObservableCollection<GroupSet> LoadGroupSetsFromDatabase()
+        {
+            var groupSets = new ObservableCollection<GroupSet>();
+
+            using var connection = DbManager.Instance.GetConnection();
+            using var command = new SQLiteCommand("SELECT GroupSetID, GroupSetName, GroupSetFlags FROM GroupSets", connection);
+            using var reader = command.ExecuteReader();
+
+            while (reader.Read())
+            {
+                var groupSet = new GroupSet(
+                    reader.GetInt64(reader.GetOrdinal("GroupSetID")),
+                    reader.GetString(reader.GetOrdinal("GroupSetName")),
+                    (GroupFlags)reader.GetInt32(reader.GetOrdinal("GroupSetFlags"))
+                );
+
+                groupSets.Add(groupSet);
+            }
+
+            return groupSets;
+        }
 
 
         // Clone method to create a copy of the current AggLoadInfo
@@ -237,7 +337,7 @@ namespace ZO.LoadOrderManager
                 LoadOuts = new ObservableCollection<LoadOut>(this.LoadOuts),
                 GroupSetGroups = new GroupSetGroupCollection { Items = new ObservableCollection<(long, long, long?, long)>(this.GroupSetGroups.Items) },
                 GroupSetPlugins = new GroupSetPluginCollection { Items = new ObservableCollection<(long, long, long, long)>(this.GroupSetPlugins.Items) },
-                ProfilePlugins = new ProfilePluginCollection { Items = new ObservableCollection<(long, long)>(this.ProfilePlugins.Items) },
+                ProfilePlugins = new ProfilePluginCollection { Items = new ObservableHashSet<(long ProfileID, long PluginID)>()  },
                 ActiveLoadOut = this.ActiveLoadOut,
                 ActiveGroupSet = this.ActiveGroupSet
             };
@@ -252,8 +352,8 @@ namespace ZO.LoadOrderManager
         }
 
         // INotifyPropertyChanged implementation
-        public event PropertyChangedEventHandler PropertyChanged;
-        protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        public event PropertyChangedEventHandler? PropertyChanged;
+        protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }

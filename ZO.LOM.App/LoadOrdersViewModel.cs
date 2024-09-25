@@ -33,6 +33,7 @@ public class LoadOrdersViewModel : INotifyPropertyChanged
                 DisplayName = $"{group.GroupName} | {group.Description}",
                 EntityType = EntityType.Group,
                 GroupID = group.GroupID, // Set GroupID for group
+                GroupSetID = group.GroupSetID, // Set GroupSetID for group
                 Children = new ObservableCollection<LoadOrderItemViewModel>()
             };
 
@@ -45,6 +46,7 @@ public class LoadOrdersViewModel : INotifyPropertyChanged
                     PluginData = plugin,
                     IsEnabled = plugin.Achievements, // Example property
                     EntityType = EntityType.Plugin,
+                    GroupSetID = plugin.GroupSetID,
                     GroupID = plugin.GroupID // Set GroupID for plugin
                 };
                 groupViewModel.Children.Add(pluginViewModel);
@@ -60,6 +62,7 @@ public class LoadOrdersViewModel : INotifyPropertyChanged
             {
                 DisplayName = loadOut.Name,
                 EntityType = EntityType.LoadOut,
+                GroupSet = loadOut.GroupSet, // Set GroupSetID for LoadOut
                 Children = new ObservableCollection<LoadOrderItemViewModel>()
             };
 
@@ -80,6 +83,8 @@ public class LoadOrdersViewModel : INotifyPropertyChanged
                         IsEnabled = true, // Plugin is enabled in this LoadOut
                         EntityType = EntityType.Plugin,
                         GroupID = plugin.GroupID // Set GroupID for plugin
+                    ,
+                        GroupSetID = plugin.GroupSetID
                     };
                     loadOutViewModel.Children.Add(pluginViewModel);
                 }
