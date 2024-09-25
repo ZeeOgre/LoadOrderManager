@@ -14,7 +14,21 @@ namespace ZO.LoadOrderManager
         private bool isEnabled;
         private Plugin pluginData;
         private long? groupID;
-
+        private bool _isSelected;
+        
+        public bool IsSelected
+        {
+            get => _isSelected;
+            set
+            {
+                if (_isSelected != value)
+                {
+                    _isSelected = value;
+                    OnPropertyChanged(nameof(IsSelected));
+                }
+            }
+        }
+        
         public string DisplayName
         {
             get => displayName;

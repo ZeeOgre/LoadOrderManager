@@ -15,15 +15,15 @@ using MessageBox = System.Windows.MessageBox;
 
 namespace ZO.LoadOrderManager
 {
-    public partial class LoadOrderWindow
+    public partial class LoadOrderWindow : Window
     {
         private bool isSaved;
-        private long SelectedLoadOutID; // Add this line
+        private long SelectedLoadOutID;
         private System.Timers.Timer cooldownTimer;
+        private bool _isLoadOrderTreeViewInitialized = false;
+        private bool _isCachedGroupSetTreeViewInitialized = false;
 
-        //public ObservableCollection<ModGroup> Groups { get; set; }
-        //public ObservableCollection<Plugin> Plugins { get; set; }
-        //public ObservableCollection<LoadOut> LoadOuts { get; set; }
+        public LoadOrdersViewModel GroupSet1ViewModel { get; set; }
 
         public LoadOrderWindow()
         {
@@ -31,9 +31,6 @@ namespace ZO.LoadOrderManager
 
             // Initialize non-nullable fields and properties
             cooldownTimer = new System.Timers.Timer();
-            //Groups = new ObservableCollection<ModGroup>();
-            //Plugins = new ObservableCollection<Plugin>();
-            //LoadOuts = new ObservableCollection<LoadOut>();
 
             try
             {
@@ -43,6 +40,9 @@ namespace ZO.LoadOrderManager
                         ((LoadingWindow)App.Current.MainWindow).UpdateProgress(10, "Initializing LoadOrderWindow..."));
                     this.DataContext = new LoadOrderWindowViewModel();
                     App.LogDebug("LoadOrderWindow: DataContext set to LoadOrderWindowViewModel");
+
+                    // Initialize GroupSet1ViewModel
+                    GroupSet1ViewModel = new LoadOrdersViewModel().GroupSet1LoadOrdersViewModel();
 
                     App.Current.Dispatcher.Invoke(() =>
                         ((LoadingWindow)App.Current.MainWindow).UpdateProgress(50, "LoadOrderWindow initialized successfully."));
@@ -64,13 +64,24 @@ namespace ZO.LoadOrderManager
         private void LoadOrderWindow_Loaded(object sender, RoutedEventArgs e)
         {
             App.LogDebug("Loading groups and plugins...");
+
+            if (!_isLoadOrderTreeViewInitialized)
+            {
+                LoadOrderTreeView_Loaded(sender, e);
+                _isLoadOrderTreeViewInitialized = true;
+            }
+
+            if (!_isCachedGroupSetTreeViewInitialized)
+            {
+                CachedGroupSetTreeView_Loaded(sender, e);
+                _isCachedGroupSetTreeViewInitialized = true;
+            }
         }
 
         private void LoadOrderWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
         {
             App.LogDebug("MainWindow is closing.");
         }
-
 
         private void Hyperlink_RequestNavigate(object sender, RequestNavigateEventArgs e)
         {
@@ -205,6 +216,11 @@ namespace ZO.LoadOrderManager
             ExpandOrCollapseGroups(LoadOrderTreeView.Items, true);
         }
 
+        private void CachedGroupSetTreeView_Loaded(object sender, RoutedEventArgs e)
+        {
+            ExpandOrCollapseGroups(CachedGroupSetTreeView.Items, true);
+        }
+
         private void ExpandOrCollapseGroups(ItemCollection items, bool expand)
         {
             foreach (var item in items)
@@ -229,6 +245,11 @@ namespace ZO.LoadOrderManager
                     }
                 }
             }
+        }
+
+        private void cmbGroupSet_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+
         }
     }
 }

@@ -31,28 +31,41 @@ namespace ZO.LoadOrderManager
         public static void SortGroupsAndPlugins(
             ObservableCollection<ModGroup> groups,
             IEnumerable<Plugin> sortedPlugins,
-            ObservableCollection<LoadOrderItemViewModel> targetCollection)
+            ObservableCollection<LoadOrderItemViewModel> targetCollection,
+            GroupSet activeGroupSet)
         {
             // Clear the target collection first
             targetCollection.Clear();
 
             // Handle special groups
             var specialGroups = new Dictionary<long, ModGroup>
-                {
-                    { 1, groups.FirstOrDefault(g => g.GroupID == 1) },    // Default root group
-                    { -997, groups.FirstOrDefault(g => g.GroupID == -997) },  // Uncategorized
-                    { -998, groups.FirstOrDefault(g => g.GroupID == -998) },  // Never load
-                    { -999, groups.FirstOrDefault(g => g.GroupID == -999) } // Bethesda core files
-                };
+            {
+                { 1, groups.FirstOrDefault(g => g.GroupID == 1) },    // Default root group
+                { -997, groups.FirstOrDefault(g => g.GroupID == -997) },  // Uncategorized
+                { -998, groups.FirstOrDefault(g => g.GroupID == -998) },  // Never load
+                { -999, groups.FirstOrDefault(g => g.GroupID == -999) } // Bethesda core files
+            };
 
-            // Add the default group first, if it exists
-            if (specialGroups[1] != null)
+            // Add the default group first, if it exists and GroupSetID is 1
+            if (activeGroupSet.GroupSetID == 1 && specialGroups[1] != null)
             {
                 AddGroupAndChildren(specialGroups[1], sortedPlugins, targetCollection, groups);
             }
 
-            // Add special groups at the bottom
-            AddSpecialGroups(targetCollection, sortedPlugins, specialGroups);
+            // Add other groups if GroupSetID is not 1
+            if (activeGroupSet.GroupSetID != 1)
+            {
+                foreach (var group in groups.Where(g => g.GroupID != 1 && g.GroupID >= 0))
+                {
+                    AddGroupAndChildren(group, sortedPlugins, targetCollection, groups);
+                }
+            }
+
+            // Add special groups at the bottom if GroupSetID is 1
+            if (activeGroupSet.GroupSetID == 1)
+            {
+                AddSpecialGroups(targetCollection, sortedPlugins, specialGroups);
+            }
         }
 
         private static void AddGroupAndChildren(

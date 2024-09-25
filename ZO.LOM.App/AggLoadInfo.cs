@@ -69,7 +69,7 @@ namespace ZO.LoadOrderManager
         private static readonly object _lock = new object();
 
         private ObservableCollection<GroupSet>? _cachedGroupSets;
-        private ObservableCollection<GroupSet> GetGroupSets()
+        public ObservableCollection<GroupSet> GetGroupSets()
         {
             if (_cachedGroupSets == null)
             {

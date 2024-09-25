@@ -1,0 +1,34 @@
+namespace ZO.LOM.App
+{
+    public partial class LoadOrderWindowViewModel
+    {
+        // LoadOrdersViewModel related properties
+        public LoadOrdersViewModel LoadOrders { get; set; }
+        public LoadOrdersViewModel CachedGroupSetLoadOrders { get; set; }
+
+        // LoadOrdersViewModel related methods
+        private LoadOrderItemViewModel? FindPluginViewModel(long pluginId)
+        {
+            foreach (var group in LoadOrders.Items)
+            {
+                if (group.EntityType == EntityType.Group)
+                {
+                    foreach (var plugin in group.Children)
+                    {
+                        if (plugin.EntityType == EntityType.Plugin && plugin.PluginData.PluginID == pluginId)
+                        {
+                            return plugin;
+                        }
+                    }
+                }
+            }
+            return null;
+        }
+
+        public void SortItems()
+        {
+            // Ensure sorting happens only after data is loaded
+            SortingHelper.SortGroupsAndPlugins(AggLoadInfo.Instance.Groups, AggLoadInfo.Instance.Plugins, LoadOrders.Items, AggLoadInfo.Instance.ActiveGroupSet);
+        }
+    }
+}

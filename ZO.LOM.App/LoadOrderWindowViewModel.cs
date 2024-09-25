@@ -130,12 +130,13 @@ namespace ZO.LoadOrderManager
         public ObservableCollection<PluginViewModel> Plugins { get; set; }
         public ObservableCollection<LoadOut> LoadOuts { get; set; }
         public LoadOrdersViewModel LoadOrders { get; set; }
+        public LoadOrdersViewModel CachedGroupSetLoadOrders { get; set; }
         public ObservableCollection<LoadOrderItemViewModel> Items { get; }
 
         public ICommand SaveCommand { get; }
         public ICommand MoveUpCommand { get; }
         public ICommand MoveDownCommand { get; }
-        //public ICommand ImportPluginsCommand { get; }
+        public ICommand ImportPluginsCommand { get; }
         public ICommand SaveAsNewLoadoutCommand { get; }
         public ICommand OpenGameFolderCommand { get; }
         public ICommand OpenGameSaveFolderCommand { get; }
@@ -169,6 +170,7 @@ namespace ZO.LoadOrderManager
             Plugins = new ObservableCollection<PluginViewModel>();
             LoadOuts = new ObservableCollection<LoadOut>();
             LoadOrders = new LoadOrdersViewModel();
+            CachedGroupSetLoadOrders = new LoadOrdersViewModel().GroupSet1LoadOrdersViewModel();
             Items = new ObservableCollection<LoadOrderItemViewModel>();
             GroupSets = new ObservableCollection<GroupSet>();
 
@@ -203,20 +205,29 @@ namespace ZO.LoadOrderManager
         }
 
 
+        private bool _isInitialDataLoaded = false;
+
         private void LoadInitialData()
         {
+            if (_isInitialDataLoaded)
+            {
+                return;
+            }
+
             InitializationManager.StartInitialization(nameof(LoadOrderWindowViewModel));
             try
             {
                 if (AggLoadInfo.Instance != null)
                 {
                     // Load initial collections from AggLoadInfo
+                    GroupSets = new ObservableCollection<GroupSet>(AggLoadInfo.Instance.GetGroupSets());
+                    LoadOuts = new ObservableCollection<LoadOut>(AggLoadInfo.Instance.LoadOuts);
                     Groups = new ObservableCollection<ModGroup>(AggLoadInfo.Instance.Groups);
                     Plugins = new ObservableCollection<PluginViewModel>(
                                 AggLoadInfo.Instance.Plugins.Select(plugin => new PluginViewModel(plugin))
-                                                                                                            );
-                    LoadOuts = new ObservableCollection<LoadOut>(AggLoadInfo.Instance.LoadOuts);
-                    GroupSets = new ObservableCollection<GroupSet>(AggLoadInfo.Instance.GroupSets);
+                            );
+                    
+                    
 
                     // Clear existing items
                     Items.Clear();
@@ -227,35 +238,35 @@ namespace ZO.LoadOrderManager
 
                     if (SelectedLoadOut == null)
                     {
-                        // Prompt the user to create a new LoadOut
-                        var result = MessageBox.Show(
-                            "No LoadOut found. Would you like to create a new LoadOut?",
-                            "Create New LoadOut",
-                            MessageBoxButton.YesNo,
-                            MessageBoxImage.Question);
+                        //// Prompt the user to create a new LoadOut
+                        //var result = MessageBox.Show(
+                        //    "No LoadOut found. Would you like to create a new LoadOut?",
+                        //    "Create New LoadOut",
+                        //    MessageBoxButton.YesNo,
+                        //    MessageBoxImage.Question);
 
-                        if (result == MessageBoxResult.Yes)
-                        {
-                            // Create a new LoadOut if the user agrees
-                            var newLoadOutName = "New LoadOut";
-                            var newLoadOut = new LoadOut
-                            {
-                                Name = newLoadOutName,
-                                ProfileID = GenerateNewProfileID(), // Generate a new profile ID
-                                enabledPlugins = new ObservableHashSet<long>()
-                            };
+                        //if (result == MessageBoxResult.Yes)
+                        //{
+                        //    // Create a new LoadOut if the user agrees
+                        //    var newLoadOutName = "New LoadOut";
+                        //    var newLoadOut = new LoadOut
+                        //    {
+                        //        Name = newLoadOutName,
+                        //        ProfileID = GenerateNewProfileID(), // Generate a new profile ID
+                        //        enabledPlugins = new ObservableHashSet<long>()
+                        //    };
 
-                            LoadOuts.Add(newLoadOut);
-                            AggLoadInfo.Instance.LoadOuts.Add(newLoadOut); // Add to AggLoadInfo
+                        //    LoadOuts.Add(newLoadOut);
+                        //    AggLoadInfo.Instance.LoadOuts.Add(newLoadOut); // Add to AggLoadInfo
 
-                            SelectedLoadOut = newLoadOut;
-                            StatusMessage = $"Created new LoadOut: {newLoadOut.Name}";
-                        }
-                        else
-                        {
-                            StatusMessage = "No LoadOut selected. Please create a new LoadOut.";
-                            return;
-                        }
+                        //    SelectedLoadOut = newLoadOut;
+                        //    StatusMessage = $"Created new LoadOut: {newLoadOut.Name}";
+                        //}
+                        //else
+                        //{
+                        StatusMessage = "No LoadOut selected. Please create a new LoadOut.";
+                        //    return;
+                        //}
                     }
 
                     // Use the enabledPlugins hashset directly from SelectedLoadOut
@@ -285,6 +296,9 @@ namespace ZO.LoadOrderManager
                     // Update the status message
                     StatusMessage = $"Loaded plugins for profile: {SelectedLoadOut.Name}";
                     UpdateStatus(StatusMessage);
+
+                    // Mark initial data as loaded
+                    _isInitialDataLoaded = true;
                 }
             }
             finally
@@ -293,6 +307,7 @@ namespace ZO.LoadOrderManager
                 InitializationManager.EndInitialization(nameof(LoadOrderWindowViewModel));
             }
         }
+
 
         // Helper method to generate a new ProfileID
         private long GenerateNewProfileID()

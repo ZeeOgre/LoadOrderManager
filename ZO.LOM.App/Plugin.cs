@@ -531,95 +531,121 @@ namespace ZO.LoadOrderManager
         private ObservableCollection<LoadOut> _loadouts;
         private string _files;
         private Dictionary<string, bool> _loadOutEnabled;
+        private GroupSet _selectedGroupSet;
+        private ObservableCollection<GroupSet> _availableGroupSets;
+
+        public PluginViewModel()
+        {
+            _plugin = new Plugin();
+            _groups = new ObservableCollection<ModGroup>();
+            _loadouts = new ObservableCollection<LoadOut>();
+            _files = string.Empty;
+            _loadOutEnabled = new Dictionary<string, bool>();
+            _selectedGroupSet = AggLoadInfo.Instance.ActiveGroupSet;
+            _availableGroupSets = AggLoadInfo.Instance.GroupSets;
+            PropertyChanged = delegate { };
+            
+        }
+
+        public PluginViewModel(Plugin plugin)
+        {
+            _plugin = plugin;
+            _groups = new ObservableCollection<ModGroup>();
+            _loadouts = new ObservableCollection<LoadOut>();
+            _files = string.Empty;
+            _loadOutEnabled = new Dictionary<string, bool>();
+            _selectedGroupSet = AggLoadInfo.Instance.ActiveGroupSet;
+            _availableGroupSets = AggLoadInfo.Instance.GroupSets;
+            PropertyChanged = delegate { };
+        }
+
+        public PluginViewModel(IEnumerable<Plugin> plugins)
+        {
+            _plugin = plugins.FirstOrDefault() ?? new Plugin();
+            _groups = new ObservableCollection<ModGroup>();
+            _loadouts = new ObservableCollection<LoadOut>();
+            _files = string.Empty;
+            _loadOutEnabled = new Dictionary<string, bool>();
+            _selectedGroupSet = AggLoadInfo.Instance.ActiveGroupSet;
+            _availableGroupSets = AggLoadInfo.Instance.GroupSets;
+            PropertyChanged = delegate { };
+        }
 
         public Plugin Plugin
         {
             get { return _plugin; }
-            set
-            {
-                _plugin = value;
-                OnPropertyChanged(nameof(Plugin));
-            }
+            set { _plugin = value; OnPropertyChanged(nameof(Plugin)); }
         }
 
         public bool IsEnabled
         {
             get { return _isEnabled; }
-            set
-            {
-                _isEnabled = value;
-                OnPropertyChanged(nameof(IsEnabled));
-            }
+            set { _isEnabled = value; OnPropertyChanged(nameof(IsEnabled)); }
         }
 
         public ObservableCollection<ModGroup> Groups
         {
             get { return _groups; }
-            set
-            {
-                _groups = value;
-                OnPropertyChanged(nameof(Groups));
-            }
+            set { _groups = value; OnPropertyChanged(nameof(Groups)); }
         }
 
-        public ObservableCollection<LoadOut> Loadouts
+        public ObservableCollection<LoadOut> LoadOuts
         {
             get { return _loadouts; }
-            set
-            {
-                _loadouts = value;
-                OnPropertyChanged(nameof(Loadouts));
-            }
+            set { _loadouts = value; OnPropertyChanged(nameof(LoadOuts)); }
         }
 
         public Dictionary<string, bool> LoadOutEnabled
         {
             get { return _loadOutEnabled; }
-            set
-            {
-                _loadOutEnabled = value;
-                OnPropertyChanged(nameof(LoadOutEnabled));
-            }
+            set { _loadOutEnabled = value; OnPropertyChanged(nameof(LoadOutEnabled)); }
         }
 
         public string Files
         {
             get { return _files; }
-            set
-            {
-                _files = value;
-                OnPropertyChanged(nameof(Files));
-            }
+            set { _files = value; OnPropertyChanged(nameof(Files)); }
         }
 
         public long PluginID => _plugin.PluginID;
 
+        public GroupSet SelectedGroupSet
+        {
+            get { return _selectedGroupSet; }
+            set
+            {
+                if (_selectedGroupSet != value)
+                {
+                    _selectedGroupSet = value;
+                    OnPropertyChanged(nameof(SelectedGroupSet));
+                    UpdateGroupsAndLoadouts();
+                }
+            }
+        }
+
+        public ObservableCollection<GroupSet> AvailableGroupSets
+        {
+            get { return _availableGroupSets; }
+            set { _availableGroupSets = value; OnPropertyChanged(nameof(AvailableGroupSets)); }
+        }
+
+        public bool IsBethesdaChecked => !string.IsNullOrEmpty(_plugin.BethesdaID);
+        public bool IsNexusChecked => !string.IsNullOrEmpty(_plugin.NexusID);
+        public event PropertyChangedEventHandler? PropertyChanged;
+        public bool IsGameFolderChecked
+        {
+            get
+            {
+                string gameFolderPath = Path.Combine(Config.Instance.GameFolder, "data");
+                string mainFilePath = Path.Combine(gameFolderPath, _plugin.PluginName);
+
+                return File.Exists(mainFilePath);
+            }
+        }
+
         public void Save()
         {
             Plugin.WriteMod();
-        }
-
-        // Constructor to take a single Plugin object
-        public PluginViewModel(Plugin plugin)
-        {
-            _plugin = plugin ?? new Plugin();
-            _isEnabled = false; // Default value, adjust as needed
-            _groups = new ObservableCollection<ModGroup>();
-            _loadouts = new ObservableCollection<LoadOut>();
-            _files = string.Empty; // Default value, adjust as needed
-            _loadOutEnabled = new Dictionary<string, bool>();
-        }
-
-        // Constructor to take a collection of Plugin objects
-        public PluginViewModel(IEnumerable<Plugin> plugins)
-        {
-            var pluginList = plugins?.ToList() ?? new List<Plugin>();
-            _plugin = pluginList.FirstOrDefault() ?? new Plugin();
-            _isEnabled = false; // Default value, adjust as needed
-            _groups = new ObservableCollection<ModGroup>();
-            _loadouts = new ObservableCollection<LoadOut>();
-            _files = string.Empty; // Default value, adjust as needed
-            _loadOutEnabled = new Dictionary<string, bool>();
         }
 
         protected virtual void OnPropertyChanged(string propertyName)
@@ -627,10 +653,18 @@ namespace ZO.LoadOrderManager
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
-        public event PropertyChangedEventHandler PropertyChanged;
+        private void UpdateGroupsAndLoadouts()
+        {
+            if (_selectedGroupSet != null)
+            {
+                Groups = new ObservableCollection<ModGroup>(_selectedGroupSet.ModGroups);
+                LoadOuts = new ObservableCollection<LoadOut>(_selectedGroupSet.LoadOuts);
+            }
+        }
 
+     
 
-
+        
     }
 
 }
