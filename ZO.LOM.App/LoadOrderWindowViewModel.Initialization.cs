@@ -121,9 +121,15 @@ namespace ZO.LoadOrderManager
                         //    return;
                         //}
                     }
+                    else 
+                    { 
+                        
+                    }
+
+                    var enabledPluginIds = SelectedLoadOut.enabledPlugins;
 
                     // Use the enabledPlugins hashset directly from SelectedLoadOut
-                    var enabledPluginIds = SelectedLoadOut.enabledPlugins;
+
 
                     // Iterate over each group and create the group view models
                     foreach (var group in Groups)

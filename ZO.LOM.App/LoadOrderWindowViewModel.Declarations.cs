@@ -1,6 +1,7 @@
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Windows;
 using System.Windows.Input;
 
 namespace ZO.LoadOrderManager
@@ -107,8 +108,6 @@ namespace ZO.LoadOrderManager
         public LoadOrdersViewModel CachedGroupSetLoadOrders { get; set; }
         public ObservableCollection<LoadOrderItemViewModel> Items { get; }
 
-       
-
         // OnPropertyChanged Method
         protected void OnPropertyChanged(string propertyName)
         {
@@ -121,7 +120,14 @@ namespace ZO.LoadOrderManager
             // Clear and reload the collections based on the updated AggLoadInfo
             Groups.Clear();
             Plugins.Clear();
-            LoadOuts.Clear();
+            //LoadOuts.Clear();
+            //foreach (var loadOut in AggLoadInfo.Instance.LoadOuts)
+            //{
+            //    LoadOuts.Add(loadOut);
+            //}
+
+            //// Update other properties or views as needed
+            UpdateLoadOrders();
 
             foreach (var group in AggLoadInfo.Instance.Groups)
             {
@@ -133,13 +139,7 @@ namespace ZO.LoadOrderManager
                 Plugins.Add(new PluginViewModel(plugin));
             }
 
-            foreach (var loadOut in AggLoadInfo.Instance.LoadOuts)
-            {
-                LoadOuts.Add(loadOut);
-            }
-
-            // Update other properties or views as needed
-            UpdateLoadOrders();
+            RefreshCheckboxes();
         }
 
         public void RefreshCheckboxes()
@@ -154,7 +154,7 @@ namespace ZO.LoadOrderManager
                 plugin.IsEnabled = SelectedLoadOut.enabledPlugins.Contains(plugin.PluginID);
             }
         }
-        
+
         public void UpdateStatus(string message)
         {
             StatusMessage = message;
@@ -164,7 +164,7 @@ namespace ZO.LoadOrderManager
         {
             if (SelectedItem != null)
             {
-                StatusMessage = SelectedItem.ToString();
+                StatusMessage = SelectedItem?.ToString() ?? "No item selected";
             }
             else
             {
@@ -172,17 +172,51 @@ namespace ZO.LoadOrderManager
             }
         }
 
-
         private void UpdateLoadOrders()
         {
             // Load data based on selected GroupSet
             var selectedGroupSet = GroupSets.FirstOrDefault(gs => gs.GroupSetID == SelectedGroupSet.GroupSetID);
             if (selectedGroupSet != null)
             {
-                // Update other properties (e.g., Items) based on selected GroupSet
-                // Items.Clear(); // Clear and repopulate as needed
+                // Update LoadOuts collection based on selected GroupSet
+                LoadOuts.Clear();
+                foreach (var loadOut in GroupSet.GetAllLoadOuts(selectedGroupSet.GroupSetID))
+                {
+                    LoadOuts.Add(loadOut);
+                }
+
+                // Select the first loadout if none is selected
+                if (SelectedLoadOut == null && LoadOuts.Any())
+                {
+                    SelectedLoadOut = LoadOuts.First();
+                }
+
+                // If no loadouts exist, prompt the user to create a new one
+                if (!LoadOuts.Any())
+                {
+                    var result = MessageBox.Show("No LoadOuts found. Do you want to create a new LoadOut?", "Create LoadOut", MessageBoxButton.YesNo);
+                    if (result == MessageBoxResult.Yes)
+                    {
+                        // Generate default name for the new loadout
+                        var defaultLoadoutName = $"{SelectedGroupSet.GroupSetName}_Loadout_{LoadOuts.Count + 1}";
+
+                        // Show InputDialog to get the name of the new loadout
+                        var inputDialog = new InputDialog("Enter the name for the new LoadOut:", defaultLoadoutName);
+                        if (inputDialog.ShowDialog() == true)
+                        {
+                            var newLoadoutName = inputDialog.ResponseText;
+
+                            // Create and add the new loadout to the selected GroupSet
+                            var newLoadOut = new LoadOut(SelectedGroupSet)
+                            {
+                                Name = newLoadoutName
+                            };
+                            LoadOuts.Add(newLoadOut);
+                            SelectedLoadOut = newLoadOut;
+                        }
+                    }
+                }
             }
         }
-
     }
 }
