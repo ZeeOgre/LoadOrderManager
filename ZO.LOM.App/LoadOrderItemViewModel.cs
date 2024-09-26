@@ -10,12 +10,14 @@ namespace ZO.LoadOrderManager
 {
     public class LoadOrderItemViewModel : INotifyPropertyChanged
     {
-        private string displayName;
+        private string displayName = string.Empty;
         private bool isEnabled;
-        private Plugin pluginData;
+        private Plugin? pluginData;
+        //private ModGroup? groupData;
         private long? groupID;
         private bool _isSelected;
-        
+        public GroupSet? GroupSet { get; internal set; }
+
         public bool IsSelected
         {
             get => _isSelected;
@@ -28,7 +30,7 @@ namespace ZO.LoadOrderManager
                 }
             }
         }
-        
+
         public string DisplayName
         {
             get => displayName;
@@ -46,7 +48,7 @@ namespace ZO.LoadOrderManager
 
         public EntityType EntityType { get; set; }
 
-        public Plugin PluginData
+        public Plugin? PluginData
         {
             get => pluginData;
             set
@@ -59,6 +61,20 @@ namespace ZO.LoadOrderManager
                 }
             }
         }
+
+        //public ModGroup? GroupData
+        //{
+        //    get => groupData;
+        //    set
+        //    {
+        //        if (groupData != value)
+        //        {
+        //            groupData = value;
+        //            OnPropertyChanged(nameof(GroupData));
+        //            GroupID = groupData?.GroupID;
+        //        }
+        //    }
+        //}
 
         public long? GroupID
         {
@@ -73,21 +89,25 @@ namespace ZO.LoadOrderManager
             }
         }
 
-        public bool IsEnabled
+        public bool IsActive
         {
-            get => isEnabled;
+            get
+            {
+                if (EntityType == EntityType.Plugin)
+                {
+                    return AggLoadInfo.Instance.ActiveLoadOut.enabledPlugins.Contains(PluginData?.PluginID ?? 0);
+                }
+                return isEnabled;
+            }
             set
             {
                 if (isEnabled != value)
                 {
                     isEnabled = value;
-                    OnPropertyChanged(nameof(IsEnabled));
+                    OnPropertyChanged(nameof(IsActive));
                 }
             }
         }
-
-        public long? GroupSetID { get; internal set; }
-        public GroupSet GroupSet { get; internal set; }
 
         public LoadOrderItemViewModel()
         {
@@ -97,20 +117,21 @@ namespace ZO.LoadOrderManager
         {
             DisplayName = group.GroupName ?? string.Empty;
             EntityType = EntityType.Group;
-            PluginData = null;
-            IsEnabled = true;
+            //GroupData = group;
+            //GroupSet = new GroupSet(group);
+            IsActive = true;
             Children = new ObservableCollection<LoadOrderItemViewModel>(
                 group.Plugins?.OrderBy(p => p.GroupOrdinal).Select(p => new LoadOrderItemViewModel
                 {
                     DisplayName = p.PluginName,
                     EntityType = EntityType.Plugin,
                     PluginData = p,
-                    IsEnabled = AggLoadInfo.Instance.ActiveLoadOut.enabledPlugins.Contains(p.PluginID)
+                    IsActive = AggLoadInfo.Instance.ActiveLoadOut.enabledPlugins.Contains(p.PluginID)
                 }) ?? Enumerable.Empty<LoadOrderItemViewModel>()
             );
         }
 
-        public event PropertyChangedEventHandler PropertyChanged;
+        public event PropertyChangedEventHandler? PropertyChanged;
 
         protected virtual void OnPropertyChanged(string propertyName)
         {

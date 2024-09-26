@@ -9,29 +9,29 @@ namespace ZO.LoadOrderManager
         public required string Name { get; set; }
         public ObservableHashSet<long> enabledPlugins { get; set; } = new ObservableHashSet<long>();
 
-        private GroupSet? _groupSet;
+        //private GroupSet? _groupSet;
         public long GroupSetID { get; set; }
 
-        public GroupSet GroupSet
-        {
-            get
-            {
-                if (_groupSet == null)
-                {
-                    _groupSet = GroupSet.LoadGroupSet(GroupSetID) ?? GroupSet.CreateEmptyGroupSet();
-                    if (_groupSet.GroupSetID == 0)
-                    {
-                        _groupSet.GroupSetName = $"{Name}_GroupSet_{_groupSet.GroupSetID}";
-                    }
-                }
-                return _groupSet;
-            }
-            set
-            {
-                _groupSet = value;
-                GroupSetID = value.GroupSetID;
-            }
-        }
+        //public GroupSet GroupSet
+        //{
+        //    get
+        //    {
+        //        if (_groupSet == null)
+        //        {
+        //            _groupSet = GroupSet.LoadGroupSet(GroupSetID) ?? GroupSet.CreateEmptyGroupSet();
+        //            if (_groupSet.GroupSetID == 0)
+        //            {
+        //                _groupSet.GroupSetName = $"{Name}_GroupSet_{_groupSet.GroupSetID}";
+        //            }
+        //        }
+        //        return _groupSet;
+        //    }
+        //    set
+        //    {
+        //        _groupSet = value;
+        //        GroupSetID = value.GroupSetID;
+        //    }
+        //}
 
         // Default constructor
         public LoadOut()
@@ -43,7 +43,8 @@ namespace ZO.LoadOrderManager
         public LoadOut(GroupSet groupSet)
         {
             enabledPlugins = new ObservableHashSet<long>();
-            GroupSet = groupSet;
+            GroupSetID = groupSet.GroupSetID;
+            
         }
 
         public void LoadPlugins(IEnumerable<Plugin> plugins)
@@ -152,7 +153,7 @@ namespace ZO.LoadOrderManager
                             VALUES (@ProfileID, @ProfileName, @GroupSetID)";
                     command.Parameters.AddWithValue("@ProfileID", this.ProfileID);
                     command.Parameters.AddWithValue("@ProfileName", this.Name);
-                    command.Parameters.AddWithValue("@GroupSetID", this.GroupSet.GroupSetID);
+                    command.Parameters.AddWithValue("@GroupSetID", this.GroupSetID);
                     command.ExecuteNonQuery();
 
                     // Insert or replace ProfilePlugins entries

@@ -26,8 +26,8 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="2*"/>
             <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="4*"/>
         </Grid.ColumnDefinitions>
 
         <!-- Plugin Name -->
@@ -39,8 +39,6 @@
         <TextBox Text="{Binding Plugin.Description}" Grid.Row="1" Grid.Column="1" Margin="5"/>
 
         <!-- Achievement Safe -->
-        <Label Content="Achievement Safe:" Grid.Row="2" Grid.Column="0" Margin="5"/>
-        <CheckBox IsChecked="{Binding Plugin.Achievements}" Grid.Row="2" Grid.Column="1" Margin="5"/>
 
         <!-- Files -->
         <Label Content="Files:" Grid.Row="3" Grid.Column="0" Margin="5"/>
@@ -48,18 +46,18 @@
 
         <!-- Timestamp and Version -->
         <StackPanel Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2" Orientation="Horizontal" Margin="5">
-            <Label Content="Timestamp:"/>
+            <Label Content="Timestamp:" Width="110"/>
             <TextBox Text="{Binding Plugin.DTStamp}" Width="200" Margin="5,0"/>
             <Label Content="Version:"/>
-            <TextBox Text="{Binding Plugin.Version}" Width="100" Margin="5,0"/>
+            <TextBox Text="{Binding Plugin.Version}" Margin="5,0" Width="193" />
         </StackPanel>
 
         <!-- Bethesda and Nexus -->
         <StackPanel Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="2" Orientation="Horizontal" Margin="5">
-            <Label Content="Bethesda ID:"/>
-            <TextBox Text="{Binding Plugin.BethesdaID}" Width="300" Margin="5,0"/>
+            <Label Content="Bethesda ID:" Width="110"/>
+            <TextBox Text="{Binding Plugin.BethesdaID}" Width="268" Margin="5,0"/>
             <Label Content="Nexus ID:"/>
-            <TextBox Text="{Binding Plugin.NexusID}" Width="100" Margin="5,0"/>
+            <TextBox Text="{Binding Plugin.NexusID}" Width="119" Margin="5,0"/>
         </StackPanel>
 
         <!-- Group -->
@@ -110,10 +108,12 @@
             </StackPanel>
 
             <!-- Save and Cancel buttons on the right -->
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="5" Grid.Column="1">
-                <Button Content="Save" Width="60" Margin="5" Click="SaveButton_Click"/>
-                <Button Content="Cancel" Width="60" Margin="5" Click="CancelButton_Click"/>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Margin="3,13,0,34" Grid.Column="1">
+                <Button Content="Save" Width="85" Margin="5" Click="SaveButton_Click" Height="75"/>
+                <Button Content="Cancel" Width="85" Margin="5" Click="CancelButton_Click" Height="75"/>
             </StackPanel>
+            <Label Content="Achievement Safe:" Grid.Column="0" Margin="-1,-35,325,146"/>
+            <CheckBox IsChecked="{Binding Plugin.Achievements}" Margin="110,-28,303,150"/>
         </Grid>
     </Grid>
 </Window>

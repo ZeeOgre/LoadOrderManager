@@ -33,7 +33,8 @@ public class LoadOrdersViewModel : INotifyPropertyChanged
                 DisplayName = $"{group.GroupName} | {group.Description}",
                 EntityType = EntityType.Group,
                 GroupID = group.GroupID, // Set GroupID for group
-                GroupSetID = group.GroupSetID, // Set GroupSetID for group
+                
+                //GroupSet = GroupSet.LoadGroupSet(group.GroupSetID ?? 1), // Set GroupSetID for group
                 Children = new ObservableCollection<LoadOrderItemViewModel>()
             };
 
@@ -44,9 +45,9 @@ public class LoadOrdersViewModel : INotifyPropertyChanged
                 {
                     DisplayName = plugin.PluginName,
                     PluginData = plugin,
-                    IsEnabled = plugin.Achievements, // Example property
+                    IsActive = plugin.Achievements, // Example property
                     EntityType = EntityType.Plugin,
-                    GroupSetID = plugin.GroupSetID,
+                    //GroupSet = GroupSet.LoadGroupSet(group.GroupSetID ?? 1),
                     GroupID = plugin.GroupID // Set GroupID for plugin
                 };
                 groupViewModel.Children.Add(pluginViewModel);
@@ -55,7 +56,7 @@ public class LoadOrdersViewModel : INotifyPropertyChanged
             Items.Add(groupViewModel);
         }
 
-        // Update the IsEnabled property of plugins based on LoadOuts
+        // Update the IsActive property of plugins based on LoadOuts
         foreach (var loadOut in aggLoadInfoInstance.LoadOuts)
         {
             // Fetch plugins based on enabled plugin IDs in LoadOut
@@ -68,11 +69,11 @@ public class LoadOrdersViewModel : INotifyPropertyChanged
 
                 if (plugin != null)
                 {
-                    // Find the corresponding plugin view model and update IsEnabled
+                    // Find the corresponding plugin view model and update IsActive
                     var pluginViewModel = FindPluginViewModel(plugin.PluginID);
                     if (pluginViewModel != null)
                     {
-                        pluginViewModel.IsEnabled = true; // Plugin is enabled in this LoadOut
+                        pluginViewModel.IsActive = true; // Plugin is enabled in this LoadOut
                     }
                 }
             }
@@ -97,7 +98,7 @@ public class LoadOrdersViewModel : INotifyPropertyChanged
                 DisplayName = $"{group.GroupName} | {group.Description}",
                 EntityType = EntityType.Group,
                 GroupID = group.GroupID, // Set GroupID for group
-                GroupSetID = group.GroupSetID, // Set GroupSetID for group
+                GroupSet = GroupSet.LoadGroupSet(1), // Set GroupSetID for group
                 Children = new ObservableCollection<LoadOrderItemViewModel>()
             };
 
@@ -108,9 +109,9 @@ public class LoadOrdersViewModel : INotifyPropertyChanged
                 {
                     DisplayName = plugin.PluginName,
                     PluginData = plugin,
-                    IsEnabled = plugin.Achievements, // Example property
+                    IsActive = plugin.Achievements, // Example property
                     EntityType = EntityType.Plugin,
-                    GroupSetID = plugin.GroupSetID,
+                    GroupSet = GroupSet.LoadGroupSet(1), // Set GroupSetID for group
                     GroupID = plugin.GroupID // Set GroupID for plugin
                 };
                 groupViewModel.Children.Add(pluginViewModel);
@@ -119,7 +120,7 @@ public class LoadOrdersViewModel : INotifyPropertyChanged
             Items.Add(groupViewModel);
         }
 
-        // Update the IsEnabled property of plugins based on LoadOuts
+        // Update the IsActive property of plugins based on LoadOuts
         foreach (var loadOut in cachedGroupSet1.LoadOuts)
         {
             // Fetch plugins based on enabled plugin IDs in LoadOut
@@ -132,11 +133,11 @@ public class LoadOrdersViewModel : INotifyPropertyChanged
 
                 if (plugin != null)
                 {
-                    // Find the corresponding plugin view model and update IsEnabled
+                    // Find the corresponding plugin view model and update IsActive
                     var pluginViewModel = FindPluginViewModel(plugin.PluginID);
                     if (pluginViewModel != null)
                     {
-                        pluginViewModel.IsEnabled = true; // Plugin is enabled in this LoadOut
+                        pluginViewModel.IsActive = true; // Plugin is enabled in this LoadOut
                     }
                 }
             }

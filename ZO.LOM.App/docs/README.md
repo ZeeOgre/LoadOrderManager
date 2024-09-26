@@ -1,4 +1,4 @@
-﻿# **Dev Mod Manager**
+﻿re# **Dev Mod Manager**
 ![Dev Mod Manager](./img/ZeeOgre_256x256.ico)
 ---
 ## Description

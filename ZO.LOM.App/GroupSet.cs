@@ -289,7 +289,7 @@ namespace ZO.LoadOrderManager
             using var connection = DbManager.Instance.GetConnection();
             using var command = new SQLiteCommand(connection);
             command.CommandText = @"
-                INSERT INTO GroupSet (GroupSetName, GroupSetFlags)
+                INSERT INTO GroupSets (GroupSetName, GroupSetFlags)
                 VALUES (@GroupSetName, @GroupSetFlags)
                 RETURNING GroupSetID;
             ";

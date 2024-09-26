@@ -28,7 +28,7 @@ namespace ZO.LoadOrderManager
         public LoadOrderWindow()
         {
             InitializeComponent();
-
+            //DataContext = new LoadOrderWindowViewModel();
             // Initialize non-nullable fields and properties
             cooldownTimer = new System.Timers.Timer();
 

@@ -3,6 +3,9 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:ZO.LoadOrderManager"
         Title="LoadOrderWindow" Height="600" Width="1366">
+    <Window.DataContext>
+        <local:LoadOrderWindowViewModel />
+    </Window.DataContext>
     <Window.Resources>
         <local:BethesdaUrlConverter x:Key="BethesdaUrlConverter"/>
         <local:NexusUrlConverter x:Key="NexusUrlConverter"/>
@@ -34,7 +37,7 @@
                     <ColumnDefinition Width="100"/>
                 </Grid.ColumnDefinitions>
                 <!-- Checkbox for IsEnabled, checkbox disabled in reservedGroups -->
-                <CheckBox IsChecked="{Binding IsEnabled}" 
+                <CheckBox IsChecked="{Binding IsActive}" 
                           Command="{Binding DataContext.ToggleEnableCommand, RelativeSource={RelativeSource AncestorType=Window}}" 
                           CommandParameter="{Binding}" 
                           Grid.Column="0" 
@@ -227,6 +230,11 @@
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
+
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                    <Button x:Name="MoveUpButton" Content="▲" Width="50" Height="50" Margin="5" Command="{Binding MoveUpCommand}"/>
+                    <Button x:Name="MoveDownButton" Content="▼" Width="50" Height="50" Margin="5" Command="{Binding MoveDownCommand}"/>
+                </StackPanel>
 
 
                 <Button x:Name="EditRowButton" Content="Edit Row" Width="100" Command="{Binding EditHighlightedItemCommand}" HorizontalAlignment="Center" Grid.Column="1"/>

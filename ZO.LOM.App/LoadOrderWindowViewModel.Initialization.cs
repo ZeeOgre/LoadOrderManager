@@ -33,21 +33,21 @@ namespace ZO.LoadOrderManager
             MoveUpCommand = new RelayCommand<object?>(param => MoveUp(), param => CanMoveUp());
             MoveDownCommand = new RelayCommand<object?>(param => MoveDown(), param => CanMoveDown());
             SaveAsNewLoadoutCommand = new RelayCommand<object?>(param => SaveAsNewLoadout());
-            OpenGameFolderCommand = new RelayCommand<object?>(param => OpenGameFolder());
-            OpenGameSaveFolderCommand = new RelayCommand<object?>(param => OpenGameSaveFolder());
-            EditPluginsCommand = new RelayCommand<object?>(param => EditPlugins());
-            EditContentCatalogCommand = new RelayCommand<object?>(param => EditContentCatalog());
+            OpenGameFolderCommand = new RelayCommand<object?>(param => OpenGameFolder(), _ => true);
+            OpenGameSaveFolderCommand = new RelayCommand<object?>(param => OpenGameSaveFolder(), _ => true);
+            EditPluginsCommand = new RelayCommand<object?>(param => EditPlugins(), _ => true);
+            EditContentCatalogCommand = new RelayCommand<object?>(param => EditContentCatalog(), _ => true);
             ImportContextCatalogCommand = new RelayCommand<object?>(param => ImportContextCatalog());
-            SavePluginsCommand = new RelayCommand<object?>(param => SavePlugins());
+            SavePluginsCommand = new RelayCommand(param => SavePlugins(), param => CanSavePlugins());
             EditHighlightedItemCommand = new RelayCommand<object?>(param => EditHighlightedItem());
-            OpenAppDataFolderCommand = new RelayCommand<object?>(param => OpenAppDataFolder());
-            OpenGameLocalAppDataCommand = new RelayCommand<object?>(param => OpenGameLocalAppData());
-            SettingsWindowCommand = new RelayCommand<object?>(param => SettingsWindow());
+            OpenAppDataFolderCommand = new RelayCommand<object?>(param => OpenAppDataFolder(), _ => true);
+            OpenGameLocalAppDataCommand = new RelayCommand<object?>(param => OpenGameLocalAppData(), _ => true);
+            SettingsWindowCommand = new RelayCommand<object?>(param => SettingsWindow(), _ => true);
             ImportFromYamlCommand = new RelayCommand<object?>(param => ImportFromYaml());
-            OpenGameSettingsCommand = new RelayCommand<object?>(param => OpenGameSettings());
+            OpenGameSettingsCommand = new RelayCommand<object?>(param => OpenGameSettings(), _ => true);
             OpenPluginEditorCommand = new RelayCommand<object?>(param => OpenPluginEditor());
             OpenGroupEditorCommand = new RelayCommand<object?>(param => OpenGroupEditor());
-            RefreshDataCommand = new RelayCommand<object?>(param => RefreshData());
+            RefreshDataCommand = new RelayCommand<object?>(param => RefreshData(), _ => true);
             CopyTextCommand = new RelayCommand<object?>(param => CopyText(), param => CanExecuteCopyText(null));
             DeleteCommand = new RelayCommand<object?>(param => Delete(), param => CanExecuteDelete(null));
             EditCommand = new RelayCommand<object?>(param => EditHighlightedItem(), param => CanExecuteEdit(null));
@@ -143,7 +143,7 @@ namespace ZO.LoadOrderManager
                             groupViewModel.Children.Add(new LoadOrderItemViewModel
                             {
                                 PluginData = plugin,
-                                IsEnabled = isEnabled,
+                                IsActive = isEnabled,
                                 EntityType = EntityType.Plugin
                             });
                         }
@@ -193,7 +193,7 @@ namespace ZO.LoadOrderManager
                         groupViewModel.Children.Add(new LoadOrderItemViewModel
                         {
                             PluginData = plugin,
-                            IsEnabled = isEnabled,
+                            IsActive = isEnabled,
                             EntityType = EntityType.Plugin
                         });
                     }

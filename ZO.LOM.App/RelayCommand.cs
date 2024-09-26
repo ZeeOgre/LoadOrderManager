@@ -12,10 +12,15 @@ namespace ZO.LoadOrderManager
         {
             _execute = execute ?? throw new ArgumentNullException(nameof(execute));
             _canExecute = canExecute;
+            App.LogDebug("RelayCommand created for " + execute.Method.Name);
         }
 
-        public bool CanExecute(object? parameter) => _canExecute?.Invoke(parameter) ?? true;
-
+        public bool CanExecute(object? parameter)
+        {
+            var result = _canExecute?.Invoke(parameter) ?? true;
+            App.LogDebug($"CanExecute called for {parameter}: {result}");
+            return result;
+        }
         public void Execute(object? parameter)
         {
             try
@@ -94,13 +99,22 @@ namespace ZO.LoadOrderManager
 
         public bool CanExecute(object? parameter)
         {
-            if (parameter is T param)
-                return _canExecute?.Invoke(param) ?? true;
+            if (parameter == null || parameter is T)
+                return _canExecute?.Invoke((T)parameter) ?? true;
             return false;
         }
 
         public void Execute(object? parameter)
         {
+            // Check for null parameter or incorrect type
+            if (parameter == null)
+            {
+                // Handle null parameter if needed
+                _execute(default(T)!); // or use a default value or skip execution
+                return;
+            }
+
+            // Check if parameter is of the correct type
             if (parameter is T param)
             {
                 try
@@ -110,9 +124,13 @@ namespace ZO.LoadOrderManager
                 catch (Exception ex)
                 {
                     // Log or handle exceptions as needed
-                    // Example: Logger.LogError(ex);
                     throw;
                 }
+            }
+            else
+            {
+                // Log or handle unexpected type
+                App.LogDebug($"Unexpected parameter type: {parameter.GetType().Name}, expected: {typeof(T).Name}");
             }
         }
 

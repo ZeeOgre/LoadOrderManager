@@ -158,26 +158,21 @@ namespace ZO.LoadOrderManager
             var aggLoadInfoInstance = AggLoadInfo.Instance;
 
             // Step 1: Decrement ordinals of sibling groups under the current parent
-            var currentParentGroup = aggLoadInfoInstance.Groups.FirstOrDefault(g => g.GroupID == this.ParentID);
-            if (currentParentGroup != null)
+            var currentSiblings = this.GetGroupSiblingsFromAggLoad(aggLoadInfoInstance);
+            foreach (var sibling in currentSiblings)
             {
-                // Only decrement ordinals of siblings with greater ordinal values
-                var siblingsToDecrement = currentParentGroup.Plugins?.Where(p => p.GroupOrdinal > this.Ordinal).ToList();
-                if (siblingsToDecrement != null)
+                if (sibling.Ordinal > this.Ordinal)
                 {
-                    foreach (var sibling in siblingsToDecrement)
-                    {
-                        sibling.GroupOrdinal--;
-                    }
+                    sibling.Ordinal--;
                 }
             }
 
             // Step 2: Find the maximum ordinal of the new parent's children
             long maxOrdinal = 0;
-            var newParentGroup = aggLoadInfoInstance.Groups.FirstOrDefault(g => g.GroupID == newParentId);
-            if (newParentGroup != null)
+            var newParentChildren = new ModGroup { GroupID = newParentId }.GetGroupChildrenFromAggLoad(aggLoadInfoInstance);
+            if (newParentChildren.Any())
             {
-                maxOrdinal = newParentGroup.Plugins?.Max(p => p.GroupOrdinal) ?? 0;
+                maxOrdinal = newParentChildren.Max(g => g.Ordinal) ?? 0;
             }
 
             // Step 3: Update the ParentID and GroupOrdinal of the group being moved
@@ -186,6 +181,26 @@ namespace ZO.LoadOrderManager
 
             // Optional: Update AggLoadInfo instance if necessary
             // aggLoadInfoInstance.UpdateGroup(this); // This depends on the implementation of AggLoadInfo
+
+
+
+        }
+
+
+        public List<ModGroup> GetGroupChildrenFromAggLoad(AggLoadInfo? aggLoadInfoObject = null)
+        {
+            aggLoadInfoObject ??= AggLoadInfo.Instance;
+            return aggLoadInfoObject.Groups.Where(g => g.ParentID == this.GroupID).ToList();
+        }
+
+        public List<ModGroup> GetGroupSiblingsFromAggLoad(AggLoadInfo? aggLoadInfoObject = null)
+        {
+            aggLoadInfoObject ??= AggLoadInfo.Instance;
+            if (this.ParentID == null)
+            {
+                return new List<ModGroup>();
+            }
+            return aggLoadInfoObject.Groups.Where(g => g.ParentID == this.ParentID && g.GroupID != this.GroupID).ToList();
         }
 
 

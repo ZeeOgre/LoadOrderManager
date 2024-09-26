@@ -5,6 +5,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Timers;
 using System.Windows;
 using System.Windows.Input;
@@ -45,48 +46,68 @@ namespace ZO.LoadOrderManager
 
         private bool CanMoveUp()
         {
-            if (SelectedItem is Plugin selectedPlugin)
+            if (SelectedItem is LoadOrderItemViewModel loadOrderItem)
             {
-                if (selectedPlugin.GroupID == -999 || selectedPlugin.GroupID == -997)
+                if (loadOrderItem.EntityType == EntityType.Plugin)
                 {
-                    return false;
+                    var selectedPlugin = loadOrderItem.PluginData;
+                    if (selectedPlugin != null)
+                    {
+                        if (selectedPlugin.GroupID < 1 || selectedPlugin.GroupOrdinal < 1)
+                        {
+                            return false;
+                        }
+                        else { return true; }
+                       
+                    }
                 }
+                else if (loadOrderItem.EntityType == EntityType.Group)
+                {
+                    var selectedGroup = loadOrderItem.GroupID;
+                    if (selectedGroup != null)
+                    {
+                        if (selectedGroup <= 1)
+                        {
+                            return false;
+                        }
 
-                var group = Groups.FirstOrDefault(g => g.Plugins != null && g.Plugins.Contains(selectedPlugin));
-                if (group != null)
-                {
-                    long index = group.Plugins.IndexOf(selectedPlugin);
-                    return index > 0;
+                        else { return true; }
+                    }
                 }
-            }
-            else if (SelectedItem is ModGroup selectedGroup)
-            {
-                long index = Groups.IndexOf(selectedGroup);
-                return index > 0;
             }
             return false;
         }
 
         private bool CanMoveDown()
         {
-            if (SelectedItem is Plugin selectedPlugin)
+            if (SelectedItem is LoadOrderItemViewModel loadOrderItem)
             {
-                if (selectedPlugin.GroupID == -999 || selectedPlugin.GroupID == -997)
+                if (loadOrderItem.EntityType == EntityType.Plugin)
                 {
-                    return false;
-                }
+                    var selectedPlugin = loadOrderItem.PluginData;
+                    if (selectedPlugin != null)
+                    {
+                        if (selectedPlugin.GroupID < 1)
+                        {
+                            return false;
+                        }
 
-                var group = Groups.FirstOrDefault(g => g.Plugins != null && g.Plugins.Contains(selectedPlugin));
-                if (group != null)
-                {
-                    long index = group.Plugins.IndexOf(selectedPlugin);
-                    return index < group.Plugins.Count - 1;
+                        else { return true; }
+                    }
                 }
-            }
-            else if (SelectedItem is ModGroup selectedGroup)
-            {
-                long index = Groups.IndexOf(selectedGroup);
-                return index < Groups.Count - 1;
+                else if (loadOrderItem.EntityType == EntityType.Group)
+                {
+                    var selectedGroup = loadOrderItem.GroupID;
+                    if (selectedGroup != null)
+                    {
+                        if (selectedGroup <= 1)
+                        {
+                            return false;
+                        }
+
+                        else { return true; }
+                    }
+                }
             }
             return false;
         }
@@ -164,18 +185,19 @@ namespace ZO.LoadOrderManager
 
         private void SavePlugins()
         {
-            Save(this);
-            if (SelectedLoadOut != null)
-            {
+            //Save(this);
                 //var currentLoadOut = SelectedLoadOut;
-                AggLoadInfo.Instance.ActiveLoadOut = SelectedLoadOut;
-                if (AggLoadInfo.Instance.ActiveLoadOut == null)
-                {
-                    StatusMessage = "Selected profile not found.";
-                    return;
-                }
+                //AggLoadInfo.Instance.ActiveLoadOut = SelectedLoadOut;
+                //if (AggLoadInfo.Instance.ActiveLoadOut == null)
+                //{
+                //    StatusMessage = "Selected profile not found.";
+                //    return;
+                //}
 
-                var profileName = AggLoadInfo.Instance.ActiveLoadOut.Name;
+
+            
+
+                var profileName = SelectedLoadOut.Name;
                 var defaultFileName = $"Plugins_{profileName}.txt";
                 var defaultFilePath = Path.Combine(FileManager.AppDataFolder, defaultFileName);
 
@@ -201,12 +223,14 @@ namespace ZO.LoadOrderManager
 
                 FileManager.ProducePluginsTxt(AggLoadInfo.Instance.ActiveLoadOut, outputFileName);
                 StatusMessage = "Plugins.txt file has been successfully created.";
-            }
-            else
-            {
-                StatusMessage = "Please select a profile to save the plugins.txt file.";
-            }
         }
+
+        private bool CanSavePlugins()
+        {
+            //return SelectedLoadOut != null && AggLoadInfo.Instance.ActiveLoadOut != null;
+            return true;
+        }
+
 
     }
 }
