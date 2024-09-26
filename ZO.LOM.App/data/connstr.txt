@@ -1,1 +1,1 @@
-Data Source=M:\ZO_Repos\ZO.Applications\ZO.LoadOrderManager\ZO.LOM.App\data\LoadOrderManager.db;Version=3;
+Data Source=M:\ZO_Repos\ZO.Applications\ZO.LoadOrderManager\ZO.LoadOrderManager\data\LoadOrderManager.db;Version=3;

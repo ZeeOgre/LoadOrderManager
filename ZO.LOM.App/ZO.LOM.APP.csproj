@@ -87,6 +87,8 @@
   <ItemGroup>
     <Compile Remove="docs\FileManager.ContentCatalogParser.cs" />
     <Compile Remove="LoadOrderWindow .bak.cs" />
+    <Compile Remove="LoadOrderWindowViewModel - PartialTemplate.cs" />
+    <Compile Remove="LoadOrderWindowViewModel.cs" />
   </ItemGroup>
 
   <ItemGroup>

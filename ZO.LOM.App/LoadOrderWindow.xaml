@@ -181,13 +181,10 @@
             <Grid Grid.Row="1" Height="4">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="2"/>
-                    <RowDefinition Height="2"/>
                 </Grid.RowDefinitions>
                 <Border Grid.Row="0" Background="Black"/>
-                <Border Grid.Row="1" Background="Black"/>
             </Grid>
 
-            <!-- New TreeView for CachedGroupSet1 -->
             <!-- New TreeView for CachedGroupSet1 -->
             <TreeView x:Name="CachedGroupSetTreeView" Grid.Row="2" ItemsSource="{Binding CachedGroupSetLoadOrders.Items}" 
           ItemTemplateSelector="{StaticResource EntityTypeTemplateSelector}"
@@ -227,10 +224,6 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
-                    <TextBox x:Name="SearchBox" Width="200" Margin="5,5,5,5" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"/>
-                    <Button x:Name="SearchButton" Content="Search" Command="{Binding SearchCommand}"/>
-                </StackPanel>
 
                 <Button x:Name="EditRowButton" Content="Edit Row" Width="100" Command="{Binding EditHighlightedItemCommand}" HorizontalAlignment="Center" Grid.Column="1"/>
             </Grid>

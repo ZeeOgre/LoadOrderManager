@@ -1,6 +1,6 @@
 {
   "profiles": {
-    "ZO.LOM.APP": {
+    "ZO.LoadOrderManager": {
       "commandName": "Project",
       "nativeDebugging": false,
       "sqlDebugging": false
