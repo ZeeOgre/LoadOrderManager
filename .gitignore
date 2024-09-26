@@ -361,5 +361,3 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
-/ZO.LOM.App/LoadOrderWindow.xaml
-/ZO.LOM.App/LoadOrderWindowViewModel.zip
