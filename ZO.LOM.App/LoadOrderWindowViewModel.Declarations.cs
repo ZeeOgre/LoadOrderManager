@@ -1,6 +1,7 @@
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics.Eventing.Reader;
 using System.Windows;
 using System.Windows.Input;
 
@@ -37,8 +38,21 @@ namespace ZO.LoadOrderManager
                     ReloadViews();
                     if (LoadOuts.Any())
                     {
-                        SelectedLoadOut = LoadOuts.First();
+                        if (!LoadOuts.Contains(SelectedLoadOut))
+                        {
+                            SelectedLoadOut = LoadOuts.First();
+                            AggLoadInfo.Instance.ActiveLoadOut = SelectedLoadOut;
+                        }
+                        else
+                        {
+                            SelectedLoadOut = AggLoadInfo.Instance.ActiveLoadOut;
+                        }
                     }
+                    else
+                    {
+                        CreateNewLoadOut();
+                    }
+
                     RefreshCheckboxes();
                 }
             }
@@ -57,18 +71,18 @@ namespace ZO.LoadOrderManager
             }
         }
 
-        public long? SelectedProfileId
-        {
-            get => _selectedProfileId;
-            set
-            {
-                if (_selectedProfileId != value)
-                {
-                    _selectedProfileId = value;
-                    OnPropertyChanged(nameof(SelectedProfileId));
-                }
-            }
-        }
+        //public long? SelectedProfileId
+        //{
+        //    get => _selectedProfileId;
+        //    set
+        //    {
+        //        if (_selectedProfileId != value)
+        //        {
+        //            _selectedProfileId = value;
+        //            OnPropertyChanged(nameof(SelectedProfileId));
+        //        }
+        //    }
+        //}
 
         public LoadOut SelectedLoadOut
         {
@@ -191,32 +205,39 @@ namespace ZO.LoadOrderManager
                     SelectedLoadOut = LoadOuts.First();
                 }
 
-                // If no loadouts exist, prompt the user to create a new one
                 if (!LoadOuts.Any())
                 {
-                    var result = MessageBox.Show("No LoadOuts found. Do you want to create a new LoadOut?", "Create LoadOut", MessageBoxButton.YesNo);
-                    if (result == MessageBoxResult.Yes)
+                    CreateNewLoadOut();
+                }
+
+            }
+        }
+
+        public void CreateNewLoadOut()
+        {
+            var result = MessageBox.Show("No LoadOuts found. Do you want to create a new LoadOut?", "Create LoadOut", MessageBoxButton.YesNo);
+            if (result == MessageBoxResult.Yes)
+            {
+                // Generate default name for the new loadout
+                var defaultLoadoutName = $"{SelectedGroupSet.GroupSetName}_Loadout_{LoadOuts.Count + 1}";
+
+                // Show InputDialog to get the name of the new loadout
+                var inputDialog = new InputDialog("Enter the name for the new LoadOut:", defaultLoadoutName);
+                if (inputDialog.ShowDialog() == true)
+                {
+                    var newLoadoutName = inputDialog.ResponseText;
+
+                    // Create and add the new loadout to the selected GroupSet
+                    var newLoadOut = new LoadOut(SelectedGroupSet)
                     {
-                        // Generate default name for the new loadout
-                        var defaultLoadoutName = $"{SelectedGroupSet.GroupSetName}_Loadout_{LoadOuts.Count + 1}";
-
-                        // Show InputDialog to get the name of the new loadout
-                        var inputDialog = new InputDialog("Enter the name for the new LoadOut:", defaultLoadoutName);
-                        if (inputDialog.ShowDialog() == true)
-                        {
-                            var newLoadoutName = inputDialog.ResponseText;
-
-                            // Create and add the new loadout to the selected GroupSet
-                            var newLoadOut = new LoadOut(SelectedGroupSet)
-                            {
-                                Name = newLoadoutName
-                            };
-                            LoadOuts.Add(newLoadOut);
-                            SelectedLoadOut = newLoadOut;
-                        }
-                    }
+                        Name = newLoadoutName
+                    };
+                    LoadOuts.Add(newLoadOut);
+                    SelectedLoadOut = newLoadOut;
+                    AggLoadInfo.Instance.ActiveLoadOut = newLoadOut;
                 }
             }
+            
         }
     }
 }

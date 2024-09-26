@@ -143,7 +143,7 @@ public class LoadOrdersViewModel : INotifyPropertyChanged
         }
 
         // Call SortItems after loading the data
-        SortItems();
+        //SortItems();
 
         return this;
     }

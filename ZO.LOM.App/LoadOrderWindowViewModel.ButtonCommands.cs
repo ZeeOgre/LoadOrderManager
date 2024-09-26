@@ -165,7 +165,7 @@ namespace ZO.LoadOrderManager
         private void SavePlugins()
         {
             Save(this);
-            if (SelectedProfileId.HasValue)
+            if (SelectedLoadOut != null)
             {
                 //var currentLoadOut = SelectedLoadOut;
                 AggLoadInfo.Instance.ActiveLoadOut = SelectedLoadOut;
