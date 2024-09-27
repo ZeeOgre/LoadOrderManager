@@ -123,46 +123,6 @@ namespace ZO.LoadOrderManager
             LoadOuts = new ObservableCollection<LoadOut>();
         }
 
-
-        //public GroupSet(string loadoutName)
-        //{
-        //    GroupSetName = $"{loadoutName}_";
-        //    GroupSetFlags = GroupFlags.Uninitialized;
-        //    ModGroups = new ObservableCollection<ModGroup>();
-        //    LoadOuts = new ObservableCollection<LoadOut>();
-
-        //    // Insert INTO database, get the GroupSetID, and update GroupSetName in one query
-        //    using var connection = DbManager.Instance.GetConnection();
-        //    using var command = new SQLiteCommand(connection);
-        //    command.CommandText = @"
-        //            INSERT INTO GroupSets (GroupSetName, GroupSetFlags)
-        //            VALUES (@GroupSetName, @GroupSetFlags)
-        //            RETURNING GroupSetID;
-        //        ";
-        //    command.Parameters.AddWithValue("@GroupSetName", GroupSetName);
-        //    command.Parameters.AddWithValue("@GroupSetFlags", (long)GroupSetFlags);
-        //    GroupSetID = Convert.ToInt64(command.ExecuteScalar());
-
-        //    // Update GroupSetName to include GroupSetID
-        //    GroupSetName = $"{loadoutName}_{GroupSetID}";
-        //    command.CommandText = @"
-        //            UPDATE GroupSets
-        //            SET GroupSetName = @UpdatedGroupSetName
-        //            WHERE GroupSetID = @GroupSetID;
-        //        ";
-        //    command.Parameters.AddWithValue("@UpdatedGroupSetName", GroupSetName);
-        //    command.Parameters.AddWithValue("@GroupSetID", GroupSetID);
-        //    command.ExecuteNonQuery();
-
-        //    // Populate LoadOuts collection
-        //    var loadOuts = GetAllLoadOuts(GroupSetID);
-        //    foreach (var loadOut in loadOuts)
-        //    {
-        //        LoadOuts.Add(loadOut);
-        //    }
-
-        //}
-
         public void AddModGroup(ModGroup modGroup)
         {
             if (ModGroups.Any(mg => mg.GroupID == modGroup.GroupID))
@@ -172,11 +132,10 @@ namespace ZO.LoadOrderManager
 
             // Set the GroupSetID of the modGroup to the current GroupSetID
             modGroup.GroupSetID = this.GroupSetID;
-
+            modGroup.WriteGroup();
             ModGroups.Add(modGroup);
+            
         }
-
-
 
 
 
@@ -303,98 +262,73 @@ namespace ZO.LoadOrderManager
         }
     }
 
-    
 
     public class GroupSetViewModel : INotifyPropertyChanged
     {
-
         private GroupSet _groupSet;
+        private AggLoadInfo _aggLoadInfo;
 
-        public GroupSetViewModel(GroupSet groupSet)
+        public long GroupSetID { get; set; }
+        public string GroupSetName { get; set; }
+        public ObservableCollection<ModGroup> ModGroups => _aggLoadInfo.Groups;
+        public ObservableCollection<LoadOut> LoadOuts => _aggLoadInfo.LoadOuts;
+        public ObservableCollection<Plugin> Plugins => _aggLoadInfo.Plugins;
+
+        public ICommand AddModGroupCommand { get; }
+        public ICommand AddPluginCommand { get; }
+        public ICommand AddLoadOutCommand { get; }
+        public ICommand SaveCommand { get; }
+
+        public GroupSetViewModel(long groupSetID)
         {
-            _groupSet = groupSet;
-            ModGroups = new ObservableCollection<ModGroupViewModel>(
-                groupSet.ModGroups.Select(mg => new ModGroupViewModel(mg))
-            );
-            LoadOuts = new ObservableCollection<LoadOut>(GroupSet.GetAllLoadOuts(_groupSet.GroupSetID));
+            // Initialize AggLoadInfo with the provided groupSetID
+            _aggLoadInfo = new AggLoadInfo(groupSetID);
+
+            // Initialize GroupSet based on AggLoadInfo
+            _groupSet = _aggLoadInfo.ActiveGroupSet ?? new GroupSet();
+
+            // Set properties
+            GroupSetID = _groupSet.GroupSetID;
+            GroupSetName = _groupSet.GroupSetName;
+
+            // Initialize commands
+            AddModGroupCommand = new RelayCommand(AddModGroup);
+            AddPluginCommand = new RelayCommand(AddPlugin);
+            AddLoadOutCommand = new RelayCommand(AddLoadOut);
+            SaveCommand = new RelayCommand(_ => Save());
         }
 
-        public long GroupSetID
+        public void AddModGroup(object? parameter)
         {
-            get => _groupSet.GroupSetID;
-            set
+            if (parameter is ModGroup modGroup)
             {
-                if (_groupSet.GroupSetID != value)
-                {
-                    _groupSet.GroupSetID = value;
-                    OnPropertyChanged();
-                }
+                _groupSet.AddModGroup(modGroup);
+                OnPropertyChanged(nameof(ModGroups));
             }
         }
 
-        public string GroupSetName
+        private void AddPlugin(object? parameter)
         {
-            get => _groupSet.GroupSetName;
-            set
-            {
-                if (_groupSet.GroupSetName != value)
-                {
-                    _groupSet.GroupSetName = value;
-                    OnPropertyChanged();
-                }
-            }
+            // Implementation for adding a Plugin
         }
 
-        public GroupFlags GroupSetFlags
+        private void AddLoadOut(object? parameter)
         {
-            get => _groupSet.GroupSetFlags;
-            set
-            {
-                if (_groupSet.GroupSetFlags != value)
-                {
-                    _groupSet.GroupSetFlags = value;
-                    OnPropertyChanged();
-                }
-            }
+            // Implementation for adding a LoadOut
         }
 
-        public ObservableCollection<ModGroupViewModel> ModGroups { get; }
-
-        public ObservableCollection<LoadOut> LoadOuts { get; }
-
-        public ICommand AddModGroupCommand => new RelayCommand<object?>(AddModGroup);
-        public ICommand CloneModGroupCommand => new RelayCommand<ModGroupViewModel>(CloneModGroup);
-
-        private void CloneModGroup(ModGroupViewModel modGroupViewModel)
+        private void Save()
         {
-            var clonedModGroup = modGroupViewModel.ModGroup.Clone();
-            _groupSet.AddModGroup(clonedModGroup);
-            ModGroups.Add(new ModGroupViewModel(clonedModGroup));
+            _groupSet.SaveGroupSet();
         }
-
-        private void AddModGroup(object? parameter)
-        {
-            var newModGroup = new ModGroup
-            {
-                GroupSetID = _groupSet.GroupSetID // Set the GroupSetID of the new ModGroup
-            };
-            _groupSet.AddModGroup(newModGroup);
-            ModGroups.Add(new ModGroupViewModel(newModGroup));
-        }
-
-        public event PropertyChangedEventHandler? PropertyChanged = delegate { };
 
         protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
-        public override string ToString()
-        {
-            return $"GroupSetViewModel: {_groupSet.GroupSetName} with {ModGroups.Count} groups.";
-        }
+        public event PropertyChangedEventHandler? PropertyChanged;
     }
-
 
 
 

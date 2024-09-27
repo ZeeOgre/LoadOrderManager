@@ -11,7 +11,7 @@ namespace ZO.LoadOrderManager
     public class LoadOrderItemViewModel : INotifyPropertyChanged
     {
         private string displayName = string.Empty;
-        private bool isEnabled;
+        private bool isActive;
         private Plugin? pluginData;
         //private ModGroup? groupData;
         private long? groupID;
@@ -97,13 +97,13 @@ namespace ZO.LoadOrderManager
                 {
                     return AggLoadInfo.Instance.ActiveLoadOut.enabledPlugins.Contains(PluginData?.PluginID ?? 0);
                 }
-                return isEnabled;
+                return isActive;
             }
             set
             {
-                if (isEnabled != value)
+                if (isActive != value)
                 {
-                    isEnabled = value;
+                    isActive = value;
                     OnPropertyChanged(nameof(IsActive));
                 }
             }

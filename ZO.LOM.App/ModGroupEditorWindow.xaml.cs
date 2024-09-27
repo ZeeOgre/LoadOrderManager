@@ -10,6 +10,7 @@ namespace ZO.LoadOrderManager
         private ModGroup _originalModGroup;
         private ModGroup _tempModGroup;
         private ObservableCollection<ModGroup> _allModGroups;
+        private ObservableCollection<GroupSet> _filteredGroupSets;
 
         public ModGroupEditorWindow(ModGroup modGroup)
         {
@@ -29,6 +30,7 @@ namespace ZO.LoadOrderManager
             ParentGroupComboBox.SelectedValue = _tempModGroup.ParentID;
 
             LoadPlugins();
+            LoadGroupSets();
         }
 
         private void LoadPlugins()
@@ -39,7 +41,6 @@ namespace ZO.LoadOrderManager
 
             using (var connection = DbManager.Instance.GetConnection())
             {
-                
                 using (var command = new SQLiteCommand(connection))
                 {
                     command.CommandText = "SELECT PluginID, PluginName FROM vwPlugins WHERE GroupID = @GroupID and GroupSetID = @GroupSetID ORDER BY GroupOrdinal";
@@ -74,6 +75,38 @@ namespace ZO.LoadOrderManager
             PluginIDsTextBox.Background = System.Windows.Media.Brushes.LightGray;
         }
 
+        private void LoadGroupSets()
+        {
+            _filteredGroupSets = new ObservableCollection<GroupSet>();
+
+            using (var connection = DbManager.Instance.GetConnection())
+            {
+                using (var command = new SQLiteCommand(connection))
+                {
+                    command.CommandText = "SELECT GroupSetID, GroupSetName FROM vwGroupSetGroups WHERE GroupID = @GroupID";
+                    command.Parameters.AddWithValue("@GroupID", _tempModGroup.GroupID);
+
+                    using (var reader = command.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            var groupSet = new GroupSet
+                            {
+                                GroupSetID = reader.GetInt64(0),
+                                GroupSetName = reader.GetString(1)
+                            };
+                            _filteredGroupSets.Add(groupSet);
+                        }
+                    }
+                }
+            }
+
+            GroupSetComboBox.ItemsSource = _filteredGroupSets;
+            GroupSetComboBox.DisplayMemberPath = "GroupSetName";
+            GroupSetComboBox.SelectedValuePath = "GroupSetID";
+            GroupSetComboBox.SelectedValue = _tempModGroup.GroupSetID;
+        }
+
         private void SaveButton_Click(object sender, RoutedEventArgs e)
         {
             // Copy changes from _tempModGroup to _originalModGroup
@@ -92,6 +125,16 @@ namespace ZO.LoadOrderManager
         {
             this.DialogResult = false;
             this.Close();
+        }
+
+        private void AddNewButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Implementation for adding a new group set
+        }
+
+        private void AddToNewGroupSet_Click(object sender, RoutedEventArgs e)
+        {
+
         }
     }
 }

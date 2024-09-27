@@ -793,7 +793,7 @@ ORDER BY GroupOrdinal"; // Correct ordering based on the group
                 }
 
                 // Initialize GroupSetViewModel with the loaded GroupSet
-                var groupSetViewModel = new GroupSetViewModel(groupSet);
+                var groupSetViewModel = new GroupSetViewModel(groupSet.GroupSetID);
 
                 // Normalize the GroupName and Description of the calling ModGroup
                 normalizedGroupName = normalizedGroupName.Replace(" ", "").ToLowerInvariant();
@@ -802,10 +802,11 @@ ORDER BY GroupOrdinal"; // Correct ordering based on the group
                 // Method to search for matching ModGroup within a GroupSetViewModel
                 ModGroupViewModel? FindMatchingModGroup(GroupSetViewModel viewModel, string name, string description)
                 {
-                    return viewModel.ModGroups.FirstOrDefault(g =>
+                    var matchingModGroup = viewModel.ModGroups.FirstOrDefault(g =>
                         g.GroupID == this.GroupID ||
                         SortingHelper.FuzzyCompareStrings(NormalizeString(g.GroupName).Replace(" ", "").ToLowerInvariant(), name) < 3);
-                        // || SortingHelper.FuzzyCompareStrings(NormalizeString(g.ModGroup.Description).Replace(" ", "").ToLowerInvariant(), description) < 3); // Adjust threshold as needed
+
+                    return matchingModGroup != null ? new ModGroupViewModel(matchingModGroup) : null;
                 }
 
                 // Search for matching ModGroup within the same GroupSetID using fuzzy matching
@@ -817,7 +818,7 @@ ORDER BY GroupOrdinal"; // Correct ordering based on the group
                     var cachedGroupSet1 = AggLoadInfo.Instance.GetCachedGroupSet1();
                     if (cachedGroupSet1 != null)
                     {
-                        var cachedGroupSetViewModel = new GroupSetViewModel(cachedGroupSet1);
+                        var cachedGroupSetViewModel = new GroupSetViewModel(cachedGroupSet1.GroupSetID);
                         matchingModGroupViewModel = FindMatchingModGroup(cachedGroupSetViewModel, normalizedGroupName, normalizedDescription);
                     }
                 }

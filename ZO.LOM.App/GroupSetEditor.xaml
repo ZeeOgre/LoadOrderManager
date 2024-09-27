@@ -1,0 +1,33 @@
+﻿<Window x:Class="ZO.LoadOrderManager.GroupSetEditor"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:ZO.LoadOrderManager"
+        mc:Ignorable="d"
+        Title="GroupSet Editor" Height="700" Width="800">
+    <Grid>
+        <StackPanel Margin="10">
+            <TextBlock Text="GroupSet ID:" FontWeight="Bold"/>
+            <TextBox Text="{Binding GroupSetID}" IsReadOnly="True" Background="LightGray" IsTabStop="False" Width="200" Margin="0,0,0,10"/>
+
+            <TextBlock Text="GroupSet Name:" FontWeight="Bold"/>
+            <TextBox Text="{Binding GroupSetName}" Width="200" Margin="0,0,0,10"/>
+
+            <TextBlock Text="Mod Groups:" FontWeight="Bold"/>
+            <ListBox ItemsSource="{Binding ModGroups}" DisplayMemberPath="GroupName" Height="100" Margin="0,0,0,10"/>
+            <Button Content="Add Mod Group" Command="{Binding AddModGroupCommand}" Width="150" HorizontalAlignment="Right" Margin="0,0,0,10"/>
+
+            <TextBlock Text="Plugins:" FontWeight="Bold"/>
+            <ListBox ItemsSource="{Binding Plugins}" DisplayMemberPath="PluginName" Height="100" Margin="0,0,0,10"/>
+            <Button Content="Add Plugin" Command="{Binding AddPluginCommand}" Width="150" HorizontalAlignment="Right" Margin="0,0,0,10"/>
+
+            <TextBlock Text="LoadOuts:" FontWeight="Bold"/>
+            <ListBox ItemsSource="{Binding LoadOuts}" DisplayMemberPath="ProfileName" Height="100" Margin="0,0,0,10"/>
+            <Button Content="Add LoadOut" Command="{Binding AddLoadOutCommand}" Width="150" HorizontalAlignment="Right" Margin="0,0,0,10"/>
+
+            <Button Content="Save" Command="{Binding SaveCommand}" Width="100" HorizontalAlignment="Center" Margin="0,20,0,0"/>
+        </StackPanel>
+    </Grid>
+</Window>
+   

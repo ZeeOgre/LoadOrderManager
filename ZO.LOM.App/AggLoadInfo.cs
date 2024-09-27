@@ -62,6 +62,8 @@ namespace ZO.LoadOrderManager
                 }
             }
         }
+
+
         private GroupSet _activeGroupSet;
 
         // Boolean flag to indicate initialization state
@@ -93,12 +95,36 @@ namespace ZO.LoadOrderManager
             //_activeLoadOut = new LoadOut();
             //ActiveGroupSet = new GroupSet(0, string.Empty, default);
             PropertyChanged = null;
-        }                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              
+        }
+
+
+        // New constructor
+        public AggLoadInfo(long groupSetID)
+        {
+            if (groupSetID == 0)
+            {
+                // Initialize with core defaults
+                ActiveGroupSet = new GroupSet();
+                //_cachedGroupSet1 = new GroupSet { GroupSetID = 0 };
+                //GroupSetGroups = new GroupSetGroupCollection();
+                //GroupSetPlugins = new GroupSetPluginCollection();
+                // Add any other core defaults initialization here
+                PropertyChanged = null;
+            }
+            else
+            {
+                // Load the GroupSet from the database
+                ActiveGroupSet = GroupSet.LoadGroupSet(groupSetID) ?? throw new InvalidOperationException("GroupSet not found.");
+                InitFromDatabase();
+            }
+        }
+
 
         // Method to initialize from the database
         public void InitFromDatabase()
         {
             if (_initialized) return;
+            if (ActiveGroupSet.GroupSetID == 0) return;
 
             lock (_lock)
             {
