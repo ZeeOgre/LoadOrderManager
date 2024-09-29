@@ -38,8 +38,6 @@
         <Label Content="Description:" Grid.Row="1" Grid.Column="0" Margin="5"/>
         <TextBox Text="{Binding Plugin.Description}" Grid.Row="1" Grid.Column="1" Margin="5"/>
 
-        <!-- Achievement Safe -->
-
         <!-- Files -->
         <Label Content="Files:" Grid.Row="3" Grid.Column="0" Margin="5"/>
         <TextBox Text="{Binding Files}" Grid.Row="3" Grid.Column="1" Margin="5" Height="60" TextWrapping="Wrap"/>
@@ -47,30 +45,37 @@
         <!-- Timestamp and Version -->
         <StackPanel Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2" Orientation="Horizontal" Margin="5">
             <Label Content="Timestamp:" Width="110"/>
-            <TextBox Text="{Binding Plugin.DTStamp}" Width="200" Margin="5,0"/>
+            <TextBox Text="{Binding Plugin.DTStamp}" Width="200" Margin="5,0,5,0"/>
             <Label Content="Version:"/>
-            <TextBox Text="{Binding Plugin.Version}" Margin="5,0" Width="193" />
+            <TextBox Text="{Binding Plugin.Version}" Margin="5,0,5,0" Width="185" />
         </StackPanel>
 
         <!-- Bethesda and Nexus -->
-        <StackPanel Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="2" Orientation="Horizontal" Margin="5">
+        <StackPanel Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="2" Orientation="Horizontal" Margin="5,0,5,0">
             <Label Content="Bethesda ID:" Width="110"/>
-            <TextBox Text="{Binding Plugin.BethesdaID}" Width="268" Margin="5,0"/>
+            <TextBox Text="{Binding Plugin.BethesdaID}" Width="260" Margin="5,0,5,0"/>
             <Label Content="Nexus ID:"/>
-            <TextBox Text="{Binding Plugin.NexusID}" Width="119" Margin="5,0"/>
+            <TextBox Text="{Binding Plugin.NexusID}" Width="115" Margin="5,0,5,0"/>
         </StackPanel>
 
+        <!-- GroupSet Dropdown -->
+        <Label Content="GroupSet:" Grid.Row="6" Grid.Column="0" Margin="5"/>
+        <ComboBox ItemsSource="{Binding AvailableGroupSets}" 
+                  DisplayMemberPath="Name" 
+                  SelectedItem="{Binding SelectedGroupSet}" 
+                  Grid.Row="6" Grid.Column="1" Margin="5" Width="300" HorizontalAlignment="Center"/>
+
         <!-- Group -->
-        <Label Content="Group:" Grid.Row="6" Grid.Column="0" Margin="5"/>
+        <Label Content="Group:" Grid.Row="7" Grid.Column="0" Margin="5"/>
         <ComboBox ItemsSource="{Binding Groups}" 
                   DisplayMemberPath="GroupName" 
                   SelectedValuePath="GroupID" 
                   SelectedValue="{Binding Plugin.GroupID}" 
-                  Grid.Row="6" Grid.Column="1" Margin="5" HorizontalAlignment="Stretch"/>
+                  Grid.Row="7" Grid.Column="1" Margin="5" HorizontalAlignment="Stretch"/>
 
         <!-- Loadouts -->
-        <Label Content="Loadouts:" Grid.Row="7" Grid.Column="0" Margin="0,0,10,10"/>
-        <ScrollViewer Grid.Row="7" Grid.Column="1" Margin="5" Height="150">
+        <Label Content="Loadouts:" Grid.Row="8" Grid.Column="0" Margin="5"/>
+        <ScrollViewer Grid.Row="8" Grid.Column="1" Margin="5" Height="150">
             <UniformGrid Columns="4">
                 <ItemsControl ItemsSource="{Binding Loadouts}">
                     <ItemsControl.ItemTemplate>
@@ -85,15 +90,8 @@
             </UniformGrid>
         </ScrollViewer>
 
-        <!-- GroupSet Dropdown -->
-        <Label Content="GroupSet:" Grid.Row="8" Grid.Column="0" Margin="5"/>
-        <ComboBox ItemsSource="{Binding AvailableGroupSets}" 
-                  DisplayMemberPath="Name" 
-                  SelectedItem="{Binding SelectedGroupSet}" 
-                  Grid.Row="8" Grid.Column="1" Margin="5" Width="300" HorizontalAlignment="Center"/>
-
         <!-- Checkboxes and Buttons -->
-        <Grid Grid.Row="10" Grid.ColumnSpan="2">
+        <Grid Grid.Row="10" Grid.ColumnSpan="2" Margin="5">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
@@ -101,19 +99,23 @@
 
             <!-- Checkmarks StackPanel on the left -->
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Margin="5">
-                <CheckBox Content="Game Folder" IsChecked="{Binding IsGameFolderChecked}" IsEnabled="False"/>
-                <CheckBox Content="Bethesda" IsChecked="{Binding IsBethesdaChecked}" IsEnabled="False"/>
-                <CheckBox Content="Nexus" IsChecked="{Binding IsNexusChecked}" IsEnabled="False"/>
-                <CheckBox Content="Mod Manager" IsChecked="False" IsEnabled="False"/>
+                <CheckBox Content="Game Folder" IsChecked="{Binding IsGameFolderChecked}" IsEnabled="False" Margin="5"/>
+                <CheckBox Content="Bethesda" IsChecked="{Binding IsBethesdaChecked}" IsEnabled="False" Margin="5"/>
+                <CheckBox Content="Nexus" IsChecked="{Binding IsNexusChecked}" IsEnabled="False" Margin="5"/>
+                <CheckBox Content="Mod Manager" IsChecked="False" IsEnabled="False" Margin="5"/>
             </StackPanel>
 
             <!-- Save and Cancel buttons on the right -->
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Margin="3,13,0,34" Grid.Column="1">
-                <Button Content="Save" Width="85" Margin="5" Click="SaveButton_Click" Height="75"/>
-                <Button Content="Cancel" Width="85" Margin="5" Click="CancelButton_Click" Height="75"/>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="5" Grid.Column="1">
+                <Button Content="Save" Width="85" Margin="5" Click="SaveButton_Click" Height="30"/>
+                <Button Content="Cancel" Width="85" Margin="5" Click="CancelButton_Click" Height="30"/>
             </StackPanel>
-            <Label Content="Achievement Safe:" Grid.Column="0" Margin="-1,-35,325,146"/>
-            <CheckBox IsChecked="{Binding Plugin.Achievements}" Margin="110,-28,303,150"/>
+
+          
         </Grid>
+
+        <!-- Achievement Safe -->
+        <Label Content="Achievement Safe:" Grid.Row="9" Grid.Column="0" Margin="5"/>
+        <CheckBox IsChecked="{Binding Plugin.Achievements}" Grid.Row="9" Grid.Column="1" Margin="5"/>
     </Grid>
 </Window>

@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Data.SQLite;
+using System.Diagnostics;
 
 namespace ZO.LoadOrderManager
 {
@@ -213,6 +214,7 @@ namespace ZO.LoadOrderManager
             command.Parameters.AddWithValue("@ProfileID", profileID);
             command.Parameters.AddWithValue("@PluginID", pluginID);
             command.ExecuteNonQuery();
+            Debug.WriteLine($"Insert/Update {pluginID} on profile {profileID}");
         }
 
         public static IEnumerable<long> GetActivePlugins(long profileId)
@@ -239,5 +241,23 @@ namespace ZO.LoadOrderManager
         {
             return enabledPlugins.Contains(pluginID);
         }
+
+
+        public override bool Equals(object obj)
+        {
+            if (obj is LoadOut other)
+            {
+                return ProfileID == other.ProfileID;
+            }
+            return false;
+        }
+
+        public override int GetHashCode()
+        {
+            return ProfileID.GetHashCode();
+        }
+
+
+
     }
 }

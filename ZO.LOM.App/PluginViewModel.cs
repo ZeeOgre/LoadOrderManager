@@ -201,6 +201,29 @@ namespace ZO.LoadOrderManager
             }
         }
 
+
+        public override bool Equals(object obj)
+        {
+            if (obj is PluginViewModel otherViewModel)
+            {
+                return _plugin.Equals(otherViewModel._plugin);
+            }
+            else if (obj is Plugin otherPlugin)
+            {
+                return _plugin.Equals(otherPlugin);
+            }
+            return false;
+        }
+
+        public override int GetHashCode()
+        {
+            return _plugin.GetHashCode();
+        }
+
+        // Existing properties and methods...
+
+
+
         public event PropertyChangedEventHandler? PropertyChanged;
     }
-}
+  }

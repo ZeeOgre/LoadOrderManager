@@ -18,7 +18,7 @@ namespace ZO.LoadOrderManager
         public long? ParentID { get; set; }
         public long? Ordinal { get; set; }
         public long? GroupSetID { get; set; }
-        public string DisplayName => $"{GroupName} ({GroupSetID}) | {Description}";
+        public string DisplayName => $"{GroupName} | {Description}";
 
         // Path-to-root structure for hierarchy navigation
         public List<long> PathToRoot { get; private set; } = new List<long>();
@@ -59,8 +59,13 @@ namespace ZO.LoadOrderManager
 
         // Event for property changes (WPF binding support)
         public event PropertyChangedEventHandler? PropertyChanged;
-        protected void OnPropertyChanged(string propertyName) =>
+
+        protected void OnPropertyChanged(string propertyName)
+        {
+            if (InitializationManager.IsAnyInitializing()) return;
+
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
 
         // Constructor
         public ModGroup()
@@ -459,39 +464,80 @@ ORDER BY GroupOrdinal"; // Correct ordering based on the group
         /// <param name="newParentId">The ID of the new parent group.</param>
         /// <returns>A list representing the path to root.</returns>
 
-        public List<long> BuildPathToRoot()
+        //public List<long> BuildPathToRoot()
+        //{
+        //    // Check if the path is already available in memory
+        //    if (AggLoadInfo.Instance.GroupSetGroups.Items.Any(gsg => gsg.groupID == this.GroupID))
+        //    {
+        //        // Create a path list to store the parent-child relationship
+        //        var pathToRoot = new List<long>();
+        //        long? currentParentID = this.ParentID;
+
+        //        // Traverse the in-memory GroupSetGroups collection to build the path to root
+        //        while (currentParentID != null)
+        //        {
+        //            // Find the parent group in the GroupSetGroups collection
+        //            var parentGroup = AggLoadInfo.Instance.GroupSetGroups.Items
+        //                .FirstOrDefault(gsg => gsg.groupID == currentParentID && gsg.groupSetID == this.GroupSetID);
+
+        //            if (parentGroup != default)
+        //            {
+        //                pathToRoot.Add(currentParentID.Value);
+        //                currentParentID = parentGroup.parentID; // Move to the next parent in the path
+        //            }
+        //            else
+        //            {
+        //                break; // If no parent is found, exit the loop
+        //            }
+        //        }
+
+        //        return pathToRoot;
+        //    }
+
+        //    // Fallback logic if the GroupID is not found in GroupSetGroups collection
+        //    return new List<long> { this.GroupID ?? 0 };
+        //}
+
+
+
+        private void CalculatePathToRootUsingCache()
         {
-            // Check if the path is already available in memory
-            if (AggLoadInfo.Instance.GroupSetGroups.Items.Any(gsg => gsg.groupID == this.GroupID))
+            if (PathToRoot != null && PathToRoot.Count > 0)
             {
-                // Create a path list to store the parent-child relationship
-                var pathToRoot = new List<long>();
-                long? currentParentID = this.ParentID;
-
-                // Traverse the in-memory GroupSetGroups collection to build the path to root
-                while (currentParentID != null)
-                {
-                    // Find the parent group in the GroupSetGroups collection
-                    var parentGroup = AggLoadInfo.Instance.GroupSetGroups.Items
-                        .FirstOrDefault(gsg => gsg.groupID == currentParentID && gsg.groupSetID == this.GroupSetID);
-
-                    if (parentGroup != default)
-                    {
-                        pathToRoot.Add(currentParentID.Value);
-                        currentParentID = parentGroup.parentID; // Move to the next parent in the path
-                    }
-                    else
-                    {
-                        break; // If no parent is found, exit the loop
-                    }
-                }
-
-                return pathToRoot;
+                return; // Path is already set
             }
 
-            // Fallback logic if the GroupID is not found in GroupSetGroups collection
-            return new List<long> { this.GroupID ?? 0 };
+            PathToRoot = new List<long>();
+            long currentGroupID = (long)this.GroupID; // Ensure currentGroupID is non-nullable long
+
+            // Using the cached GroupSetGroups data in AggLoadInfo.Instance
+            while (currentGroupID != 1) // Assuming 1 is the root ID, adjust as necessary
+            {
+                PathToRoot.Insert(0, currentGroupID); // Insert the non-nullable long value
+
+                // Find the parent group using the cached GroupSetGroups tuple
+                var parentGroupTuple = AggLoadInfo.Instance.GroupSetGroups.Items
+                    .FirstOrDefault(g => g.groupID == currentGroupID);
+
+                // If parentGroupTuple is null or parentID is null, break the loop
+                if (parentGroupTuple == default || !parentGroupTuple.parentID.HasValue)
+                {
+                    break; // Reached the root or missing parent in the cache
+                }
+
+                // Update currentGroupID to parentID, using .Value to get non-nullable long
+                currentGroupID = parentGroupTuple.parentID.Value;
+            }
+
+            // Optional: Insert the root group ID if you need to ensure it’s included
+            if (!PathToRoot.Contains(1))
+            {
+                PathToRoot.Insert(0, 1); // Assuming 1 is the root ID
+            }
         }
+
+
+
 
 
         private static long? GetParentIDFromDatabase(long groupID)
@@ -569,30 +615,7 @@ ORDER BY GroupOrdinal"; // Correct ordering based on the group
             }
         }
 
-        // Method to calculate and set path to root using only ParentID references
-        public void CalculatePathToRoot(Dictionary<long, ModGroup> groupMap)
-        {
-            PathToRoot.Clear();
-            var currentGroupID = this.GroupID;
 
-            while (currentGroupID.HasValue && currentGroupID.Value != 0 && groupMap.ContainsKey(currentGroupID.Value))
-            {
-                PathToRoot.Add(currentGroupID.Value);
-                currentGroupID = groupMap[currentGroupID.Value].ParentID ?? 0;
-            }
-
-            PathToRoot.Reverse(); // Reverse to get path from root to this group
-        }
-
-        // Method to get the parent group from the map using ParentID
-        public ModGroup GetParentGroup(Dictionary<long, ModGroup> groupMap)
-        {
-            return ParentID.HasValue && groupMap.ContainsKey(ParentID.Value)
-                ? groupMap[ParentID.Value]
-                : null;
-        }
-
-        // Override ToString for better debugging and logging
         public override string ToString()
         {
             return $"{GroupName} (ID: {GroupID}, ParentID: {ParentID}, Ordinal: {Ordinal}, GroupSetID: {GroupSetID})";
@@ -617,53 +640,36 @@ ORDER BY GroupOrdinal"; // Correct ordering based on the group
 
         public string ToPluginsString()
         {
+            // Calculate the path to root using the cache if not already set
+            CalculatePathToRootUsingCache();
+
             // If pathToRoot is empty or null, indicate no path is available
             if (PathToRoot == null || PathToRoot.Count == 0)
             {
                 return "No path to root available.";
             }
 
-            var sb = new StringBuilder();
+            // The number of hash marks is based on the depth of the current group in the hierarchy
+            int depth = PathToRoot.Count;
 
-            // Iterate through the pathToRoot to build the group hierarchy string
-            for (int i = 0; i < PathToRoot.Count; i++)
-            {
-                var groupID = PathToRoot[i];
+            // Calculate hash marks for the current group depth (2 hash marks as base level for root groups)
+            string hashMarks = new string('#', depth + 1);
 
-                // Find the group in AggLoadInfo or fall back to database lookup
-                var group = AggLoadInfo.Instance?.Groups.FirstOrDefault(g => g.GroupID == groupID);
+            // Retrieve the group name and description from this instance
+            string groupName = this.GroupName; // Assuming 'GroupName' is a property of this class
+            string groupDescription = this.Description; // Assuming 'Description' is a property of this class
 
-                if (group == null)
-                {
-                    // If the group is not found in memory, attempt to load it from the database
-                    group = LoadModGroup(groupID, this.GroupSetID ?? 0);
+            // Construct the output with group name and optional description
+            string output = string.IsNullOrEmpty(groupDescription)
+                ? $"{hashMarks} {groupName}"
+                : $"{hashMarks} {groupName} @@ {groupDescription}";
 
-                    if (group == null)
-                    {
-                        // If the group still cannot be found, skip this ID
-                        continue;
-                    }
-                }
-
-                // Calculate the indentation based on depth in hierarchy
-                string indent = new string('#', i + 3); // #### for root children, ##### for grandchildren, etc.
-
-                // Build the line with group details
-                if (string.IsNullOrEmpty(group.Description))
-                {
-                    // If no description, just use the group name
-                    sb.AppendLine($"{indent} {group.GroupName}");
-                }
-                else
-                {
-                    // Include group name and description
-                    sb.AppendLine($"{indent} {group.GroupName} @@ {group.Description}");
-                }
-            }
-
-            // Return the complete string representation of the group hierarchy
-            return sb.ToString();
+            return output;
         }
+
+
+
+
 
         public static List<ModGroup> LoadModGroupsByGroupSet(long groupSetID)
         {
@@ -764,93 +770,121 @@ ORDER BY GroupOrdinal"; // Correct ordering based on the group
 
 
         public ModGroup? FindMatchingModGroup()
+{
+    // Normalize GroupName and Description by replacing non-alphanumeric characters with spaces
+    string normalizedGroupName = NormalizeString(GroupName);
+    string normalizedDescription = NormalizeString(Description);
+
+    // Check for reserved words in normalized GroupName or Description
+    var matchingGroup = ReservedWords.FirstOrDefault(word => normalizedGroupName.Contains(word, StringComparison.OrdinalIgnoreCase) || normalizedDescription.Contains(word, StringComparison.OrdinalIgnoreCase));
+
+    if (matchingGroup != null)
+    {
+        // Assuming 'this' is the calling ModGroup object
+        long thisGroupSetID = this.GroupSetID ?? 0;
+
+        // If GroupID is less than 0, set GroupSetID to 1
+        if (this.GroupID < 0)
         {
-            // Normalize GroupName and Description by replacing non-alphanumeric characters with spaces
-            string normalizedGroupName = NormalizeString(GroupName);
-            string normalizedDescription = NormalizeString(Description);
+            // Load the ModGroup directly with GroupID and GroupSetID 1
+            return LoadModGroup(this.GroupID ?? 0, 1);
+        }
 
-            // Check for reserved words in normalized GroupName or Description
-            var matchingGroup = ReservedWords.FirstOrDefault(word => normalizedGroupName.Contains(word, StringComparison.OrdinalIgnoreCase) || normalizedDescription.Contains(word, StringComparison.OrdinalIgnoreCase));
-
-            if (matchingGroup != null)
-            {
-                // Assuming 'this' is the calling ModGroup object
-                long thisGroupSetID = this.GroupSetID ?? 0;
-
-                // If GroupID is less than 0, set GroupSetID to 1
-                if (this.GroupID < 0)
-                {
-                    // Load the ModGroup directly with GroupID and GroupSetID 1
-                    return LoadModGroup(this.GroupID ?? 0, 1);
-                }
-
-                // Load the GroupSet for the current GroupSetID
-                GroupSet? groupSet = GroupSet.LoadGroupSet(thisGroupSetID);
-                if (groupSet == null)
-                {
-                    // Handle the case where the GroupSet is not found
-                    return null;
-                }
-
-                // Initialize GroupSetViewModel with the loaded GroupSet
-                var groupSetViewModel = new GroupSetViewModel(groupSet.GroupSetID);
-
-                // Normalize the GroupName and Description of the calling ModGroup
-                normalizedGroupName = normalizedGroupName.Replace(" ", "").ToLowerInvariant();
-                normalizedDescription = normalizedDescription.Replace(" ", "").ToLowerInvariant();
-
-                // Method to search for matching ModGroup within a GroupSetViewModel
-                ModGroupViewModel? FindMatchingModGroup(GroupSetViewModel viewModel, string name, string description)
-                {
-                    var matchingModGroup = viewModel.ModGroups.FirstOrDefault(g =>
-                        g.GroupID == this.GroupID ||
-                        SortingHelper.FuzzyCompareStrings(NormalizeString(g.GroupName).Replace(" ", "").ToLowerInvariant(), name) < 3);
-
-                    return matchingModGroup != null ? new ModGroupViewModel(matchingModGroup) : null;
-                }
-
-                // Search for matching ModGroup within the same GroupSetID using fuzzy matching
-                var matchingModGroupViewModel = FindMatchingModGroup(groupSetViewModel, normalizedGroupName, normalizedDescription);
-
-                // If no match found in the current GroupSet, search in cached GroupSet 1
-                if (matchingModGroupViewModel == null)
-                {
-                    var cachedGroupSet1 = AggLoadInfo.Instance.GetCachedGroupSet1();
-                    if (cachedGroupSet1 != null)
-                    {
-                        var cachedGroupSetViewModel = new GroupSetViewModel(cachedGroupSet1.GroupSetID);
-                        matchingModGroupViewModel = FindMatchingModGroup(cachedGroupSetViewModel, normalizedGroupName, normalizedDescription);
-                    }
-                }
-
-                // If a matching group is found, return it
-                if (matchingModGroupViewModel != null)
-                {
-                    App.LogDebug($"Returning existing group: GroupID={matchingModGroupViewModel.GroupID}, GroupName={matchingModGroupViewModel.GroupName}, Description={matchingModGroupViewModel.ModGroup.Description}");
-                    return matchingModGroupViewModel.ModGroup;
-                }
-
-                // If no match is found, you can handle creating a new group or returning null
-                App.LogDebug($"No matching group found for GroupName='{normalizedGroupName}', Description='{normalizedDescription}'.");
-                return null;
-            }
-
-            // If no reserved word is found in the initial check, return null or handle accordingly
-            App.LogDebug("No reserved word match found. Returning null.");
+        // Load the GroupSet directly
+        var groupSet = GroupSet.LoadGroupSet(thisGroupSetID);
+        if (groupSet == null)
+        {
+            App.LogDebug($"GroupSet with ID {thisGroupSetID} not found.");
             return null;
         }
 
+        // Normalize the GroupName and Description of the calling ModGroup
+        normalizedGroupName = normalizedGroupName.Replace(" ", "").ToLowerInvariant();
+        normalizedDescription = normalizedDescription.Replace(" ", "").ToLowerInvariant();
+
+        // Method to search for matching ModGroup within a GroupSet
+        ModGroup? FindMatchingModGroup(IEnumerable<ModGroup> modGroups, string name, string description)
+        {
+            var normalizedGroupName = NormalizeString(name);
+            var normalizedDescription = NormalizeString(description);
+
+            return modGroups.FirstOrDefault(g =>
+                g.GroupID == this.GroupID ||
+                SortingHelper.FuzzyCompareStrings(NormalizeString(g.GroupName).Replace(" ", "").ToLowerInvariant(), normalizedGroupName) < 3);
+        }
+
+        // Search for matching ModGroup within the same GroupSetID using fuzzy matching
+        var matchingModGroup = FindMatchingModGroup(groupSet.ModGroups, normalizedGroupName, normalizedDescription);
+
+        // If no match found in the current GroupSet, search in cached GroupSet 1
+        if (matchingModGroup == null)
+        {
+            var cachedGroupSet1 = AggLoadInfo.Instance.GetCachedGroupSet1();
+            if (cachedGroupSet1 != null)
+            {
+                matchingModGroup = FindMatchingModGroup(cachedGroupSet1.ModGroups, normalizedGroupName, normalizedDescription);
+            }
+        }
+
+        // If a matching group is found, return it
+        if (matchingModGroup != null)
+        {
+            App.LogDebug($"Returning existing group: GroupID={matchingModGroup.GroupID}, GroupName={matchingModGroup.GroupName}, Description={matchingModGroup.Description}");
+            return matchingModGroup;
+        }
+
+        // If no match is found, you can handle creating a new group or returning null
+        App.LogDebug($"No matching group found for GroupName='{normalizedGroupName}', Description='{normalizedDescription}'.");
+        return null;
+    }
+
+    // If no reserved word is found in the initial check, return null or handle accordingly
+    App.LogDebug("No reserved word match found. Returning null.");
+    return null;
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (obj is ModGroup other)
+            {
+                return this.GroupID == other.GroupID && this.GroupSetID == other.GroupSetID;
+            }
+            else if (obj is LoadOrderItemViewModel otherViewModel)
+            {
+                var underlyingObject = EntityTypeHelper.GetUnderlyingObject(otherViewModel);
+                if (underlyingObject is ModGroup otherModGroup)
+                {
+                    return this.Equals(otherModGroup);
+                }
+            }
+            else if (obj is ModGroupViewModel otherGrpViewModel)
+            {
+                return this.GroupID == otherGrpViewModel.GroupID && this.GroupSetID == otherGrpViewModel.GroupSetID;
+            }
+            return false;
+        }
+
+        public override int GetHashCode()
+        {
+            unchecked // Overflow is fine, just wrap
+            {
+                int hash = 17;
+                hash = hash * 23 + GroupID.GetHashCode();
+                hash = hash * 23 + GroupSetID.GetHashCode();
+                return hash;
+            }
+        }
 
     }
 
     public class ModGroupViewModel : INotifyPropertyChanged
-        {
-            private ModGroup _modGroup;
+    {
+        private ModGroup _modGroup;
 
-            public ModGroupViewModel(ModGroup modGroup)
-            {
-                _modGroup = modGroup ?? throw new ArgumentNullException(nameof(modGroup));
-            }
+        public ModGroupViewModel(ModGroup modGroup)
+        {
+            _modGroup = modGroup ?? throw new ArgumentNullException(nameof(modGroup));
+        }
 
         public long GroupID
         {
@@ -865,101 +899,138 @@ ORDER BY GroupOrdinal"; // Correct ordering based on the group
             }
         }
 
-            public string GroupName
+        public string GroupName
+        {
+            get => _modGroup.GroupName;
+            set
             {
-                get => _modGroup.GroupName;
-                set
+                if (_modGroup.GroupName != value)
                 {
-                    if (_modGroup.GroupName != value)
-                    {
-                        _modGroup.GroupName = value;
-                        OnPropertyChanged();
-                    }
+                    _modGroup.GroupName = value;
+                    OnPropertyChanged();
                 }
-            }
-
-            public string Description
-            {
-                get => _modGroup.Description;
-                set
-                {
-                    if (_modGroup.Description != value)
-                    {
-                        _modGroup.Description = value;
-                        OnPropertyChanged();
-                    }
-                }
-            }
-
-            public long? ParentID
-            {
-                get => _modGroup.ParentID;
-                set
-                {
-                    if (_modGroup.ParentID != value)
-                    {
-                        _modGroup.ParentID = value;
-                        OnPropertyChanged();
-                    }
-                }
-            }
-
-            public long? Ordinal
-            {
-                get => _modGroup.Ordinal;
-                set
-                {
-                    if (_modGroup.Ordinal != value)
-                    {
-                        _modGroup.Ordinal = value;
-                        OnPropertyChanged();
-                    }
-                }
-            }
-
-            public long? GroupSetID
-            {
-                get => _modGroup.GroupSetID;
-                set
-                {
-                    if (_modGroup.GroupSetID != value)
-                    {
-                        _modGroup.GroupSetID = value;
-                        OnPropertyChanged();
-                    }
-                }
-            }
-
-            // Expose the PluginIDs property as an ObservableCollection for data binding
-            public ObservableCollection<long> PluginIDs => new ObservableCollection<long>(_modGroup.PluginIDs);
-
-            // Commands for ViewModel actions
-            public ICommand SaveCommand => new RelayCommand<object?>(SaveModGroup);
-            public ICommand DeleteCommand => new RelayCommand<object?>(DeleteModGroup);
-
-            private void SaveModGroup(object? parameter)
-            {
-                _modGroup.WriteGroup();
-                OnPropertyChanged(nameof(GroupName));
-                OnPropertyChanged(nameof(Description));
-                OnPropertyChanged(nameof(ParentID));
-                OnPropertyChanged(nameof(Ordinal));
-                OnPropertyChanged(nameof(GroupSetID));
-            }
-
-            private void DeleteModGroup(object? parameter)
-            {
-                // Implement deletion logic as per your requirements
-            }
-
-            public ModGroup ModGroup => _modGroup;
-
-            public event PropertyChangedEventHandler? PropertyChanged = delegate { };
-
-            protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
-            {
-                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
             }
         }
+
+        public string Description
+        {
+            get => _modGroup.Description;
+            set
+            {
+                if (_modGroup.Description != value)
+                {
+                    _modGroup.Description = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        public long? ParentID
+        {
+            get => _modGroup.ParentID;
+            set
+            {
+                if (_modGroup.ParentID != value)
+                {
+                    _modGroup.ParentID = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        public long? Ordinal
+        {
+            get => _modGroup.Ordinal;
+            set
+            {
+                if (_modGroup.Ordinal != value)
+                {
+                    _modGroup.Ordinal = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        public long? GroupSetID
+        {
+            get => _modGroup.GroupSetID;
+            set
+            {
+                if (_modGroup.GroupSetID != value)
+                {
+                    _modGroup.GroupSetID = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        // Expose the PluginIDs property as an ObservableCollection for data binding
+        public ObservableCollection<long> PluginIDs => new ObservableCollection<long>(_modGroup.PluginIDs);
+
+        // Commands for ViewModel actions
+        public ICommand SaveCommand => new RelayCommand<object?>(SaveModGroup);
+        public ICommand DeleteCommand => new RelayCommand<object?>(DeleteModGroup);
+
+        private void SaveModGroup(object? parameter)
+        {
+            _modGroup.WriteGroup();
+            OnPropertyChanged(nameof(GroupName));
+            OnPropertyChanged(nameof(Description));
+            OnPropertyChanged(nameof(ParentID));
+            OnPropertyChanged(nameof(Ordinal));
+            OnPropertyChanged(nameof(GroupSetID));
+        }
+
+        private void DeleteModGroup(object? parameter)
+        {
+            // Implement deletion logic as per your requirements
+        }
+
+        public ModGroup ModGroup => _modGroup;
+
+        public event PropertyChangedEventHandler? PropertyChanged = delegate { };
+
+        protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+        {
+            if (InitializationManager.IsAnyInitializing()) return;
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
+
+        public override bool Equals(object obj)
+        {
+            if (obj is ModGroup other)
+            {
+                return this.GroupID == other.GroupID && this.GroupSetID == other.GroupSetID;
+            }
+            else if (obj is LoadOrderItemViewModel otherViewModel)
+            {
+                var underlyingObject = EntityTypeHelper.GetUnderlyingObject(otherViewModel);
+                if (underlyingObject is ModGroup otherModGroup)
+                {
+                    return this.Equals(otherModGroup);
+                }
+            }
+            else if (obj is ModGroupViewModel otherGrpViewModel)
+            {
+                return this.GroupID == otherGrpViewModel.GroupID && this.GroupSetID == otherGrpViewModel.GroupSetID;
+            }
+            return false;
+        }
+
+        public override int GetHashCode()
+        {
+            unchecked // Overflow is fine, just wrap
+            {
+                int hash = 17;
+                hash = hash * 23 + GroupID.GetHashCode();
+                hash = hash * 23 + GroupSetID.GetHashCode();
+                return hash;
+            }
+        }
+
+
+    }
+
 
 }

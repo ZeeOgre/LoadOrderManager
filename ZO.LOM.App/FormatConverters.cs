@@ -7,38 +7,15 @@ using System.Windows.Data;
 namespace ZO.LoadOrderManager
 {
 
-    class GroupIDToAbsoluteValueConverter : IValueConverter
-    {
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
-        {
-            if (value is long groupID)
-            {
-                // Ensure reserved negative group IDs are always at the bottom
-                if (groupID < 0)
-                {
-                    return long.MaxValue + groupID;
-                }
-                return groupID;
-            }
-            return value;
-        }
-
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
-        {
-            throw new NotImplementedException();
-        }
-    }
-
-
     public class GroupIDToIsEnabledConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
             if (value is long groupID)
             {
-                return groupID >= 0;
+                return groupID > 0;
             }
-            return true;
+            return false;
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
@@ -47,6 +24,22 @@ namespace ZO.LoadOrderManager
         }
     }
 
+    public class GroupIDToIsExpandedConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value is long groupID)
+            {
+                return groupID > 0;
+            }
+            return false;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
 
     public class GroupItemStyleSelector : StyleSelector
     {

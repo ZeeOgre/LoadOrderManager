@@ -23,7 +23,6 @@ namespace ZO.LoadOrderManager
         public ICommand SavePluginsCommand { get; }
         public ICommand SaveLoadOutCommand { get; }
 
-
         private void Save(object? parameter)
         {
             if (SelectedLoadOut != null)
@@ -58,7 +57,6 @@ namespace ZO.LoadOrderManager
                             return false;
                         }
                         else { return true; }
-                       
                     }
                 }
                 else if (loadOrderItem.EntityType == EntityType.Group)
@@ -70,7 +68,6 @@ namespace ZO.LoadOrderManager
                         {
                             return false;
                         }
-
                         else { return true; }
                     }
                 }
@@ -91,7 +88,6 @@ namespace ZO.LoadOrderManager
                         {
                             return false;
                         }
-
                         else { return true; }
                     }
                 }
@@ -104,7 +100,6 @@ namespace ZO.LoadOrderManager
                         {
                             return false;
                         }
-
                         else { return true; }
                     }
                 }
@@ -116,7 +111,7 @@ namespace ZO.LoadOrderManager
         {
             if (SelectedItem is Plugin selectedPlugin)
             {
-                var group = Groups.FirstOrDefault(g => g.Plugins != null && g.Plugins.Contains(selectedPlugin));
+                var group = AggLoadInfo.Instance.Groups.FirstOrDefault(g => g.Plugins != null && g.Plugins.Contains(selectedPlugin));
                 if (group != null && group.Plugins != null)
                 {
                     int index = group.Plugins.IndexOf(selectedPlugin);
@@ -133,8 +128,8 @@ namespace ZO.LoadOrderManager
             }
             else if (SelectedItem is ModGroup selectedGroup)
             {
-                int index = Groups.IndexOf(selectedGroup);
-                var previousGroup = Groups[index - 1];
+                int index = AggLoadInfo.Instance.Groups.IndexOf(selectedGroup);
+                var previousGroup = AggLoadInfo.Instance.Groups[index - 1];
 
                 // Swap ordinals
                 long tempOrdinal = selectedGroup.Ordinal ?? 0;
@@ -142,16 +137,16 @@ namespace ZO.LoadOrderManager
                 previousGroup.Ordinal = tempOrdinal;
 
                 // Move the group
-                Groups.Move(index, index - 1);
+                AggLoadInfo.Instance.Groups.Move(index, index - 1);
             }
-            OnPropertyChanged(nameof(Groups));
+            OnPropertyChanged(nameof(AggLoadInfo.Instance.Groups));
         }
 
         private void MoveDown()
         {
             if (SelectedItem is Plugin selectedPlugin)
             {
-                var group = Groups.FirstOrDefault(g => g.Plugins != null && g.Plugins.Contains(selectedPlugin));
+                var group = AggLoadInfo.Instance.Groups.FirstOrDefault(g => g.Plugins != null && g.Plugins.Contains(selectedPlugin));
                 if (group != null && group.Plugins != null)
                 {
                     int index = group.Plugins.IndexOf(selectedPlugin);
@@ -164,13 +159,12 @@ namespace ZO.LoadOrderManager
 
                     // Move the plugin
                     group.Plugins.Move(index, index + 1);
-
                 }
             }
             else if (SelectedItem is ModGroup selectedGroup)
             {
-                int index = Groups.IndexOf(selectedGroup);
-                var nextGroup = Groups[index + 1];
+                int index = AggLoadInfo.Instance.Groups.IndexOf(selectedGroup);
+                var nextGroup = AggLoadInfo.Instance.Groups[index + 1];
 
                 // Swap ordinals
                 long tempOrdinal = selectedGroup.Ordinal ?? 0;
@@ -178,59 +172,45 @@ namespace ZO.LoadOrderManager
                 nextGroup.Ordinal = tempOrdinal;
 
                 // Move the group
-                Groups.Move(index, index + 1);
+                AggLoadInfo.Instance.Groups.Move(index, index + 1);
             }
-            OnPropertyChanged(nameof(Groups));
+            OnPropertyChanged(nameof(AggLoadInfo.Instance.Groups));
         }
 
         private void SavePlugins()
         {
-            //Save(this);
-                //var currentLoadOut = SelectedLoadOut;
-                //AggLoadInfo.Instance.ActiveLoadOut = SelectedLoadOut;
-                //if (AggLoadInfo.Instance.ActiveLoadOut == null)
-                //{
-                //    StatusMessage = "Selected profile not found.";
-                //    return;
-                //}
+            var groupSetName = SelectedGroupSet.GroupSetName;
+            var profileName = SelectedLoadOut.Name;
+            var defaultFileName = $"Plugins_{groupSetName}_{profileName}.txt";
+            var defaultFilePath = Path.Combine(FileManager.GameLocalAppDataFolder, defaultFileName);
 
+            var result = MessageBox.Show($"Producing {defaultFilePath}. Do you want to save to a different location?", "Save Plugins", MessageBoxButton.YesNo);
 
-            
-
-                var profileName = SelectedLoadOut.Name;
-                var defaultFileName = $"Plugins_{profileName}.txt";
-                var defaultFilePath = Path.Combine(FileManager.AppDataFolder, defaultFileName);
-
-                var result = MessageBox.Show($"Producing {defaultFilePath}. Do you want to save to a different location?", "Save Plugins", MessageBoxButton.YesNo);
-
-                string? outputFileName = null;
-                if (result == MessageBoxResult.Yes)
+            string? outputFileName = null;
+            if (result == MessageBoxResult.Yes)
+            {
+                var saveFileDialog = new SaveFileDialog
                 {
-                    var saveFileDialog = new SaveFileDialog
-                    {
-                        FileName = defaultFileName,
-                        DefaultExt = ".txt",
-                        Filter = "Text documents (.txt)|*.txt",
-                        InitialDirectory = FileManager.AppDataFolder
-                    };
+                    FileName = defaultFileName,
+                    DefaultExt = ".txt",
+                    Filter = "Text documents (.txt)|*.txt",
+                    InitialDirectory = FileManager.AppDataFolder
+                };
 
-                    bool? dialogResult = saveFileDialog.ShowDialog();
-                    if (dialogResult == true)
-                    {
-                        outputFileName = saveFileDialog.FileName;
-                    }
+                bool? dialogResult = saveFileDialog.ShowDialog();
+                if (dialogResult == true)
+                {
+                    outputFileName = saveFileDialog.FileName;
                 }
+            }
 
-                FileManager.ProducePluginsTxt(AggLoadInfo.Instance.ActiveLoadOut, outputFileName);
-                StatusMessage = "Plugins.txt file has been successfully created.";
+            FileManager.ProducePluginsTxt(LoadOrders, outputFileName);
+            StatusMessage = "Plugins.txt file has been successfully created.";
         }
 
         private bool CanSavePlugins()
         {
-            //return SelectedLoadOut != null && AggLoadInfo.Instance.ActiveLoadOut != null;
             return true;
         }
-
-
     }
 }

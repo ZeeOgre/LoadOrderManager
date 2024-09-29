@@ -164,7 +164,7 @@ namespace ZO.LoadOrderManager
                 if (groupSetID.HasValue)
                 {
                     plugin.GroupID = reader.IsDBNull(reader.GetOrdinal("GroupID")) ? (long?)null : reader.GetInt64(reader.GetOrdinal("GroupID"));
-                    plugin.GroupOrdinal = reader.IsDBNull(reader.GetOrdinal("GroupOrdinal")) ? (long?)null : reader.GetInt64(reader.GetOrdinal("GroupOrdinal"));  
+                    plugin.GroupOrdinal = reader.IsDBNull(reader.GetOrdinal("GroupOrdinal")) ? (long?)null : reader.GetInt64(reader.GetOrdinal("GroupOrdinal"));
                     plugin.GroupSetID = reader.IsDBNull(reader.GetOrdinal("GroupSetID")) ? (long?)null : reader.GetInt64(reader.GetOrdinal("GroupSetID"));
                 }
 
@@ -319,7 +319,7 @@ namespace ZO.LoadOrderManager
                 // Special handling for GroupID < 0
                 if (this.GroupID < 0)
                 {
-                        this.GroupSetID = 1;
+                    this.GroupSetID = 1;
                 }
 
                 using (var command = new SQLiteCommand(connection))
@@ -358,7 +358,7 @@ namespace ZO.LoadOrderManager
                         }
                     }
                     // Insert or update the Plugin based on existence
-                    if (this.PluginID == 0  && GroupID != -999)
+                    if (this.PluginID == 0 && GroupID != -999)
                     {
                         // Insert new plugin INTO Plugins table
                         command.CommandText = @"
@@ -434,12 +434,18 @@ namespace ZO.LoadOrderManager
 
                     // Insert or update GroupSetPlugins table
                     command.CommandText = @"
-                INSERT INTO GroupSetPlugins (GroupSetID, GroupID, PluginID, Ordinal)
-                VALUES (@GroupSetID, @GroupID, @PluginID, @Ordinal)
-                ON CONFLICT(GroupSetID, GroupID, PluginID) DO UPDATE 
-                SET Ordinal = COALESCE(@Ordinal, Ordinal)";
+                    INSERT INTO GroupSetPlugins (GroupSetID, GroupID, PluginID, Ordinal)
+                    VALUES (@GroupSetID, @GroupID, @PluginID, @Ordinal)
+                    ON CONFLICT(GroupSetID, GroupID, PluginID) DO UPDATE 
+                    SET Ordinal = COALESCE(@Ordinal, Ordinal)";
+
                     command.Parameters.Clear();
-                    command.Parameters.AddWithValue("@GroupSetID", this.GroupSetID ?? (object)DBNull.Value);
+
+                    // Handle the special case where GroupID is -997
+                    long effectiveGroupSetID = (this.GroupID == -997) ? 1 : (long)(this.GroupSetID ?? 1);
+
+
+                    command.Parameters.AddWithValue("@GroupSetID", effectiveGroupSetID);
                     command.Parameters.AddWithValue("@GroupID", this.GroupID ?? (object)DBNull.Value);
                     command.Parameters.AddWithValue("@PluginID", this.PluginID);
                     command.Parameters.AddWithValue("@Ordinal", this.GroupOrdinal ?? (object)DBNull.Value);
@@ -461,68 +467,84 @@ namespace ZO.LoadOrderManager
 
         public void ChangeGroup(long newGroupId, long? newGroupSetId = null)
         {
-            // Prevent adding items to the group with GroupID -999 (Bethesda Core)
-            if (newGroupId == -999)
+            using (var connection = DbManager.Instance.GetConnection())
             {
-                throw new InvalidOperationException("Cannot add items to the Bethesda Core group.");
-            }
-
-            // If the newGroupSetId is less than 0, set it to 1
-            if (newGroupSetId < 0)
-            {
-                newGroupSetId = 1;
-            }
-
-            // Use the current GroupSetID if the newGroupSetId is null
-            long effectiveGroupSetId = newGroupSetId ?? this.GroupSetID ?? throw new InvalidOperationException("Current GroupSetID is null.");
-
-            // Load the current GroupSet
-            var currentGroupSet = GroupSet.LoadGroupSet(this.GroupSetID ?? 0);
-            if (currentGroupSet == null)
-            {
-                throw new InvalidOperationException("Current GroupSet not found.");
-            }
-
-            // Step 1: Adjust ordinals of current siblings if moving within the same GroupSet
-            if (this.GroupSetID == effectiveGroupSetId)
-            {
-                var currentGroup = currentGroupSet.ModGroups.FirstOrDefault(g => g.GroupID == this.GroupID);
-                if (currentGroup != null)
+                using (var transaction = connection.BeginTransaction())
                 {
-                    var siblings = currentGroup.Plugins?.Where(p => p.GroupOrdinal > this.GroupOrdinal).ToList();
-                    if (siblings != null)
+                    try
                     {
-                        foreach (var sibling in siblings)
+                        // Delete the existing entry in GroupSetPlugins where GroupID and GroupSetID match the old values
+                        using (var deleteCommand = new SQLiteCommand(connection))
                         {
-                            sibling.GroupOrdinal--;
+                            deleteCommand.CommandText = @"
+                                DELETE FROM GroupSetPlugins
+                                WHERE PluginID = @PluginID AND GroupID = @OldGroupID AND GroupSetID = @OldGroupSetID;";
+                            deleteCommand.Parameters.AddWithValue("@PluginID", this.PluginID);
+                            deleteCommand.Parameters.AddWithValue("@OldGroupID", this.GroupID ?? (object)DBNull.Value);
+                            deleteCommand.Parameters.AddWithValue("@OldGroupSetID", this.GroupSetID ?? (object)DBNull.Value);
+                            deleteCommand.ExecuteNonQuery();
                         }
+
+                        // Update the GroupID and GroupSetID properties
+                        this.GroupID = newGroupId;
+                        this.GroupSetID = newGroupSetId;
+
+                        // Insert the new entry in GroupSetPlugins with calculated Ordinal
+                        using (var insertCommand = new SQLiteCommand(connection))
+                        {
+                            insertCommand.CommandText = @"
+                                INSERT INTO GroupSetPlugins (GroupSetID, GroupID, PluginID, Ordinal)
+                                VALUES (@GroupSetID, @GroupID, @PluginID, 
+                                    (SELECT COALESCE(MAX(Ordinal), 1) + 1 FROM GroupSetPlugins WHERE GroupSetID = @GroupSetID AND GroupID = @GroupID));";
+                            insertCommand.Parameters.AddWithValue("@GroupSetID", this.GroupSetID ?? (object)DBNull.Value);
+                            insertCommand.Parameters.AddWithValue("@GroupID", this.GroupID ?? (object)DBNull.Value);
+                            insertCommand.Parameters.AddWithValue("@PluginID", this.PluginID);
+                            insertCommand.ExecuteNonQuery();
+                        }
+
+                        transaction.Commit();
+                    }
+                    catch (Exception ex)
+                    {
+                        transaction.Rollback();
+                        App.LogDebug($"Plugin.ChangeGroup: Error changing group: {ex.Message}");
+                        throw;
                     }
                 }
             }
+        }
 
-            // Step 2: Update the GroupID and GroupSetID of the plugin
-            this.GroupID = newGroupId;
-            this.GroupSetID = effectiveGroupSetId;
 
-            // Step 3: Save the changes to the database
-            using (var connection = DbManager.Instance.GetConnection())
+        public override bool Equals(object obj)
+        {
+            if (obj is Plugin otherPlugin)
             {
-                using (var command = new SQLiteCommand(connection))
-                {
-                    command.CommandText = @"
-                        UPDATE Plugins
-                        SET GroupID = @GroupID, GroupSetID = @GroupSetID
-                        WHERE PluginID = @PluginID;";
-                    command.Parameters.AddWithValue("@GroupID", this.GroupID);
-                    command.Parameters.AddWithValue("@GroupSetID", this.GroupSetID);
-                    command.Parameters.AddWithValue("@PluginID", this.PluginID);
-                    command.ExecuteNonQuery();
-                }
+                // Compare Plugin properties here, e.g., PluginID, PluginName, etc.
+                return this.PluginID == otherPlugin.PluginID && this.PluginName == otherPlugin.PluginName;
+            }
+            else if (obj is PluginViewModel otherViewModel)
+            {
+                return this.Equals(otherViewModel.Plugin);
+            }
+            return false;
+        }
+        
+
+        public override int GetHashCode()
+        {
+            unchecked // Overflow is fine, just wrap
+            {
+                int hash = 17;
+                hash = hash * 23 + PluginID.GetHashCode();
+                hash = hash * 23 + PluginName.GetHashCode();
+                hash = hash * 23 + (BethesdaID?.GetHashCode() ?? 0);
+                hash = hash * 23 + (NexusID?.GetHashCode() ?? 0);
+                return hash;
             }
         }
 
     }
 
-    
+
 
 }

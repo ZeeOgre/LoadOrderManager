@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls; // Add this line
 using System.Windows.Media.Animation; // Add this line
@@ -16,6 +17,8 @@ namespace ZO.LoadOrderManager
             ProgressBar.Value = progress;
             MessageLabel.Content = message;
         }
+
+
     }
 }
 

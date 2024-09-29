@@ -149,7 +149,7 @@ namespace ZO.LoadOrderManager
                 {
                     aggLoadInfo.ProfilePlugins.Items.Add((loadOut.ProfileID, pluginID));
                 }
-               
+
                 // Refresh GroupSetPlugins, GroupSetGroups, and ProfilePlugins
                 //aggLoadInfo.RefreshMetadataFromDB();
             }
@@ -161,45 +161,177 @@ namespace ZO.LoadOrderManager
             return aggLoadInfo;
         }
 
-        public static void ProducePluginsTxt(LoadOut incomingLoadOut, string? outputFileName = null)
+
+        public static void ProducePluginsTxt(LoadOrdersViewModel viewModel, string? outputFileName = null)
         {
-            var loadOut = incomingLoadOut;
-            var profileName = loadOut.Name;
-            var dateTimeNow = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
-            var defaultFileName = $"profile_{profileName}.txt";
-            var fileName = outputFileName ?? Path.Combine(FileManager.AppDataFolder, defaultFileName);
-            var sb = new StringBuilder();
-
-            sb.AppendLine($"# Plugin.txt produced by ZeeOgre's LoadOutManager using profile {profileName} on {dateTimeNow}");
-            sb.AppendLine();
-
-            var groups = AggLoadInfo.Instance.Groups
-                .Where(g => g.GroupID > 1)
-                .OrderBy(g => g.Ordinal)
-                .ToList();
-
-            foreach (var group in groups)
+            if (viewModel == null || viewModel.Items == null || !viewModel.Items.Any())
             {
-                sb.AppendLine(group.ToPluginsString());
-
-                var pluginsInGroup = AggLoadInfo.Instance.Plugins
-                    .Where(p => p.GroupID == group.GroupID)
-                    .OrderBy(p => p.GroupOrdinal)
-                    .ToList();
-
-                foreach (var plugin in pluginsInGroup)
-                {
-                    var pluginLine = loadOut.IsPluginEnabled(plugin.PluginID) ? "*" + plugin.PluginName : plugin.PluginName;
-                    sb.AppendLine(pluginLine);
-                }
-
-                sb.AppendLine();
+                throw new ArgumentException("The viewModel or its Items collection cannot be null or empty.");
             }
 
-            sb.AppendLine($"# {profileName} : {dateTimeNow}");
-            File.WriteAllText(fileName, sb.ToString());
+            var sb = new StringBuilder();
+
+            // Retrieve necessary information for the header
+            var groupSetName = AggLoadInfo.Instance.ActiveGroupSet.GroupSetName ?? "Default_GroupSet";
+            var loadOutName = AggLoadInfo.Instance.ActiveLoadOut.Name ?? "Default_Profile";
+            var dateTimeNow = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+            var defaultFileName = $"Plugins_{groupSetName}_{loadOutName}.txt";
+            var pluginsFilePath = outputFileName ?? Path.Combine(FileManager.GameLocalAppDataFolder, defaultFileName);
+
+            // Custom header with the actual filename
+            sb.AppendLine($"# {defaultFileName} produced by ZeeOgre's LoadOutManager using Group Set {groupSetName} and profile {loadOutName} on {dateTimeNow}");
+            sb.AppendLine("##----------------------------------------------------------------------------------------------------------------------------------##");
+
+            // Process each item in the viewModel
+            foreach (var item in viewModel.Items)
+            {
+                AppendItemToStringBuilder(item, sb, isRoot: true);
+            }
+
+            // Custom footer
+            sb.AppendLine();
+            sb.AppendLine($"# End of {defaultFileName}");
+
+            // Write to file
+            File.WriteAllText(pluginsFilePath, sb.ToString());
         }
+
+        private static void AppendItemToStringBuilder(LoadOrderItemViewModel item, StringBuilder sb, bool isRoot = false)
+        {
+            // Print active plugins with a prefix '*'
+            if (item.EntityType == EntityType.Plugin)
+            {
+                sb.AppendLine(item.IsActive ? $"*{item.DisplayName}" : item.DisplayName);
+            }
+
+            // Process children if any
+            if (item.Children != null && item.Children.Any())
+            {
+                var plugins = item.Children.Where(c => c.EntityType == EntityType.Plugin);
+                var groups = item.Children.Where(c => c.EntityType == EntityType.Group);
+
+                // Append plugins first
+                foreach (var plugin in plugins)
+                {
+                    AppendItemToStringBuilder(plugin, sb);
+                }
+
+                // Append groups
+                foreach (var group in groups)
+                {
+                    var groupObject = ZO.LoadOrderManager.EntityTypeHelper.GetUnderlyingObject(group) as ModGroup;
+                    if (groupObject != null)
+                    {
+                        if (groupObject.GroupID <= 0)
+                        {
+                            continue;
+                        }
+                        // Skip appending the root group itself but process its children
+                        if (groupObject.GroupID != 1)
+                        {
+                            sb.AppendLine();
+                            sb.AppendLine(groupObject.ToPluginsString());
+                        }
+                        AppendItemToStringBuilder(group, sb);
+                    }
+                }
+            }
+        }
+
+
+
+        //public static void ProducePluginsTxt(LoadOrdersViewModel viewModel, string? outputFileName = null)
+        //{
+        //    // Ensure the ViewModel's Items collection is not empty
+        //    if (viewModel.Items == null || viewModel.Items.Count == 0)
+        //    {
+        //        Console.WriteLine("No items in the ViewModel to produce plugins.txt.");
+        //        return;
+        //    }
+
+        //    // Retrieve the active GroupSetID
+        //    var thisGroupSetID = AggLoadInfo.Instance.ActiveGroupSet.GroupSetID;
+
+        //    // Check if the root group (GroupID = 1) has any plugins in the current GroupSet
+        //    var rootGroupPluginCount = AggLoadInfo.Instance.GroupSetPlugins.Items
+        //        .Count(gsp => gsp.groupSetID == thisGroupSetID && gsp.groupID == 1);
+
+        //    // Determine if the root group should be displayed
+        //    bool boolDisplayRoot = rootGroupPluginCount > 0;
+
+        //    // Determine the profile name and output file path
+        //    var groupSetName = AggLoadInfo.Instance.ActiveGroupSet.GroupSetName ?? "Default_GroupSet";
+        //    var loadOutName = AggLoadInfo.Instance.ActiveLoadOut.Name ?? "Default_Profile";
+        //    var dateTimeNow = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+        //    var defaultFileName = $"Plugins_{groupSetName}_{loadOutName}.txt";
+        //    var pluginsFilePath = outputFileName ?? Path.Combine(FileManager.GameLocalAppDataFolder, defaultFileName);
+
+        //    var sb = new StringBuilder();
+
+        //    // Custom header with the actual filename
+        //    sb.AppendLine($"# {defaultFileName} produced by ZeeOgre's LoadOutManager using Group Set {groupSetName} and profile {loadOutName} on {dateTimeNow}");
+        //    sb.AppendLine();
+
+        //    // Track added plugins and groups to avoid duplication and log errors
+        //    var addedPlugins = new HashSet<string>();
+        //    var printedGroups = new HashSet<long>();
+
+        //    // Iterate through the ViewModel's Items collection
+        //    foreach (var item in viewModel.Items)
+        //    {
+        //        // Check if the item is a group
+        //        if (item.EntityType == EntityType.Group)
+        //        {
+        //            // Check if this is the root group (Default group) and whether to display it
+        //            if (item.GroupID == 1 && !boolDisplayRoot)
+        //            {
+        //                continue; // Skip the Default group if it shouldn't be displayed
+        //            }
+
+        //            // Retrieve the group from AggLoadInfo using the GroupID
+        //            var group = AggLoadInfo.Instance.Groups.FirstOrDefault(g => g.GroupID == item.GroupID);
+        //            if (group != null)
+        //            {
+        //                // Add a blank line before each group line for readability
+        //                sb.AppendLine();
+
+        //                var groupString = group.ToPluginsString();
+        //                if (boolDisplayRoot)
+        //                {
+        //                    groupString = $"#{groupString}";
+        //                }
+
+        //                // Check if the group ID is already in the printedGroups set
+        //                if (!printedGroups.Contains((long)group.GroupID))
+        //                {
+        //                    // Print the group line and track it
+        //                    sb.AppendLine(groupString);
+        //                    printedGroups.Add((long)group.GroupID);
+        //                }
+        //            }
+        //        }
+        //        else if (item.EntityType == EntityType.Plugin)
+        //        {
+        //            // Print the plugin name, prefixing with * if active
+        //            var pluginName = $"{(item.IsActive ? "*" : string.Empty)}{item.PluginData?.PluginName ?? string.Empty}";
+
+        //            // Check if the plugin ID is already in the addedPlugins set
+        //            if (item.PluginData != null && !addedPlugins.Contains(item.PluginData.PluginName))
+        //            {
+        //                // Add the plugin name to the StringBuilder and track it
+        //                sb.AppendLine(pluginName);
+        //                addedPlugins.Add(item.PluginData.PluginName);
+        //            }
+        //        }
+        //    }
+
+        //    // Custom footer
+        //    sb.AppendLine();
+        //    sb.AppendLine($"# Group Set {groupSetName} : LoadOut {loadOutName} : {dateTimeNow}");
+
+        //    // Write the content to the output file
+        //    File.WriteAllText(pluginsFilePath, sb.ToString());
+        //    Console.WriteLine($"Plugins.txt successfully written to: {pluginsFilePath}");
+        //}
     }
-
-
 }

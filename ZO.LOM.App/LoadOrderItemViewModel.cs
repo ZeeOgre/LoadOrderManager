@@ -1,171 +1,167 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.ComponentModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.ObjectModel;
+using ZO.LoadOrderManager;
 
-namespace ZO.LoadOrderManager
+public class LoadOrderItemViewModel : ViewModelBase
 {
-    public class LoadOrderItemViewModel : INotifyPropertyChanged
+    private long groupID;
+    private long? parentID;
+    private string displayName;
+    private EntityType entityType;
+    private Plugin pluginData;
+    private bool isActive;
+    private ObservableCollection<LoadOrderItemViewModel> children = new ObservableCollection<LoadOrderItemViewModel>();
+
+    public long GroupID
     {
-        private string displayName = string.Empty;
-        private bool isActive;
-        private Plugin? pluginData;
-        //private ModGroup? groupData;
-        private long? groupID;
-        private bool _isSelected;
-        public GroupSet? GroupSet { get; internal set; }
+        get => groupID;
+        set => SetProperty(ref groupID, value);
+    }
 
-        public bool IsSelected
+    public long? ParentID
+    {
+        get => parentID;
+        set => SetProperty(ref parentID, value);
+    }
+
+    public string DisplayName
+    {
+        get => displayName;
+        set => SetProperty(ref displayName, value);
+    }
+
+    public EntityType EntityType
+    {
+        get => entityType;
+        set => SetProperty(ref entityType, value);
+    }
+
+    public Plugin PluginData
+    {
+        get => pluginData;
+        set => SetProperty(ref pluginData, value);
+    }
+
+
+
+    public bool IsActive
+    {
+        get => isActive;
+        set => SetProperty(ref isActive, value);
+
+    }
+
+    // ObservableCollection to hold child items
+    public ObservableCollection<LoadOrderItemViewModel> Children
+    {
+        get => children;
+        set => SetProperty(ref children, value);
+    }
+
+    // Constructor for group items
+    public LoadOrderItemViewModel(ModGroup group)
+    {
+        GroupID = group.GroupID ?? throw new ArgumentNullException(nameof(group.GroupID), "GroupID cannot be null");
+        ParentID = group.ParentID;
+        DisplayName = group.DisplayName;
+        EntityType = EntityType.Group;
+    }
+
+    // Constructor for plugin items
+    public LoadOrderItemViewModel(Plugin plugin)
+    {
+        GroupID = plugin.GroupID ?? throw new ArgumentNullException(nameof(plugin.GroupID), "GroupID cannot be null");
+        DisplayName = plugin.PluginName;
+        ParentID = plugin.GroupID; // We have the single "GetParent()" method, so we can just say that the GroupID is a parent to facilitate single calls to "get containing group"
+        PluginData = plugin;
+        EntityType = EntityType.Plugin;
+    }
+
+    public LoadOrderItemViewModel()
+    {
+        // Default constructor
+    }
+
+    // Retrieve the ModGroup associated with this item using the GroupID
+    public ModGroup? GetModGroup()
+    {
+        return AggLoadInfo.Instance.Groups.FirstOrDefault(g => g.GroupID == GroupID);
+    }
+
+    // Retrieve the parent ModGroup associated with this item using the ParentID
+    public ModGroup? GetParentGroup()
+    {
+        if (!ParentID.HasValue) return null;
+
+        return AggLoadInfo.Instance.Groups.FirstOrDefault(g => g.GroupID == ParentID.Value);
+    }
+
+    private bool _isHighlighted;
+
+    public bool IsHighlighted
+    {
+        get => _isHighlighted;
+        set
         {
-            get => _isSelected;
-            set
+            if (_isHighlighted != value)
             {
-                if (_isSelected != value)
-                {
-                    _isSelected = value;
-                    OnPropertyChanged(nameof(IsSelected));
-                }
-            }
-        }
-
-        public string DisplayName
-        {
-            get => displayName;
-            set
-            {
-                if (displayName != value)
-                {
-                    displayName = value;
-                    OnPropertyChanged(nameof(DisplayName));
-                }
-            }
-        }
-
-        public ObservableCollection<LoadOrderItemViewModel> Children { get; set; } = new ObservableCollection<LoadOrderItemViewModel>();
-
-        public EntityType EntityType { get; set; }
-
-        public Plugin? PluginData
-        {
-            get => pluginData;
-            set
-            {
-                if (pluginData != value)
-                {
-                    pluginData = value;
-                    OnPropertyChanged(nameof(PluginData));
-                    GroupID = pluginData?.GroupID;
-                }
-            }
-        }
-
-        //public ModGroup? GroupData
-        //{
-        //    get => groupData;
-        //    set
-        //    {
-        //        if (groupData != value)
-        //        {
-        //            groupData = value;
-        //            OnPropertyChanged(nameof(GroupData));
-        //            GroupID = groupData?.GroupID;
-        //        }
-        //    }
-        //}
-
-        public long? GroupID
-        {
-            get => groupID;
-            set
-            {
-                if (groupID != value)
-                {
-                    groupID = value;
-                    OnPropertyChanged(nameof(GroupID));
-                }
-            }
-        }
-
-        public bool IsActive
-        {
-            get
-            {
-                if (EntityType == EntityType.Plugin)
-                {
-                    return AggLoadInfo.Instance.ActiveLoadOut.enabledPlugins.Contains(PluginData?.PluginID ?? 0);
-                }
-                return isActive;
-            }
-            set
-            {
-                if (isActive != value)
-                {
-                    isActive = value;
-                    OnPropertyChanged(nameof(IsActive));
-                }
-            }
-        }
-
-        public LoadOrderItemViewModel()
-        {
-        }
-
-        public LoadOrderItemViewModel(ModGroup group)
-        {
-            DisplayName = group.GroupName ?? string.Empty;
-            EntityType = EntityType.Group;
-            //GroupData = group;
-            //GroupSet = new GroupSet(group);
-            IsActive = true;
-            Children = new ObservableCollection<LoadOrderItemViewModel>(
-                group.Plugins?.OrderBy(p => p.GroupOrdinal).Select(p => new LoadOrderItemViewModel
-                {
-                    DisplayName = p.PluginName,
-                    EntityType = EntityType.Plugin,
-                    PluginData = p,
-                    IsActive = AggLoadInfo.Instance.ActiveLoadOut.enabledPlugins.Contains(p.PluginID)
-                }) ?? Enumerable.Empty<LoadOrderItemViewModel>()
-            );
-        }
-
-        public event PropertyChangedEventHandler? PropertyChanged;
-
-        protected virtual void OnPropertyChanged(string propertyName)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
-
-        public ModGroup? FindModGroup(string displayName)
-        {
-            if (string.IsNullOrWhiteSpace(displayName))
-            {
-                // Handle empty or whitespace displayName
-                return null;
-            }
-
-            // Split the displayName to get groupName and description
-            var parts = displayName.Split('|');
-            if (parts.Length < 2)
-            {
-                // If only one part, search by groupName only
-                var groupName = displayName.Trim();
-                return AggLoadInfo.Instance.Groups.FirstOrDefault(g =>
-                    string.Equals(g.GroupName?.Trim(), groupName, StringComparison.OrdinalIgnoreCase));
-            }
-            else
-            {
-                var groupName = parts[0].Trim();
-                var description = parts[1].Trim();
-
-                // Search for the ModGroup using groupName and description
-                return AggLoadInfo.Instance.Groups.FirstOrDefault(g =>
-                    string.Equals(g.GroupName?.Trim(), groupName, StringComparison.OrdinalIgnoreCase) &&
-                    string.Equals(g.Description?.Trim(), description, StringComparison.OrdinalIgnoreCase));
+                _isHighlighted = value;
+                OnPropertyChanged(nameof(IsHighlighted));
             }
         }
     }
+
+    public void HighlightSearchResults(string searchTerm)
+    {
+        if (string.IsNullOrWhiteSpace(searchTerm))
+        {
+            IsHighlighted = false;
+            foreach (var child in Children)
+            {
+                child.HighlightSearchResults(searchTerm);
+            }
+            return;
+        }
+
+        IsHighlighted = DisplayName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase);
+        foreach (var child in Children)
+        {
+            child.HighlightSearchResults(searchTerm);
+        }
+    }
+
+
+    public override bool Equals(object obj)
+    {
+        if (obj is LoadOrderItemViewModel other)
+        {
+            return this.GroupID == other.GroupID && this.EntityType == other.EntityType;
+        }
+        else if (obj is Plugin plugin)
+        {
+            return this.PluginData != null && this.PluginData.PluginID == plugin.PluginID;
+        }
+        else if (obj is ModGroup modGroup)
+        {
+            return this.GroupID == modGroup.GroupID;
+        }
+        return false;
+    }
+
+    public override int GetHashCode()
+    {
+        unchecked // Overflow is fine, just wrap
+        {
+            int hash = 17;
+            hash = hash * 23 + GroupID.GetHashCode();
+            hash = hash * 23 + EntityType.GetHashCode();
+            if (PluginData != null)
+            {
+                hash = hash * 23 + PluginData.PluginID.GetHashCode();
+            }
+            return hash;
+        }
+    }
+
+
 
 }

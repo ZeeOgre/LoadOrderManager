@@ -40,30 +40,15 @@ namespace ZO.LoadOrderManager
                     App.LogDebug("FileManager: Starting initialization...");
 
                     // Retrieve the singleton GroupSet and LoadOut from the database
-                    App.LogDebug("FileManager: Retrieving singleton GroupSet and LoadOut from the database...");
                     var singletonGroupSet = GroupSet.LoadGroupSet(2);
-                    if (singletonGroupSet == null)
-                    {
-                        throw new InvalidOperationException("FileManager: Failed to load singleton GroupSet from the database.");
-                    }
-
                     var singletonLoadOut = LoadOut.Load(2);
-                    if (singletonLoadOut == null)
-                    {
-                        throw new InvalidOperationException("FileManager: Failed to load singleton LoadOut from the database.");
-                    }
 
                     AggLoadInfo.Instance.ActiveLoadOut = singletonLoadOut;
                     AggLoadInfo.Instance.ActiveGroupSet = singletonGroupSet;
-                    App.LogDebug("FileManager: Singleton GroupSet and LoadOut retrieved successfully.");
-
-
 
                     // Load data from the database INTO the AggLoadInfo instance
-                    App.LogDebug("FileManager: Attempting to load additional data from the database...");
                     AggLoadInfo.Instance.InitFromDatabase();
-                    App.LogDebug("FileManager: Database load completed.");
-                   
+
                     // Check if files have already been loaded
                     if (singletonGroupSet.AreFilesLoaded)
                     {
@@ -71,17 +56,19 @@ namespace ZO.LoadOrderManager
                         _initialized = true;
                         return;
                     }
+
                     // Update the flags to indicate the singleton is ready to load
-                    App.LogDebug("FileManager: Updating singleton LoadOut flags to ReadyToLoad...");
                     singletonGroupSet.GroupSetFlags |= GroupFlags.ReadyToLoad;
                     singletonGroupSet.SaveGroupSet();
 
-                    App.LogDebug("FileManager: Singleton LoadOut is now ready to load. Proceeding with initialization...");
                     FileManager.ParsePluginsTxt(AggLoadInfo.Instance, PluginsFile);
+                    InitializationManager.ReportProgress(83, "Plugins parsed");
 
                     FileManager.ParseContentCatalogTxt();
-                    FileManager.ScanGameDirectoryForStrays();
+                    InitializationManager.ReportProgress(84, "Content catalog parsed");
+
                     FileManager.MarkLoadOutComplete(AggLoadInfo.Instance);
+                    InitializationManager.ReportProgress(85, "LoadOut marked complete");
 
                     _initialized = true;
                     App.LogDebug("FileManager: Initialization completed successfully.");
@@ -97,6 +84,7 @@ namespace ZO.LoadOrderManager
                 }
             }
         }
+
 
         public static void MarkLoadOutComplete(AggLoadInfo aggLoadInfo)
         {

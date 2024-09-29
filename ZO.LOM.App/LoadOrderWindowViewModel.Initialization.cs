@@ -17,16 +17,19 @@ namespace ZO.LoadOrderManager
     {
         public ICommand RefreshDataCommand { get; }
 
+
         public LoadOrderWindowViewModel()
         {
+            _selectedGroupSet = AggLoadInfo.Instance.ActiveGroupSet;
+            _selectedLoadOut = AggLoadInfo.Instance.ActiveLoadOut;
+
+
             // Initialize collections and commands
-            Groups = new ObservableCollection<ModGroup>();
-            Plugins = new ObservableCollection<PluginViewModel>();
-            LoadOuts = new ObservableCollection<LoadOut>();
-            LoadOrders = new LoadOrdersViewModel();
-            CachedGroupSetLoadOrders = new LoadOrdersViewModel().GroupSet1LoadOrdersViewModel();
             Items = new ObservableCollection<LoadOrderItemViewModel>();
             GroupSets = new ObservableCollection<GroupSet>();
+            LoadOuts = new ObservableCollection<LoadOut>();
+            LoadOrders = SortingHelper.CreateLoadOrdersViewModel(AggLoadInfo.Instance.ActiveGroupSet, AggLoadInfo.Instance.ActiveLoadOut, false);
+            CachedGroupSetLoadOrders = SortingHelper.CreateLoadOrdersViewModel(AggLoadInfo.Instance.GetCachedGroupSet1(), LoadOut.Load(1), true); ;
 
             // Initialize commands
             SearchCommand = new RelayCommand<string?>(Search);
@@ -51,14 +54,12 @@ namespace ZO.LoadOrderManager
             CopyTextCommand = new RelayCommand<object?>(param => CopyText(), param => CanExecuteCopyText(null));
             DeleteCommand = new RelayCommand<object?>(param => Delete(), param => CanExecuteDelete(null));
             EditCommand = new RelayCommand<object?>(param => EditHighlightedItem(), param => CanExecuteEdit(null));
-            ToggleEnableCommand = new RelayCommand<object?>(param => ToggleEnable(null), param => CanExecuteToggleEnable(null));
+            ToggleEnableCommand = new RelayCommand<object>(ToggleEnable, CanExecuteToggleEnable);
             ChangeGroupCommand = new RelayCommandWithParameter(ChangeGroup, CanExecuteChangeGroup);
 
             // Load initial data
             LoadInitialData();
         }
-
-        
 
         private void LoadInitialData()
         {
@@ -72,98 +73,39 @@ namespace ZO.LoadOrderManager
             {
                 if (AggLoadInfo.Instance != null)
                 {
-                    // Load initial collections from AggLoadInfo
-                    GroupSets = new ObservableCollection<GroupSet>(AggLoadInfo.Instance.GetGroupSets());
-                    LoadOuts = new ObservableCollection<LoadOut>(AggLoadInfo.Instance.LoadOuts);
-                    Groups = new ObservableCollection<ModGroup>(AggLoadInfo.Instance.Groups);
-                    Plugins = new ObservableCollection<PluginViewModel>(
-                                AggLoadInfo.Instance.Plugins.Select(plugin => new PluginViewModel(plugin))
-                            );
-
-
-
-                    // Clear existing items
+                    // Clear existing items and select active GroupSet and LoadOut
                     Items.Clear();
+                    GroupSets.Clear();
+                    LoadOuts.Clear();
 
-                    SelectedGroupSet = AggLoadInfo.Instance.ActiveGroupSet;
-                    // Check if there is a LoadOut available
-                    SelectedLoadOut = AggLoadInfo.Instance.ActiveLoadOut;
-
-                    if (SelectedLoadOut == null)
+                    foreach (var groupSet in AggLoadInfo.Instance.GroupSets)
                     {
-                        //// Prompt the user to create a new LoadOut
-                        //var result = MessageBox.Show(
-                        //    "No LoadOut found. Would you like to create a new LoadOut?",
-                        //    "Create New LoadOut",
-                        //    MessageBoxButton.YesNo,
-                        //    MessageBoxImage.Question);
-
-                        //if (result == MessageBoxResult.Yes)
-                        //{
-                        //    // Create a new LoadOut if the user agrees
-                        //    var newLoadOutName = "New LoadOut";
-                        //    var newLoadOut = new LoadOut
-                        //    {
-                        //        Name = newLoadOutName,
-                        //        ProfileID = GenerateNewProfileID(), // Generate a new profile ID
-                        //        enabledPlugins = new ObservableHashSet<long>()
-                        //    };
-
-                        //    LoadOuts.Add(newLoadOut);
-                        //    AggLoadInfo.Instance.LoadOuts.Add(newLoadOut); // Add to AggLoadInfo
-
-                        //    SelectedLoadOut = newLoadOut;
-                        //    StatusMessage = $"Created new LoadOut: {newLoadOut.Name}";
-                        //}
-                        //else
-                        //{
-                        StatusMessage = "No LoadOut selected. Please create a new LoadOut.";
-                        //    return;
-                        //}
-                    }
-                    else 
-                    { 
-                        
+                        GroupSets.Add(groupSet);
                     }
 
-                    var enabledPluginIds = SelectedLoadOut.enabledPlugins;
-
-                    // Use the enabledPlugins hashset directly from SelectedLoadOut
-
-
-                    // Iterate over each group and create the group view models
-                    foreach (var group in Groups)
+                    foreach (var loadOut in AggLoadInfo.Instance.LoadOuts)
                     {
-                        var groupViewModel = CreateGroupViewModel(group);
-
-                        // Iterate over each plugin in the group and determine if it is enabled
-                        foreach (var plugin in group.Plugins ?? Enumerable.Empty<Plugin>())
-                        {
-                            var isEnabled = enabledPluginIds.Contains(plugin.PluginID); // Simplified check
-                            groupViewModel.Children.Add(new LoadOrderItemViewModel
-                            {
-                                PluginData = plugin,
-                                IsActive = isEnabled,
-                                EntityType = EntityType.Plugin
-                            });
-                        }
-
-                        // Add the group view model to the Items collection
-                        Items.Add(groupViewModel);
+                        LoadOuts.Add(loadOut);
                     }
+                    //_selectedGroupSet = AggLoadInfo.Instance.ActiveGroupSet;
+                    //_selectedLoadOut = AggLoadInfo.Instance.ActiveLoadOut;
 
-                    // Update the status message
+
+
+
+                    InitializationManager.ReportProgress(95, "Initial data loaded into view");
+
                     StatusMessage = $"Loaded plugins for profile: {SelectedLoadOut.Name}";
                     UpdateStatus(StatusMessage);
 
-                    // Mark initial data as loaded
                     _isInitialDataLoaded = true;
                 }
             }
             finally
             {
-                // Ensure initialization is marked as complete
                 InitializationManager.EndInitialization(nameof(LoadOrderWindowViewModel));
+                // Refresh data in the view
+                //RefreshData();
             }
         }
 
@@ -172,42 +114,56 @@ namespace ZO.LoadOrderManager
             return new LoadOrderItemViewModel(group);
         }
 
-        private void RefreshData()
+        private async void RefreshData()
         {
             if (InitializationManager.IsAnyInitializing()) return;
+
             UpdateStatus("Refreshing data...");
 
-            if (SelectedLoadOut != null)
+            if (SelectedLoadOut != null && ! _isSynchronizing)
             {
-                // Directly using the enabledPlugins hashset from SelectedLoadOut
-                var enabledPluginIds = SelectedLoadOut.enabledPlugins;
 
-                Items.Clear();
-                foreach (var group in Groups)
+
+                
+                _isSynchronizing = true;
+                // Using async to improve performance and avoid blocking the UI
+                await Task.Run(() =>
                 {
-                    var groupViewModel = CreateGroupViewModel(group);
+                    LoadOrders = SortingHelper.CreateLoadOrdersViewModel(SelectedGroupSet, SelectedLoadOut, false);
+                });
 
-                    foreach (var plugin in group.Plugins ?? Enumerable.Empty<Plugin>())
-                    {
-                        var isEnabled = enabledPluginIds.Contains(plugin.PluginID); // Simplified check
-                        groupViewModel.Children.Add(new LoadOrderItemViewModel
-                        {
-                            PluginData = plugin,
-                            IsActive = isEnabled,
-                            EntityType = EntityType.Plugin
-                        });
-                    }
-                    Items.Add(groupViewModel);
-                }
 
-                StatusMessage = $"Loaded plugins for profile: {SelectedLoadOut.Name}";
-                UpdateStatus(StatusMessage);
+                    //    // Directly using the enabledPlugins hashset from SelectedLoadOut
+                    //    var enabledPluginIds = SelectedLoadOut.enabledPlugins;
+
+                    //    Items.Clear();
+                    //    foreach (var group in AggLoadInfo.Instance.Groups)
+                    //    {
+                    //        var groupViewModel = CreateGroupViewModel(group);
+
+                    //        foreach (var plugin in group.Plugins ?? Enumerable.Empty<Plugin>())
+                    //        {
+                    //            var isEnabled = enabledPluginIds.Contains(plugin.PluginID); // Simplified check
+                    //            groupViewModel.Children.Add(new LoadOrderItemViewModel
+                    //            {
+                    //                PluginData = plugin,
+                    //                IsActive = isEnabled,
+                    //                EntityType = EntityType.Plugin
+                    //            });
+                    //        }
+                    //        Items.Add(groupViewModel);
+                    //    }
+                    //});
+
+                    StatusMessage = $"Loaded plugins for profile: {SelectedLoadOut.Name}";
             }
             else
             {
-                UpdateStatus("No LoadOut selected.");
+                StatusMessage = "No LoadOut selected.";
             }
-        }
+            _isSynchronizing = false;
 
+            UpdateStatus(StatusMessage);
+        }
     }
 }

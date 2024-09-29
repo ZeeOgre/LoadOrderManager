@@ -116,11 +116,13 @@ namespace ZO.LoadOrderManager
 
         public GroupSet()
         {
-            GroupSetID = 0;
-            GroupSetName = "EmptyGroupSet";
-            GroupSetFlags = GroupFlags.Uninitialized;
-            ModGroups = new ObservableCollection<ModGroup>();
-            LoadOuts = new ObservableCollection<LoadOut>();
+           // var emptyGroupSet = CreateEmptyGroupSet();
+            //GroupSetID = emptyGroupSet.GroupSetID;
+            //GroupSetName = emptyGroupSet.GroupSetName;
+            GroupSetFlags = GroupFlags.Uninitialized | GroupFlags.ReadyToLoad;
+            //GroupSetFlags = emptyGroupSet.GroupSetFlags;
+            //ModGroups = emptyGroupSet.ModGroups;
+            //LoadOuts = emptyGroupSet.LoadOuts;
         }
 
         public void AddModGroup(ModGroup modGroup)
@@ -246,19 +248,72 @@ namespace ZO.LoadOrderManager
         public static GroupSet CreateEmptyGroupSet()
         {
             using var connection = DbManager.Instance.GetConnection();
-            using var command = new SQLiteCommand(connection);
-            command.CommandText = @"
-                INSERT INTO GroupSets (GroupSetName, GroupSetFlags)
-                VALUES (@GroupSetName, @GroupSetFlags)
-                RETURNING GroupSetID;
-            ";
-            command.Parameters.AddWithValue("@GroupSetName", "EmptyGroupSet");
-            command.Parameters.AddWithValue("@GroupSetFlags", (long)GroupFlags.Uninitialized);
+            using var transaction = connection.BeginTransaction();
 
-            long groupSetID = (long)command.ExecuteScalar();
-            
-            return new GroupSet(groupSetID, "EmptyGroupSet", GroupFlags.Uninitialized);
+            try
+            {
+                using var command = new SQLiteCommand(connection);
+                command.CommandText = @"
+                    INSERT INTO GroupSets (GroupSetName, GroupSetFlags)
+                    VALUES (@GroupSetName, @GroupSetFlags)
+                    RETURNING GroupSetID;
+                ";
+                command.Parameters.AddWithValue("@GroupSetName", "EmptyGroupSet");
+                command.Parameters.AddWithValue("@GroupSetFlags", (long)(GroupFlags.Uninitialized | GroupFlags.ReadyToLoad));
 
+                long groupSetID = (long)command.ExecuteScalar();
+
+                // Insert or ignore GroupID = 1
+                command.CommandText = @"
+                    INSERT OR IGNORE INTO GroupSetGroups (GroupID, GroupSetID, ParentID, Ordinal)
+                    VALUES (1, @GroupSetID, 0, 0);
+                ";
+                command.Parameters.AddWithValue("@GroupSetID", groupSetID);
+                command.ExecuteNonQuery();
+
+                // Insert or ignore GroupID = -997
+                command.CommandText = @"
+                    INSERT OR IGNORE INTO GroupSetGroups (GroupID, GroupSetID, ParentID, Ordinal)
+                    VALUES (-997, @GroupSetID, 1, 9997);
+                ";
+                command.ExecuteNonQuery();
+
+                transaction.Commit();
+
+                return new GroupSet(groupSetID, "EmptyGroupSet", GroupFlags.Uninitialized | GroupFlags.ReadyToLoad);
+            }
+            catch (Exception)
+            {
+                transaction.Rollback();
+                throw;
+            }
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (obj is GroupSetViewModel other)
+            {
+                return this.GroupSetID == other.GroupSetID ||
+                       this.GroupSetName == other.GroupSetName;
+            }
+            else if (obj is GroupSet otherGroupSet)
+            {
+                return this.GroupSetID == otherGroupSet.GroupSetID ||
+                       this.GroupSetName == otherGroupSet.GroupSetName;
+            }
+
+            return false;
+        }
+
+        public override int GetHashCode()
+        {
+            unchecked // Overflow is fine, just wrap
+            {
+                int hash = 17;
+                hash = hash * 23 + GroupSetID.GetHashCode();
+                hash = hash * 23 + (GroupSetName?.GetHashCode() ?? 0);
+                return hash;
+            }
         }
     }
 
@@ -325,6 +380,33 @@ namespace ZO.LoadOrderManager
         protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (obj is GroupSetViewModel other)
+            {
+                return this.GroupSetID == other.GroupSetID ||
+                       this.GroupSetName == other.GroupSetName;
+            }
+            else if (obj is GroupSet otherGroupSet)
+            {
+                return this.GroupSetID == otherGroupSet.GroupSetID ||
+                       this.GroupSetName == otherGroupSet.GroupSetName;
+            }
+
+            return false;
+        }
+
+        public override int GetHashCode()
+        {
+            unchecked // Overflow is fine, just wrap
+            {
+                int hash = 17;
+                hash = hash * 23 + GroupSetID.GetHashCode();
+                hash = hash * 23 + (GroupSetName?.GetHashCode() ?? 0);
+                return hash;
+            }
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;

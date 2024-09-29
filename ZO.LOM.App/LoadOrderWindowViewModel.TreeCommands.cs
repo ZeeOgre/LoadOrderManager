@@ -20,8 +20,47 @@ namespace ZO.LoadOrderManager
         public ICommand EditHighlightedItemCommand { get; }
         public ICommand EditCommand { get; }
 
-        private void Search(string? searchText)
+        //private void Search(string? searchText)
+        //{
+        //    if (string.IsNullOrEmpty(searchText))
+        //    {
+        //        // If search text is empty, show all items
+        //        RefreshData();
+        //    }
+        //    else
+        //    {
+        //        // Filter Groups and Plugins based on the search text
+        //        var filteredGroups = new ObservableCollection<ModGroup>(
+        //            Groups.Where(g => g.GroupName.Contains(searchText, StringComparison.OrdinalIgnoreCase) ||
+        //                              (g.Plugins != null && g.Plugins.Any(p => p.PluginName.Contains(searchText, StringComparison.OrdinalIgnoreCase))))
+        //        );
+
+        //        var filteredPlugins = new ObservableCollection<PluginViewModel>(
+        //            Plugins.Where(p => p.Plugin.PluginName.Contains(searchText, StringComparison.OrdinalIgnoreCase))
+        //        );
+
+        //        // Update the collections
+        //        Groups = filteredGroups;
+        //        Plugins = filteredPlugins;
+
+        //        // Notify the UI about the changes
+        //        OnPropertyChanged(nameof(Groups));
+        //        OnPropertyChanged(nameof(Plugins));
+        //    }
+        //}
+
+        public void Search(string? searchText)
         {
+            if (Items == null || Items.Count == 0)
+                return;
+
+            var flatList = Flatten(Items).ToList();
+
+            foreach (var item in flatList)
+            {
+                item.IsHighlighted = false; // Reset highlighting
+            }
+
             if (string.IsNullOrEmpty(searchText))
             {
                 // If search text is empty, show all items
@@ -29,25 +68,23 @@ namespace ZO.LoadOrderManager
             }
             else
             {
-                // Filter Groups and Plugins based on the search text
-                var filteredGroups = new ObservableCollection<ModGroup>(
-                    Groups.Where(g => g.GroupName.Contains(searchText, StringComparison.OrdinalIgnoreCase) ||
-                                      (g.Plugins != null && g.Plugins.Any(p => p.PluginName.Contains(searchText, StringComparison.OrdinalIgnoreCase))))
+                // Filter and highlight Groups and Plugins based on the search text
+                var matchingItems = flatList.Where(item =>
+                    (item.DisplayName != null && item.DisplayName.Contains(searchText, StringComparison.OrdinalIgnoreCase)) ||
+                    (item.PluginData != null && (item.PluginData.PluginName.Contains(searchText, StringComparison.OrdinalIgnoreCase) ||
+                                                 item.PluginData.Description.Contains(searchText, StringComparison.OrdinalIgnoreCase)))
                 );
 
-                var filteredPlugins = new ObservableCollection<PluginViewModel>(
-                    Plugins.Where(p => p.Plugin.PluginName.Contains(searchText, StringComparison.OrdinalIgnoreCase))
-                );
-
-                // Update the collections
-                Groups = filteredGroups;
-                Plugins = filteredPlugins;
+                foreach (var item in matchingItems)
+                {
+                    item.IsHighlighted = true;
+                }
 
                 // Notify the UI about the changes
-                OnPropertyChanged(nameof(Groups));
-                OnPropertyChanged(nameof(Plugins));
+                OnPropertyChanged(nameof(Items));
             }
         }
+
 
         public void SelectPreviousItem()
         {
@@ -95,13 +132,7 @@ namespace ZO.LoadOrderManager
 
         private void MoveToUnassignedGroup(Plugin plugin)
         {
-            var unassignedGroup = Groups.FirstOrDefault(g => g.GroupID == -996);
-            if (unassignedGroup == null)
-            {
-                unassignedGroup = new ModGroup { GroupID = -996, GroupName = "Unassigned" };
-                Groups.Add(unassignedGroup);
-            }
-
+            var unassignedGroup = AggLoadInfo.Instance.Groups.FirstOrDefault(g => g.GroupID == -997);
             plugin.GroupID = unassignedGroup.GroupID;
             plugin.GroupOrdinal = unassignedGroup.Plugins?.Count ?? 0;
             unassignedGroup.Plugins?.Add(plugin);

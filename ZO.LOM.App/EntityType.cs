@@ -42,7 +42,7 @@ namespace ZO.LoadOrderManager
         {
             return item.EntityType switch
             {
-                EntityType.Group => item.FindModGroup(item.DisplayName),
+                EntityType.Group => item.GetModGroup(),
                 EntityType.Plugin => item.PluginData,
                 _ => null,
             };

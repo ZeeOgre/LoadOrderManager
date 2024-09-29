@@ -165,6 +165,28 @@ namespace ZO.LoadOrderManager
                 throw;
             }
         }
+
+        public override bool Equals(object obj)
+        {
+            if (obj is FileInfo other)
+            {
+                return this.FileID == other.FileID || this.Filename == other.Filename || this.HASH == other.HASH;
+            }
+         
+            return false;
+        }
+
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                int hash = 17;
+                hash = hash * 23 + FileID.GetHashCode();
+                hash = hash * 23 + Filename.GetHashCode();
+                hash = hash * 23 + (HASH?.GetHashCode() ?? 0);
+                return hash;
+            }
+        }
     }
 }
 

@@ -49,9 +49,9 @@ namespace ZO.LoadOrderManager
             aggLoadInfo ??= AggLoadInfo.Instance;
 
             // Ensure the selected loadout is set in the AggLoadInfo object
-            if (_selectedLoadOut != null)
+            if (SelectedLoadOut != null)
             {
-                aggLoadInfo.ActiveLoadOut = _selectedLoadOut;
+                aggLoadInfo.ActiveLoadOut = SelectedLoadOut;
             }
             else
             {
@@ -233,28 +233,67 @@ namespace ZO.LoadOrderManager
                    (selectedItem.EntityType == EntityType.Group || selectedItem.EntityType == EntityType.Plugin);
         }
 
-        public void Delete()
+        private void Delete()
         {
             if (SelectedItem is LoadOrderItemViewModel selectedItem)
             {
-                var parentGroup = selectedItem.FindModGroup(selectedItem.DisplayName);
+                var parentGroup = selectedItem.GetParentGroup();
                 if (parentGroup != null)
                 {
-                    // Adjust ordinals of subsequent siblings
-                    var siblings = parentGroup.Plugins?.Where(p => p.GroupOrdinal > selectedItem.PluginData.GroupOrdinal).ToList();
-                    if (siblings != null)
+                    if (selectedItem.EntityType == EntityType.Plugin)
                     {
-                        foreach (var sibling in siblings)
+                        // Adjust ordinals of subsequent sibling plugins
+                        var siblingPlugins = parentGroup.Plugins?
+                            .Where(p => p.GroupOrdinal > selectedItem.PluginData.GroupOrdinal)
+                            .ToList();
+                        if (siblingPlugins != null)
                         {
-                            sibling.GroupOrdinal--;
+                            foreach (var sibling in siblingPlugins)
+                            {
+                                sibling.GroupOrdinal--;
+                            }
                         }
+
+                        // Remove the plugin from the group
+                        parentGroup.Plugins?.Remove(selectedItem.PluginData);
+
+                        // Move the plugin to the unassigned group (-997)
+                        MoveToUnassignedGroup(selectedItem.PluginData);
                     }
+                    else if (selectedItem.EntityType == EntityType.Group)
+                    {
+                        // Check if the group has child groups
+                        if (selectedItem.Children.Any(child => child.EntityType == EntityType.Group))
+                        {
+                            // Block deleting groups that hold other groups
+                            MessageBox.Show("Cannot delete a group that contains other groups.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                            return;
+                        }
 
-                    // Remove the mod from the group
-                    parentGroup.Plugins?.Remove(selectedItem.PluginData);
+                        // Adjust ordinals of subsequent sibling groups
+                        var siblingGroups = AggLoadInfo.Instance.Groups?
+                            .Where(g => g.ParentID == parentGroup.GroupID && g.Ordinal > selectedItem.GetModGroup().Ordinal)
+                            .ToList();
+                        if (siblingGroups != null)
+                        {
+                            foreach (var sibling in siblingGroups)
+                            {
+                                sibling.Ordinal--;
+                            }
+                        }
 
-                    // Move to unassigned group (-996)
-                    MoveToUnassignedGroup(selectedItem.PluginData);
+                        // Move all child plugins to the unassigned group (-997)
+                        foreach (var child in selectedItem.Children)
+                        {
+                            if (child.EntityType == EntityType.Plugin)
+                            {
+                                MoveToUnassignedGroup(child.PluginData);
+                            }
+                        }
+
+                        // Remove the group from the parent group's children
+                        parentGroup.Plugins?.Remove(selectedItem.PluginData);
+                    }
                 }
             }
         }
@@ -275,29 +314,49 @@ namespace ZO.LoadOrderManager
 
         private void ToggleEnable(object parameter)
         {
-            if (SelectedLoadOut != null && parameter is PluginViewModel pluginViewModel)
-            {
-                if (pluginViewModel.IsEnabled)
-                {
-                    LoadOut.SetPluginEnabled(SelectedLoadOut.ProfileID, pluginViewModel.PluginID, false);
-                }
-                else
-                {
-                    LoadOut.SetPluginEnabled(SelectedLoadOut.ProfileID, pluginViewModel.PluginID, true);
-                }
+            Debug.WriteLine($"Parameter Type: {parameter?.GetType().Name}");
+            Debug.WriteLine($"Parameter Value: {parameter}");
 
-                pluginViewModel.IsEnabled = !pluginViewModel.IsEnabled;
+            if (SelectedLoadOut != null && parameter is LoadOrderItemViewModel itemViewModel)
+            {
+                // Record the old state for debugging
+                Debug.WriteLine($"OldState: {itemViewModel.IsActive}");
+
+                // Calculate the new state and log it
+                bool newState = itemViewModel.IsActive;
+                Debug.WriteLine($"NewState: {newState}");
+
+                // Set the new state to the UI-bound property
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    itemViewModel.IsActive = newState;
+                });
+
+                // Update the backend data
+                LoadOut.SetPluginEnabled(SelectedLoadOut.ProfileID, itemViewModel.PluginData.PluginID, newState);
             }
             else
             {
-                UpdateStatus("No loadout or plugin selected.");
+                UpdateStatus("No loadout or valid item selected.");
             }
         }
 
+
+
         private bool CanExecuteToggleEnable(object parameter)
         {
-            return SelectedLoadOut != null && parameter is PluginViewModel;
+
+            //Debug.WriteLine($"Parameter Type: {parameter?.GetType().Name}");
+            //Debug.WriteLine($"Parameter Value: {parameter}");
+
+            if (SelectedLoadOut != null && parameter is LoadOrderItemViewModel itemViewModel)
+            {
+                return itemViewModel.GroupID > 0;
+
+            }
+            return true;
         }
+
 
         private bool CanExecuteDelete(object parameter)
         {
