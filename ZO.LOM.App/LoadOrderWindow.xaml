@@ -14,27 +14,17 @@
         <local:GroupIDToIsExpandedConverter x:Key="GroupIDToIsExpandedConverter"/>
         <Style TargetType="TreeViewItem">
             <Setter Property="IsExpanded" Value="True"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
             <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
             <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}" />
         </Style>
         <!-- Define the templates -->
+
+
         <HierarchicalDataTemplate x:Key="GroupTemplate" ItemsSource="{Binding Children}">
             <Grid x:Name="GroupGrid" Background="LightBlue" HorizontalAlignment="Stretch">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="1300"/>
-                </Grid.ColumnDefinitions>
-                <TextBlock Text="{Binding DisplayName}" Margin="5" Grid.Column="0" HorizontalAlignment="Stretch"/>
-            </Grid>
-            <HierarchicalDataTemplate.Triggers>
-                <DataTrigger Binding="{Binding IsHighlighted}" Value="True">
-                    <Setter TargetName="GroupGrid" Property="Background" Value="Yellow"/>
-                </DataTrigger>
-            </HierarchicalDataTemplate.Triggers>
-        </HierarchicalDataTemplate>
-
-        <DataTemplate x:Key="PluginTemplate">
-            <Grid x:Name="PluginGrid">
-                <Grid.ColumnDefinitions>
+                    <!-- Use the same column definitions as the plugin rows -->
                     <ColumnDefinition Width="50"/>
                     <ColumnDefinition Width="250"/>
                     <ColumnDefinition Width="400"/>
@@ -43,40 +33,67 @@
                     <ColumnDefinition Width="250"/>
                     <ColumnDefinition Width="100"/>
                 </Grid.ColumnDefinitions>
-                <!-- Checkbox for IsEnabled, checkbox disabled in reservedGroups -->
-                <CheckBox IsChecked="{Binding IsActive, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-          Command="{Binding DataContext.ToggleEnableCommand, RelativeSource={RelativeSource AncestorType=Window}}" 
-          CommandParameter="{Binding}"  
-                    Grid.Column="0" 
-          Margin="5" 
-          HorizontalAlignment="Stretch" 
-          HorizontalContentAlignment="Stretch">
-                    <CheckBox.Style>
-                        <Style TargetType="CheckBox">
-                            <Setter Property="IsEnabled" Value="{Binding PluginData.GroupID, Converter={StaticResource GroupIDToIsEnabledConverter}, UpdateSourceTrigger=PropertyChanged}"/>
-                        </Style>
-                    </CheckBox.Style>
-                </CheckBox>
+
+                <!-- Place the Group Text in the second column to align with plugin names -->
+                <TextBlock Text="{Binding DisplayName}" Margin="5" Grid.Column="1" HorizontalAlignment="Left"/>
+            </Grid>
+            <HierarchicalDataTemplate.Triggers>
+                <DataTrigger Binding="{Binding IsHighlighted}" Value="True">
+                    <Setter TargetName="GroupGrid" Property="Background" Value="Yellow"/>
+                </DataTrigger>
+            </HierarchicalDataTemplate.Triggers>
+        </HierarchicalDataTemplate>
 
 
+        <DataTemplate x:Key="PluginTemplate">
+            <Grid x:Name="PluginGrid" HorizontalAlignment="Stretch">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="50"/>
+                    <!-- Checkbox -->
+                    <ColumnDefinition Width="250"/>
+                    <!-- Plugin name -->
+                    <ColumnDefinition Width="400"/>
+                    <!-- Description -->
+                    <ColumnDefinition Width="50"/>
+                    <!-- Achievements -->
+                    <ColumnDefinition Width="150"/>
+                    <!-- Date -->
+                    <ColumnDefinition Width="250"/>
+                    <!-- BethesdaID -->
+                    <ColumnDefinition Width="100"/>
+                    <!-- NexusID -->
+                </Grid.ColumnDefinitions>
 
+                <!-- Checkbox for IsEnabled -->
+                <CheckBox IsChecked="{Binding IsActive, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                  Command="{Binding DataContext.ToggleEnableCommand, RelativeSource={RelativeSource AncestorType=Window}}" 
+                  CommandParameter="{Binding}" Grid.Column="0" Margin="5" HorizontalAlignment="Stretch"/>
 
-                <TextBlock Text="{Binding PluginData.PluginName}" Grid.Column="1" Margin="5" HorizontalAlignment="Left" />
+                <!-- Plugin name (aligned with Group name) -->
+                <TextBlock Text="{Binding PluginData.PluginName}" Grid.Column="1" Margin="5" HorizontalAlignment="Left"/>
+
+                <!-- Plugin description -->
                 <TextBlock Text="{Binding PluginData.Description}" Grid.Column="2" Margin="5" HorizontalAlignment="Left"/>
+
+                <!-- Achievements -->
                 <CheckBox IsChecked="{Binding PluginData.Achievements, Mode=OneWay}" IsEnabled="False" Grid.Column="3" Margin="5" HorizontalAlignment="Left"/>
+
+                <!-- Date (aligned with Date column) -->
                 <TextBlock Text="{Binding PluginData.DTStamp}" Grid.Column="4" Margin="5" HorizontalAlignment="Left"/>
 
+                <!-- BethesdaID -->
                 <TextBlock Grid.Column="5" Margin="5" HorizontalAlignment="Left">
-                    <Hyperlink NavigateUri="{Binding PluginData.BethesdaID, Converter={StaticResource BethesdaUrlConverter}}" RequestNavigate="Hyperlink_RequestNavigate">
-                        <TextBlock Text="{Binding PluginData.BethesdaID, TargetNullValue='Bethesda', FallbackValue='Bethesda'}"/>
-                    </Hyperlink>
-                </TextBlock>
+            <Hyperlink NavigateUri="{Binding PluginData.BethesdaID}" RequestNavigate="Hyperlink_RequestNavigate">
+                <TextBlock Text="{Binding PluginData.BethesdaID, TargetNullValue='Bethesda', FallbackValue='Bethesda'}"/>
+            </Hyperlink>
+        </TextBlock>
 
+                <!-- NexusID -->
                 <TextBlock Grid.Column="6" Margin="5" HorizontalAlignment="Left">
-                    <Hyperlink NavigateUri="{Binding PluginData.NexusID, Converter={StaticResource NexusUrlConverter}}" RequestNavigate="Hyperlink_RequestNavigate">
-                        <TextBlock Text="{Binding PluginData.NexusID, TargetNullValue='Nexus', FallbackValue='Nexus'}"/>
-                    </Hyperlink>
-                </TextBlock>
+            <Hyperlink NavigateUri="{Binding PluginData.NexusID}" RequestNavigate="Hyperlink_RequestNavigate">
+                <TextBlock Text="{Binding PluginData.NexusID, TargetNullValue='Nexus', FallbackValue='Nexus'}"/>
+            </Hyperlink>
+        </TextBlock>
             </Grid>
             <DataTemplate.Triggers>
                 <DataTrigger Binding="{Binding IsHighlighted}" Value="True">
@@ -84,6 +101,7 @@
                 </DataTrigger>
             </DataTemplate.Triggers>
         </DataTemplate>
+
 
         <!-- EntityTypeTemplateSelector with reference to the defined templates -->
         <local:EntityTypeTemplateSelector x:Key="EntityTypeTemplateSelector"
@@ -129,11 +147,17 @@
         <Grid Grid.Row="1" Background="LightGray">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="50"/>
+                <!-- Checkbox column, fixed width -->
                 <ColumnDefinition Width="250"/>
+                <!-- Plugin name, fixed or min width -->
                 <ColumnDefinition Width="400"/>
+                <!-- Description, flexible width -->
                 <ColumnDefinition Width="50"/>
+                <!-- Achievements, fixed width -->
                 <ColumnDefinition Width="150"/>
+                <!-- Date, min width to fit content -->
                 <ColumnDefinition Width="250"/>
+                <!-- BethesdaID, min width or auto -->
                 <ColumnDefinition Width="100"/>
             </Grid.ColumnDefinitions>
             <TextBlock Text="Enabled" Grid.Column="0" Margin="5" VerticalAlignment="Center" HorizontalAlignment="Left" AutomationProperties.IsColumnHeader="True"/>
@@ -159,9 +183,11 @@
 
             <!-- Hierarchical DataGrid -->
             <TreeView x:Name="LoadOrderTreeView" Grid.Row="0" ItemsSource="{Binding LoadOrders.Items}" 
-                      ItemTemplateSelector="{StaticResource EntityTypeTemplateSelector}" 
-                      Loaded="LoadOrderTreeView_Loaded"
+          ItemTemplateSelector="{StaticResource EntityTypeTemplateSelector}" 
+          HorizontalAlignment="Stretch" 
+                HorizontalContentAlignment="Stretch"
                       SelectedItemChanged="TreeView_SelectedItemChanged"
+                      Loaded="LoadOrderTreeView_Loaded"
                       MouseDoubleClick="TreeView_MouseDoubleClick"
                       KeyDown="TreeView_KeyDown"
                       MouseRightButtonDown="TreeView_MouseRightButtonDown">
