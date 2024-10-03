@@ -35,7 +35,7 @@
     <Node Id="FileInfo_FileID" Category="PK" Description="longEGER" Label="FileID longEGER" />
     <Node Id="FileInfo_Filename" Category="NOT NULL" Description="TEXT" Label="Filename TEXT" />
     <Node Id="FileInfo_HASH" Category="NULL" Description="TEXT" Label="HASH TEXT" />
-    <Node Id="FileInfo_IsArchive" Category="NOT NULL" Description="biglong" Label="IsArchive biglong" />
+    <Node Id="FileInfo_Flags" Category="NOT NULL" Description="biglong" Label="Flags biglong" />
     <Node Id="FileInfo_ModID" Category="FK" Description="biglong" Label="ModID biglong" />
     <Node Id="FileInfo_PluginID" Category="FK" Description="biglong" Label="PluginID biglong" />
     <Node Id="FileInfo_RelativePath" Category="NULL" Description="TEXT" Label="RelativePath TEXT" />
@@ -202,7 +202,7 @@
     <Link Source="FileInfo" Target="FileInfo_FileID" Category="Contains" />
     <Link Source="FileInfo" Target="FileInfo_Filename" Category="Contains" />
     <Link Source="FileInfo" Target="FileInfo_HASH" Category="Contains" />
-    <Link Source="FileInfo" Target="FileInfo_IsArchive" Category="Contains" />
+    <Link Source="FileInfo" Target="FileInfo_Flags" Category="Contains" />
     <Link Source="FileInfo" Target="FileInfo_ModID" Category="Contains" />
     <Link Source="FileInfo" Target="FileInfo_PluginID" Category="Contains" />
     <Link Source="FileInfo" Target="FileInfo_RelativePath" Category="Contains" />

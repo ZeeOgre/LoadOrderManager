@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net8.0-windows</TargetFramework>
+    <TargetFramework>net8.0-windows10.0.17763.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>True</UseWPF>
@@ -27,6 +27,7 @@
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <StartupObject></StartupObject>
     <EnforceCodeStyleInBuild>True</EnforceCodeStyleInBuild>
+    <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='GitRelease|AnyCPU'">
@@ -47,6 +48,11 @@
 
   <ItemGroup>
     <PackageReference Include="Autoupdater.NET.Official" Version="1.9.2" />
+    <PackageReference Include="DiffPlex" Version="1.7.2" />
+    <PackageReference Include="DiffPlex.Wpf" Version="1.4.0" />
+    <PackageReference Include="Microsoft.Windows.CsWinRT" Version="2.1.3" />
+    <PackageReference Include="Microsoft.Windows.SDK.Contracts" Version="10.0.19041.1" />
+    <PackageReference Include="Microsoft.Windows.Compatibility" Version="5.0.2" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="System.Data.SQLite" Version="1.0.118" />
     <PackageReference Include="YamlDotNet" Version="16.1.0" />

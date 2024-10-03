@@ -3,18 +3,18 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:ZO.LoadOrderManager"
         Title="Settings" Height="600" Width="800">
-    <Grid>
+    <Grid HorizontalAlignment="Left" Width="800" RenderTransformOrigin="0.506,0.546">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto" MinHeight="383"/>
+            <RowDefinition/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/> <!-- New row definition for the button -->
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="150"/>
-            <ColumnDefinition Width="550"/>
-            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="570"/>
+            <ColumnDefinition/>
         </Grid.ColumnDefinitions>
 
         <!-- Game Folder -->
@@ -22,27 +22,48 @@
             <Label Content="Game Folder:" VerticalAlignment="Center" Width="150"/>
             <TextBox Name="GameFolderTextBox" Width="300" Margin="5,0,0,0" Text="{Binding GameFolder, UpdateSourceTrigger=PropertyChanged}"/>
             <Button Content="📁" Click="GameFolderButton_Click" Width="30" Margin="5,0,0,0"/>
+            <Button Content="Lookup" Click="LookupButton_Click" Width="75" Margin="5,0,0,0"/>
         </StackPanel>
 
+        <!-- Monitored Files -->
+        <GroupBox Header="Monitored Files" Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3" Margin="10,10,10,10">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <ListBox x:Name="MonitoredFilesListBox" Grid.Row="0" Height="100" ItemsSource="{Binding MonitoredFiles}">
+                    <ListBox.ContextMenu>
+                        <ContextMenu>
+                            <MenuItem Header="Edit File" Click="EditFile_Click"/>
+                            <MenuItem Header="Open Folder" Click="OpenFolder_Click"/>
+                        </ContextMenu>
+                    </ListBox.ContextMenu>
+                </ListBox>
+                <Button Content="Add New" Grid.Row="1" Width="75" Margin="10" HorizontalAlignment="Right" Click="AddNew_Click"/>
+            </Grid>
+        </GroupBox>
+
         <!-- Auto Check for Updates -->
-        <StackPanel Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,25,0,0">
-            <CheckBox Name="AutoCheckUpdatesCheckBox" Content="Automatically check at startup" Margin="10,0,0,0" 
+        <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,0,5" Width="315">
+            <Label Content="Automatically check at startup:" VerticalAlignment="Center" Width="200"/>
+            <CheckBox Name="AutoCheckUpdatesCheckBox" Margin="10,0,0,0" 
                       IsChecked="{Binding AutoCheckForUpdates, UpdateSourceTrigger=PropertyChanged}" 
                       VerticalAlignment="Center" />
         </StackPanel>
 
-        <!-- Version Display and Save Button -->
-        <StackPanel Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,25,0,5">
+        <!-- Version Display and Check for Updates Button -->
+        <StackPanel Grid.Row="3" Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,25,0,5" Width="315">
             <Label Content="Version:" VerticalAlignment="Center" Width="50"/>
             <TextBlock Name="VersionTextBlock" Width="100" Margin="5,0,0,0" Text="{x:Static local:App.Version}" 
                        HorizontalAlignment="Center" VerticalAlignment="Center" TextAlignment="Center"/>
             <Button Content="Check for Updates" Click="CheckForUpdatesButton_Click" Width="150" Margin="10,0,0,0"/>
-            <Button Content="Save" Click="SaveButton_Click" Width="100" Margin="25,0,10,0"/>
         </StackPanel>
 
-        <!-- New row for the "Load from Yaml" button -->
-        <StackPanel Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="3" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,25,0,0">
+        <!-- Load from Yaml and Save Buttons -->
+        <StackPanel Grid.Row="4" Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,25,0,0" Width="284">
             <Button Content="Load from Yaml" Width="150" Click="ImportFromYaml_Click"/>
+            <Button Content="Save" Click="SaveButton_Click" Width="100" Margin="25,0,10,0"/>
         </StackPanel>
     </Grid>
 </Window>

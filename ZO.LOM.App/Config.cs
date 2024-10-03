@@ -18,6 +18,7 @@ namespace ZO.LoadOrderManager
         public static readonly string configFilePath = Path.Combine(localAppDataPath, "config.yaml");
         public static readonly string dbFilePath = Path.Combine(localAppDataPath, "LoadOrderManager.db");
         private static bool _isVerificationInProgress = false; // Flag to track verification
+        public List<FileInfo> MonitoredFiles { get; set; } = new List<FileInfo>();
 
         /// <summary>
         /// Gets the singleton instance of the Config class.
@@ -50,6 +51,7 @@ namespace ZO.LoadOrderManager
             // Assuming these are the properties you want to update
             this.GameFolder = other.GameFolder;
             this.AutoCheckForUpdates = other.AutoCheckForUpdates;
+            this.MonitoredFiles = other.MonitoredFiles;
             // Add other properties as needed
         }
 

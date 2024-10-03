@@ -108,7 +108,7 @@
             "name": "FileInfo",
             "withoutRowId": false,
             "strict": false,
-            "ddl": "CREATE TABLE [FileInfo] ( \r\n  [FileID] longEGER PRIMARY KEY AUTOINCREMENT NOT NULL, \r\n  [PluginID] longEGER NULL, \r\n  [Filename] TEXT NOT NULL, \r\n  [RelativePath] TEXT NULL, \r\n  [DTStamp] TEXT NOT NULL, \r\n  [HASH] TEXT NULL, \r\n  [IsArchive] longEGER NOT NULL, \r\n  CONSTRAlong [FK_FileInfo_PluginID] FOREIGN KEY ([PluginID]) REFERENCES [Plugins] ([PluginID]) ON DELETE NO ACTION ON UPDATE NO ACTION \r\n)",
+            "ddl": "CREATE TABLE [FileInfo] ( \r\n  [FileID] longEGER PRIMARY KEY AUTOINCREMENT NOT NULL, \r\n  [PluginID] longEGER NULL, \r\n  [Filename] TEXT NOT NULL, \r\n  [RelativePath] TEXT NULL, \r\n  [DTStamp] TEXT NOT NULL, \r\n  [HASH] TEXT NULL, \r\n  [Flags] longEGER NOT NULL, \r\n  CONSTRAlong [FK_FileInfo_PluginID] FOREIGN KEY ([PluginID]) REFERENCES [Plugins] ([PluginID]) ON DELETE NO ACTION ON UPDATE NO ACTION \r\n)",
             "columns": [
                 {
                     "name": "FileID",
@@ -175,7 +175,7 @@
                     ]
                 },
                 {
-                    "name": "IsArchive",
+                    "name": "Flags",
                     "type": "longEGER",
                     "constralongs": [
                         {
@@ -1089,11 +1089,11 @@
             "type": "trigger",
             "database": null,
             "name": "trgInsteadOfInsert_vwPluginFiles",
-            "ddl": "CREATE TRIGGER trgInsteadOfInsert_vwPluginFiles \r\nINSTEAD OF INSERT ON vwPluginFiles \r\nFOR EACH ROW \r\nBEGIN \r\n    -- Insert INTO Plugins table \r\n    INSERT INTO Plugins (PluginID, PluginName) \r\n    VALUES (NEW.PluginID, NEW.PluginName) \r\n    ON CONFLICT(PluginID) DO UPDATE SET  \r\n        PluginName = COALESCE(excluded.PluginName, Plugins.PluginName); \r\n \r\n    -- Insert INTO FileInfo table \r\n    INSERT INTO FileInfo (FileID, PluginID, Filename, RelativePath, DTStamp, HASH, IsArchive) \r\n    VALUES ( \r\n        NEW.FileID, \r\n        NEW.PluginID, \r\n        NEW.Filename, \r\n        NEW.RelativePath, \r\n        NEW.DTStamp, \r\n        NEW.HASH, \r\n        NEW.IsArchive \r\n    ) \r\n    ON CONFLICT(FileID) DO UPDATE SET \r\n        PluginID = COALESCE(excluded.PluginID, FileInfo.PluginID), \r\n        Filename = COALESCE(excluded.Filename, FileInfo.Filename), \r\n        RelativePath = COALESCE(excluded.RelativePath, FileInfo.RelativePath), \r\n        DTStamp = COALESCE(excluded.DTStamp, FileInfo.DTStamp), \r\n        HASH = COALESCE(excluded.HASH, FileInfo.HASH), \r\n        IsArchive = COALESCE(excluded.IsArchive, FileInfo.IsArchive); \r\nEND",
+            "ddl": "CREATE TRIGGER trgInsteadOfInsert_vwPluginFiles \r\nINSTEAD OF INSERT ON vwPluginFiles \r\nFOR EACH ROW \r\nBEGIN \r\n    -- Insert INTO Plugins table \r\n    INSERT INTO Plugins (PluginID, PluginName) \r\n    VALUES (NEW.PluginID, NEW.PluginName) \r\n    ON CONFLICT(PluginID) DO UPDATE SET  \r\n        PluginName = COALESCE(excluded.PluginName, Plugins.PluginName); \r\n \r\n    -- Insert INTO FileInfo table \r\n    INSERT INTO FileInfo (FileID, PluginID, Filename, RelativePath, DTStamp, HASH, Flags) \r\n    VALUES ( \r\n        NEW.FileID, \r\n        NEW.PluginID, \r\n        NEW.Filename, \r\n        NEW.RelativePath, \r\n        NEW.DTStamp, \r\n        NEW.HASH, \r\n        NEW.Flags \r\n    ) \r\n    ON CONFLICT(FileID) DO UPDATE SET \r\n        PluginID = COALESCE(excluded.PluginID, FileInfo.PluginID), \r\n        Filename = COALESCE(excluded.Filename, FileInfo.Filename), \r\n        RelativePath = COALESCE(excluded.RelativePath, FileInfo.RelativePath), \r\n        DTStamp = COALESCE(excluded.DTStamp, FileInfo.DTStamp), \r\n        HASH = COALESCE(excluded.HASH, FileInfo.HASH), \r\n        Flags = COALESCE(excluded.Flags, FileInfo.Flags); \r\nEND",
             "timing": "INSTEAD OF",
             "action": "INSERT",
             "view": "vwPluginFiles",
-            "code": "INSERT INTO Plugins (PluginID, PluginName) \r\n    VALUES (NEW.PluginID, NEW.PluginName) \r\n    ON CONFLICT(PluginID) DO UPDATE SET  \r\n        PluginName = COALESCE(excluded.PluginName, Plugins.PluginName)\nINSERT INTO FileInfo (FileID, PluginID, Filename, RelativePath, DTStamp, HASH, IsArchive) \r\n    VALUES ( \r\n        NEW.FileID, \r\n        NEW.PluginID, \r\n        NEW.Filename, \r\n        NEW.RelativePath, \r\n        NEW.DTStamp, \r\n        NEW.HASH, \r\n        NEW.IsArchive \r\n    ) \r\n    ON CONFLICT(FileID) DO UPDATE SET \r\n        PluginID = COALESCE(excluded.PluginID, FileInfo.PluginID), \r\n        Filename = COALESCE(excluded.Filename, FileInfo.Filename), \r\n        RelativePath = COALESCE(excluded.RelativePath, FileInfo.RelativePath), \r\n        DTStamp = COALESCE(excluded.DTStamp, FileInfo.DTStamp), \r\n        HASH = COALESCE(excluded.HASH, FileInfo.HASH), \r\n        IsArchive = COALESCE(excluded.IsArchive, FileInfo.IsArchive)"
+            "code": "INSERT INTO Plugins (PluginID, PluginName) \r\n    VALUES (NEW.PluginID, NEW.PluginName) \r\n    ON CONFLICT(PluginID) DO UPDATE SET  \r\n        PluginName = COALESCE(excluded.PluginName, Plugins.PluginName)\nINSERT INTO FileInfo (FileID, PluginID, Filename, RelativePath, DTStamp, HASH, Flags) \r\n    VALUES ( \r\n        NEW.FileID, \r\n        NEW.PluginID, \r\n        NEW.Filename, \r\n        NEW.RelativePath, \r\n        NEW.DTStamp, \r\n        NEW.HASH, \r\n        NEW.Flags \r\n    ) \r\n    ON CONFLICT(FileID) DO UPDATE SET \r\n        PluginID = COALESCE(excluded.PluginID, FileInfo.PluginID), \r\n        Filename = COALESCE(excluded.Filename, FileInfo.Filename), \r\n        RelativePath = COALESCE(excluded.RelativePath, FileInfo.RelativePath), \r\n        DTStamp = COALESCE(excluded.DTStamp, FileInfo.DTStamp), \r\n        HASH = COALESCE(excluded.HASH, FileInfo.HASH), \r\n        Flags = COALESCE(excluded.Flags, FileInfo.Flags)"
         },
         {
             "type": "trigger",
@@ -1143,8 +1143,8 @@
             "type": "view",
             "database": null,
             "name": "vwPluginFiles",
-            "ddl": "CREATE VIEW vwPluginFiles AS      \r\nSELECT      \r\n    fi.FileID,      \r\n    p.PluginID,      \r\n    p.PluginName,      \r\n    fi.Filename,      \r\n    fi.RelativePath,      \r\n    fi.DTStamp,      \r\n    fi.HASH,      \r\n    fi.IsArchive      \r\nFROM      \r\n    Plugins p      \r\nJOIN      \r\n    FileInfo fi ON p.PluginID = fi.PluginID",
-            "select": "SELECT      \r\n    fi.FileID,      \r\n    p.PluginID,      \r\n    p.PluginName,      \r\n    fi.Filename,      \r\n    fi.RelativePath,      \r\n    fi.DTStamp,      \r\n    fi.HASH,      \r\n    fi.IsArchive      \r\nFROM      \r\n    Plugins p      \r\nJOIN      \r\n    FileInfo fi ON p.PluginID = fi.PluginID"
+            "ddl": "CREATE VIEW vwPluginFiles AS      \r\nSELECT      \r\n    fi.FileID,      \r\n    p.PluginID,      \r\n    p.PluginName,      \r\n    fi.Filename,      \r\n    fi.RelativePath,      \r\n    fi.DTStamp,      \r\n    fi.HASH,      \r\n    fi.Flags      \r\nFROM      \r\n    Plugins p      \r\nJOIN      \r\n    FileInfo fi ON p.PluginID = fi.PluginID",
+            "select": "SELECT      \r\n    fi.FileID,      \r\n    p.PluginID,      \r\n    p.PluginName,      \r\n    fi.Filename,      \r\n    fi.RelativePath,      \r\n    fi.DTStamp,      \r\n    fi.HASH,      \r\n    fi.Flags      \r\nFROM      \r\n    Plugins p      \r\nJOIN      \r\n    FileInfo fi ON p.PluginID = fi.PluginID"
         },
         {
             "type": "view",

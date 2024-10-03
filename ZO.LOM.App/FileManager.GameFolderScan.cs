@@ -47,7 +47,7 @@ namespace ZO.LoadOrderManager
                     {
                         existingFileInfo.DTStamp = dtStamp;
                         existingFileInfo.HASH = ZO.LoadOrderManager.FileInfo.ComputeHash(fileInfo.FullName);
-                        existingFileInfo.IsArchive = false;
+                        existingFileInfo.Flags = FileFlags.None;
                         ZO.LoadOrderManager.FileInfo.InsertFileInfo(existingFileInfo, existingPlugin.PluginID);
                     }
                 }
@@ -85,7 +85,7 @@ namespace ZO.LoadOrderManager
                         Filename = pluginName,
                         DTStamp = dtStamp,
                         HASH = ZO.LoadOrderManager.FileInfo.ComputeHash(fileInfo.FullName),
-                        IsArchive = false
+                        Flags = FileFlags.None
                     };
                     ZO.LoadOrderManager.FileInfo.InsertFileInfo(newFileInfo, newPlugin.PluginID);
                 }

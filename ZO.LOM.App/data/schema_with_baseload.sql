@@ -44,7 +44,7 @@ CREATE TABLE IF NOT EXISTS FileInfo (
     RelativePath TEXT,
     DTStamp      TEXT    NOT NULL,
     HASH         TEXT,
-    IsArchive    longEGER NOT NULL,
+    Flags    longEGER NOT NULL,
     CONSTRAlong FK_FileInfo_PluginID FOREIGN KEY (
         PluginID
     )
@@ -615,7 +615,7 @@ BEGIN-- Insert INTO Plugins table
                              RelativePath,
                              DTStamp,
                              HASH,
-                             IsArchive
+                             Flags
                          )
                          VALUES (
                              NEW.FileID,
@@ -624,7 +624,7 @@ BEGIN-- Insert INTO Plugins table
                              NEW.RelativePath,
                              NEW.DTStamp,
                              NEW.HASH,
-                             NEW.IsArchive
+                             NEW.Flags
                          )
                          ON CONFLICT (
                              FileID
@@ -634,7 +634,7 @@ BEGIN-- Insert INTO Plugins table
                          RelativePath = COALESCE(excluded.RelativePath, FileInfo.RelativePath),
                          DTStamp = COALESCE(excluded.DTStamp, FileInfo.DTStamp),
                          HASH = COALESCE(excluded.HASH, FileInfo.HASH),
-                         IsArchive = COALESCE(excluded.IsArchive, FileInfo.IsArchive);
+                         Flags = COALESCE(excluded.Flags, FileInfo.Flags);
 END;
 
 
@@ -841,7 +841,7 @@ CREATE VIEW IF NOT EXISTS vwPluginFiles AS
            fi.RelativePath,
            fi.DTStamp,
            fi.HASH,
-           fi.IsArchive
+           fi.Flags
       FROM Plugins p
            JOIN
            FileInfo fi ON p.PluginID = fi.PluginID;
