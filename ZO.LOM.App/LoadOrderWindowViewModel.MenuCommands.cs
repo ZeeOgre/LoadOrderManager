@@ -31,7 +31,8 @@ namespace ZO.LoadOrderManager
         public ICommand EditPluginsCommand { get; }
         public ICommand EditContentCatalogCommand { get; }
         public ICommand ImportContextCatalogCommand { get; }
-        
+        public ICommand ScanGameFolderCommand { get; }
+
         public ICommand CopyTextCommand { get; }
         public ICommand DeleteCommand { get; }
 
@@ -199,6 +200,12 @@ namespace ZO.LoadOrderManager
             }
         }
         
+
+        private void ScanGameFolder()
+        {
+            FileManager.ScanGameDirectoryForStrays();
+        }
+
         private void SettingsWindow()
 
         {

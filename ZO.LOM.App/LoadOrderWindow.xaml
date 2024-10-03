@@ -102,22 +102,23 @@
         <!-- Menu -->
         <Menu Grid.Row="0">
             <MenuItem Header="_File">
-                <MenuItem Header="_Import Plugins.txt file" Command="{Binding ImportPluginsCommand}"/>
-                <MenuItem Header="_Import ContextCatalog.txt" Command="{Binding ImportContextCatalogCommand}"/>
+                <MenuItem Header="Import _Plugins.txt file" Command="{Binding ImportPluginsCommand}"/>
+                <MenuItem Header="Import _ContextCatalog.txt" Command="{Binding ImportContextCatalogCommand}"/>
+                <MenuItem Header="Scan _Game Folder" Command="{Binding ScanGameFolderCommand}" />
                 <MenuItem Header="_Save Plugins.txt" Command="{Binding SavePluginsCommand}"/>
-                <MenuItem Header="_Save Active Loadout to database" Command="{Binding SaveCommand}"/>
-                <MenuItem Header="_Save as new loadout" Command="{Binding SaveAsNewLoadoutCommand}"/>
+                <MenuItem Header="Save _Active Loadout to database" Command="{Binding SaveCommand}"/>
+                <MenuItem Header="Save as _new loadout" Command="{Binding SaveAsNewLoadoutCommand}"/>
             </MenuItem>
             <MenuItem Header="_Edit">
                 <MenuItem Header="_Edit the highlighted item" Command="{Binding EditHighlightedItemCommand}"/>
-                <MenuItem Header="_Edit Plugins.txt" Command="{Binding EditPluginsCommand}"/>
-                <MenuItem Header="_Edit ContentCatalog.txt" Command="{Binding EditContentCatalogCommand}"/>
+                <MenuItem Header="Edit _Plugins.txt" Command="{Binding EditPluginsCommand}"/>
+                <MenuItem Header="Edit _ContentCatalog.txt" Command="{Binding EditContentCatalogCommand}"/>
             </MenuItem>
             <MenuItem Header="_Open">
-                <MenuItem Header="_Open Game Folder" Command="{Binding OpenGameFolderCommand}"/>
-                <MenuItem Header="_Open Game Settings" Command="{Binding OpenGameSettingsCommand}"/>
-                <MenuItem Header="_Open Game LocalAppData Folder" Command="{Binding OpenGameLocalAppDataCommand}"/>
-                <MenuItem Header="_Open Application Data folder" Command="{Binding OpenAppDataFolderCommand}"/>
+                <MenuItem Header="Open _Game Folder" Command="{Binding OpenGameFolderCommand}"/>
+                <MenuItem Header="Open Game _Settings" Command="{Binding OpenGameSettingsCommand}"/>
+                <MenuItem Header="Open Game _LocalAppData Folder" Command="{Binding OpenGameLocalAppDataCommand}"/>
+                <MenuItem Header="Open _Application Data folder" Command="{Binding OpenAppDataFolderCommand}"/>
             </MenuItem>
             <MenuItem Header="_Settings">
                 <MenuItem Header="_Settings Window" Command="{Binding SettingsWindowCommand}"/>

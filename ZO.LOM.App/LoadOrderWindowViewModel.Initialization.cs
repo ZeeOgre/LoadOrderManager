@@ -41,6 +41,7 @@ namespace ZO.LoadOrderManager
             EditPluginsCommand = new RelayCommand<object?>(param => EditPlugins(), _ => true);
             EditContentCatalogCommand = new RelayCommand<object?>(param => EditContentCatalog(), _ => true);
             ImportContextCatalogCommand = new RelayCommand<object?>(param => ImportContextCatalog());
+            ScanGameFolderCommand = new RelayCommand<object?>(param => ScanGameFolder(), _ => true);
             SavePluginsCommand = new RelayCommand(param => SavePlugins(), param => CanSavePlugins());
             EditHighlightedItemCommand = new RelayCommand<object?>(param => EditHighlightedItem());
             OpenAppDataFolderCommand = new RelayCommand<object?>(param => OpenAppDataFolder(), _ => true);
