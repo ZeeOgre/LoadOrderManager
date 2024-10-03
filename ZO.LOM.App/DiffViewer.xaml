@@ -1,0 +1,29 @@
+﻿<Window x:Class="ZO.LoadOrderManager.DiffViewer"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Text Diff Viewer" Height="450" Width="800">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <!-- RichTextBoxes -->
+        <RichTextBox x:Name="LeftRichTextBox" Grid.Row="0" Grid.Column="0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" IsReadOnly="False" />
+        <RichTextBox x:Name="RightRichTextBox" Grid.Row="0" Grid.Column="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" IsReadOnly="False" />
+
+        <!-- Show Diff Button -->
+        <Button Content="Show Diff" Grid.Row="1" Grid.ColumnSpan="2" HorizontalAlignment="Center" Margin="10" Click="ShowDiff_Click"/>
+
+        <!-- Apply from Saved Button -->
+        <Button Content="Apply from Saved" Grid.Row="2" Grid.Column="0" HorizontalAlignment="Center" Margin="10" Click="ApplyFromSaved_Click"/>
+
+        <!-- Accept New Button -->
+        <Button Content="Accept New" Grid.Row="2" Grid.Column="1" HorizontalAlignment="Center" Margin="10" Click="AcceptNew_Click"/>
+    </Grid>
+</Window>

@@ -17,7 +17,7 @@
     <Node Id="FileInfo_RelativePath" Label="RelativePath" Category="Field Optional" Description="text" />
     <Node Id="FileInfo_DTStamp" Label="DTStamp" Category="Field" Description="datetime" />
     <Node Id="FileInfo_HASH" Label="HASH" Category="Field Optional" Description="text" />
-    <Node Id="FileInfo_IsArchive" Label="IsArchive" Category="Field" Description="biglong" />
+    <Node Id="FileInfo_Flags" Label="Flags" Category="Field" Description="biglong" />
     <Node Id="InitializationStatus" Label="InitializationStatus" Category="Table" Group="Collapsed" />
     <Node Id="InitializationStatus_Id" Label="Id" Category="Field Primary" Description="biglong" />
     <Node Id="InitializationStatus_IsInitialized" Label="IsInitialized" Category="Field" Description="biglong" />
@@ -61,7 +61,7 @@
     <Link Source="FileInfo" Target="FileInfo_RelativePath" Category="Contains" />
     <Link Source="FileInfo" Target="FileInfo_DTStamp" Category="Contains" />
     <Link Source="FileInfo" Target="FileInfo_HASH" Category="Contains" />
-    <Link Source="FileInfo" Target="FileInfo_IsArchive" Category="Contains" />
+    <Link Source="FileInfo" Target="FileInfo_Flags" Category="Contains" />
     <Link Source="FileInfo_PluginID" Target="Plugins_PluginID" Label="FK_FileInfo_0_0" Category="Foreign Key" />
     <Link Source="Database" Target="InitializationStatus" Category="Contains" />
     <Link Source="InitializationStatus" Target="InitializationStatus_Id" Category="Contains" />

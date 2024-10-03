@@ -1,7 +1,10 @@
 using System.Data.SQLite;
 using System.IO;
+using System.IO.Compression;
 using System.Net.NetworkInformation;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
+using System.Text;
 using System.Windows;
 
 namespace ZO.LoadOrderManager
@@ -11,26 +14,54 @@ namespace ZO.LoadOrderManager
     public enum FileFlags
     {
         None = 0,
-        IsArchive = 1,
-        IsMonitored = 2,
-        IsJunction = 4
+        IsMonitored = 1,
+        GameAppdata = 2,
+        GameDocs = 4,
+        GameFolder = 8,
+        Plugin = 16,
+        Config = 32,
+        IsJunction = 64,
+        IsArchive = 128
     }
 
     public class FileInfo
     {
+
+        [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+        private static extern IntPtr CreateFile(
+           string lpFileName,
+           uint dwDesiredAccess,
+           uint dwShareMode,
+           IntPtr lpSecurityAttributes,
+           uint dwCreationDisposition,
+           uint dwFlagsAndAttributes,
+           IntPtr hTemplateFile);
+
+        [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+        private static extern bool CloseHandle(IntPtr hObject);
+
+        [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+        private static extern int GetFinalPathNameByHandle(IntPtr hFile, StringBuilder lpszFilePath, int cchFilePath, int dwFlags);
+
+        private static readonly IntPtr INVALID_HANDLE_VALUE = new IntPtr(-1);
+
+
         public long FileID { get; set; }
         public string Filename { get; set; }
         public string? RelativePath { get; set; }
         public string DTStamp { get; set; }
         public string? HASH { get; set; }
         public FileFlags Flags { get; set; }
-        public string AbsolutePath { get; set; }
+        public string AbsolutePath { get; set; } // Absolute path of the file
+        public byte[]? FileContent { get; set; } // Nullable byte array for raw file content
+        public byte[]? CompressedContent { get; set; } // Property for compressed content
 
         public FileInfo()
         {
             Filename = string.Empty; // Initialize with default value
             DTStamp = DateTime.Now.ToString("o"); // Initialize with current timestamp
             AbsolutePath = string.Empty;
+            Flags = FileFlags.None;
         }
 
         public FileInfo(string filename)
@@ -51,6 +82,50 @@ namespace ZO.LoadOrderManager
             HASH = ComputeHash(fileInfo.FullName);
             Flags = CheckFileFlags(fileInfo);
             AbsolutePath = Flags.HasFlag(FileFlags.IsJunction) ? GetJunctionTarget(fileInfo.FullName) : fileInfo.FullName;
+        }
+
+        public FileInfo(string filename, bool monitor, bool? storeFile = false)
+        {
+            Filename = filename.ToLowerInvariant();
+            RelativePath = null;
+            DTStamp = DateTime.Now.ToString("o");
+            HASH = ComputeHash(filename);
+            AbsolutePath = filename;
+
+            if (monitor)
+            {
+                Flags = FileFlags.IsMonitored;
+                storeFile = true;
+            }
+            else
+            {
+                Flags = FileFlags.None;
+            }
+
+            if (storeFile == true)
+            {
+                FileContent = System.IO.File.ReadAllBytes(filename); // Store raw file content
+                CompressedContent = CompressFile(FileContent); // Store compressed content
+            }
+        }
+
+        private byte[] CompressFile(byte[] fileContent)
+        {
+            using var compressedFileStream = new MemoryStream();
+            using (var compressionStream = new GZipStream(compressedFileStream, CompressionMode.Compress))
+            {
+                compressionStream.Write(fileContent, 0, fileContent.Length);
+            }
+            return compressedFileStream.ToArray();
+        }
+
+        private static byte[] DecompressFile(byte[] compressedContent)
+        {
+            using var compressedStream = new MemoryStream(compressedContent);
+            using var decompressionStream = new GZipStream(compressedStream, CompressionMode.Decompress);
+            using var decompressedStream = new MemoryStream();
+            decompressionStream.CopyTo(decompressedStream);
+            return decompressedStream.ToArray();
         }
 
         private FileFlags CheckFileFlags(System.IO.FileInfo fileInfo)
@@ -125,24 +200,6 @@ namespace ZO.LoadOrderManager
             }
         }
 
-        [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Auto)]
-        private static extern IntPtr CreateFile(
-            string lpFileName,
-            uint dwDesiredAccess,
-            uint dwShareMode,
-            IntPtr lpSecurityAttributes,
-            uint dwCreationDisposition,
-            uint dwFlagsAndAttributes,
-            IntPtr hTemplateFile);
-
-        [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Auto)]
-        private static extern bool CloseHandle(IntPtr hObject);
-
-        [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Auto)]
-        private static extern int GetFinalPathNameByHandle(IntPtr hFile, StringBuilder lpszFilePath, int cchFilePath, int dwFlags);
-
-        private static readonly IntPtr INVALID_HANDLE_VALUE = new IntPtr(-1);
-
         public static string ComputeHash(string filePath)
         {
             using var sha256 = SHA256.Create();
@@ -209,21 +266,21 @@ namespace ZO.LoadOrderManager
                 if (fileInfo.FileID == 0)
                 {
                     command.CommandText = @"
-                            INSERT INTO FileInfo (PluginID, Filename, RelativePath, DTStamp, HASH, Flags, AbsolutePath)
-                            VALUES (@PluginID, @Filename, @RelativePath, @DTStamp, @HASH, @Flags, @AbsolutePath)
-                            ON CONFLICT(Filename) DO UPDATE 
-                            SET RelativePath = COALESCE(excluded.RelativePath, FileInfo.RelativePath), 
-                                DTStamp = COALESCE(excluded.DTStamp, FileInfo.DTStamp), 
-                                HASH = COALESCE(excluded.HASH, FileInfo.HASH), 
-                                Flags = excluded.Flags,
-                                AbsolutePath = excluded.AbsolutePath";
+                INSERT INTO FileInfo (PluginID, Filename, RelativePath, DTStamp, HASH, Flags, AbsolutePath)
+                VALUES (@PluginID, @Filename, @RelativePath, @DTStamp, @HASH, @Flags, @AbsolutePath)
+                ON CONFLICT(Filename) DO UPDATE 
+                SET RelativePath = COALESCE(excluded.RelativePath, FileInfo.RelativePath), 
+                    DTStamp = COALESCE(excluded.DTStamp, FileInfo.DTStamp), 
+                    HASH = COALESCE(excluded.HASH, FileInfo.HASH), 
+                    Flags = excluded.Flags,
+                    AbsolutePath = excluded.AbsolutePath";
 
                     command.Parameters.AddWithValue("@PluginID", pluginId);
                     command.Parameters.AddWithValue("@Filename", fileInfo.Filename);
                     command.Parameters.AddWithValue("@RelativePath", fileInfo.RelativePath ?? (object)DBNull.Value);
                     command.Parameters.AddWithValue("@DTStamp", fileInfo.DTStamp);
                     command.Parameters.AddWithValue("@HASH", fileInfo.HASH ?? (object)DBNull.Value);
-                    command.Parameters.AddWithValue("@Flags", (int)fileInfo.Flags);
+                    command.Parameters.AddWithValue("@Flags", (long)fileInfo.Flags);
                     command.Parameters.AddWithValue("@AbsolutePath", fileInfo.AbsolutePath);
 
                     fileInfo.FileID = Convert.ToInt64(command.ExecuteScalar());
@@ -231,15 +288,15 @@ namespace ZO.LoadOrderManager
                 else
                 {
                     command.CommandText = @"
-                        UPDATE FileInfo
-                        SET PluginID = @PluginID,
-                            Filename = @Filename,
-                            RelativePath = @RelativePath,
-                            DTStamp = COALESCE(@DTStamp, DTStamp),
-                            HASH = COALESCE(@HASH, HASH),
-                            Flags = @Flags,
-                            AbsolutePath = @AbsolutePath
-                        WHERE FileID = @FileID";
+                UPDATE FileInfo
+                SET PluginID = @PluginID,
+                    Filename = @Filename,
+                    RelativePath = @RelativePath,
+                    DTStamp = COALESCE(@DTStamp, DTStamp),
+                    HASH = COALESCE(@HASH, HASH),
+                    Flags = @Flags,
+                    AbsolutePath = @AbsolutePath
+                WHERE FileID = @FileID";
 
                     command.Parameters.AddWithValue("@FileID", fileInfo.FileID);
                     command.Parameters.AddWithValue("@PluginID", pluginId);
@@ -247,7 +304,7 @@ namespace ZO.LoadOrderManager
                     command.Parameters.AddWithValue("@RelativePath", fileInfo.RelativePath ?? (object)DBNull.Value);
                     command.Parameters.AddWithValue("@DTStamp", fileInfo.DTStamp);
                     command.Parameters.AddWithValue("@HASH", fileInfo.HASH ?? (object)DBNull.Value);
-                    command.Parameters.AddWithValue("@Flags", (int)fileInfo.Flags);
+                    command.Parameters.AddWithValue("@Flags", (long)fileInfo.Flags);
                     command.Parameters.AddWithValue("@AbsolutePath", fileInfo.AbsolutePath);
 
                     command.ExecuteNonQuery();
@@ -267,6 +324,127 @@ namespace ZO.LoadOrderManager
                 transaction.Rollback();
                 throw;
             }
+        }
+
+        public static void InsertFileInfo(FileInfo fileInfo)
+        {
+            using var connection = DbManager.Instance.GetConnection();
+
+#if WINDOWS
+            App.LogDebug($"Fileinfo Begin Transaction");
+#endif
+
+            using var transaction = connection.BeginTransaction();
+
+            try
+            {
+                using var command = new SQLiteCommand(connection);
+                if (fileInfo.FileID == 0)
+                {
+                    command.CommandText = @"
+                INSERT INTO FileInfo (Filename, RelativePath, DTStamp, HASH, Flags, AbsolutePath, FileContent)
+                VALUES (@Filename, @RelativePath, @DTStamp, @HASH, @Flags, @AbsolutePath, @FileContent)
+                ON CONFLICT(Filename) DO UPDATE 
+                SET RelativePath = COALESCE(excluded.RelativePath, FileInfo.RelativePath), 
+                    DTStamp = COALESCE(excluded.DTStamp, FileInfo.DTStamp), 
+                    HASH = COALESCE(excluded.HASH, FileInfo.HASH), 
+                    Flags = excluded.Flags,
+                    AbsolutePath = excluded.AbsolutePath,
+                    FileContent = excluded.FileContent";
+
+                    command.Parameters.AddWithValue("@Filename", fileInfo.Filename);
+                    command.Parameters.AddWithValue("@RelativePath", fileInfo.RelativePath ?? (object)DBNull.Value);
+                    command.Parameters.AddWithValue("@DTStamp", fileInfo.DTStamp);
+                    command.Parameters.AddWithValue("@HASH", fileInfo.HASH ?? (object)DBNull.Value);
+                    command.Parameters.AddWithValue("@Flags", (long)fileInfo.Flags);
+                    command.Parameters.AddWithValue("@AbsolutePath", fileInfo.AbsolutePath);
+                    command.Parameters.AddWithValue("@FileContent", fileInfo.CompressedContent ?? (object)DBNull.Value);
+
+                    fileInfo.FileID = Convert.ToInt64(command.ExecuteScalar());
+                }
+                else
+                {
+                    command.CommandText = @"
+                UPDATE FileInfo
+                SET Filename = @Filename,
+                    RelativePath = @RelativePath,
+                    DTStamp = COALESCE(@DTStamp, DTStamp),
+                    HASH = COALESCE(@HASH, HASH),
+                    Flags = @Flags,
+                    AbsolutePath = @AbsolutePath,
+                    FileContent = @FileContent
+                WHERE FileID = @FileID";
+
+                    command.Parameters.AddWithValue("@FileID", fileInfo.FileID);
+                    command.Parameters.AddWithValue("@Filename", fileInfo.Filename);
+                    command.Parameters.AddWithValue("@RelativePath", fileInfo.RelativePath ?? (object)DBNull.Value);
+                    command.Parameters.AddWithValue("@DTStamp", fileInfo.DTStamp);
+                    command.Parameters.AddWithValue("@HASH", fileInfo.HASH ?? (object)DBNull.Value);
+                    command.Parameters.AddWithValue("@Flags", (long)fileInfo.Flags);
+                    command.Parameters.AddWithValue("@AbsolutePath", fileInfo.AbsolutePath);
+                    command.Parameters.AddWithValue("@FileContent", fileInfo.CompressedContent ?? (object)DBNull.Value);
+
+                    command.ExecuteNonQuery();
+                }
+
+#if WINDOWS
+                App.LogDebug($"Fileinfo Commit Transaction");
+#endif
+
+                transaction.Commit();
+            }
+            catch (Exception ex)
+            {
+#if WINDOWS
+                App.LogDebug($"Error inserting/updating file info: {ex.Message}");
+#endif
+                transaction.Rollback();
+                throw;
+            }
+        }
+
+        public static List<FileInfo> GetMonitoredFiles()
+        {
+            var monitoredFiles = new List<FileInfo>();
+
+            using var connection = DbManager.Instance.GetConnection();
+            connection.Open();
+
+            using (var pragmaCommand = new SQLiteCommand("PRAGMA read_uncommitted = true;", connection))
+            {
+                pragmaCommand.ExecuteNonQuery();
+            }
+
+            using var command = new SQLiteCommand(
+                "SELECT FileID, Filename, RelativePath, DTStamp, HASH, Flags, AbsolutePath, FileContent " +
+                "FROM FileInfo WHERE (Flags & @IsMonitoredFlag) = @IsMonitoredFlag", connection);
+
+            _ = command.Parameters.AddWithValue("@IsMonitoredFlag", (long)FileFlags.IsMonitored);
+
+            using var reader = command.ExecuteReader();
+            while (reader.Read())
+            {
+                var fileInfo = new FileInfo
+                {
+                    FileID = reader.GetInt64(0),
+                    Filename = reader.GetString(1),
+                    RelativePath = reader.IsDBNull(2) ? null : reader.GetString(2),
+                    DTStamp = reader.GetString(3),
+                    HASH = reader.IsDBNull(4) ? null : reader.GetString(4),
+                    Flags = (FileFlags)reader.GetInt32(5),
+                    AbsolutePath = reader.GetString(6),
+                    CompressedContent = reader.IsDBNull(7) ? null : (byte[])reader[7]
+                };
+
+                if (fileInfo.CompressedContent != null)
+                {
+                    fileInfo.FileContent = DecompressFile(fileInfo.CompressedContent);
+                }
+
+                monitoredFiles.Add(fileInfo);
+            }
+
+            return monitoredFiles;
         }
 
         public override bool Equals(object obj)

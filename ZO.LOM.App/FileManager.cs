@@ -70,6 +70,9 @@ namespace ZO.LoadOrderManager
                     FileManager.MarkLoadOutComplete(AggLoadInfo.Instance);
                     InitializationManager.ReportProgress(85, "LoadOut marked complete");
 
+                    // Initialize file monitors for monitored files
+                    FileMonitor.InitializeAllMonitors();
+
                     _initialized = true;
                     App.LogDebug("FileManager: Initialization completed successfully.");
                 }
@@ -101,7 +104,7 @@ namespace ZO.LoadOrderManager
         {
             var files = new List<ZO.LoadOrderManager.FileInfo>();
 
-            using (var command = new SQLiteCommand("SELECT FileID, Filename, RelativePath, DTStamp, HASH, IsArchive FROM vwPluginFiles WHERE PluginID = @PluginID", connection))
+            using (var command = new SQLiteCommand("SELECT FileID, Filename, RelativePath, DTStamp, HASH, Flags FROM vwPluginFiles WHERE PluginID = @PluginID", connection))
             {
                 _ = command.Parameters.AddWithValue("@PluginID", pluginID);
                 using var reader = command.ExecuteReader();
@@ -114,7 +117,7 @@ namespace ZO.LoadOrderManager
                         RelativePath = reader.IsDBNull(reader.GetOrdinal("RelativePath")) ? null : reader.GetString(reader.GetOrdinal("RelativePath")),
                         DTStamp = reader.GetString(reader.GetOrdinal("DTStamp")),
                         HASH = reader.IsDBNull(reader.GetOrdinal("HASH")) ? null : reader.GetString(reader.GetOrdinal("HASH")),
-                        IsArchive = reader.GetInt64(reader.GetOrdinal("IsArchive")) == 1
+                        Flags = (FileFlags)reader.GetInt64(reader.GetOrdinal("Flags"))
                     };
                     files.Add(file);
                 }

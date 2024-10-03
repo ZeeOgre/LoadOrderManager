@@ -188,7 +188,7 @@ namespace ZO.LoadOrderManager
         //        {
         //            Filename = fileName,
         //            DTStamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
-        //            IsArchive = false
+        //            Flags = FileFlags.None
         //        }
         //    };
         //}
@@ -226,7 +226,7 @@ namespace ZO.LoadOrderManager
                     {
                         Filename = filePath,
                         RelativePath = relativePath,
-                        IsArchive = false,
+                        Flags = FileFlags.None,
                         DTStamp = this.DTStamp,
                     });
                 }
@@ -252,7 +252,7 @@ namespace ZO.LoadOrderManager
                     RelativePath = relativePath,
                     DTStamp = file.LastWriteTime.ToString("yyyy-MM-dd HH:mm:ss"),
                     HASH = FileInfo.ComputeHash(file.FullName),
-                    IsArchive = false
+                    Flags = FileFlags.None
                 }
             };
         }
@@ -295,7 +295,7 @@ namespace ZO.LoadOrderManager
                     RelativePath = file.RelativePath,
                     DTStamp = file.DTStamp,
                     HASH = file.HASH,
-                    IsArchive = file.IsArchive
+                    Flags = file.Flags
                 }).ToList()
             };
 
@@ -414,20 +414,20 @@ namespace ZO.LoadOrderManager
                     foreach (var file in this.Files)
                     {
                         command.CommandText = @"
-                        INSERT INTO FileInfo (PluginID, Filename, RelativePath, DTStamp, HASH, IsArchive)
-                        VALUES (@PluginID, @Filename, @RelativePath, @DTStamp, @HASH, @IsArchive)
+                        INSERT INTO FileInfo (PluginID, Filename, RelativePath, DTStamp, HASH, Flags)
+                        VALUES (@PluginID, @Filename, @RelativePath, @DTStamp, @HASH, @Flags)
                         ON CONFLICT(Filename) DO UPDATE 
                         SET RelativePath = COALESCE(excluded.RelativePath, FileInfo.RelativePath), 
                             DTStamp = COALESCE(excluded.DTStamp, FileInfo.DTStamp), 
                             HASH = COALESCE(excluded.HASH, FileInfo.HASH), 
-                            IsArchive = excluded.IsArchive";
+                            Flags = excluded.Flags";
                         command.Parameters.Clear();
                         command.Parameters.AddWithValue("@PluginID", this.PluginID);
                         command.Parameters.AddWithValue("@Filename", string.IsNullOrEmpty(file.Filename) ? (object)DBNull.Value : file.Filename);
                         command.Parameters.AddWithValue("@RelativePath", string.IsNullOrEmpty(file.RelativePath) ? (object)DBNull.Value : file.RelativePath);
                         command.Parameters.AddWithValue("@DTStamp", string.IsNullOrEmpty(file.DTStamp) ? (object)DBNull.Value : file.DTStamp);
                         command.Parameters.AddWithValue("@HASH", string.IsNullOrEmpty(file.HASH) ? (object)DBNull.Value : file.HASH);
-                        command.Parameters.AddWithValue("@IsArchive", file.IsArchive);
+                        command.Parameters.AddWithValue("@Flags", file.Flags);
 
                         command.ExecuteNonQuery();
                     }

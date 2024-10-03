@@ -257,7 +257,7 @@ namespace ZO.LoadOrderManager
         private void Hyperlink_RequestNavigate(object sender, RequestNavigateEventArgs e)
         {
             Uri uri = e.Uri;
-            string newUri = uri.AbsoluteUri;
+            string newUri = uri.IsAbsoluteUri ? uri.AbsoluteUri : string.Empty;
 
             if (!uri.IsAbsoluteUri || string.IsNullOrEmpty(uri.OriginalString))
             {

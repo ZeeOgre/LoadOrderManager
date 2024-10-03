@@ -13,6 +13,8 @@ namespace ZO.LoadOrderManager
         private Config _config;
         private string _gameFolder;
         private bool _autoCheckForUpdates;
+        private ObservableCollection<FileInfo> _monitoredFiles;
+
 
         public SettingsViewModel()
         {
@@ -29,6 +31,17 @@ namespace ZO.LoadOrderManager
         public ICommand LoadCommand { get; }
         public ICommand LaunchGameFolderCommand { get; }
         public ICommand CheckForUpdatesCommand { get; }
+
+
+        public ObservableCollection<FileInfo> MonitoredFiles
+        {
+            get => _monitoredFiles;
+            set
+            {
+                _monitoredFiles = value;
+                OnPropertyChanged();
+            }
+        }
 
         public bool AutoCheckForUpdates
         {
@@ -58,12 +71,14 @@ namespace ZO.LoadOrderManager
         {
             GameFolder = _config.GameFolder;
             AutoCheckForUpdates = _config.AutoCheckForUpdates;
+            MonitoredFiles = new ObservableCollection<FileInfo>(_config.MonitoredFiles);
         }
 
         private void SaveSettings()
         {
             _config.GameFolder = GameFolder;
             _config.AutoCheckForUpdates = AutoCheckForUpdates;
+            _config.MonitoredFiles = MonitoredFiles.ToList();
             Config.SaveToYaml();
             Config.SaveToDatabase();
             _ = MessageBox.Show("Settings saved successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
