@@ -1,4 +1,5 @@
 ﻿using System.Collections.ObjectModel;
+using System.Windows;
 using ZO.LoadOrderManager;
 
 public class LoadOrdersViewModel : ViewModelBase
@@ -11,20 +12,32 @@ public class LoadOrdersViewModel : ViewModelBase
         set => SetProperty(ref items, value);
     }
 
+    public GroupSet SelectedGroupSet { get; set; }
+    public LoadOut SelectedLoadOut { get; set; }
+    public bool Suppress997 { get; set; }
+    public bool IsCached { get; set; }
+
     public LoadOrdersViewModel()
     {
         Items = new ObservableCollection<LoadOrderItemViewModel>();
+        AggLoadInfo.Instance.DataRefreshed += OnDataRefreshed;
     }
 
-    public void LoadData(GroupSet groupSet, LoadOut loadOut, bool suppress997 = false)
+    public void LoadData(GroupSet groupSet, LoadOut loadOut, bool suppress997 = false, bool isCached = false)
     {
-        Items.Clear();
-        SortingHelper.PopulateLoadOrdersViewModel(this, groupSet, loadOut, suppress997);
+        Application.Current.Dispatcher.Invoke(() => Items.Clear());
+        SortingHelper.PopulateLoadOrdersViewModel(this, groupSet, loadOut, suppress997, isCached);
     }
 
-    public void SortItems(GroupSet groupSet)
+    public void RefreshData()
     {
-        // Re-sort the items based on a given GroupSet without clearing them
-        SortingHelper.UpdateLoadOrdersViewModel(this, groupSet);
+        // Derive parameters from the instance properties
+        LoadData(SelectedGroupSet, SelectedLoadOut, Suppress997, IsCached);
+    }
+
+    public void OnDataRefreshed(object? sender, EventArgs e)
+    {
+        // Reload the underlying data for the main LoadOrders
+        RefreshData();
     }
 }

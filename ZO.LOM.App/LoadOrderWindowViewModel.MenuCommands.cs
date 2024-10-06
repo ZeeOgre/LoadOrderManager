@@ -107,7 +107,7 @@ namespace ZO.LoadOrderManager
         {
             if (SelectedItem is Plugin plugin)
             {
-                var editorWindow = new PluginEditorWindow(plugin, SelectedLoadOut);
+                var editorWindow = new PluginEditorWindow(plugin);
                 if (editorWindow.ShowDialog() == true)
                 {
                     RefreshData();
@@ -329,24 +329,25 @@ namespace ZO.LoadOrderManager
                 // Record the old state for debugging
                 Debug.WriteLine($"OldState: {itemViewModel.IsActive}");
 
-                // Calculate the new state and log it
+                // Toggle the current state
                 bool newState = itemViewModel.IsActive;
                 Debug.WriteLine($"NewState: {newState}");
 
                 // Set the new state to the UI-bound property
-                Application.Current.Dispatcher.Invoke(() =>
-                {
-                    itemViewModel.IsActive = newState;
-                });
+                itemViewModel.IsActive = newState;
 
-                // Update the backend data
+                // Update the backend data (the database and in-memory LoadOut)
                 LoadOut.SetPluginEnabled(SelectedLoadOut.ProfileID, itemViewModel.PluginData.PluginID, newState);
+
+                // Notify the UI to refresh the view
+                OnPropertyChanged(nameof(LoadOuts));
             }
             else
             {
                 UpdateStatus("No loadout or valid item selected.");
             }
         }
+
 
 
 

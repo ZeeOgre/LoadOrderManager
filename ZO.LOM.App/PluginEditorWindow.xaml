@@ -6,6 +6,7 @@
     <Window.Resources>
         <local:FilesToStringConverter x:Key="FilesToStringConverter"/>
         <local:EnumFlagConverter x:Key="EnumFlagConverter"/>
+        <local:LoadOutAndPluginToIsEnabledConverter x:Key="LoadOutAndPluginToIsEnabledConverter"/>
     </Window.Resources>
     <Window.DataContext>
         <Binding Path="Plugin" />
@@ -33,52 +34,70 @@
 
         <!-- Plugin Name -->
         <Label Content="Plugin Name:" Grid.Row="0" Grid.Column="0" Margin="5"/>
-        <TextBox Text="{Binding Plugin.PluginName}" Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2" Margin="5,5,5,5"/>
+        <TextBox Text="{Binding Plugin.PluginName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2" Margin="5,5,5,5"/>
 
         <!-- Description -->
         <Label Content="Description:" Grid.Row="1" Grid.Column="0" Margin="5"/>
-        <TextBox Text="{Binding Plugin.Description}" Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" Margin="5,5,5,5"/>
+        <TextBox Text="{Binding Plugin.Description, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" Margin="5,5,5,5"/>
 
         <!-- Files -->
         <Label Content="Files:" Grid.Row="3" Grid.Column="0" Margin="5"/>
-        <TextBox Text="{Binding Files}" Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2" Margin="5,5,5,5" Height="60" TextWrapping="Wrap"/>
+        <TextBox Text="{Binding Files, Converter={StaticResource FilesToStringConverter}}" Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2" Margin="5,5,5,5" Height="60" TextWrapping="Wrap"/>
 
         <!-- Timestamp and Version -->
         <Label Content="Timestamp:" Grid.Row="4" Grid.Column="0" Margin="5"/>
-        <TextBox Text="{Binding Plugin.DTStamp}" Grid.Row="4" Margin="5,5,69,5" Grid.Column="1"/>
+        <TextBox Text="{Binding Plugin.DTStamp, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Grid.Row="4" Margin="5,5,69,5" Grid.Column="1"/>
         <Label Content="Version:" Grid.Row="4" Grid.Column="1" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="283,0,0,0"/>
-        <TextBox Text="{Binding Plugin.Version}" Grid.Row="4" Grid.Column="1" Margin="343,5,5,5" Grid.ColumnSpan="2"/>
+        <TextBox Text="{Binding Plugin.Version, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Grid.Row="4" Grid.Column="1" Margin="343,5,5,5" Grid.ColumnSpan="2"/>
 
         <!-- Bethesda and Nexus -->
         <Label Content="Bethesda ID:" Grid.Row="5" Grid.Column="0" Margin="5"/>
-        <TextBox Text="{Binding Plugin.BethesdaID}" Grid.Row="5" Grid.Column="1" Margin="5,5,69,5"/>
+        <TextBox Text="{Binding Plugin.BethesdaID, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Grid.Row="5" Grid.Column="1" Margin="5,5,69,5"/>
         <Label Content="Nexus ID:" Grid.Row="5" Grid.Column="1" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="283,0,0,0"/>
-        <TextBox Text="{Binding Plugin.NexusID}" Grid.Row="5" Grid.Column="1" Margin="343,5,5,5" Grid.ColumnSpan="2"/>
+        <TextBox Text="{Binding Plugin.NexusID, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Grid.Row="5" Grid.Column="1" Margin="343,5,5,5" Grid.ColumnSpan="2"/>
 
         <!-- GroupSet Dropdown -->
         <Label Content="GroupSet:" Grid.Row="6" Grid.Column="0" Margin="5" VerticalAlignment="Center"/>
         <ComboBox ItemsSource="{Binding AvailableGroupSets}" 
-                  DisplayMemberPath="Name" 
-                  SelectedItem="{Binding SelectedGroupSet}" 
+                  DisplayMemberPath="GroupSetName" 
+                  SelectedItem="{Binding SelectedGroupSet, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
                   Grid.Row="6" Grid.Column="1" Grid.ColumnSpan="2" Margin="5" HorizontalAlignment="Stretch"/>
 
         <!-- Group -->
         <Label Content="Group:" Grid.Row="7" Grid.Column="0" Margin="5"/>
         <ComboBox ItemsSource="{Binding Groups}" 
-                  DisplayMemberPath="GroupName" 
-                  SelectedValuePath="GroupID" 
-                  SelectedValue="{Binding Plugin.GroupID}" 
-                  Grid.Row="7" Grid.Column="1" Grid.ColumnSpan="2" Margin="5" HorizontalAlignment="Stretch"/>
+          DisplayMemberPath="GroupName" 
+          SelectedValuePath="GroupID" 
+          SelectedItem="{Binding SelectedGroup, Mode=TwoWay}" 
+          Grid.Row="7" Grid.Column="1" Grid.ColumnSpan="2" Margin="5" HorizontalAlignment="Stretch"/>
 
         <!-- Loadouts -->
-        <Label Content="Loadouts:" Grid.Row="8" Grid.Column="0" Margin="5"/>
+        <Label Content="LoadOuts:" Grid.Row="8" Grid.Column="0" Margin="5"/>
         <ScrollViewer Grid.Row="8" Grid.Column="1" Grid.ColumnSpan="2" Margin="5" Height="150">
-            <UniformGrid Columns="4">
-                <ItemsControl ItemsSource="{Binding Loadouts}">
+            <UniformGrid Columns="3">
+                <ItemsControl ItemsSource="{Binding LoadOuts}">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
                             <StackPanel Orientation="Horizontal">
-                                <CheckBox IsChecked="{Binding IsEnabled, Mode=TwoWay}"/>
+
+                                <CheckBox>
+                                    <CheckBox.IsChecked>
+                                        <MultiBinding Converter="{StaticResource LoadOutAndPluginToIsEnabledConverter}">
+                                            <Binding Path="." />
+                                            <!-- This will pass the LoadOut object -->
+                                            <Binding Path="DataContext.Plugin.PluginID" RelativeSource="{RelativeSource AncestorType=Window}" />
+                                        </MultiBinding>
+                                    </CheckBox.IsChecked>
+                                    <CheckBox.Command>
+                                        <Binding Path="DataContext.TogglePluginEnabledInLoadOutCommand" RelativeSource="{RelativeSource AncestorType=Window}" />
+                                    </CheckBox.Command>
+                                    <CheckBox.CommandParameter>
+                                        <Binding Path="." />
+                                        <!-- Pass the LoadOut object as the command parameter -->
+                                    </CheckBox.CommandParameter>
+                                </CheckBox>
+
+
                                 <TextBlock Text="{Binding Name}" Margin="5,0,0,0"/>
                             </StackPanel>
                         </DataTemplate>
@@ -86,6 +105,10 @@
                 </ItemsControl>
             </UniformGrid>
         </ScrollViewer>
+
+        <!-- Achievement Safe Checkbox -->
+        <Label Content="Achievement Safe:" Grid.Row="9" Grid.Column="0" Margin="5,5,5,5"/>
+        <CheckBox IsChecked="{Binding Plugin.Achievements}" IsEnabled="False" Grid.Row="9" Grid.Column="1" Margin="5,10,5,5"/>
 
         <!-- Checkboxes and Buttons -->
         <Grid Grid.Row="10" Grid.ColumnSpan="3" Margin="5">
@@ -99,7 +122,7 @@
                 <CheckBox Content="Game Folder" IsChecked="{Binding IsGameFolderChecked}" IsEnabled="False" Margin="5"/>
                 <CheckBox Content="Bethesda" IsChecked="{Binding IsBethesdaChecked}" IsEnabled="False" Margin="5"/>
                 <CheckBox Content="Nexus" IsChecked="{Binding IsNexusChecked}" IsEnabled="False" Margin="5"/>
-                <CheckBox Content="Mod Manager" IsChecked="False" IsEnabled="False" Margin="5"/>
+                <CheckBox Content="Mod Manager" IsChecked="{Binding IsModManagerChecked}" IsEnabled="False" Margin="5"/>
             </StackPanel>
 
             <!-- Save and Cancel buttons on the right -->
@@ -108,11 +131,5 @@
                 <Button Content="Cancel" Width="85" Margin="5" Click="CancelButton_Click" Height="30"/>
             </StackPanel>
         </Grid>
-
-        <!-- Achievement Safe -->
-        <StackPanel Grid.Row="9" Grid.Column="0" Grid.ColumnSpan="2" Orientation="Horizontal" Margin="5,0,0,5">
-            <Label Content="Achievement Safe:" Width="110" VerticalAlignment="Center"/>
-            <CheckBox IsChecked="{Binding Plugin.Achievements}" VerticalAlignment="Center" Margin="5"/>
-        </StackPanel>
     </Grid>
 </Window>

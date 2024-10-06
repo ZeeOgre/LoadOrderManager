@@ -84,7 +84,9 @@ public class LoadOrderItemViewModel : ViewModelBase
     // Retrieve the ModGroup associated with this item using the GroupID
     public ModGroup? GetModGroup()
     {
-        return AggLoadInfo.Instance.Groups.FirstOrDefault(g => g.GroupID == GroupID);
+        ModGroup? group = AggLoadInfo.Instance.Groups.FirstOrDefault(g => g.GroupID == GroupID);
+        group.Ordinal = group.Ordinal;
+        return group;
     }
 
     // Retrieve the parent ModGroup associated with this item using the ParentID

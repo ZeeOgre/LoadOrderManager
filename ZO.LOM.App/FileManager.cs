@@ -38,19 +38,20 @@ namespace ZO.LoadOrderManager
                 {
                     InitializationManager.StartInitialization(nameof(FileManager));
                     App.LogDebug("FileManager: Starting initialization...");
+                    FileMonitor.InitializeAllMonitors();
+                    InitializeFavoriteGroupSetAndLoadOut();
+                    //// Retrieve the singleton GroupSet and LoadOut from the database
+                    //var singletonGroupSet = GroupSet.LoadGroupSet(2);
+                    //var singletonLoadOut = LoadOut.Load(2);
 
-                    // Retrieve the singleton GroupSet and LoadOut from the database
-                    var singletonGroupSet = GroupSet.LoadGroupSet(2);
-                    var singletonLoadOut = LoadOut.Load(2);
-
-                    AggLoadInfo.Instance.ActiveLoadOut = singletonLoadOut;
-                    AggLoadInfo.Instance.ActiveGroupSet = singletonGroupSet;
+                    //AggLoadInfo.Instance.ActiveLoadOut = singletonLoadOut;
+                    //AggLoadInfo.Instance.ActiveGroupSet = singletonGroupSet;
 
                     // Load data from the database INTO the AggLoadInfo instance
                     AggLoadInfo.Instance.InitFromDatabase();
 
                     // Check if files have already been loaded
-                    if (singletonGroupSet.AreFilesLoaded)
+                    if (AggLoadInfo.Instance.ActiveGroupSet.AreFilesLoaded)
                     {
                         App.LogDebug("FileManager: Files have already been loaded. Skipping file initialization.");
                         _initialized = true;
@@ -58,8 +59,8 @@ namespace ZO.LoadOrderManager
                     }
 
                     // Update the flags to indicate the singleton is ready to load
-                    singletonGroupSet.GroupSetFlags |= GroupFlags.ReadyToLoad;
-                    singletonGroupSet.SaveGroupSet();
+                    AggLoadInfo.Instance.ActiveGroupSet.GroupSetFlags |= GroupFlags.ReadyToLoad;
+                    AggLoadInfo.Instance.ActiveGroupSet.SaveGroupSet();
 
                     FileManager.ParsePluginsTxt(AggLoadInfo.Instance, PluginsFile);
                     InitializationManager.ReportProgress(83, "Plugins parsed");
@@ -71,7 +72,7 @@ namespace ZO.LoadOrderManager
                     InitializationManager.ReportProgress(85, "LoadOut marked complete");
 
                     // Initialize file monitors for monitored files
-                    FileMonitor.InitializeAllMonitors();
+                    
 
                     _initialized = true;
                     App.LogDebug("FileManager: Initialization completed successfully.");
@@ -88,6 +89,33 @@ namespace ZO.LoadOrderManager
             }
         }
 
+        public static GroupSet? FindFavoriteGroupSet()
+        {
+            var groupSets = AggLoadInfo.LoadGroupSetsFromDatabase();
+            return groupSets.FirstOrDefault(gs => gs.IsFavorite);
+        }
+
+        public static LoadOut? FindFavoriteLoadOut(GroupSet groupSet)
+        {
+            var loadOuts = GroupSet.GetAllLoadOuts(groupSet.GroupSetID);
+            return loadOuts.FirstOrDefault(lo => lo.IsFavorite);
+        }
+
+        public static void InitializeFavoriteGroupSetAndLoadOut()
+        {
+            var favoriteGroupSet = FindFavoriteGroupSet();
+            var favoriteLoadOut = favoriteGroupSet != null ? FindFavoriteLoadOut(favoriteGroupSet) : null;
+
+            if (favoriteGroupSet == null || favoriteLoadOut == null)
+            {
+                // Default to GroupSet and LoadOut with IDs 2
+                favoriteGroupSet = GroupSet.LoadGroupSet(2);
+                favoriteLoadOut = LoadOut.Load(2);
+            }
+
+            AggLoadInfo.Instance.ActiveGroupSet = favoriteGroupSet;
+            AggLoadInfo.Instance.ActiveLoadOut = favoriteLoadOut;
+        }
 
         public static void MarkLoadOutComplete(AggLoadInfo aggLoadInfo)
         {

@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Data.SQLite;
 
@@ -22,9 +24,9 @@ namespace ZO.LoadOrderManager
 
                 using var command = new SQLiteCommand(connection);
                 command.CommandText = @"
-                    SELECT GroupID, GroupSetID, ParentID, Ordinal
-                    FROM GroupSetGroups
-                    WHERE GroupSetID = @GroupSetID OR GroupSetID = 1";
+                        SELECT GroupID, GroupSetID, ParentID, Ordinal
+                        FROM GroupSetGroups
+                        WHERE GroupSetID = @GroupSetID OR GroupSetID = 1";
                 command.Parameters.AddWithValue("@GroupSetID", groupSetID);
 
                 using var reader = command.ExecuteReader();
@@ -51,11 +53,11 @@ namespace ZO.LoadOrderManager
             {
                 using var command = new SQLiteCommand(connection);
                 command.CommandText = @"
-                    INSERT INTO GroupSetGroups (GroupID, GroupSetID, ParentID, Ordinal)
-                    VALUES (@GroupID, @GroupSetID, @ParentID, @Ordinal)
-                    ON CONFLICT(GroupID, GroupSetID) DO UPDATE 
-                    SET ParentID = COALESCE(@ParentID, ParentID),
-                        Ordinal = COALESCE(@Ordinal, Ordinal);";
+                        INSERT INTO GroupSetGroups (GroupID, GroupSetID, ParentID, Ordinal)
+                        VALUES (@GroupID, @GroupSetID, @ParentID, @Ordinal)
+                        ON CONFLICT(GroupID, GroupSetID) DO UPDATE 
+                        SET ParentID = COALESCE(@ParentID, ParentID),
+                            Ordinal = COALESCE(@Ordinal, Ordinal);";
 
                 command.Parameters.AddWithValue("@GroupID", groupID);
                 command.Parameters.AddWithValue("@GroupSetID", groupSetID);
@@ -90,9 +92,9 @@ namespace ZO.LoadOrderManager
 
                 using var command = new SQLiteCommand(connection);
                 command.CommandText = @"
-                    SELECT GroupSetID, GroupID, PluginID, Ordinal
-                    FROM GroupSetPlugins
-                    WHERE GroupSetID = @GroupSetID OR GroupSetID = 1";
+                        SELECT GroupSetID, GroupID, PluginID, Ordinal
+                        FROM GroupSetPlugins
+                        WHERE GroupSetID = @GroupSetID OR GroupSetID = 1";
                 command.Parameters.AddWithValue("@GroupSetID", groupSetID);
 
                 using var reader = command.ExecuteReader();
@@ -119,10 +121,10 @@ namespace ZO.LoadOrderManager
             {
                 using var command = new SQLiteCommand(connection);
                 command.CommandText = @"
-                    INSERT INTO GroupSetPlugins (GroupSetID, GroupID, PluginID, Ordinal)
-                    VALUES (@GroupSetID, @GroupID, @PluginID, @Ordinal)
-                    ON CONFLICT(GroupSetID, GroupID, PluginID) DO UPDATE 
-                    SET Ordinal = COALESCE(@Ordinal, Ordinal);";
+                        INSERT INTO GroupSetPlugins (GroupSetID, GroupID, PluginID, Ordinal)
+                        VALUES (@GroupSetID, @GroupID, @PluginID, @Ordinal)
+                        ON CONFLICT(GroupSetID, GroupID, PluginID) DO UPDATE 
+                        SET Ordinal = COALESCE(@Ordinal, Ordinal);";
 
                 command.Parameters.AddWithValue("@GroupSetID", groupSetID);
                 command.Parameters.AddWithValue("@GroupID", groupID);
@@ -139,11 +141,11 @@ namespace ZO.LoadOrderManager
         }
     }
 
-    public class ProfilePluginCollection
+    public class ProfilePluginCollection : IEnumerable<(long ProfileID, long PluginID)>
     {
         public ObservableHashSet<(long ProfileID, long PluginID)> Items { get; set; } = new ObservableHashSet<(long ProfileID, long PluginID)>();
 
-        public ProfilePluginCollection() {}
+        public ProfilePluginCollection() { }
 
         // Load data from the database for all profiles associated with a specific GroupSetID
         public void LoadProfilePlugins(long groupSetID, SQLiteConnection connection)
@@ -154,10 +156,10 @@ namespace ZO.LoadOrderManager
 
                 using var command = new SQLiteCommand(connection);
                 command.CommandText = @"
-                    SELECT pp.ProfileID, pp.PluginID
-                    FROM ProfilePlugins pp
-                    INNER JOIN LoadOutProfiles lp ON pp.ProfileID = lp.ProfileID
-                    WHERE lp.GroupSetID = @GroupSetID OR GroupSetID = 1";
+                        SELECT pp.ProfileID, pp.PluginID
+                        FROM ProfilePlugins pp
+                        INNER JOIN LoadOutProfiles lp ON pp.ProfileID = lp.ProfileID
+                        WHERE lp.GroupSetID = @GroupSetID OR GroupSetID = 1";
                 command.Parameters.AddWithValue("@GroupSetID", groupSetID);
 
                 using var reader = command.ExecuteReader();
@@ -182,9 +184,9 @@ namespace ZO.LoadOrderManager
             {
                 using var command = new SQLiteCommand(connection);
                 command.CommandText = @"
-                    INSERT INTO ProfilePlugins (ProfileID, PluginID)
-                    VALUES (@ProfileID, @PluginID)
-                    ON CONFLICT(ProfileID, PluginID) DO NOTHING;"; // No updates on conflict
+                        INSERT INTO ProfilePlugins (ProfileID, PluginID)
+                        VALUES (@ProfileID, @PluginID)
+                        ON CONFLICT(ProfileID, PluginID) DO NOTHING;"; // No updates on conflict
 
                 command.Parameters.AddWithValue("@ProfileID", profileID);
                 command.Parameters.AddWithValue("@PluginID", pluginID);
@@ -196,6 +198,17 @@ namespace ZO.LoadOrderManager
             {
                 Console.WriteLine($"Error writing ProfilePlugin: {ex.Message}");
             }
+        }
+
+        // Implement IEnumerable to allow foreach iteration
+        public IEnumerator<(long ProfileID, long PluginID)> GetEnumerator()
+        {
+            return Items.GetEnumerator();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
         }
     }
 }

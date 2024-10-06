@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.IO.Compression;
 using System.Security.Cryptography;
 using System.Windows;
 using Microsoft.Win32;
@@ -85,21 +86,34 @@ namespace ZO.LoadOrderManager
 
                         if (file.FileContent != null)
                         {
+                            // Check if the file and its hash match the database
+                            string currentHash = FileInfo.ComputeHash(resolvedPath);
+                            if (file.HASH != currentHash)
+                            {
+                                file.HASH = currentHash;
+                                file.FileContent = File.ReadAllBytes(resolvedPath);
+                                file.CompressedContent = CompressFile(file.FileContent);
+                                file.DTStamp = File.GetLastWriteTime(resolvedPath).ToString("yyyy-MM-dd HH:mm:ss");
+                                FileInfo.InsertFileInfo(file);
+                            }
+
                             new FileMonitor(resolvedPath, file.FileContent);
                         }
                         else
                         {
                             // Log or handle the case where FileContent is null
-                            Console.WriteLine($"FileContent is null for file: {resolvedPath}");
+                            Console.WriteLine($"FileContent is null for file: {file}");
 
                             // Create a new FileInfo object for the target file
                             var newFileInfo = new FileInfo
                             {
                                 AbsolutePath = resolvedPath,
                                 Filename = file.Filename,
-                                DTStamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
+                                DTStamp = File.GetLastWriteTime(resolvedPath).ToString("yyyy-MM-dd HH:mm:ss"),
                                 FileContent = File.ReadAllBytes(resolvedPath),
-                                HASH = FileInfo.ComputeHash(resolvedPath)
+                                HASH = FileInfo.ComputeHash(resolvedPath),
+                                CompressedContent = CompressFile(File.ReadAllBytes(resolvedPath)),
+                                Flags = file.Flags | FileFlags.IsMonitored
                             };
 
                             // Update the database with the new FileInfo
@@ -123,6 +137,18 @@ namespace ZO.LoadOrderManager
             }
         }
 
+        private static byte[] CompressFile(byte[] fileContent)
+        {
+            using (var outputStream = new MemoryStream())
+            {
+                using (var compressionStream = new GZipStream(outputStream, CompressionMode.Compress))
+                {
+                    compressionStream.Write(fileContent, 0, fileContent.Length);
+                }
+                return outputStream.ToArray();
+            }
+        }
+
 
         private static string ResolveFilePath(string fullPath)
         {
@@ -137,7 +163,7 @@ namespace ZO.LoadOrderManager
                     var openFileDialog = new OpenFileDialog
                     {
                         FileName = Path.GetFileName(fullPath),
-                        Title = "Select the file for monitoring"
+                        Title = $"Select the {fullPath} file for monitoring"
                     };
 
                     if (openFileDialog.ShowDialog() == true)
@@ -146,7 +172,7 @@ namespace ZO.LoadOrderManager
                     }
                     else
                     {
-                        throw new FileNotFoundException("File not found and user did not select a file.");
+                        throw new FileNotFoundException($"{fullPath} File not found and user did not select a file.");
                     }
                 }
             }

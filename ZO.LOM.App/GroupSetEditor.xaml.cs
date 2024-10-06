@@ -1,44 +1,69 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
+﻿using System.Windows;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
 
 namespace ZO.LoadOrderManager
 {
-    /// <summary>
-    /// Interaction logic for GroupSetEditor.xaml
-    /// </summary>
     public partial class GroupSetEditor : Window
     {
-        // Constructor for existing GroupSet
-        public GroupSetEditor(GroupSet groupSet)
+        private AggLoadInfo _aggLoadInfo;
+
+        public GroupSetEditor(long? groupSetID = null)
         {
             InitializeComponent();
-            DataContext = new GroupSetViewModel(groupSet.GroupSetID);
-        }
 
-        // Constructor for new GroupSet
-        public GroupSetEditor()
-        {
-            InitializeComponent();
-            DataContext = new GroupSetViewModel(0);
-        }
-
-        public void AddModGroup(ModGroup modGroup)
-        {
-            if (DataContext is GroupSetViewModel viewModel)
+            // Check if GroupSetID is provided, if not, use the Singleton and clone it
+            if (groupSetID.HasValue)
             {
-                viewModel.AddModGroup(modGroup);
+                _aggLoadInfo = new AggLoadInfo(groupSetID.Value);  // Targeted group set
             }
+            else
+            {
+                _aggLoadInfo = AggLoadInfo.Instance.Clone();  // Clone from singleton
+            }
+
+            // Set the DataContext for binding
+            DataContext = _aggLoadInfo;
+        }
+
+        private void AddModGroup_Click(object sender, RoutedEventArgs e)
+        {
+            var addGroupWindow = new GroupSetAddGroupWindow(_aggLoadInfo);
+            addGroupWindow.ShowDialog();
+            // Refresh the DataContext after adding the group
+            DataContext = null;
+            DataContext = _aggLoadInfo;
+        }
+
+        private void AddPlugin_Click(object sender, RoutedEventArgs e)
+        {
+            // Implement adding plugin functionality
+            // You may want to open a plugin selection window here
+        }
+
+        private void AddLoadOut_Click(object sender, RoutedEventArgs e)
+        {
+            // Implement adding loadout functionality
+            // You may want to open a loadout selection window here
+        }
+
+        private void Save_Click(object sender, RoutedEventArgs e)
+        {
+            // Save all changes
+            _aggLoadInfo.Save();
+            // Optionally, refresh the singleton if necessary
+            AggLoadInfo.Instance.RefreshAllData();
+            this.Close();
+        }
+
+        private void Cancel_Click(object sender, RoutedEventArgs e)
+        {
+            this.Close();  // Discard changes
+        }
+
+        private void AddModGroupCommand_Executed(object sender, ExecutedRoutedEventArgs e)
+        {
+            var addGroupWindow = new GroupSetAddGroupWindow(_aggLoadInfo); // Pass the existing AggLoadInfo object
+            addGroupWindow.ShowDialog();
         }
 
     }

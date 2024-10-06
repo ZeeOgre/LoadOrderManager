@@ -35,7 +35,7 @@
                 </Grid.ColumnDefinitions>
 
                 <!-- Place the Group Text in the second column to align with plugin names -->
-                <TextBlock Text="{Binding DisplayName}" Margin="5" Grid.Column="1" HorizontalAlignment="Left"/>
+                <TextBlock Text="{Binding DisplayName}" Margin="5" Grid.Column="1" Grid.ColumnSpan="5" HorizontalAlignment="Left"/>
             </Grid>
             <HierarchicalDataTemplate.Triggers>
                 <DataTrigger Binding="{Binding IsHighlighted}" Value="True">
@@ -267,16 +267,29 @@
             <Grid Grid.Row="3">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
 
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
-                    <TextBox x:Name="SearchBox" Width="200" Margin="5,5,5,5" Text="{Binding SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-                    <Button x:Name="SearchButton" Content="Search" Command="{Binding SearchCommand}"/>
-                </StackPanel>
+                <!-- Up Arrow Button -->
+                <Button Grid.Row="0" Grid.Column="0" Width="50" Height="50" 
+            Command="{Binding MoveUpCommand}" 
+            IsEnabled="{Binding CanMoveUp}" Margin="5">
+                    <Button.Content>
+                        <Path Data="M 25,0 L 50,50 L 0,50 Z" Fill="Black"/>
+                    </Button.Content>
+                </Button>
 
-                <Button x:Name="EditRowButton" Content="Edit Row" Width="100" Command="{Binding EditHighlightedItemCommand}" HorizontalAlignment="Center" Grid.Column="1"/>
+                <!-- Down Arrow Button -->
+                <Button Grid.Row="0" Grid.Column="1" Width="50" Height="50" 
+            Command="{Binding MoveDownCommand}" 
+            IsEnabled="{Binding CanMoveDown}" Margin="5">
+                    <Button.Content>
+                        <Path Data="M 0,0 L 50,0 L 25,50 Z" Fill="Black"/>
+                    </Button.Content>
+                </Button>
+
+                <Button x:Name="EditRowButton" Content="Edit Row" Width="100" Command="{Binding EditHighlightedItemCommand}" HorizontalAlignment="Center" Grid.Column="2" Margin="5"/>
             </Grid>
 
             <Grid Grid.Row="4">
@@ -285,7 +298,11 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                    <TextBox x:Name="SearchBox" Width="200" Margin="5,5,5,5" Text="{Binding SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                    <Button x:Name="SearchButton" Content="Search" Command="{Binding SearchCommand}"/>
+                </StackPanel>
+                
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                     <ComboBox x:Name="cmbGroupSet"
               ItemsSource="{Binding GroupSets}" 
@@ -300,7 +317,7 @@
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Grid.Column="1">
                     <Button x:Name="SaveButton" Content="Save" Width="50" Margin="5,5,5,5" Command="{Binding SaveLoadOutCommand}"/>
                     <ComboBox x:Name="cmbProfile"
-              ItemsSource="{Binding SelectedGroupSet.LoadOuts}"
+              ItemsSource="{Binding LoadOuts}"
               SelectedItem="{Binding SelectedLoadOut, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
               DisplayMemberPath="Name"
               Width="200" Height="30" Margin="10">

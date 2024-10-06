@@ -1,417 +1,256 @@
-using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
+using System.Collections.Specialized;
 using System.Data.SQLite;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Windows.Input;
-using YamlDotNet.Serialization;
-using YamlDotNet.Serialization.NamingConventions;
+using ZO.LoadOrderManager;
 
-namespace ZO.LoadOrderManager
+[Flags]
+public enum GroupFlags
 {
+    Uninitialized = 0,
+    DefaultGroup = 1,
+    ReadOnly = 2,
+    Favorite = 4,
+    ReadyToLoad = 8,
+    FilesLoaded = 16
+}
 
-    [Flags]
-    public enum GroupFlags
+public class GroupSet
+{
+    public long GroupSetID { get; set; }
+    public string GroupSetName { get; set; } = string.Empty;
+    public GroupFlags GroupSetFlags { get; set; }
+    public ObservableCollection<ModGroup> ModGroups { get; set; } = new ObservableCollection<ModGroup>();
+    public ObservableCollection<LoadOut> LoadOuts { get; set; } = new ObservableCollection<LoadOut>();
+
+    // Constructor to create a new GroupSet or load an existing one
+    public GroupSet(long groupSetID, string groupSetName, GroupFlags groupSetFlags)
     {
-        Uninitialized = 0,
-        DefaultGroup = 1,
-        ReadOnly = 2,
-        Favorite = 4,
-        ReadyToLoad = 8,
-        FilesLoaded = 16
+        GroupSetID = groupSetID;
+        GroupSetName = groupSetName;
+        GroupSetFlags = groupSetFlags;
+
+        // If this is an empty group set, mark it as ReadyToLoad and Uninitialized, but do not create database entries.
+        if (GroupSetID == 0)
+        {
+            GroupSetName = "EmptyGroupSet";
+            GroupSetFlags = GroupFlags.Uninitialized | GroupFlags.ReadyToLoad; // Mark as both uninitialized and ready to load
+        }
     }
 
+    // Default constructor
+    public GroupSet() : this(0, "EmptyGroupSet", GroupFlags.Uninitialized | GroupFlags.ReadyToLoad) { }
 
-    public class GroupSet
+    // SaveGroupSet method
+    public void SaveGroupSet()
     {
-        public long GroupSetID { get; set; }
-        public string GroupSetName { get; set; }
-        public GroupFlags GroupSetFlags { get; set; }
-        public ObservableCollection<ModGroup> ModGroups { get; set; } = new ObservableCollection<ModGroup>();
-        public ObservableCollection<LoadOut> LoadOuts { get; set; } = new ObservableCollection<LoadOut>();
+        using var connection = DbManager.Instance.GetConnection();
+        using var transaction = connection.BeginTransaction();
 
-        public bool IsUninitialized => (GroupSetFlags & GroupFlags.DefaultGroup) == GroupFlags.Uninitialized;
-        public bool IsDefaultGroup => (GroupSetFlags & GroupFlags.DefaultGroup) == GroupFlags.DefaultGroup;
-        public bool IsReadOnly => (GroupSetFlags & GroupFlags.ReadOnly) == GroupFlags.ReadOnly;
-        public bool IsFavorite => (GroupSetFlags & GroupFlags.Favorite) == GroupFlags.Favorite;
-        public bool IsReadyToLoad => (GroupSetFlags & GroupFlags.ReadyToLoad) == GroupFlags.ReadyToLoad;
-        public bool AreFilesLoaded => (GroupSetFlags & GroupFlags.FilesLoaded) == GroupFlags.FilesLoaded;
-
-
-
-        public GroupSet(long groupSetID, string groupSetName, GroupFlags groupSetFlags)
+        try
         {
-            GroupSetID = groupSetID;
-            GroupSetName = groupSetName;
-            GroupSetFlags = groupSetFlags;
-
-            //if (IsDefaultGroup || GroupSetID == 1)
-            //{
-            //    // Load the default group set if applicable
-            //    var defaultGroupSet = LoadGroupSet(1);
-            //    if (defaultGroupSet == null)
-            //    {
-            //        throw new InvalidOperationException("Default GroupSet with ID 1 not found in the database.");
-            //    }
-            //    App.LogDebug("GroupSet 1 loaded as default.");
-            //    return;
-            //}
-
-            if (IsReadOnly)
-            {
-                // Check if the read-only group set exists, or create it
-                var readOnlyGroupSet = LoadGroupSet(groupSetID);
-                if (readOnlyGroupSet == null)
-                {
-                    InsertReadOnlyGroupSet();
-                    App.LogDebug("New ReadOnly GroupSet created and inserted INTO the database.");
-                }
-                else
-                {
-                    App.LogDebug("GroupSet with ReadOnly flag loaded.");
-                }
-            }
-        }
-
-
-        private void InsertReadOnlyGroupSet()
-        {
-            using var connection = DbManager.Instance.GetConnection();
-            using var command = new SQLiteCommand(connection);
-            command.CommandText = @"
-                INSERT INTO GroupSet (GroupSetID, GroupSetName, GroupSetFlags)
-                VALUES (@GroupSetID, @GroupSetName, @GroupSetFlags)";
-            command.Parameters.AddWithValue("@GroupSetID", GroupSetID);
-            command.Parameters.AddWithValue("@GroupSetName", GroupSetName);
-            command.Parameters.AddWithValue("@GroupSetFlags", (long)GroupSetFlags);
-
-            command.ExecuteNonQuery();
-        }
-
-
-        public static IEnumerable<LoadOut> GetAllLoadOuts(long groupSetID)
-        {
-            using var connection = DbManager.Instance.GetConnection();
-            using var command = new SQLiteCommand(connection);
-            command.CommandText = "SELECT * FROM LoadOutProfiles WHERE GroupSetID = @GroupSetID";
-            command.Parameters.AddWithValue("@GroupSetID", groupSetID);
-
-            using var reader = command.ExecuteReader();
-            var loadOuts = new List<LoadOut>();
-            while (reader.Read())
-            {
-                var loadOut = new LoadOut
-                {
-                    ProfileID = reader.GetInt64(reader.GetOrdinal("ProfileID")),
-                    Name = reader.GetString(reader.GetOrdinal("ProfileName")),
-                };
-                loadOut.LoadEnabledPlugins();
-                loadOuts.Add(loadOut);
-            }
-            return loadOuts;
-        }
-
-
-        public GroupSet()
-        {
-           // var emptyGroupSet = CreateEmptyGroupSet();
-            //GroupSetID = emptyGroupSet.GroupSetID;
-            //GroupSetName = emptyGroupSet.GroupSetName;
-            GroupSetFlags = GroupFlags.Uninitialized | GroupFlags.ReadyToLoad;
-            //GroupSetFlags = emptyGroupSet.GroupSetFlags;
-            //ModGroups = emptyGroupSet.ModGroups;
-            //LoadOuts = emptyGroupSet.LoadOuts;
-        }
-
-        public void AddModGroup(ModGroup modGroup)
-        {
-            if (ModGroups.Any(mg => mg.GroupID == modGroup.GroupID))
-            {
-                throw new InvalidOperationException("ModGroup already exists in this GroupSet.");
-            }
-
-            // Set the GroupSetID of the modGroup to the current GroupSetID
-            modGroup.GroupSetID = this.GroupSetID;
-            modGroup.WriteGroup();
-            ModGroups.Add(modGroup);
-            
-        }
-
-
-
-        // Method to clone the GroupSet
-        public GroupSet Clone()
-        {
-            var clonedGroupSet = new GroupSet(this.GroupSetID, this.GroupSetName, this.GroupSetFlags);
-            foreach (var modGroup in this.ModGroups)
-            {
-                clonedGroupSet.ModGroups.Add(modGroup.Clone());
-            }
-            return clonedGroupSet;
-        }
-
-        // Method to merge another GroupSet INTO this one
-        //public void Merge(GroupSet otherGroupSet)
-        //{
-        //    foreach (var modGroup in otherGroupSet.ModGroups)
-        //    {
-        //        if (!this.ModGroups.Any(mg => mg.GroupID == modGroup.GroupID))
-        //        {
-        //            this.ModGroups.Add(modGroup.Clone());
-        //        }
-        //    }
-        //}
-
-        // Method to load GroupSet from the database
-        public static GroupSet? LoadGroupSet(long groupSetID)
-        {
-            using var connection = DbManager.Instance.GetConnection();
-            using var command = new SQLiteCommand(connection);
-            command.CommandText = "SELECT * FROM GroupSets WHERE GroupSetID = @GroupSetID";
-            command.Parameters.AddWithValue("@GroupSetID", groupSetID);
-
-            using var reader = command.ExecuteReader();
-            if (reader.Read())
-            {
-                var groupSet = new GroupSet(
-                    reader.GetInt64(reader.GetOrdinal("GroupSetID")),
-                    reader.GetString(reader.GetOrdinal("GroupSetName")),
-                    (GroupFlags)reader.GetInt64(reader.GetOrdinal("GroupSetFlags"))
-                );
-
-                var modGroupsList = ModGroup.LoadModGroupsByGroupSet(groupSetID);
-                groupSet.ModGroups = new ObservableCollection<ModGroup>(modGroupsList);
-
-                // Populate LoadOuts collection
-                var loadOuts = GetAllLoadOuts(groupSetID);
-                groupSet.LoadOuts = new ObservableCollection<LoadOut>(loadOuts);
-
-                return groupSet;
-            }
-            return null;
-        }
-
-        // Method to save GroupSet to the database
-        public GroupSet SaveGroupSet()
-        {
-            if (IsReadOnly)
-            {
-                throw new InvalidOperationException("Cannot update a ReadOnly GroupSet.");
-            }
-
-            using var connection = DbManager.Instance.GetConnection();
             using var command = new SQLiteCommand(connection);
 
-            // Check if the GroupSet already exists
-            command.CommandText = "SELECT GroupSetFlags FROM GroupSets WHERE GroupSetID = @GroupSetID";
-            command.Parameters.AddWithValue("@GroupSetID", GroupSetID);
-
-            var existingFlags = command.ExecuteScalar();
-
-            // Validate and cast existingFlags if it is not null or DBNull
-            if (existingFlags != null && existingFlags != DBNull.Value)
+            if (this.GroupSetID == 0) // New GroupSet
             {
-                // Correctly cast to long, then to GroupFlags
-                var existingGroupSetFlags = (GroupFlags)(long)existingFlags;
-                // Merge existing flags with the current flags
-                GroupSetFlags |= existingGroupSetFlags;
-            }
-
-            // Prepare insert or replace command
-            command.CommandText = @"
-        INSERT OR REPLACE INTO GroupSets (GroupSetID, GroupSetName, GroupSetFlags)
-        VALUES (@GroupSetID, @GroupSetName, @GroupSetFlags)";
-            command.Parameters.AddWithValue("@GroupSetName", GroupSetName);
-            command.Parameters.AddWithValue("@GroupSetFlags", (long)GroupSetFlags);
-
-            command.ExecuteNonQuery();
-
-            // Save ModGroups to the database
-            foreach (var modGroup in ModGroups)
-            {
-                
-               
-                if (modGroup.GroupSetID != GroupSetID && modGroup.GroupID >= 0) 
-                {
-                    modGroup.GroupID = this.GroupSetID;
-                    modGroup.WriteGroup();
-                }
-                
-            }
-
-            return this;
-        }
-
-
-        public static GroupSet CreateEmptyGroupSet()
-        {
-            using var connection = DbManager.Instance.GetConnection();
-            using var transaction = connection.BeginTransaction();
-
-            try
-            {
-                using var command = new SQLiteCommand(connection);
                 command.CommandText = @"
                     INSERT INTO GroupSets (GroupSetName, GroupSetFlags)
                     VALUES (@GroupSetName, @GroupSetFlags)
                     RETURNING GroupSetID;
                 ";
-                command.Parameters.AddWithValue("@GroupSetName", "EmptyGroupSet");
-                command.Parameters.AddWithValue("@GroupSetFlags", (long)(GroupFlags.Uninitialized | GroupFlags.ReadyToLoad));
-
-                long groupSetID = (long)command.ExecuteScalar();
-
-                // Insert or ignore GroupID = 1
+                command.Parameters.AddWithValue("@GroupSetName", this.GroupSetName);
+                command.Parameters.AddWithValue("@GroupSetFlags", (long)this.GroupSetFlags);
+                this.GroupSetID = (long)command.ExecuteScalar();
+            }
+            else // Update existing GroupSet
+            {
                 command.CommandText = @"
-                    INSERT OR IGNORE INTO GroupSetGroups (GroupID, GroupSetID, ParentID, Ordinal)
-                    VALUES (1, @GroupSetID, 0, 0);
+                    UPDATE GroupSets
+                    SET GroupSetName = @GroupSetName, GroupSetFlags = @GroupSetFlags
+                    WHERE GroupSetID = @GroupSetID;
                 ";
-                command.Parameters.AddWithValue("@GroupSetID", groupSetID);
+                command.Parameters.AddWithValue("@GroupSetName", this.GroupSetName);
+                command.Parameters.AddWithValue("@GroupSetFlags", (long)this.GroupSetFlags);
+                command.Parameters.AddWithValue("@GroupSetID", this.GroupSetID);
                 command.ExecuteNonQuery();
-
-                // Insert or ignore GroupID = -997
-                command.CommandText = @"
-                    INSERT OR IGNORE INTO GroupSetGroups (GroupID, GroupSetID, ParentID, Ordinal)
-                    VALUES (-997, @GroupSetID, 1, 9997);
-                ";
-                command.ExecuteNonQuery();
-
-                transaction.Commit();
-
-                return new GroupSet(groupSetID, "EmptyGroupSet", GroupFlags.Uninitialized | GroupFlags.ReadyToLoad);
             }
-            catch (Exception)
-            {
-                transaction.Rollback();
-                throw;
-            }
+
+            transaction.Commit();
         }
-
-        public override bool Equals(object obj)
+        catch (Exception ex)
         {
-            if (obj is GroupSetViewModel other)
-            {
-                return this.GroupSetID == other.GroupSetID ||
-                       this.GroupSetName == other.GroupSetName;
-            }
-            else if (obj is GroupSet otherGroupSet)
-            {
-                return this.GroupSetID == otherGroupSet.GroupSetID ||
-                       this.GroupSetName == otherGroupSet.GroupSetName;
-            }
-
-            return false;
-        }
-
-        public override int GetHashCode()
-        {
-            unchecked // Overflow is fine, just wrap
-            {
-                int hash = 17;
-                hash = hash * 23 + GroupSetID.GetHashCode();
-                hash = hash * 23 + (GroupSetName?.GetHashCode() ?? 0);
-                return hash;
-            }
+            transaction.Rollback();
+            App.LogDebug($"Error saving GroupSet: {ex.Message}");
+            throw;
         }
     }
 
-
-    public class GroupSetViewModel : INotifyPropertyChanged
+    // LoadGroupSet method
+    public static GroupSet? LoadGroupSet(long groupSetID)
     {
-        private GroupSet _groupSet;
-        private AggLoadInfo _aggLoadInfo;
+        using var connection = DbManager.Instance.GetConnection();
+        using var command = new SQLiteCommand(connection);
 
-        public long GroupSetID { get; set; }
-        public string GroupSetName { get; set; }
-        public ObservableCollection<ModGroup> ModGroups => _aggLoadInfo.Groups;
-        public ObservableCollection<LoadOut> LoadOuts => _aggLoadInfo.LoadOuts;
-        public ObservableCollection<Plugin> Plugins => _aggLoadInfo.Plugins;
+        command.CommandText = @"
+            SELECT GroupSetID, GroupSetName, GroupSetFlags
+            FROM GroupSets
+            WHERE GroupSetID = @GroupSetID;
+        ";
+        command.Parameters.AddWithValue("@GroupSetID", groupSetID);
 
-        public ICommand AddModGroupCommand { get; }
-        public ICommand AddPluginCommand { get; }
-        public ICommand AddLoadOutCommand { get; }
-        public ICommand SaveCommand { get; }
-
-        public GroupSetViewModel(long groupSetID)
+        using var reader = command.ExecuteReader();
+        if (reader.Read())
         {
-            // Initialize AggLoadInfo with the provided groupSetID
-            _aggLoadInfo = new AggLoadInfo(groupSetID);
-
-            // Initialize GroupSet based on AggLoadInfo
-            _groupSet = _aggLoadInfo.ActiveGroupSet ?? new GroupSet();
-
-            // Set properties
-            GroupSetID = _groupSet.GroupSetID;
-            GroupSetName = _groupSet.GroupSetName;
-
-            // Initialize commands
-            AddModGroupCommand = new RelayCommand(AddModGroup);
-            AddPluginCommand = new RelayCommand(AddPlugin);
-            AddLoadOutCommand = new RelayCommand(AddLoadOut);
-            SaveCommand = new RelayCommand(_ => Save());
-        }
-
-        public void AddModGroup(object? parameter)
-        {
-            if (parameter is ModGroup modGroup)
+            var groupSet = new GroupSet
             {
-                _groupSet.AddModGroup(modGroup);
-                OnPropertyChanged(nameof(ModGroups));
-            }
+                GroupSetID = reader.GetInt64(reader.GetOrdinal("GroupSetID")),
+                GroupSetName = reader.GetString(reader.GetOrdinal("GroupSetName")),
+                GroupSetFlags = (GroupFlags)reader.GetInt64(reader.GetOrdinal("GroupSetFlags"))
+            };
+
+            // Load associated ModGroups
+            var modGroupsList = ModGroup.LoadModGroupsByGroupSet(groupSetID);
+            groupSet.ModGroups = new ObservableCollection<ModGroup>(modGroupsList);
+
+            // Load associated LoadOuts
+            var loadOuts = GetAllLoadOuts(groupSetID);
+            groupSet.LoadOuts = new ObservableCollection<LoadOut>(loadOuts);
+
+            return groupSet;
         }
 
-        private void AddPlugin(object? parameter)
+        return null;
+    }
+
+    // CreateEmptyGroupSet method
+    public static GroupSet CreateEmptyGroupSet()
+    {
+        using var connection = DbManager.Instance.GetConnection();
+        using var transaction = connection.BeginTransaction();
+
+        try
         {
-            // Implementation for adding a Plugin
-        }
+            using var command = new SQLiteCommand(connection);
+            command.CommandText = @"
+                INSERT INTO GroupSets (GroupSetName, GroupSetFlags)
+                VALUES (@GroupSetName, @GroupSetFlags)
+                RETURNING GroupSetID;
+            ";
+            command.Parameters.AddWithValue("@GroupSetName", "EmptyGroupSet");
+            command.Parameters.AddWithValue("@GroupSetFlags", (long)(GroupFlags.Uninitialized | GroupFlags.ReadyToLoad));
 
-        private void AddLoadOut(object? parameter)
+            long groupSetID = (long)command.ExecuteScalar();
+
+            // Insert or ignore GroupID = 1 (Default Group)
+            command.CommandText = @"
+                INSERT OR IGNORE INTO GroupSetGroups (GroupID, GroupSetID, ParentID, Ordinal)
+                VALUES (1, @GroupSetID, 0, 0);
+            ";
+            command.Parameters.AddWithValue("@GroupSetID", groupSetID);
+            command.ExecuteNonQuery();
+
+            // Insert or ignore GroupID = -997 (Uncategorized Group)
+            command.CommandText = @"
+                INSERT OR IGNORE INTO GroupSetGroups (GroupID, GroupSetID, ParentID, Ordinal)
+                VALUES (-997, @GroupSetID, 1, 9997);
+            ";
+            command.ExecuteNonQuery();
+
+            transaction.Commit();
+
+            return new GroupSet(groupSetID, "EmptyGroupSet", GroupFlags.Uninitialized | GroupFlags.ReadyToLoad);
+        }
+        catch (Exception)
         {
-            // Implementation for adding a LoadOut
+            transaction.Rollback();
+            throw;
         }
+    }
 
-        private void Save()
+    // GroupSetChanged method for notification and reloading
+    public static event NotifyCollectionChangedEventHandler? GroupSetChanged;
+
+    private static void OnGroupSetChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        if (!((GroupSet)sender).IsUninitialized && ((GroupSet)sender).AreFilesLoaded)
         {
-            _groupSet.SaveGroupSet();
+            GroupSetChanged?.Invoke(sender, e);
         }
+    }
 
-        protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+    // Flag checks
+    public bool IsUninitialized => (GroupSetFlags & GroupFlags.Uninitialized) == GroupFlags.Uninitialized;
+    public bool IsDefaultGroup => (GroupSetFlags & GroupFlags.DefaultGroup) == GroupFlags.DefaultGroup;
+    public bool IsReadOnly => (GroupSetFlags & GroupFlags.ReadOnly) == GroupFlags.ReadOnly;
+    public bool IsFavorite => (GroupSetFlags & GroupFlags.Favorite) == GroupFlags.Favorite;
+    public bool IsReadyToLoad => (GroupSetFlags & GroupFlags.ReadyToLoad) == GroupFlags.ReadyToLoad;
+    public bool AreFilesLoaded => (GroupSetFlags & GroupFlags.FilesLoaded) == GroupFlags.FilesLoaded;
+
+    // Clone method
+    public GroupSet Clone()
+    {
+        var clonedGroupSet = new GroupSet(this.GroupSetID, this.GroupSetName, this.GroupSetFlags);
+        foreach (var modGroup in this.ModGroups)
         {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+            clonedGroupSet.ModGroups.Add(modGroup.Clone());
         }
+        return clonedGroupSet;
+    }
 
-        public override bool Equals(object obj)
+    // Equality comparison
+    public override bool Equals(object obj)
+    {
+    if (obj is GroupSet otherGroupSet)
         {
-            if (obj is GroupSetViewModel other)
-            {
-                return this.GroupSetID == other.GroupSetID ||
-                       this.GroupSetName == other.GroupSetName;
-            }
-            else if (obj is GroupSet otherGroupSet)
-            {
-                return this.GroupSetID == otherGroupSet.GroupSetID ||
-                       this.GroupSetName == otherGroupSet.GroupSetName;
-            }
-
-            return false;
+            return this.GroupSetID == otherGroupSet.GroupSetID ||
+                   this.GroupSetName == otherGroupSet.GroupSetName;
         }
 
-        public override int GetHashCode()
+        return false;
+    }
+
+    public override int GetHashCode()
+    {
+        unchecked // Overflow is fine, just wrap
         {
-            unchecked // Overflow is fine, just wrap
-            {
-                int hash = 17;
-                hash = hash * 23 + GroupSetID.GetHashCode();
-                hash = hash * 23 + (GroupSetName?.GetHashCode() ?? 0);
-                return hash;
-            }
+            int hash = 17;
+            hash = hash * 23 + GroupSetID.GetHashCode();
+            hash = hash * 23 + (GroupSetName?.GetHashCode() ?? 0);
+            return hash;
         }
-
-        public event PropertyChangedEventHandler? PropertyChanged;
     }
 
 
+    //private static void OnGroupSetChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    //{
+    //    if (!((GroupSet)sender).IsUninitialized && ((GroupSet)sender).AreFilesLoaded)
+    //    {
+    //        GroupSetChanged?.Invoke(sender, e);
+    //    }
+    //}
 
+
+    // Dummy LoadOut methods - replace these with actual implementations
+    public static IEnumerable<LoadOut> GetAllLoadOuts(long groupSetID)
+    {
+        using var connection = DbManager.Instance.GetConnection();
+        using var command = new SQLiteCommand(connection);
+        command.CommandText = "SELECT * FROM LoadOutProfiles WHERE GroupSetID = @GroupSetID";
+        command.Parameters.AddWithValue("@GroupSetID", groupSetID);
+
+        using var reader = command.ExecuteReader();
+        var loadOuts = new List<LoadOut>();
+        while (reader.Read())
+        {
+            var loadOut = new LoadOut
+            {
+                ProfileID = reader.GetInt64(reader.GetOrdinal("ProfileID")),
+                Name = reader.GetString(reader.GetOrdinal("ProfileName")),
+                GroupSetID = reader.GetInt64(reader.GetOrdinal("GroupSetID")),
+                IsFavorite = reader.GetBoolean(reader.GetOrdinal("IsFavorite")),
+            };
+            loadOut.LoadEnabledPlugins();
+            loadOuts.Add(loadOut);
+        }
+        return loadOuts;
+    }
 }

@@ -184,7 +184,7 @@ namespace ZO.LoadOrderManager
                         var plugin = underlyingObject as Plugin;
                         if (plugin != null)
                         {
-                            var pluginEditorWindow = new PluginEditorWindow(plugin, SelectedLoadOut);
+                            var pluginEditorWindow = new PluginEditorWindow(plugin);
                             if (pluginEditorWindow.ShowDialog() == true)
                             {
                                 // Handle successful edit

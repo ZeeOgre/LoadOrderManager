@@ -42,34 +42,14 @@ namespace ZO.LoadOrderManager
                     {
                         // Update ActiveGroupSet in AggLoadInfo and refresh views
                         AggLoadInfo.Instance.ActiveGroupSet = value;
-                        ReloadViews();
+                        //ReloadViews();
                     }
-
+                    SelectedLoadOut = GetLoadOutForGroupSet(SelectedGroupSet);
                     _selectedGroupSet = value ?? throw new ArgumentNullException(nameof(value));
                     OnPropertyChanged(nameof(SelectedGroupSet));
 
-                    // Sync SelectedItem based on new SelectedGroupSet
-                    if (AggLoadInfo.Instance.LoadOuts.Any())
-                    {
-                        LoadOuts.Clear();
-                        foreach (var loadOut in AggLoadInfo.Instance.LoadOuts)
-                        {
-                            LoadOuts.Add(loadOut);
-                        }
-                        if (!AggLoadInfo.Instance.LoadOuts.Contains(SelectedLoadOut))
-                        {
-                            SelectedLoadOut = AggLoadInfo.Instance.LoadOuts.First();
-                            AggLoadInfo.Instance.ActiveLoadOut = SelectedLoadOut;
-                        }
-                        else
-                        {
-                            SelectedLoadOut = AggLoadInfo.Instance.ActiveLoadOut;
-                        }
-                    }
-                    else
-                    {
-                        CreateNewLoadOut();
-                    }
+                   
+
                 }
             }
         }
@@ -87,7 +67,9 @@ namespace ZO.LoadOrderManager
                     _isSynchronizing = true;
                     try
                     {
-                        _selectedLoadOut = value ?? throw new ArgumentNullException(nameof(value));
+                        
+
+                        // Usage:
                         AggLoadInfo.Instance.ActiveLoadOut = _selectedLoadOut;
                         OnPropertyChanged(nameof(SelectedLoadOut));
                         RefreshCheckboxes();
@@ -129,6 +111,54 @@ namespace ZO.LoadOrderManager
                     }
                 }
             }
+        }
+
+
+        private LoadOut GetLoadOutForGroupSet(GroupSet groupSet)
+        {
+            // Try to find the favorite loadout
+            var favoriteLoadOut = groupSet.LoadOuts.FirstOrDefault(l => l.IsFavorite);
+            if (favoriteLoadOut != null)
+            {
+                return favoriteLoadOut;
+            }
+
+            // Try to find the default loadout
+            var defaultLoadOut = groupSet.LoadOuts.FirstOrDefault(l => l.Name == "Default");
+            if (defaultLoadOut != null)
+            {
+                return defaultLoadOut;
+            }
+
+            // Try to find the first loadout
+            var firstLoadOut = groupSet.LoadOuts.FirstOrDefault();
+            if (firstLoadOut != null)
+            {
+                return firstLoadOut;
+            }
+
+            // Prompt the user to create a new loadout
+            var result = MessageBox.Show("No LoadOuts found. Do you want to create a new LoadOut?", "Create LoadOut", MessageBoxButton.YesNo);
+            if (result == MessageBoxResult.Yes)
+            {
+                // Get the name for the new loadout
+                var inputDialog = new InputDialog("Enter the name for the new LoadOut:");
+                if (inputDialog.ShowDialog() == true)
+                {
+                    var newLoadoutName = inputDialog.ResponseText;
+
+                    // Create and add the new loadout to the groupset
+                    var newLoadOut = new LoadOut(groupSet)
+                    {
+                        Name = newLoadoutName
+                    };
+                    groupSet.LoadOuts.Add(newLoadOut);
+                    return newLoadOut;
+                }
+            }
+
+            // Return null if no loadout is found and the user chooses not to create a new one
+            return null;
         }
 
         public string StatusMessage

@@ -15,7 +15,7 @@ namespace ZO.LoadOrderManager
     {
         None = 0,
         IsMonitored = 1,
-        GameAppdata = 2,
+        GameAppData = 2,
         GameDocs = 4,
         GameFolder = 8,
         Plugin = 16,
@@ -26,6 +26,15 @@ namespace ZO.LoadOrderManager
 
     public class FileInfo
     {
+
+        private static readonly Dictionary<string, string> FolderDefinitions = new()
+    {
+        { "GameAppData", Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "starfield") },
+        { "GameDocs", Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "My Games", "Starfield") },
+        { "GameFolder", Config.Instance.GameFolder }
+    };
+
+
 
         [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Auto)]
         private static extern IntPtr CreateFile(
@@ -108,6 +117,49 @@ namespace ZO.LoadOrderManager
                 CompressedContent = CompressFile(FileContent); // Store compressed content
             }
         }
+
+        private void SetFlagsBasedOnPath()
+        {
+            foreach (var folder in FolderDefinitions)
+            {
+                if (AbsolutePath.StartsWith(folder.Value, StringComparison.OrdinalIgnoreCase))
+                {
+                    switch (folder.Key)
+                    {
+                        case "GameAppData":
+                            Flags |= FileFlags.GameAppData;
+                            break;
+                        case "GameDocs":
+                            Flags |= FileFlags.GameDocs;
+                            break;
+                        case "GameFolder":
+                            Flags |= FileFlags.GameFolder;
+                            break;
+                    }
+                }
+            }
+        }
+
+        private string GetPathByFlags(FileFlags flags, string filename)
+        {
+            if (flags.HasFlag(FileFlags.GameAppData))
+            {
+                return Path.Combine(FolderDefinitions["GameAppData"], filename);
+            }
+            else if (flags.HasFlag(FileFlags.GameDocs))
+            {
+                return Path.Combine(FolderDefinitions["GameDocs"], filename);
+            }
+            else if (flags.HasFlag(FileFlags.GameFolder))
+            {
+                return Path.Combine(FolderDefinitions["GameFolder"], filename);
+            }
+            else
+            {
+                throw new InvalidOperationException("File does not have a valid path flag set.");
+            }
+        }
+
 
         private byte[] CompressFile(byte[] fileContent)
         {
@@ -199,6 +251,82 @@ namespace ZO.LoadOrderManager
                 CloseHandle(handle);
             }
         }
+        public bool FileCheck()
+        {
+            var currentHash = ComputeHash(AbsolutePath);
+            return currentHash == HASH;
+        }
+
+        public static FileInfo FileCheck(string filename)
+        {
+            var currentHash = ComputeHash(filename);
+            using var connection = DbManager.Instance.GetConnection();
+            using var command = new SQLiteCommand(connection);
+            command.CommandText = "SELECT * FROM FileInfo WHERE Filename = @Filename";
+            command.Parameters.AddWithValue("@Filename", filename.ToLowerInvariant());
+
+            using var reader = command.ExecuteReader();
+            if (reader.Read())
+            {
+                var fileInfo = new FileInfo
+                {
+                    FileID = reader.GetInt64(reader.GetOrdinal("FileID")),
+                    Filename = reader.GetString(reader.GetOrdinal("Filename")),
+                    RelativePath = reader.IsDBNull(reader.GetOrdinal("RelativePath")) ? null : reader.GetString(reader.GetOrdinal("RelativePath")),
+                    DTStamp = reader.GetString(reader.GetOrdinal("DTStamp")),
+                    HASH = reader.IsDBNull(reader.GetOrdinal("HASH")) ? null : reader.GetString(reader.GetOrdinal("HASH")),
+                    Flags = (FileFlags)reader.GetInt64(reader.GetOrdinal("Flags")),
+                    AbsolutePath = reader.IsDBNull(reader.GetOrdinal("AbsolutePath")) ? null : reader.GetString(reader.GetOrdinal("AbsolutePath")),
+                    FileContent = reader.IsDBNull(reader.GetOrdinal("FileContent")) ? null : (byte[])reader["FileContent"]
+                };
+
+                if (string.IsNullOrEmpty(fileInfo.AbsolutePath) && string.IsNullOrEmpty(fileInfo.RelativePath))
+                {
+                    try
+                    {
+                        // Create an instance of FileInfo to call the non-static method
+                        var fileInfoInstance = new FileInfo();
+                        fileInfo.AbsolutePath = fileInfoInstance.GetPathByFlags(fileInfo.Flags, filename);
+                    }
+                    catch (InvalidOperationException ex)
+                    {
+                        throw new FileNotFoundException("File path could not be determined from flags.", ex);
+                    }
+                }
+
+                if (fileInfo.Filename == filename.ToLowerInvariant())
+                {
+                    if (fileInfo.HASH == currentHash && (fileInfo.FileContent == null || fileInfo.FileContent.Length == 0))
+                    {
+                        fileInfo.HASH = currentHash;
+                        fileInfo.DTStamp = new System.IO.FileInfo(fileInfo.AbsolutePath).LastWriteTime.ToString("o");
+                        fileInfo.FileContent = System.IO.File.ReadAllBytes(fileInfo.AbsolutePath);
+                        fileInfo.CompressedContent = fileInfo.CompressFile(fileInfo.FileContent);
+                        fileInfo.SetFlagsBasedOnPath(); // Set flags based on path
+                        InsertFileInfo(fileInfo);
+                    }
+                    else
+                    {
+                        fileInfo.HASH = currentHash;
+                        fileInfo.DTStamp = new System.IO.FileInfo(fileInfo.AbsolutePath).LastWriteTime.ToString("o");
+                        fileInfo.FileContent = System.IO.File.ReadAllBytes(fileInfo.AbsolutePath);
+                        fileInfo.CompressedContent = fileInfo.CompressFile(fileInfo.FileContent);
+                        fileInfo.SetFlagsBasedOnPath(); // Set flags based on path
+                        InsertFileInfo(fileInfo);
+                    }
+                }
+
+                return fileInfo;
+            }
+            else
+            {
+                var newFileInfo = new FileInfo(filename, true, true);
+                newFileInfo.SetFlagsBasedOnPath(); // Set flags based on path
+                InsertFileInfo(newFileInfo);
+                return newFileInfo;
+            }
+        }
+
 
         public static string ComputeHash(string filePath)
         {
@@ -218,7 +346,6 @@ namespace ZO.LoadOrderManager
             var fileInfos = new List<FileInfo>();
 
             using var connection = DbManager.Instance.GetConnection();
-            connection.Open();
 
             using (var pragmaCommand = new SQLiteCommand("PRAGMA read_uncommitted = true;", connection))
             {
@@ -236,13 +363,13 @@ namespace ZO.LoadOrderManager
             {
                 var fileInfo = new FileInfo
                 {
-                    FileID = reader.GetInt64(0),
-                    Filename = reader.GetString(1),
-                    RelativePath = reader.IsDBNull(2) ? null : reader.GetString(2),
-                    DTStamp = reader.GetString(3),
-                    HASH = reader.IsDBNull(4) ? null : reader.GetString(4),
-                    Flags = (FileFlags)reader.GetInt32(5),
-                    AbsolutePath = reader.GetString(6)
+                    FileID = reader.GetInt64(0), // Ensure this matches the INTEGER type in the schema
+                    Filename = reader.GetString(1), // Ensure this matches the TEXT type in the schema
+                    RelativePath = reader.IsDBNull(2) ? string.Empty : reader.GetString(2), // Handle potential null values
+                    DTStamp = reader.IsDBNull(3) ? string.Empty : reader.GetString(3), // Ensure this matches the TEXT type in the schema
+                    HASH = reader.IsDBNull(4) ? string.Empty : reader.GetString(4), // Handle potential null values
+                    Flags = reader.IsDBNull(5) ? FileFlags.None : (FileFlags)reader.GetInt64(5), // Handle potential null values
+                    AbsolutePath = reader.IsDBNull(6) ? string.Empty : reader.GetString(6) // Ensure this matches the TEXT type in the schema
                 };
                 fileInfos.Add(fileInfo);
             }
@@ -272,8 +399,8 @@ namespace ZO.LoadOrderManager
                 SET RelativePath = COALESCE(excluded.RelativePath, FileInfo.RelativePath), 
                     DTStamp = COALESCE(excluded.DTStamp, FileInfo.DTStamp), 
                     HASH = COALESCE(excluded.HASH, FileInfo.HASH), 
-                    Flags = excluded.Flags,
-                    AbsolutePath = excluded.AbsolutePath";
+                    Flags = FileInfo.Flags | excluded.Flags,
+                    AbsolutePath = COALESCE(excluded.AbsolutePath, FileInfo.AbsolutePath)";
 
                     command.Parameters.AddWithValue("@PluginID", pluginId);
                     command.Parameters.AddWithValue("@Filename", fileInfo.Filename);
@@ -294,8 +421,8 @@ namespace ZO.LoadOrderManager
                     RelativePath = @RelativePath,
                     DTStamp = COALESCE(@DTStamp, DTStamp),
                     HASH = COALESCE(@HASH, HASH),
-                    Flags = @Flags,
-                    AbsolutePath = @AbsolutePath
+                    Flags = FileInfo.Flags | excluded.Flags,
+                    AbsolutePath = COALESCE(excluded.AbsolutePath, FileInfo.AbsolutePath)"";
                 WHERE FileID = @FileID";
 
                     command.Parameters.AddWithValue("@FileID", fileInfo.FileID);
@@ -402,14 +529,35 @@ namespace ZO.LoadOrderManager
                 throw;
             }
         }
+        public void ReplaceFlags(FileFlags newFlags)
+        {
+            this.Flags = newFlags;
+            UpdateFlagsInDatabase();
+        }
+
+        private void UpdateFlagsInDatabase()
+        {
+            using var connection = DbManager.Instance.GetConnection();
+            using var command = new SQLiteCommand(connection);
+
+            command.CommandText = @"
+        UPDATE FileInfo
+        SET Flags = @Flags
+        WHERE FileID = @FileID";
+
+            command.Parameters.AddWithValue("@FileID", this.FileID);
+            command.Parameters.AddWithValue("@Flags", (long)this.Flags);
+
+            command.ExecuteNonQuery();
+        }
+
 
         public static List<FileInfo> GetMonitoredFiles()
         {
             var monitoredFiles = new List<FileInfo>();
 
             using var connection = DbManager.Instance.GetConnection();
-            connection.Open();
-
+      
             using (var pragmaCommand = new SQLiteCommand("PRAGMA read_uncommitted = true;", connection))
             {
                 pragmaCommand.ExecuteNonQuery();
@@ -435,6 +583,11 @@ namespace ZO.LoadOrderManager
                     AbsolutePath = reader.GetString(6),
                     CompressedContent = reader.IsDBNull(7) ? null : (byte[])reader[7]
                 };
+
+                if (string.IsNullOrEmpty(fileInfo.AbsolutePath))
+                {
+                    fileInfo.AbsolutePath = fileInfo.GetPathByFlags(fileInfo.Flags, fileInfo.Filename);
+                }
 
                 if (fileInfo.CompressedContent != null)
                 {

@@ -43,65 +43,39 @@ namespace ZO.LoadOrderManager
             return SelectedLoadOut != null && SelectedGroupSet != null;
         }
 
-        private bool CanMoveUp()
+        public bool CanMoveUp()
         {
             if (SelectedItem is LoadOrderItemViewModel loadOrderItem)
             {
-                if (loadOrderItem.EntityType == EntityType.Plugin)
+                var underlyingObject = EntityTypeHelper.GetUnderlyingObject(loadOrderItem);
+                if (underlyingObject is ModGroup modGroup)
                 {
-                    var selectedPlugin = loadOrderItem.PluginData;
-                    if (selectedPlugin != null)
-                    {
-                        if (selectedPlugin.GroupID < 1 || selectedPlugin.GroupOrdinal < 1)
-                        {
-                            return false;
-                        }
-                        else { return true; }
-                    }
+                    return modGroup.Ordinal > 1 && AggLoadInfo.Instance.Groups
+                        .Any(g => g.ParentID == modGroup.ParentID && g.Ordinal == modGroup.Ordinal - 1);
                 }
-                else if (loadOrderItem.EntityType == EntityType.Group)
+                else if (underlyingObject is Plugin plugin)
                 {
-                    var selectedGroup = loadOrderItem.GroupID;
-                    if (selectedGroup != null)
-                    {
-                        if (selectedGroup <= 1)
-                        {
-                            return false;
-                        }
-                        else { return true; }
-                    }
+                    return plugin.GroupOrdinal > 1 && AggLoadInfo.Instance.Plugins
+                        .Any(p => p.GroupID == plugin.GroupID && p.GroupOrdinal == plugin.GroupOrdinal - 1);
                 }
             }
             return false;
         }
 
-        private bool CanMoveDown()
+        public bool CanMoveDown()
         {
             if (SelectedItem is LoadOrderItemViewModel loadOrderItem)
             {
-                if (loadOrderItem.EntityType == EntityType.Plugin)
+                var underlyingObject = EntityTypeHelper.GetUnderlyingObject(loadOrderItem);
+                if (underlyingObject is ModGroup modGroup)
                 {
-                    var selectedPlugin = loadOrderItem.PluginData;
-                    if (selectedPlugin != null)
-                    {
-                        if (selectedPlugin.GroupID < 1)
-                        {
-                            return false;
-                        }
-                        else { return true; }
-                    }
+                    return AggLoadInfo.Instance.Groups
+                        .Any(g => g.ParentID == modGroup.ParentID && g.Ordinal == modGroup.Ordinal + 1);
                 }
-                else if (loadOrderItem.EntityType == EntityType.Group)
+                else if (underlyingObject is Plugin plugin)
                 {
-                    var selectedGroup = loadOrderItem.GroupID;
-                    if (selectedGroup != null)
-                    {
-                        if (selectedGroup <= 1)
-                        {
-                            return false;
-                        }
-                        else { return true; }
-                    }
+                    return AggLoadInfo.Instance.Plugins
+                        .Any(p => p.GroupID == plugin.GroupID && p.GroupOrdinal == plugin.GroupOrdinal + 1);
                 }
             }
             return false;
@@ -109,72 +83,138 @@ namespace ZO.LoadOrderManager
 
         private void MoveUp()
         {
-            if (SelectedItem is Plugin selectedPlugin)
+            if (CanMoveUp())
             {
-                var group = AggLoadInfo.Instance.Groups.FirstOrDefault(g => g.Plugins != null && g.Plugins.Contains(selectedPlugin));
-                if (group != null && group.Plugins != null)
+                if (SelectedItem is LoadOrderItemViewModel loadOrderItem)
                 {
-                    int index = group.Plugins.IndexOf(selectedPlugin);
-                    var previousPlugin = group.Plugins[index - 1];
+                    var underlyingObject = EntityTypeHelper.GetUnderlyingObject(loadOrderItem);
+                    if (underlyingObject is ModGroup modGroup)
+                    {
+                        var previousItem = AggLoadInfo.Instance.Groups
+                            .FirstOrDefault(g => g.ParentID == modGroup.ParentID && g.Ordinal == modGroup.Ordinal - 1);
 
-                    // Swap ordinals
-                    long tempOrdinal = selectedPlugin.GroupOrdinal ?? 0;
-                    selectedPlugin.GroupOrdinal = previousPlugin.GroupOrdinal;
-                    previousPlugin.GroupOrdinal = tempOrdinal;
+                        if (previousItem != null)
+                        {
+                            // Swap locations
+                            modGroup.SwapLocations(previousItem);
 
-                    // Move the plugin
-                    group.Plugins.Move(index, index - 1);
+                            // Refresh all data to update the ViewModel
+                            AggLoadInfo.Instance.RefreshAllData();
+                        }
+                    }
+                    else if (underlyingObject is Plugin plugin)
+                    {
+                        var previousItem = AggLoadInfo.Instance.Plugins
+                            .FirstOrDefault(p => p.GroupID == plugin.GroupID && p.GroupOrdinal == plugin.GroupOrdinal - 1);
+
+                        if (previousItem != null)
+                        {
+                            // Swap locations
+                            plugin.SwapLocations(previousItem);
+
+                            // Refresh all data to update the ViewModel
+                            AggLoadInfo.Instance.RefreshAllData();
+                        }
+                    }
                 }
             }
-            else if (SelectedItem is ModGroup selectedGroup)
-            {
-                int index = AggLoadInfo.Instance.Groups.IndexOf(selectedGroup);
-                var previousGroup = AggLoadInfo.Instance.Groups[index - 1];
-
-                // Swap ordinals
-                long tempOrdinal = selectedGroup.Ordinal ?? 0;
-                selectedGroup.Ordinal = previousGroup.Ordinal;
-                previousGroup.Ordinal = tempOrdinal;
-
-                // Move the group
-                AggLoadInfo.Instance.Groups.Move(index, index - 1);
-            }
-            OnPropertyChanged(nameof(AggLoadInfo.Instance.Groups));
         }
 
         private void MoveDown()
         {
-            if (SelectedItem is Plugin selectedPlugin)
+            if (CanMoveDown())
             {
-                var group = AggLoadInfo.Instance.Groups.FirstOrDefault(g => g.Plugins != null && g.Plugins.Contains(selectedPlugin));
-                if (group != null && group.Plugins != null)
+                if (SelectedItem is LoadOrderItemViewModel loadOrderItem)
                 {
-                    int index = group.Plugins.IndexOf(selectedPlugin);
-                    var nextPlugin = group.Plugins[index + 1];
+                    var underlyingObject = EntityTypeHelper.GetUnderlyingObject(loadOrderItem);
+                    if (underlyingObject is ModGroup modGroup)
+                    {
+                        var nextItem = AggLoadInfo.Instance.Groups
+                            .FirstOrDefault(g => g.ParentID == modGroup.ParentID && g.Ordinal == modGroup.Ordinal + 1);
 
-                    // Swap ordinals
-                    long tempOrdinal = selectedPlugin.GroupOrdinal ?? 0;
-                    selectedPlugin.GroupOrdinal = nextPlugin.GroupOrdinal;
-                    nextPlugin.GroupOrdinal = tempOrdinal;
+                        if (nextItem != null)
+                        {
+                            // Swap locations
+                            modGroup.SwapLocations(nextItem);
 
-                    // Move the plugin
-                    group.Plugins.Move(index, index + 1);
+                            // Refresh all data to update the ViewModel
+                            AggLoadInfo.Instance.RefreshAllData();
+                        }
+                    }
+                    else if (underlyingObject is Plugin plugin)
+                    {
+                        var nextItem = AggLoadInfo.Instance.Plugins
+                            .FirstOrDefault(p => p.GroupID == plugin.GroupID && p.GroupOrdinal == plugin.GroupOrdinal + 1);
+
+                        if (nextItem != null)
+                        {
+                            // Swap locations
+                            plugin.SwapLocations(nextItem);
+
+                            // Refresh all data to update the ViewModel
+                            AggLoadInfo.Instance.RefreshAllData();
+                        }
+                    }
                 }
             }
-            else if (SelectedItem is ModGroup selectedGroup)
+        }
+
+        private ObservableCollection<LoadOrderItemViewModel> GetFlattenedList(EntityType entityType)
+        {
+            var flattenedList = new List<LoadOrderItemViewModel>();
+
+            foreach (var item in LoadOrders.Items)
             {
-                int index = AggLoadInfo.Instance.Groups.IndexOf(selectedGroup);
-                var nextGroup = AggLoadInfo.Instance.Groups[index + 1];
-
-                // Swap ordinals
-                long tempOrdinal = selectedGroup.Ordinal ?? 0;
-                selectedGroup.Ordinal = nextGroup.Ordinal;
-                nextGroup.Ordinal = tempOrdinal;
-
-                // Move the group
-                AggLoadInfo.Instance.Groups.Move(index, index + 1);
+                if (entityType == EntityType.Group && item.EntityType == EntityType.Group)
+                {
+                    flattenedList.Add(item);
+                }
+                else if (entityType == EntityType.Plugin && item.EntityType == EntityType.Plugin)
+                {
+                    flattenedList.Add(item);
+                }
             }
-            OnPropertyChanged(nameof(AggLoadInfo.Instance.Groups));
+
+            // Sort the list based on Ordinal for ModGroup and GroupOrdinal for Plugin
+            var orderedList = flattenedList
+                .OrderBy(i => i.EntityType == EntityType.Group
+                    ? ((ModGroup?)i.GetModGroup())?.Ordinal ?? 0
+                    : ((Plugin?)i.PluginData)?.GroupOrdinal ?? 0)
+                .ToList();
+
+            return new ObservableCollection<LoadOrderItemViewModel>(orderedList);
+        }
+
+        //private void AddChildItems(ObservableCollection<LoadOrderItemViewModel> flattenedList, LoadOrderItemViewModel parentItem, EntityType entityType)
+        //{
+        //    foreach (var child in parentItem.Children)
+        //    {
+        //        if (entityType == child.EntityType)
+        //        {
+        //            flattenedList.Add(child);
+        //        }
+
+        //        // Recursively add child items
+        //        AddChildItems(flattenedList, child, entityType);
+        //    }
+        //}
+
+
+        private void SwapLocations(LoadOrderItemViewModel item1, LoadOrderItemViewModel item2)
+        {
+            var underlyingObject1 = EntityTypeHelper.GetUnderlyingObject(item1);
+            var underlyingObject2 = EntityTypeHelper.GetUnderlyingObject(item2);
+
+            if (underlyingObject1 is ModGroup modGroup1 && underlyingObject2 is ModGroup modGroup2)
+            {
+                modGroup1.SwapLocations(modGroup2);
+            }
+            else if (underlyingObject1 is Plugin plugin1 && underlyingObject2 is Plugin plugin2)
+            {
+                plugin1.SwapLocations(plugin2);
+            }
+
+            OnPropertyChanged(nameof(Items));
         }
 
         private void SavePlugins()

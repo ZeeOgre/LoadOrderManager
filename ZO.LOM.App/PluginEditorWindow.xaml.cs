@@ -1,32 +1,29 @@
-using System.Collections.ObjectModel;
 using System.Windows;
 
 namespace ZO.LoadOrderManager
 {
     public partial class PluginEditorWindow : Window
     {
-        private PluginViewModel _viewModel;
+        private PluginViewModel _pluginViewModel;
 
-        public PluginEditorWindow(Plugin plugin, LoadOut loadOut)
+        public PluginEditorWindow(Plugin plugin, AggLoadInfo? aggLoadInfo = null)
         {
             InitializeComponent();
-            _viewModel = new PluginViewModel(plugin); // Assuming the plugin is enabled by default
-            DataContext = _viewModel;
+            _pluginViewModel = new PluginViewModel(plugin, aggLoadInfo);
+            DataContext = _pluginViewModel;
         }
 
         private void SaveButton_Click(object sender, RoutedEventArgs e)
         {
-            _viewModel.Save();
-            DialogResult = true;
-            Close();
+            _pluginViewModel.SavePluginChanges();
+            this.DialogResult = true;
+            this.Close();
         }
 
         private void CancelButton_Click(object sender, RoutedEventArgs e)
         {
-            DialogResult = false;
-            Close();
+            this.DialogResult = false;
+            this.Close();
         }
-
- 
     }
 }

@@ -17,19 +17,17 @@ namespace ZO.LoadOrderManager
     {
         public ICommand RefreshDataCommand { get; }
 
-
         public LoadOrderWindowViewModel()
         {
             _selectedGroupSet = AggLoadInfo.Instance.ActiveGroupSet;
             _selectedLoadOut = AggLoadInfo.Instance.ActiveLoadOut;
 
-
             // Initialize collections and commands
             Items = new ObservableCollection<LoadOrderItemViewModel>();
             GroupSets = new ObservableCollection<GroupSet>();
             LoadOuts = new ObservableCollection<LoadOut>();
-            LoadOrders = SortingHelper.CreateLoadOrdersViewModel(AggLoadInfo.Instance.ActiveGroupSet, AggLoadInfo.Instance.ActiveLoadOut, false);
-            CachedGroupSetLoadOrders = SortingHelper.CreateLoadOrdersViewModel(AggLoadInfo.Instance.GetCachedGroupSet1(), LoadOut.Load(1), true); ;
+            LoadOrders = new LoadOrdersViewModel();
+            CachedGroupSetLoadOrders = new LoadOrdersViewModel();
 
             // Initialize commands
             SearchCommand = new RelayCommand<string?>(Search);
@@ -88,11 +86,10 @@ namespace ZO.LoadOrderManager
                     {
                         LoadOuts.Add(loadOut);
                     }
-                    //_selectedGroupSet = AggLoadInfo.Instance.ActiveGroupSet;
-                    //_selectedLoadOut = AggLoadInfo.Instance.ActiveLoadOut;
 
-
-
+                    // Initialize LoadOrders and CachedGroupSetLoadOrders with the selected GroupSet and LoadOut
+                    LoadOrders.LoadData(_selectedGroupSet, _selectedLoadOut);
+                    CachedGroupSetLoadOrders.LoadData(AggLoadInfo.Instance.GetCachedGroupSet1(), LoadOut.Load(1));
 
                     InitializationManager.ReportProgress(95, "Initial data loaded into view");
 
@@ -106,7 +103,7 @@ namespace ZO.LoadOrderManager
             {
                 InitializationManager.EndInitialization(nameof(LoadOrderWindowViewModel));
                 // Refresh data in the view
-                //RefreshData();
+                RefreshData();
             }
         }
 
@@ -121,42 +118,17 @@ namespace ZO.LoadOrderManager
 
             UpdateStatus("Refreshing data...");
 
-            if (SelectedLoadOut != null && ! _isSynchronizing)
+            if (SelectedLoadOut != null && !_isSynchronizing)
             {
-
-
-                
                 _isSynchronizing = true;
                 // Using async to improve performance and avoid blocking the UI
                 await Task.Run(() =>
                 {
-                    LoadOrders = SortingHelper.CreateLoadOrdersViewModel(SelectedGroupSet, SelectedLoadOut, false);
+                    LoadOrders.RefreshData();
+                    CachedGroupSetLoadOrders.RefreshData();
                 });
 
-
-                    //    // Directly using the enabledPlugins hashset from SelectedLoadOut
-                    //    var enabledPluginIds = SelectedLoadOut.enabledPlugins;
-
-                    //    Items.Clear();
-                    //    foreach (var group in AggLoadInfo.Instance.Groups)
-                    //    {
-                    //        var groupViewModel = CreateGroupViewModel(group);
-
-                    //        foreach (var plugin in group.Plugins ?? Enumerable.Empty<Plugin>())
-                    //        {
-                    //            var isEnabled = enabledPluginIds.Contains(plugin.PluginID); // Simplified check
-                    //            groupViewModel.Children.Add(new LoadOrderItemViewModel
-                    //            {
-                    //                PluginData = plugin,
-                    //                IsActive = isEnabled,
-                    //                EntityType = EntityType.Plugin
-                    //            });
-                    //        }
-                    //        Items.Add(groupViewModel);
-                    //    }
-                    //});
-
-                    StatusMessage = $"Loaded plugins for profile: {SelectedLoadOut.Name}";
+                StatusMessage = $"Loaded plugins for profile: {SelectedLoadOut.Name}";
             }
             else
             {

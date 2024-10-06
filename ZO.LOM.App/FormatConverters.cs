@@ -239,6 +239,26 @@ namespace ZO.LoadOrderManager
         }
     }
 
+
+    public class LoadOutAndPluginToIsEnabledConverter : IMultiValueConverter
+    {
+        public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (values[0] is LoadOut loadOut && values[1] is long pluginID)
+            {
+                return loadOut.IsPluginEnabled(pluginID);
+            }
+
+            return false;
+        }
+
+        public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
+        {
+            return null; // or return Binding.DoNothing; depending on your preference
+        }
+    }
+
+
     public class FilesToStringConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)

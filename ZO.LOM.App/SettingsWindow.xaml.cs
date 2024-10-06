@@ -154,7 +154,7 @@ namespace ZO.LoadOrderManager
             }
         }
 
-        [SupportedOSPlatform("windows6.1")]
+        
         private void GameFolderButton_Click(object sender, RoutedEventArgs e)
         {
 #if WINDOWS
@@ -170,7 +170,6 @@ namespace ZO.LoadOrderManager
 #endif
         }
 
-        [SupportedOSPlatform("windows")]
         private void CheckForUpdatesButton_Click(object sender, RoutedEventArgs e)
         {
 #if WINDOWS
@@ -181,6 +180,26 @@ namespace ZO.LoadOrderManager
         private void SaveButton_Click(object sender, RoutedEventArgs e)
         {
             SaveSettings();
+        }
+
+        private void LookupButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Implement the logic for the Lookup button click event
+        }
+
+        private void EditFile_Click(object sender, RoutedEventArgs e)
+        {
+            // Implement the logic for the Edit File menu item click event
+        }
+
+        private void OpenFolder_Click(object sender, RoutedEventArgs e)
+        {
+            // Implement the logic for the Open Folder menu item click event
+        }
+
+        private void AddNew_Click(object sender, RoutedEventArgs e)
+        {
+            // Implement the logic for the Add New button click event
         }
     }
 }
