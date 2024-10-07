@@ -54,9 +54,21 @@ namespace ZO.LoadOrderManager
                         string groupName = groupParts.Length > 0 ? groupParts[0].Trim() : string.Empty;
                         string groupDescription = groupParts.Length > 1 ? groupParts[1].Trim() : string.Empty;
 
-                        ModGroup parentGroup = level == 3
-                            ? aggLoadInfo.Groups.FirstOrDefault(g => g.GroupID == 1) ?? throw new Exception("Parent group not found.")
-                            : groupParentMapping[level - 1];
+                        // Determine the parent group
+                        ModGroup parentGroup;
+                        if (level == 3) // All groups at ### level have the default root as their parent
+                        {
+                            parentGroup = defaultModGroup;
+                        }
+                        else
+                        {
+                            // Ensure the parent group for the current level exists in the mapping
+                            if (!groupParentMapping.TryGetValue(level - 1, out parentGroup))
+                            {
+                                // If the parent group is not found, skip processing this line
+                                continue;
+                            }
+                        }
 
                         if (parentGroup == null)
                         {
@@ -97,7 +109,6 @@ namespace ZO.LoadOrderManager
                                 aggLoadInfo.Groups.Add(currentGroup); // Add new group to aggLoadInfo.Groups
                             }
                         }
-
                         else
                         {
                             var newGroup = new ModGroup(null, groupName, groupDescription, parentGroup.GroupID, groupOrdinalTracker[parentGroup.GroupID ?? 1], groupSet.GroupSetID);
@@ -116,6 +127,7 @@ namespace ZO.LoadOrderManager
 
                         continue;
                     }
+
 
                     bool isEnabled = line.StartsWith("*");
                     string pluginName = line.TrimStart('*').Trim();
@@ -182,12 +194,24 @@ namespace ZO.LoadOrderManager
             var groupSetName = AggLoadInfo.Instance.ActiveGroupSet.GroupSetName ?? "Default_GroupSet";
             var loadOutName = AggLoadInfo.Instance.ActiveLoadOut.Name ?? "Default_Profile";
             var dateTimeNow = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
-            var defaultFileName = $"Plugins_{groupSetName}_{loadOutName}.txt";
-            var pluginsFilePath = outputFileName ?? Path.Combine(FileManager.GameLocalAppDataFolder, defaultFileName);
+
+            string defaultFileName;
+            string pluginsFilePath;
+
+            if (outputFileName == null)
+            {
+                defaultFileName = $"Plugins_{groupSetName}_{loadOutName}.txt";
+                pluginsFilePath = Path.Combine(FileManager.GameLocalAppDataFolder, defaultFileName);
+            }
+            else
+            {
+                defaultFileName = Path.GetFileName(outputFileName);
+                pluginsFilePath = outputFileName;
+            }
 
             // Custom header with the actual filename
             sb.AppendLine($"# {defaultFileName} produced by ZeeOgre's LoadOutManager using Group Set {groupSetName} and profile {loadOutName} on {dateTimeNow}");
-            sb.AppendLine("##----------------------------------------------------------------------------------------------------------------------------------##");
+            sb.AppendLine("##--------------------------------------------------------------------------------------------------------------------------------------------------------##");
 
             // Process each item in the viewModel
             foreach (var item in viewModel.Items)

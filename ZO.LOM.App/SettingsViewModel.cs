@@ -1,122 +1,294 @@
+using Microsoft.Win32; // For OpenFileDialog
+using System;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
-using System.Diagnostics;
-using System.IO;
-using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Input;
+using Windows.Media.ClosedCaptioning;
 
 namespace ZO.LoadOrderManager
 {
-    public class SettingsViewModel : INotifyPropertyChanged
+    public enum SettingsLaunchSource
+    {
+        MainWindow,
+        CommandLine,
+        DatabaseInitialization,
+        MissingConfigDialog
+    }
+
+    public class SettingsViewModel : ViewModelBase
     {
         private Config _config;
-        private string _gameFolder;
-        private bool _autoCheckForUpdates;
-        private ObservableCollection<FileInfo> _monitoredFiles;
+        private readonly DbManager _dbManager;
+        
+        public event Action SaveCompleted;
 
+        // Bindable properties for UI
+        public ObservableCollection<FileInfo> MonitoredFiles { get; set; }
 
-        public SettingsViewModel()
+        public FileInfo SelectedMonitoredFile { get; set; }
+
+        public bool AutoCheckAtStartup
         {
-            _config = Config.Instance;
-            SaveCommand = new RelayCommand(_ => SaveSettings());
-            LoadCommand = new RelayCommand(_ => LoadSettings());
-            LaunchGameFolderCommand = new RelayCommand(_ => LaunchGameFolder());
-            CheckForUpdatesCommand = new RelayCommand(_ => CheckForUpdates());
-            UpdateFromConfig();
-        }
-
-        public Window ParentWindow { get; set; }
-        public ICommand SaveCommand { get; }
-        public ICommand LoadCommand { get; }
-        public ICommand LaunchGameFolderCommand { get; }
-        public ICommand CheckForUpdatesCommand { get; }
-
-
-        public ObservableCollection<FileInfo> MonitoredFiles
-        {
-            get => _monitoredFiles;
+            get => _config.AutoCheckForUpdates;
             set
             {
-                _monitoredFiles = value;
-                OnPropertyChanged();
-            }
-        }
-
-        public bool AutoCheckForUpdates
-        {
-            get => _autoCheckForUpdates;
-            set
-            {
-                _autoCheckForUpdates = value;
-                OnPropertyChanged();
+                if (_config.AutoCheckForUpdates != value)
+                {
+                    _config.AutoCheckForUpdates = value;
+                    OnPropertyChanged();
+                }
             }
         }
 
         public string GameFolder
         {
-            get => _gameFolder;
+            get => _config.GameFolder;
             set
             {
-                _gameFolder = value;
-                OnPropertyChanged();
+                if (_config.GameFolder != value)
+                {
+                    _config.GameFolder = value;
+                    OnPropertyChanged();
+                }
             }
         }
 
-        public ObservableCollection<string> AvailableArchiveFormats { get; private set; }
+        public string Version => App.Version;
 
-        public event PropertyChangedEventHandler? PropertyChanged;
+        // Read-only command properties initialized in the constructor
+        public ICommand AddNewMonitoredFileCommand { get; private set; }
+        public ICommand RestartMonitorCommand { get; private set; }
+        public ICommand VacuumReindexCommand { get; private set; }
+        public ICommand CleanOrdinalsCommand { get; private set; }
+        public ICommand EditFileCommand { get; private set; }
+        public ICommand CompareFileCommand { get; private set; }
+        public ICommand BrowseGameFolderCommand { get; private set; }
+        public ICommand CheckForUpdatesCommand { get; private set; }
+        public ICommand LoadFromYamlCommand { get; private set; }
+        public ICommand SaveCommand { get; private set; }
 
-        public void UpdateFromConfig()
+        public SettingsViewModel()
         {
-            GameFolder = _config.GameFolder;
-            AutoCheckForUpdates = _config.AutoCheckForUpdates;
+            _config = Config.Instance;
+            _dbManager = DbManager.Instance;
+            InitializeViewModel();
+        }
+
+        public void UseEmptyConfig()
+        {
+            _config = new Config(); // Create a new empty config object
+            InitializeViewModel();  // Re-initialize commands and properties with the new config
+        }
+
+        private void InitializeViewModel()
+        {
+            // Initialize monitored files from Config
             MonitoredFiles = new ObservableCollection<FileInfo>(_config.MonitoredFiles);
+
+            // Initialize commands in the constructor
+            AddNewMonitoredFileCommand = new RelayCommand(_ => AddNewFile());
+            RestartMonitorCommand = new RelayCommand(_ => RestartMonitor());
+            VacuumReindexCommand = new RelayCommand(_ => VacuumDatabase());
+            CleanOrdinalsCommand = new RelayCommand(_ => CleanOrdinals());
+            EditFileCommand = new RelayCommand<FileInfo>(file => EditFile(file));
+            CompareFileCommand = new RelayCommand<FileInfo>(file => CompareFile(file));
+            BrowseGameFolderCommand = new RelayCommand(_ => BrowseGameFolder());
+            CheckForUpdatesCommand = new RelayCommand(_ => CheckForUpdates());
+            LoadFromYamlCommand = new RelayCommand(_ => LoadFromYaml());
+            SaveCommand = new RelayCommand(_ => Save());
         }
 
-        private void SaveSettings()
+        private void AddNewFile()
         {
-            _config.GameFolder = GameFolder;
-            _config.AutoCheckForUpdates = AutoCheckForUpdates;
-            _config.MonitoredFiles = MonitoredFiles.ToList();
-            Config.SaveToYaml();
-            Config.SaveToDatabase();
-            _ = MessageBox.Show("Settings saved successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
-        }
-
-        private void LoadSettings()
-        {
-            UpdateFromConfig();
-        }
-
-        private void LaunchGameFolder()
-        {
-            if (!string.IsNullOrEmpty(GameFolder) && Directory.Exists(GameFolder))
+            var openFileDialog = new OpenFileDialog();
+            if (openFileDialog.ShowDialog() == true)
             {
-                _ = Process.Start(new ProcessStartInfo
+                var filePath = openFileDialog.FileName;
+                var newFileInfo = new FileInfo(filePath, true, true);
+
+                MonitoredFiles.Add(newFileInfo);
+                _config.MonitoredFiles.Add(newFileInfo);
+
+                OnPropertyChanged(nameof(MonitoredFiles));
+            }
+        }
+
+        private void RestartMonitor()
+        {
+            FileMonitor.InitializeAllMonitors();
+        }
+
+        private void VacuumDatabase()
+        {
+            try
+            {
+                DbManager.FlushDB();
+                _dbManager.Initialize();
+                MessageBox.Show("Database vacuum and reindex completed successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error during vacuum and reindex: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void CleanOrdinals()
+        {
+            try
+            {
+                using (var connection = DbManager.Instance.GetConnection())
                 {
-                    FileName = GameFolder,
-                    UseShellExecute = true,
-                    Verb = "open"
-                });
+                    using (var transaction = connection.BeginTransaction())
+                    {
+                        const string cleanOrdinalsQuery = @"
+                            WITH OrderedGSP AS (
+                                SELECT GroupSetID, GroupID, PluginID,
+                                       ROW_NUMBER() OVER (PARTITION BY GroupSetID, GroupID ORDER BY Ordinal) AS NewOrdinal
+                                FROM GroupSetPlugins
+                            )
+                            UPDATE GroupSetPlugins
+                            SET Ordinal = OrderedGSP.NewOrdinal
+                            FROM OrderedGSP
+                            WHERE GroupSetPlugins.GroupSetID = OrderedGSP.GroupSetID
+                              AND GroupSetPlugins.GroupID = OrderedGSP.GroupID
+                              AND GroupSetPlugins.PluginID = OrderedGSP.PluginID;
+
+                            WITH OrderedGSG AS (
+                                SELECT GroupSetID, ParentID, GroupID,
+                                       CASE WHEN GroupID < 0 THEN -GroupID + 9000
+                                            ELSE ROW_NUMBER() OVER (PARTITION BY GroupSetID, ParentID ORDER BY Ordinal)
+                                       END AS NewOrdinal
+                                FROM GroupSetGroups
+                            )
+                            UPDATE GroupSetGroups
+                            SET Ordinal = OrderedGSG.NewOrdinal
+                            FROM OrderedGSG
+                            WHERE GroupSetGroups.GroupSetID = OrderedGSG.GroupSetID
+                              AND GroupSetGroups.ParentID = OrderedGSG.ParentID
+                              AND GroupSetGroups.GroupID = OrderedGSG.GroupID;
+                        ";
+
+                        using (var command = connection.CreateCommand())
+                        {
+                            command.CommandText = cleanOrdinalsQuery;
+                            command.Transaction = transaction;
+                            command.ExecuteNonQuery();
+                        }
+
+                        transaction.Commit();
+                    }
+                }
+
+                AggLoadInfo.Instance.RefreshMetadataFromDB();
+                MessageBox.Show("Ordinals cleaned successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error during cleaning ordinals: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void CompareFile(FileInfo file)
+        {
+            if (file.FileContent != null && System.IO.File.Exists(file.AbsolutePath))
+            {
+                var currentFileContent = System.IO.File.ReadAllBytes(file.AbsolutePath);
+                var diffViewer = new DiffViewer(file);
+                diffViewer.Show();
             }
             else
             {
-                _ = MessageBox.Show("Game folder path is invalid.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                var openFileDialog = new OpenFileDialog();
+                if (openFileDialog.ShowDialog() == true)
+                {
+                    file.AbsolutePath = openFileDialog.FileName;
+                    var currentFileContent = System.IO.File.ReadAllBytes(file.AbsolutePath);
+                    var diffViewer = new DiffViewer(file);
+                    diffViewer.Show();
+                }
+            }
+        }
+
+        private void EditFile(FileInfo file)
+        {
+            if (!string.IsNullOrEmpty(file.AbsolutePath))
+            {
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = file.AbsolutePath,
+                    UseShellExecute = true
+                });
+            }
+        }
+
+        private void BrowseGameFolder()
+        {
+            var dialog = new OpenFileDialog
+            {
+                CheckFileExists = false,
+                CheckPathExists = true,
+                FileName = "Select Folder",
+                Filter = "Folders|*.",
+                Title = "Select the game folder"
+            };
+
+            if (dialog.ShowDialog() == true)
+            {
+                string folderPath = System.IO.Path.GetDirectoryName(dialog.FileName);
+                _config.GameFolder = folderPath;
+                OnPropertyChanged(nameof(GameFolder));
             }
         }
 
         private void CheckForUpdates()
         {
-            // Implement the logic to check for updates
-            _ = MessageBox.Show("Check for updates clicked.");
+            App.CheckForUpdates(Application.Current.MainWindow);
         }
 
-        protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+        private void LoadFromYaml()
         {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+            var openFileDialog = new Microsoft.Win32.OpenFileDialog
+            {
+                InitialDirectory = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "ZeeOgre", "LoadOrderManager"),
+                Filter = "YAML files (*.yaml)|*.yaml|All files (*.*)|*.*",
+                Title = "Select YAML file"
+            };
+
+            if (openFileDialog.ShowDialog() == true)
+            {
+                var selectedFile = openFileDialog.FileName;
+                try
+                {
+                    _ = Config.LoadFromYaml(selectedFile);
+                    _ = MessageBox.Show("Configuration loaded successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+                catch (Exception ex)
+                {
+                    App.LogDebug($"Exception in ImportFromYaml_Click: {ex.Message}");
+                    _ = MessageBox.Show("An error occurred while loading the configuration.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+        }
+
+        public void Save()
+        {
+            try
+            {
+                // Update the singleton instance with current values
+                Config.Instance.UpdateFrom(_config);
+
+                // Save to YAML
+                Config.SaveToYaml();
+
+                // Save to Database
+                Config.SaveToDatabase();
+
+                SaveCompleted?.Invoke(); 
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error saving configuration: " + ex.Message);
+            }
         }
     }
-
-   
 }

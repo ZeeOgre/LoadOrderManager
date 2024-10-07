@@ -185,19 +185,26 @@ namespace ZO.LoadOrderManager
             return new ObservableCollection<LoadOrderItemViewModel>(orderedList);
         }
 
-        //private void AddChildItems(ObservableCollection<LoadOrderItemViewModel> flattenedList, LoadOrderItemViewModel parentItem, EntityType entityType)
-        //{
-        //    foreach (var child in parentItem.Children)
-        //    {
-        //        if (entityType == child.EntityType)
-        //        {
-        //            flattenedList.Add(child);
-        //        }
+        public ICommand AddNewGroupSetCommand => new RelayCommand(_ => AddNewGroupSet());
+        public ICommand AddNewLoadoutCommand => new RelayCommand(_ => AddNewLoadout());
+        public ICommand CompareCommand => new RelayCommand(_ => Compare());
 
-        //        // Recursively add child items
-        //        AddChildItems(flattenedList, child, entityType);
-        //    }
-        //}
+        private void Compare()
+        {
+            // Launch the Diff Viewer with null parameters to trigger file pickers
+            var diffViewer = new DiffViewer((string?)null, (string?)null);
+            diffViewer.ShowDialog();
+        }
+
+        private void AddNewGroupSet()
+        {
+            // Logic for adding a new GroupSet skeleton
+        }
+
+        private void AddNewLoadout()
+        {
+            // Logic for adding a new Loadout skeleton
+        }
 
 
         private void SwapLocations(LoadOrderItemViewModel item1, LoadOrderItemViewModel item2)
@@ -221,14 +228,17 @@ namespace ZO.LoadOrderManager
         {
             var groupSetName = SelectedGroupSet.GroupSetName;
             var profileName = SelectedLoadOut.Name;
-            var defaultFileName = $"Plugins_{groupSetName}_{profileName}.txt";
-            var defaultFilePath = Path.Combine(FileManager.GameLocalAppDataFolder, defaultFileName);
+            var defaultFilePath = FileManager.PluginsFile;
 
             var result = MessageBox.Show($"Producing {defaultFilePath}. Do you want to save to a different location?", "Save Plugins", MessageBoxButton.YesNo);
 
             string? outputFileName = null;
             if (result == MessageBoxResult.Yes)
             {
+                var defaultFileName = $"Plugins_{groupSetName}_{profileName}.txt";
+                defaultFilePath = Path.Combine(FileManager.GameLocalAppDataFolder, defaultFileName);
+
+
                 var saveFileDialog = new SaveFileDialog
                 {
                     FileName = defaultFileName,
@@ -242,6 +252,10 @@ namespace ZO.LoadOrderManager
                 {
                     outputFileName = saveFileDialog.FileName;
                 }
+            }
+            else if (result == MessageBoxResult.No)
+            {
+                outputFileName = defaultFilePath;
             }
 
             FileManager.ProducePluginsTxt(LoadOrders, outputFileName);

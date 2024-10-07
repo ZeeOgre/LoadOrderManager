@@ -39,6 +39,32 @@ namespace ZO.LoadOrderManager
         public ICommand ChangeGroupCommand { get; }
         public ICommand ToggleEnableCommand { get; }
 
+        public IEnumerable<ModGroup> ValidGroups
+        {
+            get
+            {
+                // Ensure the selected item exists and necessary data is available
+                if (SelectedItem == null || AggLoadInfo.Instance == null || SelectedGroupSet == null)
+                    return Enumerable.Empty<ModGroup>();
+
+                // Cast SelectedItem to LoadOrderItemViewModel to access necessary properties
+                if (!(SelectedItem is LoadOrderItemViewModel loadOrderItem))
+                    return Enumerable.Empty<ModGroup>();
+
+                // Get all groups within the SelectedGroupSet
+                var allGroups = AggLoadInfo.Instance.Groups
+                                  .Where(g => g.GroupSetID == SelectedGroupSet.GroupSetID);
+
+                // Exclude groups where the selected item (group/plugin) is already assigned
+                var currentParentOrGroupID = loadOrderItem.ParentID; // ParentID for groups or GroupID for plugins
+
+                // Return groups excluding the one where the item is already contained
+                return allGroups.Where(g => g.GroupID != currentParentOrGroupID);
+            }
+        }
+
+
+
 
         private void ImportPlugins(AggLoadInfo? aggLoadInfo = null, string? pluginsFile = null)
         {
@@ -68,24 +94,7 @@ namespace ZO.LoadOrderManager
 
         private void SaveAsNewLoadout()
         {
-            //var inputDialog = new InputDialog("Enter the name for the new LoadOut:", "New LoadOut");
-            //if (inputDialog.ShowDialog() == true)
-            //{
-            //    var newProfileName = inputDialog.ResponseText;
 
-            //    try
-            //    {
-            //        var newLoadOut = new LoadOut(newProfileName, SelectedLoadOut);
-            //        newLoadOut.WriteProfile();
-            //        LoadOuts.Add(newLoadOut);
-
-            //        MessageBox.Show("New loadout saved successfully.", "Save As New Loadout", MessageBoxButton.OK, MessageBoxImage.Information);
-            //    }
-            //    catch (Exception ex)
-            //    {
-            //        MessageBox.Show($"An error occurred: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            //    }
-            //}
         }
 
         private void OpenGameFolder()
@@ -101,32 +110,6 @@ namespace ZO.LoadOrderManager
         private void OpenGameSettings()
         {
             OpenFolder(FileManager.GameDocsFolder);
-        }
-
-        private void OpenPluginEditor()
-        {
-            if (SelectedItem is Plugin plugin)
-            {
-                var editorWindow = new PluginEditorWindow(plugin);
-                if (editorWindow.ShowDialog() == true)
-                {
-                    RefreshData();
-                }
-            }
-        }
-
-        private void OpenGroupEditor()
-        {
-
-            if (SelectedItem is ModGroup modGroup)
-            {
-                var editorWindow = new ModGroupEditorWindow(modGroup);
-                if (editorWindow.ShowDialog() == true)
-                {
-                    RefreshData();
-                }
-            }
-
         }
 
         private void OpenAppDataFolder()
@@ -307,13 +290,25 @@ namespace ZO.LoadOrderManager
 
         private void ChangeGroup(object parameter)
         {
-            if (SelectedItem is ModGroup modGroup)
+            if (parameter is not long newGroupId)
             {
-                modGroup.ChangeGroup((long)parameter); // Cast parameter to long
+                throw new ArgumentException("Parameter must be a long representing the new group ID.", nameof(parameter));
             }
-            else if (SelectedItem is Plugin plugin)
+
+            if (SelectedItem is LoadOrderItemViewModel loadOrderItem)
             {
-                plugin.ChangeGroup((long)parameter); // Cast parameter to long
+                var underlyingObject = EntityTypeHelper.GetUnderlyingObject(loadOrderItem);
+                if (underlyingObject is ModGroup modGroup)
+                {
+                    modGroup.ChangeGroup(newGroupId);
+                }
+                else if (underlyingObject is Plugin plugin)
+                {
+                    plugin.ChangeGroup(newGroupId);
+                }
+
+                // Refresh all data to update the ViewModel
+                AggLoadInfo.Instance.RefreshAllData();
             }
         }
 

@@ -49,7 +49,7 @@ namespace ZO.LoadOrderManager
 
                     // Load data from the database INTO the AggLoadInfo instance
                     AggLoadInfo.Instance.InitFromDatabase();
-
+                    FileMonitor.InitializeAllMonitors();
                     // Check if files have already been loaded
                     if (AggLoadInfo.Instance.ActiveGroupSet.AreFilesLoaded)
                     {
@@ -71,7 +71,7 @@ namespace ZO.LoadOrderManager
                     FileManager.MarkLoadOutComplete(AggLoadInfo.Instance);
                     InitializationManager.ReportProgress(85, "LoadOut marked complete");
 
-                    // Initialize file monitors for monitored files
+
                     
 
                     _initialized = true;

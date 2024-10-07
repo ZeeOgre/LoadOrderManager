@@ -1,119 +1,149 @@
-﻿using DiffPlex;
-using DiffPlex.DiffBuilder;
-using DiffPlex.DiffBuilder.Model;
-using System;
+﻿using System;
 using System.IO;
 using System.Text;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Documents;
-using System.Windows.Forms;
+using Microsoft.Win32;
+using DiffPlex.Wpf.Controls;
 using System.Windows.Media;
-using MessageBox = System.Windows.MessageBox;
 
 namespace ZO.LoadOrderManager
 {
     public partial class DiffViewer : Window
     {
-        private byte[] byteArray;
-        private string filePath;
-        private FileFlags fileFlags;
+        private string? filePath1;
+        private string? filePath2;
 
-        public DiffViewer(byte[] byteArray, string filePath, FileFlags fileFlags)
+        // Constructor 1: FileInfo handling
+        public DiffViewer(FileInfo fileInfo)
         {
             InitializeComponent();
-            this.byteArray = byteArray;
-            this.filePath = filePath;
-            this.fileFlags = fileFlags;
+
+            // Try to get file from AbsolutePath or load from byte[] if needed
+            filePath1 = fileInfo.AbsolutePath ?? OpenFileDialog("Select the first file to compare");
+
+            // Prompt for the second file path
+            filePath2 = GetSecondFilePath();
+
+            // Load content from FileInfo and the second file path
+            string oldText = Encoding.UTF8.GetString(fileInfo.FileContent);
+            string newText = File.ReadAllText(filePath2);
+
+            // Set texts in DiffView
+            DiffView.OldText = oldText;
+            DiffView.NewText = newText;
+
+            LoadData();
         }
 
-        private void ShowDiff_Click(object sender, RoutedEventArgs e)
+        // Constructor 2: Two nullable file paths, prompts if missing
+        public DiffViewer(string? filePath1, string? filePath2)
         {
-            // Load text from byte array
-            string leftText = Encoding.UTF8.GetString(byteArray);
+            InitializeComponent();
 
-            // Load text from file system
-            string rightText = File.ReadAllText(filePath);
+            // Prompt for missing file paths
+            if (string.IsNullOrEmpty(filePath1))
+                filePath1 = OpenFileDialog("Select the first file to compare");
 
-            // Display texts
-            LeftRichTextBox.Document.Blocks.Clear();
-            RightRichTextBox.Document.Blocks.Clear();
-            LeftRichTextBox.Document.Blocks.Add(new Paragraph(new Run(leftText)));
-            RightRichTextBox.Document.Blocks.Add(new Paragraph(new Run(rightText)));
+            if (string.IsNullOrEmpty(filePath2))
+                filePath2 = OpenFileDialog("Select the second file to compare");
 
-            // Compute and display diff
-            ShowDiff(leftText, rightText);
+            // Load text from both files
+            string oldText = File.ReadAllText(filePath1);
+            string newText = File.ReadAllText(filePath2);
+
+            // Set texts in DiffView
+            DiffView.OldText = oldText;
+            DiffView.NewText = newText;
+
+            LoadData();
         }
 
-        private void ShowDiff(string leftText, string rightText)
+        // Constructor 3: FileInfo and a single file path, prompts for missing file
+        public DiffViewer(FileInfo fileInfo, string? filePath2)
         {
-            var diffBuilder = new InlineDiffBuilder(new Differ());
-            var diff = diffBuilder.BuildDiffModel(leftText, rightText);
+            InitializeComponent();
 
-            LeftRichTextBox.Document.Blocks.Clear();
-            RightRichTextBox.Document.Blocks.Clear();
+            filePath1 = fileInfo.AbsolutePath ?? OpenFileDialog("Select the first file to compare");
 
-            foreach (var line in diff.Lines)
+            if (string.IsNullOrEmpty(filePath2))
+                filePath2 = OpenFileDialog("Select the second file to compare");
+
+            // Load content from FileInfo and the second file path
+            string oldText = Encoding.UTF8.GetString(fileInfo.FileContent);
+            string newText = File.ReadAllText(filePath2);
+
+            // Set texts in DiffView
+            DiffView.OldText = oldText;
+            DiffView.NewText = newText;
+
+            LoadData();
+        }
+        //constructor 4 byte arrays 
+        public DiffViewer(byte[] oldContent, byte[] newContent)
+        {
+            InitializeComponent();
+
+            // Convert byte arrays to strings
+            string oldText = Encoding.UTF8.GetString(oldContent);
+            string newText = Encoding.UTF8.GetString(newContent);
+
+            // Set texts in DiffView
+            DiffView.OldText = oldText;
+            DiffView.NewText = newText;
+
+            LoadData();
+        }
+
+        // Helper method for opening file dialog
+        private string? OpenFileDialog(string title)
+        {
+            OpenFileDialog openFileDialog = new OpenFileDialog
             {
-                var leftRun = new Run(line.Text) { Background = GetBackgroundBrush(line.Type) };
-                var rightRun = new Run(line.Text) { Background = GetBackgroundBrush(line.Type) };
+                Title = title,
+                Filter = "All files (*.*)|*.*"
+            };
 
-                LeftRichTextBox.Document.Blocks.Add(new Paragraph(leftRun));
-                RightRichTextBox.Document.Blocks.Add(new Paragraph(rightRun));
+            return openFileDialog.ShowDialog() == true ? openFileDialog.FileName : null;
+        }
+
+        // Placeholder for logic to retrieve second file path if necessary
+        private string? GetSecondFilePath()
+        {
+            return OpenFileDialog("Select the second file to compare");
+        }
+
+        // LoadData method to adjust view settings, dark/light modes, etc.
+        private void LoadData()
+        {
+            // Adjust appearance based on the time of day (dark/light mode)
+            var now = DateTime.Now;
+            var isDark = false; // now.Hour < 6 || now.Hour >= 18;
+            DiffView.Foreground = new SolidColorBrush(isDark ? Color.FromRgb(240, 240, 240) : Color.FromRgb(32, 32, 32));
+
+            // Optionally set headers or adjust appearance
+            DiffView.SetHeaderAsOldToNew();
+
+            // Set background color
+            Background = new SolidColorBrush(isDark ? Color.FromRgb(32, 32, 32) : Color.FromRgb(251, 251, 251));
+        }
+
+        // Switch between inline and side-by-side views
+        private void DiffButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (DiffView.IsInlineViewMode)
+            {
+                DiffView.ShowSideBySide();
+            }
+            else
+            {
+                DiffView.ShowInline();
             }
         }
 
-        private Brush GetBackgroundBrush(ChangeType changeType)
+        // Open additional view options (collapse unchanged, etc.)
+        private void FutherActionsButton_Click(object sender, RoutedEventArgs e)
         {
-            return changeType switch
-            {
-                ChangeType.Inserted => Brushes.LightGreen,
-                ChangeType.Deleted => Brushes.LightCoral,
-                ChangeType.Modified => Brushes.LightYellow,
-                _ => Brushes.Transparent,
-            };
-        }
-
-        private void ApplyFromSaved_Click(object sender, RoutedEventArgs e)
-        {
-            // Get text from the left RichTextBox
-            string leftText = new TextRange(LeftRichTextBox.Document.ContentStart, LeftRichTextBox.Document.ContentEnd).Text;
-
-            // Save text to the filePath
-            File.WriteAllText(filePath, leftText);
-
-            // Create a new FileInfo object
-            var fileInfo = new FileInfo(filePath, true)
-            {
-                Flags = fileFlags,
-                FileContent = Encoding.UTF8.GetBytes(leftText)
-            };
-
-            // Insert or update the FileInfo in the database
-            FileInfo.InsertFileInfo(fileInfo);
-
-            MessageBox.Show("Changes applied from saved file.");
-        }
-
-        private void AcceptNew_Click(object sender, RoutedEventArgs e)
-        {
-            // Get text from the right RichTextBox
-            string rightText = new TextRange(RightRichTextBox.Document.ContentStart, RightRichTextBox.Document.ContentEnd).Text;
-
-            // Save text to the filePath
-            File.WriteAllText(filePath, rightText);
-
-            // Create a new FileInfo object
-            var fileInfo = new FileInfo(filePath, true)
-            {
-                Flags = fileFlags,
-                FileContent = Encoding.UTF8.GetBytes(rightText)
-            };
-
-            // Insert or update the FileInfo in the database
-            FileInfo.InsertFileInfo(fileInfo);
-
-            MessageBox.Show("New changes accepted.");
+            DiffView.OpenViewModeContextMenu();
         }
     }
 }

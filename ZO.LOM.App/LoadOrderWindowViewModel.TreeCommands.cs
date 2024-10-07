@@ -20,41 +20,13 @@ namespace ZO.LoadOrderManager
         public ICommand EditHighlightedItemCommand { get; }
         public ICommand EditCommand { get; }
 
-        //private void Search(string? searchText)
-        //{
-        //    if (string.IsNullOrEmpty(searchText))
-        //    {
-        //        // If search text is empty, show all items
-        //        RefreshData();
-        //    }
-        //    else
-        //    {
-        //        // Filter Groups and Plugins based on the search text
-        //        var filteredGroups = new ObservableCollection<ModGroup>(
-        //            Groups.Where(g => g.GroupName.Contains(searchText, StringComparison.OrdinalIgnoreCase) ||
-        //                              (g.Plugins != null && g.Plugins.Any(p => p.PluginName.Contains(searchText, StringComparison.OrdinalIgnoreCase))))
-        //        );
-
-        //        var filteredPlugins = new ObservableCollection<PluginViewModel>(
-        //            Plugins.Where(p => p.Plugin.PluginName.Contains(searchText, StringComparison.OrdinalIgnoreCase))
-        //        );
-
-        //        // Update the collections
-        //        Groups = filteredGroups;
-        //        Plugins = filteredPlugins;
-
-        //        // Notify the UI about the changes
-        //        OnPropertyChanged(nameof(Groups));
-        //        OnPropertyChanged(nameof(Plugins));
-        //    }
-        //}
 
         public void Search(string? searchText)
         {
-            if (Items == null || Items.Count == 0)
+            if (LoadOrders.Items == null || LoadOrders.Items.Count == 0)
                 return;
 
-            var flatList = Flatten(Items).ToList();
+            var flatList = Flatten(LoadOrders.Items).ToList();
 
             foreach (var item in flatList)
             {
@@ -70,10 +42,11 @@ namespace ZO.LoadOrderManager
             {
                 // Filter and highlight Groups and Plugins based on the search text
                 var matchingItems = flatList.Where(item =>
-                    (item.DisplayName != null && item.DisplayName.Contains(searchText, StringComparison.OrdinalIgnoreCase)) ||
-                    (item.PluginData != null && (item.PluginData.PluginName.Contains(searchText, StringComparison.OrdinalIgnoreCase) ||
-                                                 item.PluginData.Description.Contains(searchText, StringComparison.OrdinalIgnoreCase)))
-                );
+    (item.DisplayName != null && item.DisplayName.Contains(searchText, StringComparison.OrdinalIgnoreCase)) ||
+    (item.PluginData != null &&
+     (item.PluginData.PluginName?.Contains(searchText, StringComparison.OrdinalIgnoreCase) == true ||
+      item.PluginData.Description?.Contains(searchText, StringComparison.OrdinalIgnoreCase) == true))
+);
 
                 foreach (var item in matchingItems)
                 {
@@ -81,7 +54,7 @@ namespace ZO.LoadOrderManager
                 }
 
                 // Notify the UI about the changes
-                OnPropertyChanged(nameof(Items));
+                OnPropertyChanged(nameof(LoadOrders.Items));
             }
         }
 
@@ -91,7 +64,7 @@ namespace ZO.LoadOrderManager
             if (SelectedItem is not LoadOrderItemViewModel selectedItem || Items == null || Items.Count == 0)
                 return;
 
-            var flatList = Flatten(Items).ToList();
+            var flatList = Flatten(LoadOrders.Items).ToList();
             var currentIndex = flatList.IndexOf(selectedItem);
 
             if (currentIndex > 0)
@@ -105,7 +78,7 @@ namespace ZO.LoadOrderManager
             if (SelectedItem is not LoadOrderItemViewModel selectedItem || Items == null || Items.Count == 0)
                 return;
 
-            var flatList = Flatten(Items).ToList();
+            var flatList = Flatten(LoadOrders.Items).ToList();
             var currentIndex = flatList.IndexOf(selectedItem);
 
             if (currentIndex < flatList.Count - 1)
@@ -116,18 +89,18 @@ namespace ZO.LoadOrderManager
 
         public void SelectFirstItem()
         {
-            if (Items == null || Items.Count == 0)
+            if (LoadOrders.Items == null || LoadOrders.Items.Count == 0)
                 return;
 
-            SelectedItem = Flatten(Items).FirstOrDefault();
+            SelectedItem = Flatten(LoadOrders.Items).FirstOrDefault();
         }
 
         public void SelectLastItem()
         {
-            if (Items == null || Items.Count == 0)
+            if (LoadOrders.Items == null || LoadOrders.Items.Count == 0)
                 return;
 
-            SelectedItem = Flatten(Items).LastOrDefault();
+            SelectedItem = Flatten(LoadOrders.Items).LastOrDefault();
         }
 
         private void MoveToUnassignedGroup(Plugin plugin)

@@ -33,6 +33,12 @@ namespace ZO.LoadOrderManager
             _watcher.Deleted += OnFileChanged;
             _watcher.EnableRaisingEvents = true;
         }
+        
+        ~FileMonitor()
+        {
+            App.LogDebug($"FileMonitor for {_filePath} is being garbage collected.");
+            Console.WriteLine($"FileMonitor for {_filePath} is being garbage collected.");
+        }
 
         private void OnFileChanged(object sender, FileSystemEventArgs e)
         {
@@ -68,9 +74,11 @@ namespace ZO.LoadOrderManager
 
         private void LaunchDiffViewer(byte[] oldContent, byte[] newContent)
         {
-            // Custom logic to launch the DiffViewer
-            MessageBox.Show("File has been changed. Launching DiffViewer...");
-            // Example: DiffViewer.Show(oldContent, newContent);
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                var diffViewer = new DiffViewer(oldContent, newContent);
+                diffViewer.Show();
+            });
         }
 
         public static void InitializeAllMonitors()
@@ -121,6 +129,7 @@ namespace ZO.LoadOrderManager
 
                             // Initialize the FileMonitor with the new FileInfo
                             new FileMonitor(newFileInfo.AbsolutePath, newFileInfo.FileContent);
+                            App.LogDebug($"New FileMonitor for {newFileInfo.AbsolutePath} established");
                         }
                     }
                     catch (Exception ex)

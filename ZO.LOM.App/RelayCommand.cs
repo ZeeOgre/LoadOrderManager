@@ -12,13 +12,13 @@ namespace ZO.LoadOrderManager
         {
             _execute = execute ?? throw new ArgumentNullException(nameof(execute));
             _canExecute = canExecute;
-            App.LogDebug("RelayCommand created for " + execute.Method.Name);
+            //App.LogDebug("RelayCommand created for " + execute.Method.Name);
         }
 
         public bool CanExecute(object? parameter)
         {
             var result = _canExecute?.Invoke(parameter) ?? true;
-            App.LogDebug($"CanExecute called for {parameter}: {result}");
+            //App.LogDebug($"CanExecute called for {parameter}: {result}");
             return result;
         }
         public void Execute(object? parameter)

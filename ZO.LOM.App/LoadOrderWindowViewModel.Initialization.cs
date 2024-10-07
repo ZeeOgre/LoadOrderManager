@@ -30,7 +30,7 @@ namespace ZO.LoadOrderManager
             CachedGroupSetLoadOrders = new LoadOrdersViewModel();
 
             // Initialize commands
-            SearchCommand = new RelayCommand<string?>(Search);
+            SearchCommand = new RelayCommand(_ => Search(SearchText));
             MoveUpCommand = new RelayCommand<object?>(param => MoveUp(), param => CanMoveUp());
             MoveDownCommand = new RelayCommand<object?>(param => MoveDown(), param => CanMoveDown());
             SaveAsNewLoadoutCommand = new RelayCommand<object?>(param => SaveAsNewLoadout());
@@ -47,8 +47,8 @@ namespace ZO.LoadOrderManager
             SettingsWindowCommand = new RelayCommand<object?>(param => SettingsWindow(), _ => true);
             ImportFromYamlCommand = new RelayCommand<object?>(param => ImportFromYaml());
             OpenGameSettingsCommand = new RelayCommand<object?>(param => OpenGameSettings(), _ => true);
-            OpenPluginEditorCommand = new RelayCommand<object?>(param => OpenPluginEditor());
-            OpenGroupEditorCommand = new RelayCommand<object?>(param => OpenGroupEditor());
+            //OpenPluginEditorCommand = new RelayCommand<object?>(param => OpenPluginEditor());
+            //OpenGroupEditorCommand = new RelayCommand<object?>(param => OpenGroupEditor());
             RefreshDataCommand = new RelayCommand<object?>(param => RefreshData(), _ => true);
             CopyTextCommand = new RelayCommand<object?>(param => CopyText(), param => CanExecuteCopyText(null));
             DeleteCommand = new RelayCommand<object?>(param => Delete(), param => CanExecuteDelete(null));

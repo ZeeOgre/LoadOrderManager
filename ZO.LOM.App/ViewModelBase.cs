@@ -18,7 +18,7 @@ namespace ZO.LoadOrderManager
             if (EqualityComparer<T>.Default.Equals(field, value)) return false;
 
             field = value;
-            Debug.WriteLine($"SETPROPERTY: Property '{propertyName}' changed to: {value}");
+            //Debug.WriteLine($"SETPROPERTY: Property '{propertyName}' changed to: {value}");
             OnPropertyChanged(propertyName);
             return true;
         }

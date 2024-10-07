@@ -263,7 +263,7 @@ namespace ZO.LoadOrderManager
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            if (value is List<FileInfo> files)
+            if (value is ObservableCollection<FileInfo> files)
             {
                 return string.Join(", ", files.Select(f => f.Filename));
             }

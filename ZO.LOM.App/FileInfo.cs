@@ -6,6 +6,7 @@ using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Windows;
+using YamlDotNet.Serialization;
 
 namespace ZO.LoadOrderManager
 {
@@ -62,7 +63,9 @@ namespace ZO.LoadOrderManager
         public string? HASH { get; set; }
         public FileFlags Flags { get; set; }
         public string AbsolutePath { get; set; } // Absolute path of the file
+        [YamlIgnore]
         public byte[]? FileContent { get; set; } // Nullable byte array for raw file content
+        [YamlIgnore]
         public byte[]? CompressedContent { get; set; } // Property for compressed content
 
         public FileInfo()
@@ -160,6 +163,25 @@ namespace ZO.LoadOrderManager
             }
         }
 
+        public string GetPathByFlags()
+        {
+            if (Flags.HasFlag(FileFlags.GameAppData))
+            {
+                return Path.Combine(FolderDefinitions["GameAppData"], Filename);
+            }
+            else if (Flags.HasFlag(FileFlags.GameDocs))
+            {
+                return Path.Combine(FolderDefinitions["GameDocs"], Filename);
+            }
+            else if (Flags.HasFlag(FileFlags.GameFolder))
+            {
+                return Path.Combine(FolderDefinitions["GameFolder"], Filename);
+            }
+            else
+            {
+                throw new InvalidOperationException("File does not have a valid path flag set.");
+            }
+        }
 
         private byte[] CompressFile(byte[] fileContent)
         {

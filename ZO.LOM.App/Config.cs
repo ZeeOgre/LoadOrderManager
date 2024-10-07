@@ -1,5 +1,6 @@
 using System.Data.SQLite;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Windows;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
@@ -20,9 +21,6 @@ namespace ZO.LoadOrderManager
         private static bool _isVerificationInProgress = false; // Flag to track verification
         public List<FileInfo> MonitoredFiles { get; set; } = new List<FileInfo>();
 
-        /// <summary>
-        /// Gets the singleton instance of the Config class.
-        /// </summary>
         public static Config Instance
         {
             get
@@ -48,20 +46,13 @@ namespace ZO.LoadOrderManager
         {
             if (other == null) throw new ArgumentNullException(nameof(other));
 
-            // Assuming these are the properties you want to update
             this.GameFolder = other.GameFolder;
             this.AutoCheckForUpdates = other.AutoCheckForUpdates;
             this.MonitoredFiles = other.MonitoredFiles;
-            // Add other properties as needed
         }
 
-        /// <summary>
-        /// Initializes the configuration.
-        /// </summary>
         public static void Initialize()
         {
-            //MessageBox.Show($"Regular Init: Config file path: {configFilePath}\nDB file path: {dbFilePath}", "Initialization Paths");
-
             if (_instance == null)
             {
                 lock (_lock)
@@ -72,6 +63,7 @@ namespace ZO.LoadOrderManager
                         if (File.Exists(dbFilePath) && HasRowsInDatabase())
                         {
                             _ = LoadFromDatabase();
+                            Instance.MonitoredFiles = FileInfo.GetMonitoredFiles();
                         }
                         else
                         {
@@ -87,7 +79,6 @@ namespace ZO.LoadOrderManager
             try
             {
                 using var connection = DbManager.Instance.GetConnection();
-                
                 using var command = new SQLiteCommand("SELECT COUNT(*) FROM Config", connection);
                 var rowCount = Convert.ToInt64(command.ExecuteScalar());
                 return rowCount > 0;
@@ -102,8 +93,6 @@ namespace ZO.LoadOrderManager
         public static void InitializeNewInstance()
         {
             _instance = new Config();
-            //MessageBox.Show($"Special Blank Init:Config file path: {configFilePath}\nDB file path: {dbFilePath}", "Initialization Paths");
-
         }
 
         public static void VerifyLocalAppDataFiles()
@@ -171,28 +160,16 @@ namespace ZO.LoadOrderManager
             }
         }
 
-        /// <summary>
-        /// Loads the configuration from a YAML file.
-        /// </summary>
-        /// <returns>The loaded configuration.</returns>
         public static Config LoadFromYaml()
         {
             return LoadFromYaml(configFilePath);
         }
 
-        /// <summary>
-        /// Saves the configuration to a YAML file.
-        /// </summary>
         public static void SaveToYaml()
         {
             SaveToYaml(configFilePath);
         }
 
-        /// <summary>
-        /// Loads the configuration from a specified YAML file.
-        /// </summary>
-        /// <param name="filePath">The path to the YAML file.</param>
-        /// <returns>The loaded configuration.</returns>
         public static Config LoadFromYaml(string filePath)
         {
             if (!File.Exists(filePath))
@@ -215,10 +192,6 @@ namespace ZO.LoadOrderManager
             return _instance;
         }
 
-        /// <summary>
-        /// Saves the configuration to a specified YAML file.
-        /// </summary>
-        /// <param name="filePath">The path to the YAML file.</param>
         public static void SaveToYaml(string filePath)
         {
             var serializer = new SerializerBuilder()
@@ -226,19 +199,15 @@ namespace ZO.LoadOrderManager
                 .Build();
 
             var yaml = serializer.Serialize(Instance);
-
             File.WriteAllText(filePath, yaml);
         }
 
-        /// <summary>
-        /// Loads the configuration from the database.
-        /// </summary>
-        /// <returns>The loaded configuration.</returns>
+
+
         public static Config? LoadFromDatabase()
         {
             using (var connection = DbManager.Instance.GetConnection())
             {
-                
                 using var command = new SQLiteCommand("SELECT * FROM Config", connection);
                 using var reader = command.ExecuteReader();
                 if (reader.Read())
@@ -246,24 +215,19 @@ namespace ZO.LoadOrderManager
                     _instance = new Config
                     {
                         GameFolder = reader["GameFolder"]?.ToString(),
-                        AutoCheckForUpdates = Convert.ToBoolean(reader["AutoCheckForUpdates"])
-
+                        AutoCheckForUpdates = Convert.ToBoolean(reader["AutoCheckForUpdates"]),
+                        MonitoredFiles = FileInfo.GetMonitoredFiles() // Ensure MonitoredFiles is loaded
                     };
                 }
             }
             return _instance;
         }
 
-        /// <summary>
-        /// Saves the configuration to the database.
-        /// </summary>
         public static void SaveToDatabase()
         {
             var config = Instance;
 
             using var connection = DbManager.Instance.GetConnection();
-            
-            App.LogDebug($"Config Begin Transaction");
             using var transaction = connection.BeginTransaction();
             using (var command = new SQLiteCommand(connection))
             {
@@ -271,20 +235,19 @@ namespace ZO.LoadOrderManager
                 _ = command.ExecuteNonQuery();
 
                 command.CommandText = @"
-                                INSERT INTO Config (
-                                    GameFolder,
-                                    AutoCheckForUpdates
-                                ) VALUES (
-                                    @GameFolder,
-                                    @AutoCheckForUpdates
-                                )";
+                        INSERT INTO Config (
+                            GameFolder,
+                            AutoCheckForUpdates
+                        ) VALUES (
+                            @GameFolder,
+                            @AutoCheckForUpdates
+                        )";
 
                 _ = command.Parameters.AddWithValue("@GameFolder", config.GameFolder ?? (object)DBNull.Value);
                 _ = command.Parameters.AddWithValue("@AutoCheckForUpdates", config.AutoCheckForUpdates ? 1 : 0);
 
                 _ = command.ExecuteNonQuery();
             }
-            App.LogDebug($"Config  Commit Transaction");
             transaction.Commit();
         }
     }
