@@ -64,7 +64,13 @@ namespace ZO.LoadOrderManager
                     _config.DarkMode = value;
                     OnPropertyChanged();
 
-                    ApplyTheme(value);
+                    // Call the updated methods from the App class
+                    Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        // Apply the modern theme and custom TreeView theme
+                        //((App)Application.Current).ApplyModernTheme();
+                        ((App)Application.Current).ApplyCustomTheme(_config.DarkMode);
+                    });
                 }
             }
         }
@@ -307,18 +313,5 @@ namespace ZO.LoadOrderManager
             }
         }
 
-        private void ApplyTheme(bool isDarkMode)
-        {
-            App.Current.Dispatcher.Invoke(() =>
-            {
-                ResourceDictionary theme = new ResourceDictionary();
-                theme.Source = isDarkMode
-                    ? new Uri("Themes/DarkTheme.xaml", UriKind.Relative)
-                    : new Uri("Themes/LightTheme.xaml", UriKind.Relative);
-
-                App.Current.Resources.MergedDictionaries.Clear();
-                App.Current.Resources.MergedDictionaries.Add(theme);
-            });
-        }
     }
 }

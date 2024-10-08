@@ -1,4 +1,5 @@
 using Microsoft.Win32;
+using ModernWpf.Controls;
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -217,8 +218,98 @@ namespace ZO.LoadOrderManager
 
         private void AddNewGroupSet()
         {
-            // Logic for adding a new GroupSet skeleton
+            // Step 1: Ask the user if they want to copy an existing GroupSet or create a new one
+            var result = MessageBox.Show("Do you want to copy an existing GroupSet?", "Add New GroupSet", MessageBoxButton.YesNoCancel);
+
+            if (result == MessageBoxResult.Cancel)
+            {
+                return; // User canceled the operation
+            }
+
+            string newGroupName = PromptForGroupName();
+            if (string.IsNullOrEmpty(newGroupName))
+            {
+                MessageBox.Show("Group name cannot be empty.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+            GroupSet newGroupSet;
+
+            if (result == MessageBoxResult.Yes)
+            {
+                // Step 2: Copy an existing GroupSet
+                var selectGroupSetWindow = new SelectGroupSetWindow();
+                if (selectGroupSetWindow.ShowDialog() == true)
+                {
+                    var existingGroupSet = selectGroupSetWindow.SelectedGroupSet;
+                    if (existingGroupSet == null)
+                    {
+                        MessageBox.Show("No existing GroupSet selected.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                        return;
+                    }
+
+                    newGroupSet = existingGroupSet.Clone();
+                    newGroupSet.GroupSetName = newGroupName;
+                }
+                else
+                {
+                    return; // User canceled the operation
+                }
+            }
+            else
+            {
+                // Step 3: Create a new GroupSet
+                newGroupSet = new GroupSet { GroupSetName = newGroupName };
+                InitializeNewGroupSet(newGroupSet);
+            }
+
+            // Step 4: Create a new AggLoadInfo instance with the new GroupSet
+            var newAggLoadInfo = new AggLoadInfo();
+            newAggLoadInfo.GroupSets.Add(newGroupSet);
+            var newLoadOut = new LoadOut(newGroupSet) { LoadOutName = "LO_" + newGroupName };
+            newAggLoadInfo.LoadOuts.Add(newLoadOut);
+
+            // Step 5: Copy the new AggLoadInfo instance over the existing one
+            AggLoadInfo.Instance = newAggLoadInfo;
+            AggLoadInfo.Instance.ActiveGroupSet = newGroupSet;
+            AggLoadInfo.Instance.ActiveLoadOut = newLoadOut;
+
+            // Add the new GroupSet to the collection
+            GroupSets.Add(newGroupSet);
         }
+
+        private string PromptForGroupName()
+        {
+            // Use the InputDialog to prompt the user for the new group name
+            var dialog = new InputDialog("Enter the name for the new GroupSet:");
+            if (dialog.ShowDialog() == true)
+            {
+                return dialog.ResponseText;
+            }
+            return null;
+        }
+
+        private GroupSet SelectExistingGroupSet()
+        {
+            // Implement a dialog to select an existing GroupSet
+            var dialog = new SelectGroupSetDialog(GroupSets);
+            if (dialog.ShowDialog() == true)
+            {
+                return dialog.SelectedGroupSet;
+            }
+            return null;
+        }
+
+        private void InitializeNewGroupSet(GroupSet groupSet)
+        {
+            // Add group 1 and -997
+            groupSet.ModGroups.Add(new ModGroup { Id = 1 });
+            groupSet.ModGroups.Add(new ModGroup { Id = -997 });
+
+            // Add an empty default loadout
+            groupSet.LoadOuts.Add(new LoadOut(groupSet));
+        }
+
 
         private void AddNewLoadout()
         {

@@ -51,22 +51,12 @@ namespace ZO.LoadOrderManager
 
         protected override void OnStartup(StartupEventArgs e)
         {
-            
             App.LogDebug("OnStartup called");
-            AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
-            DispatcherUnhandledException += App_DispatcherUnhandledException;
 
             try
             {
                 base.OnStartup(e);
-                ApplyTheme(IsSystemInDarkMode());
-                App.LogDebug("Application_Startup called");
-                var updateUrl = Settings.Default.UpdateUrl;
-
                 SetProbingPaths();
-
-                App.LogDebug("Verifying local app data files...");
-                //Config.VerifyLocalAppDataFiles();
 
                 App.LogDebug("Checking command line arguments...");
                 foreach (var arg in e.Args)
@@ -93,24 +83,53 @@ namespace ZO.LoadOrderManager
                 Shutdown();
             }
         }
-        
-        private void ApplyTheme(bool isDarkMode)
+
+        // Apply the ModernWpf theme
+        //public void ApplyModernTheme()
+        //{
+        //    Application.Current.Dispatcher.Invoke(() =>
+        //    {
+        //        ModernWpf.ThemeManager.Current.ApplicationTheme = Config.Instance.DarkMode ? ModernWpf.ApplicationTheme.Dark : ModernWpf.ApplicationTheme.Light;
+        //    });
+        //}
+
+
+        public void ApplyCustomTheme(bool? isDarkMode)
         {
-            ResourceDictionary theme = new ResourceDictionary();
-            if (isDarkMode)
+            string assemblyName = Assembly.GetExecutingAssembly().GetName().Name;
+            ResourceDictionary colorDict = new ResourceDictionary();
+
+            if (isDarkMode == null)
             {
-                theme.Source = new Uri("Themes/DarkTheme.xaml", UriKind.Relative);
+                isDarkMode = IsSystemInDarkMode(); // Use system settings
+            }
+
+            // Load appropriate color dictionary
+            if (isDarkMode == true)
+            {
+                colorDict.Source = new Uri($"/{assemblyName};component/Themes/ColorsDark.xaml", UriKind.Relative);
             }
             else
             {
-                theme.Source = new Uri("Themes/LightTheme.xaml", UriKind.Relative);
+                colorDict.Source = new Uri($"/{assemblyName};component/Themes/ColorsLight.xaml", UriKind.Relative);
             }
 
-            // Clear existing resources and add the selected theme
+            // Clear existing dictionaries and load the new one
             Application.Current.Resources.MergedDictionaries.Clear();
-            Application.Current.Resources.MergedDictionaries.Add(theme);
+            Application.Current.Resources.MergedDictionaries.Add(colorDict);
+
+            // Also add the shared style dictionary (common between both modes)
+            ResourceDictionary styleDict = new ResourceDictionary
+            {
+                Source = new Uri($"/{assemblyName};component/Themes/CommonStyle.xaml", UriKind.Relative)
+            };
+            Application.Current.Resources.MergedDictionaries.Add(styleDict);
         }
 
+
+
+
+        // Helper method to check system's dark mode setting using the registry
         private bool IsSystemInDarkMode()
         {
             const string registryKey = @"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize";
@@ -127,42 +146,15 @@ namespace ZO.LoadOrderManager
             return false;
         }
 
-        public static void LogReaderData(SQLiteDataReader reader)
-        {
-            var logMessage = new StringBuilder();
-            for (int i = 0; i < reader.FieldCount; i++)
-            {
-                logMessage.AppendFormat("{0} = {1}, ", reader.GetName(i), reader.IsDBNull(i) ? "NULL" : reader.GetValue(i).ToString());
-            }
-            App.LogDebug(logMessage.ToString());
-        }
-
-        private void App_DispatcherUnhandledException(object sender, System.Windows.Threading.DispatcherUnhandledExceptionEventArgs e)
-        {
-            App.LogDebug($"Unhandled exception caught: {e.Exception.Message}");
-            _ = MessageBox.Show($"Unhandled exception: {e.Exception.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            e.Handled = true; // Optionally set this to true to prevent app crash
-        }
-
-        private void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
-        {
-            if (e.ExceptionObject is Exception ex)
-            {
-                App.LogDebug($"Unhandled domain exception: {ex.Message}");
-                _ = MessageBox.Show($"Unhandled domain exception: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-            else
-            {
-                App.LogDebug("Unhandled domain exception occurred.");
-                _ = MessageBox.Show("Unhandled domain exception occurred.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-        }
 
         private void HandleSettingsMode()
         {
             try
             {
                 Config.InitializeNewInstance();
+                //ApplyModernTheme();
+                ApplyCustomTheme(Config.Instance.DarkMode);
+
                 App.LogDebug("Launching SettingsWindow in settings mode.");
                 var settingsWindow = new SettingsWindow(SettingsLaunchSource.CommandLine);
                 settingsWindow.Closed += (s, e) => RestartApplication();
@@ -223,6 +215,10 @@ namespace ZO.LoadOrderManager
                         Config.Initialize();
                         InitializationManager.ReportProgress(20, "Configuration initialized");
                         InitializationManager.EndInitialization(nameof(Config));
+
+                        //ApplyModernTheme();
+                        //ApplyCustomTreeViewTheme(Config.Instance.DarkMode);
+                        ApplyCustomTheme(null);
 
                         App.LogDebug("Initializing database manager...");
                         InitializationManager.StartInitialization(nameof(DbManager));
@@ -293,9 +289,6 @@ namespace ZO.LoadOrderManager
                 Shutdown();
             }
         }
-
-
-
 
         private async static void RestartApplication()
         {
@@ -386,5 +379,28 @@ namespace ZO.LoadOrderManager
             string probingPaths = Settings.Default.ProbingPaths;
             AppDomain.CurrentDomain.SetData("PROBING_DIRECTORIES", probingPaths);
         }
+
+        private void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
+        {
+            if (e.ExceptionObject is Exception ex)
+            {
+                LogDebug($"Unhandled domain exception: {ex.Message}");
+                _ = MessageBox.Show($"Unhandled domain exception: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            else
+            {
+                LogDebug("Unhandled domain exception occurred.");
+                _ = MessageBox.Show("Unhandled domain exception occurred.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void App_DispatcherUnhandledException(object sender, System.Windows.Threading.DispatcherUnhandledExceptionEventArgs e)
+        {
+            LogDebug($"Unhandled exception caught: {e.Exception.Message}");
+            _ = MessageBox.Show($"Unhandled exception: {e.Exception.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            e.Handled = true; // Optionally set this to true to prevent app crash
+        }
+
+
     }
 }

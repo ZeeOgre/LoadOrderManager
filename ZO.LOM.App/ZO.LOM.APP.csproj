@@ -50,10 +50,11 @@
     <PackageReference Include="Autoupdater.NET.Official" Version="1.9.2" />
     <PackageReference Include="DiffPlex" Version="1.7.2" />
     <PackageReference Include="DiffPlex.Wpf" Version="1.4.0" />
+    <PackageReference Include="ModernWpfUI" Version="0.9.6" />
     
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-    <PackageReference Include="System.Data.SQLite" Version="1.0.118" />
-    <PackageReference Include="YamlDotNet" Version="16.1.0" />
+    <PackageReference Include="System.Data.SQLite" Version="1.0.119" />
+    <PackageReference Include="YamlDotNet" Version="16.1.3" />
   </ItemGroup>
 
   <ItemGroup>
@@ -102,17 +103,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Page Remove="Themes\DarkTheme.xaml" />
-    <Page Remove="Themes\LightTheme.xaml" />
+    <Page Remove="Themes\DarkTreeViewTheme.xaml" />
+    <Page Remove="Themes\LightTreeViewTheme.xaml" />
   </ItemGroup>
 
   <ItemGroup>
-    <Resource Include="Themes\DarkTheme.xaml">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Resource>
-    <Resource Include="Themes\LightTheme.xaml">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Resource>
+    <Resource Include="Themes\DarkTreeViewTheme.xaml" />
+    <Resource Include="Themes\LightTreeViewTheme.xaml" />
   </ItemGroup>
 
   <Target Name="RearrangeOutputFiles" AfterTargets="Build;Publish" BeforeTargets="PostBuildEvent">

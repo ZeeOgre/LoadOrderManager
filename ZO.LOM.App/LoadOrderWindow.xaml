@@ -134,7 +134,7 @@
             </MenuItem>
         </Menu>
 
-        <Grid Grid.Row="1" Background="DarkGray">
+        <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="50"/>
                 <ColumnDefinition Width="250"/>
@@ -154,12 +154,13 @@
         </Grid>
 
         <local:MultiSelectTreeView x:Name="LoadOrderTreeView" Grid.Row="2" ItemsSource="{Binding LoadOrders.Items}" 
-          ItemTemplateSelector="{StaticResource EntityTypeTemplateSelector}"
-          HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
-          SelectedItems="{Binding SelectedItems, Mode=TwoWay}"
-          KeyDown="TreeView_KeyDown"
-          MouseRightButtonDown="TreeView_MouseRightButtonDown"
-          Loaded="LoadOrderTreeView_Loaded">
+   ItemTemplateSelector="{StaticResource EntityTypeTemplateSelector}"
+   HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
+   SelectedItems="{Binding SelectedItems, Mode=TwoWay}"
+   KeyDown="TreeView_KeyDown"
+   MouseRightButtonDown="TreeView_MouseRightButtonDown"
+   Loaded="LoadOrderTreeView_Loaded">
+
             <TreeView.Resources>
                 <ContextMenu x:Key="ItemContextMenu">
                     <MenuItem Header="Edit" Command="{Binding DataContext.EditCommand, RelativeSource={RelativeSource AncestorType=TreeView}}" CommandParameter="{Binding}" />
@@ -180,21 +181,28 @@
                     <MenuItem Header="Enable/Disable" Tag="menu" Command="{Binding DataContext.ToggleEnableCommand, RelativeSource={RelativeSource AncestorType=TreeView}}" CommandParameter="{Binding}" />
                 </ContextMenu>
             </TreeView.Resources>
+
             <TreeView.ItemContainerStyle>
-                <Style TargetType="TreeViewItem">
+                <Style TargetType="TreeViewItem" BasedOn="{StaticResource {x:Type TreeViewItem}}">
+                    <!-- Ensure we inherit ModernWPF styling -->
                     <Setter Property="ContextMenu" Value="{StaticResource ItemContextMenu}" />
                     <Setter Property="IsExpanded" Value="{Binding GroupID, Converter={StaticResource GroupIDToIsExpandedConverter}}"/>
+                    <Setter Property="FontSize" Value="14" />
+                    <Setter Property="Padding" Value="5" />
                 </Style>
             </TreeView.ItemContainerStyle>
+
         </local:MultiSelectTreeView>
 
+
         <local:MultiSelectTreeView x:Name="CachedGroupSetTreeView" Grid.Row="3" ItemsSource="{Binding CachedGroupSetLoadOrders.Items}" 
-          ItemTemplateSelector="{StaticResource EntityTypeTemplateSelector}"
-          HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
-          SelectedItems="{Binding SelectedCachedItems, Mode=TwoWay}"
-          Loaded="CachedGroupSetTreeView_Loaded"
-          KeyDown="TreeView_KeyDown"
-          MouseRightButtonDown="TreeView_MouseRightButtonDown">
+   ItemTemplateSelector="{StaticResource EntityTypeTemplateSelector}"
+   HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
+   SelectedItems="{Binding SelectedCachedItems, Mode=TwoWay}"
+   Loaded="CachedGroupSetTreeView_Loaded"
+   KeyDown="TreeView_KeyDown"
+   MouseRightButtonDown="TreeView_MouseRightButtonDown">
+
             <TreeView.Resources>
                 <ContextMenu x:Key="ItemContextMenu">
                     <MenuItem Header="Edit" Command="{Binding DataContext.EditCommand, RelativeSource={RelativeSource AncestorType=TreeView}}" CommandParameter="{Binding}" />
@@ -207,7 +215,7 @@
                         </MenuItem.ItemsSource>
                         <MenuItem.ItemTemplate>
                             <DataTemplate>
-                                <MenuItem Header="{Binding GroupName}" Command="{Binding DataContext.ChangeGroupCommand, RelativeSource={RelativeSource AncestorType=TreeView}}" CommandParameter="{Binding}" />
+                                <MenuItem Header="{Binding GroupName}" Command="{Binding DataContext.ChangeGroupCommand, RelativeSource={RelativeSource AncestorType=TreeView}}" CommandParameter="{Binding GroupID}" />
                             </DataTemplate>
                         </MenuItem.ItemTemplate>
                     </MenuItem>
@@ -215,13 +223,19 @@
                     <MenuItem Header="Enable/Disable" Tag="menu" Command="{Binding DataContext.ToggleEnableCommand, RelativeSource={RelativeSource AncestorType=TreeView}}" CommandParameter="{Binding}" />
                 </ContextMenu>
             </TreeView.Resources>
+
             <TreeView.ItemContainerStyle>
-                <Style TargetType="TreeViewItem">
+                <Style TargetType="TreeViewItem" BasedOn="{StaticResource {x:Type TreeViewItem}}">
+                    <!-- Ensure we inherit ModernWPF styling -->
                     <Setter Property="ContextMenu" Value="{StaticResource ItemContextMenu}" />
                     <Setter Property="IsExpanded" Value="{Binding GroupID, Converter={StaticResource GroupIDToIsExpandedConverter}}"/>
+                    <Setter Property="FontSize" Value="14" />
+                    <Setter Property="Padding" Value="5" />
                 </Style>
             </TreeView.ItemContainerStyle>
+
         </local:MultiSelectTreeView>
+
 
         <Grid Grid.Row="4">
             <Grid.ColumnDefinitions>
@@ -235,7 +249,7 @@
                         Command="{Binding MoveUpCommand}" 
                         Margin="5">
                     <Button.Content>
-                        <Path Data="M 25,0 L 50,50 L 0,50 Z" Fill="Black"/>
+                        <TextBlock FontFamily="Segoe UI Symbol" FontSize="30" Text="&#x25B2;"/>
                     </Button.Content>
                 </Button>
 
@@ -243,7 +257,7 @@
                         Command="{Binding MoveDownCommand}" 
                         Margin="5">
                     <Button.Content>
-                        <Path Data="M 0,0 L 50,0 L 25,50 Z" Fill="Black"/>
+                        <TextBlock FontFamily="Segoe UI Symbol" FontSize="30" Text="&#x25BC;"/>
                     </Button.Content>
                 </Button>
             </StackPanel>
@@ -255,8 +269,7 @@
                           DisplayMemberPath="GroupSetName" 
                           Width="200" Height="30" Margin="10,5,10,5" 
                           IsSynchronizedWithCurrentItem="True"
-                          HorizontalAlignment="Center" BorderBrush="{x:Null}" Background="{DynamicResource {x:Static SystemColors.ControlLightBrushKey}}"
-                          />
+                          HorizontalAlignment="Center" />
                 <Button Content="Add New GroupSet"
                         Command="{Binding AddNewGroupSetCommand}"
                         Width="200" 

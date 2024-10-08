@@ -2,6 +2,13 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <Application.Resources>
-        <!-- Define application-wide resources here -->
+        <!-- Default Fallback Theme -->
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="Themes/ColorsLight.xaml" />
+                <ResourceDictionary Source="Themes/CommonStyle.xaml" />
+                <!-- Default to Light Theme -->
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
     </Application.Resources>
 </Application>

@@ -30,15 +30,13 @@ namespace ZO.LoadOrderManager
         }
 
 
-        private void ApplyTheme(bool DarkMode)
+        private void ApplyTheme(bool isDarkMode)
         {
-            ResourceDictionary theme = new ResourceDictionary
-            {
-                Source = new Uri(DarkMode ? "Themes/DarkTheme.xaml" : "Themes/LightTheme.xaml", UriKind.Relative)
-            };
+            Config.Instance.DarkMode = isDarkMode;
 
-            Application.Current.Resources.MergedDictionaries.Clear();
-            Application.Current.Resources.MergedDictionaries.Add(theme);
+            // Apply the ModernWpf theme and custom TreeView themes globally via App class
+            //((App)Application.Current).ApplyModernTheme();
+            ((App)Application.Current).ApplyCustomTheme(isDarkMode);
         }
 
         private void DarkModeCheckBox_Checked(object sender, RoutedEventArgs e)
