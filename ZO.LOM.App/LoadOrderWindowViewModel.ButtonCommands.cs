@@ -43,121 +43,140 @@ namespace ZO.LoadOrderManager
             return SelectedLoadOut != null && SelectedGroupSet != null;
         }
 
-        public bool CanMoveUp()
+        private bool CanMoveUp()
         {
-            if (SelectedItem is LoadOrderItemViewModel loadOrderItem)
-            {
-                var underlyingObject = EntityTypeHelper.GetUnderlyingObject(loadOrderItem);
-                if (underlyingObject is ModGroup modGroup)
-                {
-                    return modGroup.Ordinal > 1 && AggLoadInfo.Instance.Groups
-                        .Any(g => g.ParentID == modGroup.ParentID && g.Ordinal == modGroup.Ordinal - 1);
-                }
-                else if (underlyingObject is Plugin plugin)
-                {
-                    return plugin.GroupOrdinal > 1 && AggLoadInfo.Instance.Plugins
-                        .Any(p => p.GroupID == plugin.GroupID && p.GroupOrdinal == plugin.GroupOrdinal - 1);
-                }
-            }
-            return false;
-        }
+            if (SelectedItems == null || SelectedItems.Count == 0)
+                return false;
 
-        public bool CanMoveDown()
-        {
-            if (SelectedItem is LoadOrderItemViewModel loadOrderItem)
+            // Ensure that for all selected items, they can move up
+            foreach (var item in SelectedItems)
             {
-                var underlyingObject = EntityTypeHelper.GetUnderlyingObject(loadOrderItem);
-                if (underlyingObject is ModGroup modGroup)
-                {
-                    return AggLoadInfo.Instance.Groups
-                        .Any(g => g.ParentID == modGroup.ParentID && g.Ordinal == modGroup.Ordinal + 1);
-                }
-                else if (underlyingObject is Plugin plugin)
-                {
-                    return AggLoadInfo.Instance.Plugins
-                        .Any(p => p.GroupID == plugin.GroupID && p.GroupOrdinal == plugin.GroupOrdinal + 1);
-                }
-            }
-            return false;
-        }
-
-        private void MoveUp()
-        {
-            if (CanMoveUp())
-            {
-                if (SelectedItem is LoadOrderItemViewModel loadOrderItem)
+                if (item is LoadOrderItemViewModel loadOrderItem)
                 {
                     var underlyingObject = EntityTypeHelper.GetUnderlyingObject(loadOrderItem);
+
                     if (underlyingObject is ModGroup modGroup)
                     {
                         var previousItem = AggLoadInfo.Instance.Groups
                             .FirstOrDefault(g => g.ParentID == modGroup.ParentID && g.Ordinal == modGroup.Ordinal - 1);
-
-                        if (previousItem != null)
-                        {
-                            // Swap locations
-                            modGroup.SwapLocations(previousItem);
-
-                            // Refresh all data to update the ViewModel
-                            AggLoadInfo.Instance.RefreshAllData();
-                        }
+                        if (previousItem == null)
+                            return false;
                     }
                     else if (underlyingObject is Plugin plugin)
                     {
                         var previousItem = AggLoadInfo.Instance.Plugins
                             .FirstOrDefault(p => p.GroupID == plugin.GroupID && p.GroupOrdinal == plugin.GroupOrdinal - 1);
-
-                        if (previousItem != null)
-                        {
-                            // Swap locations
-                            plugin.SwapLocations(previousItem);
-
-                            // Refresh all data to update the ViewModel
-                            AggLoadInfo.Instance.RefreshAllData();
-                        }
+                        if (previousItem == null)
+                            return false;
                     }
                 }
             }
+
+            return true;
         }
 
-        private void MoveDown()
+
+        private bool CanMoveDown()
         {
-            if (CanMoveDown())
+            if (SelectedItems == null || SelectedItems.Count == 0)
+                return false;
+
+            // Ensure that for all selected items, they can move up
+            foreach (var item in SelectedItems)
             {
-                if (SelectedItem is LoadOrderItemViewModel loadOrderItem)
+                if (item is LoadOrderItemViewModel loadOrderItem)
                 {
                     var underlyingObject = EntityTypeHelper.GetUnderlyingObject(loadOrderItem);
+
                     if (underlyingObject is ModGroup modGroup)
                     {
-                        var nextItem = AggLoadInfo.Instance.Groups
+                        var previousItem = AggLoadInfo.Instance.Groups
                             .FirstOrDefault(g => g.ParentID == modGroup.ParentID && g.Ordinal == modGroup.Ordinal + 1);
-
-                        if (nextItem != null)
-                        {
-                            // Swap locations
-                            modGroup.SwapLocations(nextItem);
-
-                            // Refresh all data to update the ViewModel
-                            AggLoadInfo.Instance.RefreshAllData();
-                        }
+                        if (previousItem == null)
+                            return false;
                     }
                     else if (underlyingObject is Plugin plugin)
                     {
-                        var nextItem = AggLoadInfo.Instance.Plugins
+                        var previousItem = AggLoadInfo.Instance.Plugins
                             .FirstOrDefault(p => p.GroupID == plugin.GroupID && p.GroupOrdinal == plugin.GroupOrdinal + 1);
-
-                        if (nextItem != null)
-                        {
-                            // Swap locations
-                            plugin.SwapLocations(nextItem);
-
-                            // Refresh all data to update the ViewModel
-                            AggLoadInfo.Instance.RefreshAllData();
-                        }
+                        if (previousItem == null)
+                            return false;
                     }
                 }
             }
+
+            return true;
         }
+
+        private void MoveUp(LoadOrderItemViewModel loadOrderItem)
+        {
+            var underlyingObject = EntityTypeHelper.GetUnderlyingObject(loadOrderItem);
+
+            if (underlyingObject is ModGroup modGroup)
+            {
+                var previousItem = AggLoadInfo.Instance.Groups
+                    .FirstOrDefault(g => g.ParentID == modGroup.ParentID && g.Ordinal == modGroup.Ordinal - 1);
+
+                if (previousItem != null)
+                {
+                    // Swap locations
+                    modGroup.SwapLocations(previousItem);
+
+                    // Refresh all data to update the ViewModel
+                    AggLoadInfo.Instance.RefreshAllData();
+                }
+            }
+            else if (underlyingObject is Plugin plugin)
+            {
+                var previousItem = AggLoadInfo.Instance.Plugins
+                    .FirstOrDefault(p => p.GroupID == plugin.GroupID && p.GroupOrdinal == plugin.GroupOrdinal - 1);
+
+                if (previousItem != null)
+                {
+                    // Swap locations
+                    plugin.SwapLocations(previousItem);
+
+                    // Refresh all data to update the ViewModel
+                    AggLoadInfo.Instance.RefreshAllData();
+                }
+            }
+        }
+
+
+        private void MoveDown(LoadOrderItemViewModel loadOrderItem)
+        {
+            var underlyingObject = EntityTypeHelper.GetUnderlyingObject(loadOrderItem);
+
+            if (underlyingObject is ModGroup modGroup)
+            {
+                var nextItem = AggLoadInfo.Instance.Groups
+                    .FirstOrDefault(g => g.ParentID == modGroup.ParentID && g.Ordinal == modGroup.Ordinal + 1);
+
+                if (nextItem != null)
+                {
+                    // Swap locations
+                    modGroup.SwapLocations(nextItem);
+
+                    // Refresh all data to update the ViewModel
+                    AggLoadInfo.Instance.RefreshAllData();
+                }
+            }
+            else if (underlyingObject is Plugin plugin)
+            {
+                var nextItem = AggLoadInfo.Instance.Plugins
+                    .FirstOrDefault(p => p.GroupID == plugin.GroupID && p.GroupOrdinal == plugin.GroupOrdinal + 1);
+
+                if (nextItem != null)
+                {
+                    // Swap locations
+                    plugin.SwapLocations(nextItem);
+
+                    // Refresh all data to update the ViewModel
+                    AggLoadInfo.Instance.RefreshAllData();
+                }
+            }
+        }
+
 
         private ObservableCollection<LoadOrderItemViewModel> GetFlattenedList(EntityType entityType)
         {

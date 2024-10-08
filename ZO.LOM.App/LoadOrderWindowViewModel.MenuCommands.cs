@@ -5,6 +5,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Timers;
 using System.Windows;
 using System.Windows.Input;
@@ -22,8 +23,8 @@ namespace ZO.LoadOrderManager
         public ICommand OpenGameSaveFolderCommand { get; }
         public ICommand OpenAppDataFolderCommand { get; }
         public ICommand OpenGameSettingsCommand { get; }
-        public ICommand OpenPluginEditorCommand { get; }
-        public ICommand OpenGroupEditorCommand { get; }
+        //public ICommand OpenPluginEditorCommand { get; }
+        //public ICommand OpenGroupEditorCommand { get; }
         public ICommand OpenGameLocalAppDataCommand { get; }
         
         public ICommand SettingsWindowCommand { get; }
@@ -59,7 +60,7 @@ namespace ZO.LoadOrderManager
                 var currentParentOrGroupID = loadOrderItem.ParentID; // ParentID for groups or GroupID for plugins
 
                 // Return groups excluding the one where the item is already contained
-                return allGroups.Where(g => g.GroupID != currentParentOrGroupID);
+                return allGroups.Where(g => g.GroupID != currentParentOrGroupID).Distinct();
             }
         }
 
@@ -207,97 +208,138 @@ namespace ZO.LoadOrderManager
             }
         }
 
-        public void CopyText()
-        {
-            if (SelectedItem is LoadOrderItemViewModel selectedItem)
-            {
-                var underlyingObject = EntityTypeHelper.GetUnderlyingObject(selectedItem);
-                string textToCopy = underlyingObject?.ToString() ?? string.Empty;
-                Clipboard.SetText(textToCopy);
-            }
-        }
 
-        private bool CanExecuteCopyText(object parameter)
+        private void HandleMultipleSelectedItems(Action<LoadOrderItemViewModel> action)
         {
-            return SelectedItem is LoadOrderItemViewModel selectedItem &&
-                   (selectedItem.EntityType == EntityType.Group || selectedItem.EntityType == EntityType.Plugin);
-        }
+            if (SelectedItems == null || SelectedItems.Count == 0)
+                return;
 
-        private void Delete()
-        {
-            if (SelectedItem is LoadOrderItemViewModel selectedItem)
+            foreach (var item in SelectedItems)
             {
-                var parentGroup = selectedItem.GetParentGroup();
-                if (parentGroup != null)
+                if (item is LoadOrderItemViewModel viewModelItem)
                 {
-                    if (selectedItem.EntityType == EntityType.Plugin)
-                    {
-                        // Adjust ordinals of subsequent sibling plugins
-                        var siblingPlugins = parentGroup.Plugins?
-                            .Where(p => p.GroupOrdinal > selectedItem.PluginData.GroupOrdinal)
-                            .ToList();
-                        if (siblingPlugins != null)
-                        {
-                            foreach (var sibling in siblingPlugins)
-                            {
-                                sibling.GroupOrdinal--;
-                            }
-                        }
-
-                        // Remove the plugin from the group
-                        parentGroup.Plugins?.Remove(selectedItem.PluginData);
-
-                        // Move the plugin to the unassigned group (-997)
-                        MoveToUnassignedGroup(selectedItem.PluginData);
-                    }
-                    else if (selectedItem.EntityType == EntityType.Group)
-                    {
-                        // Check if the group has child groups
-                        if (selectedItem.Children.Any(child => child.EntityType == EntityType.Group))
-                        {
-                            // Block deleting groups that hold other groups
-                            MessageBox.Show("Cannot delete a group that contains other groups.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                            return;
-                        }
-
-                        // Adjust ordinals of subsequent sibling groups
-                        var siblingGroups = AggLoadInfo.Instance.Groups?
-                            .Where(g => g.ParentID == parentGroup.GroupID && g.Ordinal > selectedItem.GetModGroup().Ordinal)
-                            .ToList();
-                        if (siblingGroups != null)
-                        {
-                            foreach (var sibling in siblingGroups)
-                            {
-                                sibling.Ordinal--;
-                            }
-                        }
-
-                        // Move all child plugins to the unassigned group (-997)
-                        foreach (var child in selectedItem.Children)
-                        {
-                            if (child.EntityType == EntityType.Plugin)
-                            {
-                                MoveToUnassignedGroup(child.PluginData);
-                            }
-                        }
-
-                        // Remove the group from the parent group's children
-                        parentGroup.Plugins?.Remove(selectedItem.PluginData);
-                    }
+                    action(viewModelItem); // Apply the action to each item
                 }
             }
         }
 
-        private void ChangeGroup(object parameter)
+
+
+        private bool CanExecuteCheckAllItems()
         {
-            if (parameter is not long newGroupId)
+            // If no items are selected, return false
+            if (SelectedItems == null || SelectedItems.Count == 0)
+                return false;
+
+            // Ensure all selected items meet the condition
+            foreach (var item in SelectedItems)
             {
-                throw new ArgumentException("Parameter must be a long representing the new group ID.", nameof(parameter));
+                if (!(item is LoadOrderItemViewModel))
+                {
+                    return false; // If any item is not a LoadOrderItemViewModel, return false
+                }
             }
 
-            if (SelectedItem is LoadOrderItemViewModel loadOrderItem)
+            return true; // All items are valid, return true
+        }
+
+
+
+        private void CopyText(LoadOrderItemViewModel item)
+        {
+            // Your logic for copying a single item's text goes here
+            Clipboard.SetText(item.ToString()); // Example action
+        }
+
+
+
+        private bool CanExecuteCopyText()
+        {
+            // If no items are selected, the command cannot execute
+            if (SelectedItems == null || SelectedItems.Count == 0)
+                return false;
+
+            // Ensure all selected items meet the condition
+            foreach (var item in SelectedItems)
             {
-                var underlyingObject = EntityTypeHelper.GetUnderlyingObject(loadOrderItem);
+                if (item is LoadOrderItemViewModel viewModelItem)
+                {
+                    if (viewModelItem.EntityType != EntityType.Group && viewModelItem.EntityType != EntityType.Plugin)
+                    {
+                        return false; // If any item doesn't meet the condition, disable the command
+                    }
+                }
+            }
+
+            // All items meet the condition, enable the command
+            return true;
+        }
+
+
+
+
+
+
+        private void Delete(LoadOrderItemViewModel selectedItem)
+        {
+            var parentGroup = selectedItem.GetParentGroup();
+            if (parentGroup != null)
+            {
+                if (selectedItem.EntityType == EntityType.Plugin)
+                {
+                    Plugin plugin = selectedItem.PluginData;
+                    MoveToUnassignedGroup(plugin);
+                }
+                else if (selectedItem.EntityType == EntityType.Group)
+                {
+                    // Block deleting groups that hold other groups
+                    if (selectedItem.Children.Any(child => child.EntityType == EntityType.Group))
+                    {
+                        MessageBox.Show("Cannot delete a group that contains other groups.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                        return;
+                    }
+
+                    // Adjust ordinals of sibling groups and move child plugins to unassigned group
+                    AdjustSiblingGroupsAndMoveChildPlugins(selectedItem, parentGroup);
+                }
+            }
+
+            AggLoadInfo.Instance.RefreshAllData();
+        }
+
+
+        private void AdjustSiblingGroupsAndMoveChildPlugins(LoadOrderItemViewModel selectedItem, ModGroup parentGroup)
+        {
+            var siblingGroups = AggLoadInfo.Instance.Groups?
+                .Where(g => g.ParentID == parentGroup.GroupID && g.Ordinal > selectedItem.GetModGroup().Ordinal)
+                .ToList();
+            if (siblingGroups != null)
+            {
+                foreach (var sibling in siblingGroups)
+                {
+                    sibling.Ordinal--;
+                    sibling.WriteGroup();
+                }
+            }
+
+            foreach (var child in selectedItem.Children)
+            {
+                if (child.EntityType == EntityType.Plugin)
+                {
+                    MoveToUnassignedGroup(child.PluginData);
+                }
+            }
+
+            parentGroup.Plugins?.Remove(selectedItem.PluginData);
+        }
+
+
+        private void ChangeGroup(LoadOrderItemViewModel item, object parameter)
+        {
+            if (parameter is long newGroupId)
+            {
+                var underlyingObject = EntityTypeHelper.GetUnderlyingObject(item);
+
                 if (underlyingObject is ModGroup modGroup)
                 {
                     modGroup.ChangeGroup(newGroupId);
@@ -307,25 +349,37 @@ namespace ZO.LoadOrderManager
                     plugin.ChangeGroup(newGroupId);
                 }
 
-                // Refresh all data to update the ViewModel
                 AggLoadInfo.Instance.RefreshAllData();
+            }
+            else
+            {
+                throw new ArgumentException("Parameter must be a long representing the new group ID.", nameof(parameter));
             }
         }
 
+
+
         private bool CanExecuteChangeGroup(object parameter) { return true; }
 
-        private void ToggleEnable(object parameter)
+        private void ToggleEnable(LoadOrderItemViewModel itemViewModel, object sender)
         {
-            Debug.WriteLine($"Parameter Type: {parameter?.GetType().Name}");
-            Debug.WriteLine($"Parameter Value: {parameter}");
-
-            if (SelectedLoadOut != null && parameter is LoadOrderItemViewModel itemViewModel)
+            if (SelectedLoadOut == null)
             {
+                UpdateStatus("No loadout selected.");
+                return;
+            }
+
+            // Retrieve the Tag property to determine the source (checkbox or right-click menu)
+            if (sender is FrameworkElement element && element.Tag is string tag)
+            {
+                bool isCheckbox = tag == "checkbox";
+
                 // Record the old state for debugging
                 Debug.WriteLine($"OldState: {itemViewModel.IsActive}");
 
-                // Toggle the current state
-                bool newState = itemViewModel.IsActive;
+                // Determine the new state based on whether this is a checkbox toggle or right-click menu
+                bool newState = isCheckbox ? itemViewModel.IsActive : !itemViewModel.IsActive;
+
                 Debug.WriteLine($"NewState: {newState}");
 
                 // Set the new state to the UI-bound property
@@ -337,11 +391,8 @@ namespace ZO.LoadOrderManager
                 // Notify the UI to refresh the view
                 OnPropertyChanged(nameof(LoadOuts));
             }
-            else
-            {
-                UpdateStatus("No loadout or valid item selected.");
-            }
         }
+
 
 
 

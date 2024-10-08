@@ -1,8 +1,10 @@
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
+using System.Windows.Media;
 
 namespace ZO.LoadOrderManager
 {
@@ -40,6 +42,76 @@ namespace ZO.LoadOrderManager
             throw new NotImplementedException();
         }
     }
+
+    public class BooleanToColorConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value is bool boolValue)
+            {
+                var type = parameter as string;
+
+                if (type == "Highlight")
+                {
+                    return boolValue ? Brushes.LightYellow : Brushes.Transparent; // Color for highlighting
+                }
+                else if (type == "Group")
+                {
+                    return boolValue ? Brushes.LightSeaGreen : Brushes.LightBlue; // Color for groups
+                }
+                else // Default for plugins or other items
+                {
+                    return boolValue ? Brushes.LightSkyBlue : Brushes.Transparent; // Color for plugins
+                }
+            }
+            return Brushes.Transparent; // Default color if value is not a boolean
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    public class ItemStateToColorConverter : IMultiValueConverter
+    {
+        public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (values.Length < 3)
+                return Brushes.Transparent; // Default color if not enough values
+
+            bool isSelected = values[0] is bool selected && selected;
+            bool isHighlighted = values[1] is bool highlighted && highlighted;
+            EntityType type = values[2] is EntityType entityType ? entityType : EntityType.Url; // Default to Unknown if not valid
+
+            // Debugging
+            Debug.WriteLine($"Selected: {isSelected}, Highlighted: {isHighlighted}, Type: {type}");
+
+            if (isHighlighted)
+            {
+                return Brushes.LightGoldenrodYellow; // Highlighted color
+            }
+
+            if (isSelected)
+            {
+                return type == EntityType.Group ? Brushes.LightSeaGreen : Brushes.CornflowerBlue; // Selected color for groups and plugins
+            }
+
+            // Default colors based on the type when not selected
+            return type == EntityType.Group ? Brushes.LightBlue : Brushes.Transparent; // Groups default to LightBlue, plugins to Transparent
+        }
+
+
+        public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+
+
+
+
 
     public class GroupItemStyleSelector : StyleSelector
     {

@@ -12,6 +12,15 @@ namespace ZO.LoadOrderManager
         private ObservableCollection<ModGroup> _allModGroups;
         private ObservableCollection<GroupSet> _filteredGroupSets;
 
+
+        public Task<bool?> ShowDialogAsync()
+        {
+            TaskCompletionSource<bool?> tcs = new TaskCompletionSource<bool?>();
+            this.Closed += (s, e) => tcs.SetResult(this.DialogResult);
+            this.Show();
+            return tcs.Task;
+        }
+
         public ModGroupEditorWindow(ModGroup modGroup)
         {
             InitializeComponent();

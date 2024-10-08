@@ -22,6 +22,9 @@ namespace ZO.LoadOrderManager
             _selectedGroupSet = AggLoadInfo.Instance.ActiveGroupSet;
             _selectedLoadOut = AggLoadInfo.Instance.ActiveLoadOut;
 
+            SelectedItems = new ObservableCollection<object>();
+            SelectedCachedItems = new ObservableCollection<object>();
+
             // Initialize collections and commands
             Items = new ObservableCollection<LoadOrderItemViewModel>();
             GroupSets = new ObservableCollection<GroupSet>();
@@ -31,8 +34,18 @@ namespace ZO.LoadOrderManager
 
             // Initialize commands
             SearchCommand = new RelayCommand(_ => Search(SearchText));
-            MoveUpCommand = new RelayCommand<object?>(param => MoveUp(), param => CanMoveUp());
-            MoveDownCommand = new RelayCommand<object?>(param => MoveDown(), param => CanMoveDown());
+
+            //MultiSelectCommand enabled items;
+            MoveUpCommand = new RelayCommand<object?>(param => HandleMultipleSelectedItems(MoveUp), param => CanMoveUp());
+            MoveDownCommand = new RelayCommand<object?>(param => HandleMultipleSelectedItems(MoveDown), param => CanMoveDown());
+            EditHighlightedItemCommand = new RelayCommand<object?>(param => HandleMultipleSelectedItems(EditHighlightedItem), param => CanExecuteCheckAllItems());
+            CopyTextCommand = new RelayCommand<object?>(param => HandleMultipleSelectedItems(CopyText), param => CanExecuteCheckAllItems());
+            DeleteCommand = new RelayCommand<object?>(param => HandleMultipleSelectedItems(Delete), param => CanExecuteCheckAllItems());
+            EditCommand = new RelayCommand<object?>(param => HandleMultipleSelectedItems(EditHighlightedItem), param => CanExecuteCheckAllItems());
+            ToggleEnableCommand = new RelayCommand<object?>(param => HandleMultipleSelectedItems(item => ToggleEnable(item, param)), param => CanExecuteCheckAllItems());
+            ChangeGroupCommand = new RelayCommandWithParameter(param => HandleMultipleSelectedItems(item => ChangeGroup(item, param)), param => CanExecuteCheckAllItems());
+
+
             SaveAsNewLoadoutCommand = new RelayCommand<object?>(param => SaveAsNewLoadout());
             OpenGameFolderCommand = new RelayCommand<object?>(param => OpenGameFolder(), _ => true);
             OpenGameSaveFolderCommand = new RelayCommand<object?>(param => OpenGameSaveFolder(), _ => true);
@@ -41,7 +54,6 @@ namespace ZO.LoadOrderManager
             ImportContextCatalogCommand = new RelayCommand<object?>(param => ImportContextCatalog());
             ScanGameFolderCommand = new RelayCommand<object?>(param => ScanGameFolder(), _ => true);
             SavePluginsCommand = new RelayCommand(param => SavePlugins(), param => CanSavePlugins());
-            EditHighlightedItemCommand = new RelayCommand<object?>(param => EditHighlightedItem());
             OpenAppDataFolderCommand = new RelayCommand<object?>(param => OpenAppDataFolder(), _ => true);
             OpenGameLocalAppDataCommand = new RelayCommand<object?>(param => OpenGameLocalAppData(), _ => true);
             SettingsWindowCommand = new RelayCommand<object?>(param => SettingsWindow(), _ => true);
@@ -50,12 +62,7 @@ namespace ZO.LoadOrderManager
             //OpenPluginEditorCommand = new RelayCommand<object?>(param => OpenPluginEditor());
             //OpenGroupEditorCommand = new RelayCommand<object?>(param => OpenGroupEditor());
             RefreshDataCommand = new RelayCommand<object?>(param => RefreshData(), _ => true);
-            CopyTextCommand = new RelayCommand<object?>(param => CopyText(), param => CanExecuteCopyText(null));
-            DeleteCommand = new RelayCommand<object?>(param => Delete(), param => CanExecuteDelete(null));
-            EditCommand = new RelayCommand<object?>(param => EditHighlightedItem(), param => CanExecuteEdit(null));
-            ToggleEnableCommand = new RelayCommand<object>(ToggleEnable, CanExecuteToggleEnable);
-            ChangeGroupCommand = new RelayCommandWithParameter(ChangeGroup, CanExecuteChangeGroup);
-
+           
             // Load initial data
             LoadInitialData();
         }
@@ -88,8 +95,8 @@ namespace ZO.LoadOrderManager
                     }
 
                     // Initialize LoadOrders and CachedGroupSetLoadOrders with the selected GroupSet and LoadOut
-                    LoadOrders.LoadData(_selectedGroupSet, _selectedLoadOut);
-                    CachedGroupSetLoadOrders.LoadData(AggLoadInfo.Instance.GetCachedGroupSet1(), LoadOut.Load(1));
+                    LoadOrders.LoadData(_selectedGroupSet, _selectedLoadOut,false,false);
+                    CachedGroupSetLoadOrders.LoadData(AggLoadInfo.Instance.GetCachedGroupSet1(), LoadOut.Load(1),true,true);
 
                     InitializationManager.ReportProgress(95, "Initial data loaded into view");
 

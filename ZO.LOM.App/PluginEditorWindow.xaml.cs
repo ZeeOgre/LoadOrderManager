@@ -4,6 +4,14 @@ namespace ZO.LoadOrderManager
 {
     public partial class PluginEditorWindow : Window
     {
+        public Task<bool?> ShowDialogAsync()
+        {
+            TaskCompletionSource<bool?> tcs = new TaskCompletionSource<bool?>();
+            this.Closed += (s, e) => tcs.SetResult(this.DialogResult);
+            this.Show();
+            return tcs.Task;
+        }
+
         private PluginViewModel _pluginViewModel;
 
         public PluginEditorWindow(Plugin plugin, AggLoadInfo? aggLoadInfo = null)

@@ -300,7 +300,7 @@ namespace ZO.LoadOrderManager
             try
             {
                 // Special handling for GroupID < 0
-                if (this.GroupID < 0)
+                if (this.GroupID < 0 && GroupID != -997)
                 {
                     this.GroupSetID = 1;
                 }
@@ -376,7 +376,7 @@ namespace ZO.LoadOrderManager
                     }
 
                     // Calculate GroupOrdinal if not set
-                    long effectiveGroupSetID = (this.GroupID == -997) ? 1 : (long)(this.GroupSetID ?? 1);
+                    long effectiveGroupSetID = (this.GroupSetID == 0 || this.GroupSetID == null) ? 1 : (long)this.GroupSetID;
                     if (!this.GroupOrdinal.HasValue)
                     {
                         command.CommandText = @"

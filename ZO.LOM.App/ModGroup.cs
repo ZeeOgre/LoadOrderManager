@@ -116,24 +116,29 @@ namespace ZO.LoadOrderManager
             using var connection = DbManager.Instance.GetConnection();
             using var command = new SQLiteCommand(connection);
             command.CommandText = @"
-        SELECT GroupID, GroupName, GroupDescription, ParentID, GroupOrdinal, GroupSetID
-        FROM vwModGroups
-        WHERE GroupSetID = @GroupSetID";
+                SELECT GroupID, GroupName, GroupDescription, ParentID, GroupOrdinal, GroupSetID
+                FROM vwModGroups
+                WHERE GroupSetID = @GroupSetID";
 
-        command.Parameters.AddWithValue("@GroupSetID", groupSetID);
+            command.Parameters.AddWithValue("@GroupSetID", groupSetID);
 
-        using var reader = command.ExecuteReader();
-        while (reader.Read())
-        {
-            var modGroup = new ModGroup
+            if (groupSetID == 1)
             {
-                GroupID = reader.GetInt64(0),
-                GroupName = reader.GetString(1),
-                Description = reader.IsDBNull(2) ? null : reader.GetString(2), // Handle nullable Description
-                ParentID = reader.IsDBNull(3) ? (long?)null : reader.GetInt64(3), // Handle nullable ParentID
-                Ordinal = reader.IsDBNull(4) ? (long?)null : reader.GetInt64(4), // Handle nullable Ordinal
-                GroupSetID = reader.GetInt64(5)
-            };
+                command.CommandText += " AND GroupID != -997";
+            }
+
+            using var reader = command.ExecuteReader();
+            while (reader.Read())
+            {
+                var modGroup = new ModGroup
+                {
+                    GroupID = reader.GetInt64(0),
+                    GroupName = reader.GetString(1),
+                    Description = reader.IsDBNull(2) ? null : reader.GetString(2), // Handle nullable Description
+                    ParentID = reader.IsDBNull(3) ? (long?)null : reader.GetInt64(3), // Handle nullable ParentID
+                    Ordinal = reader.IsDBNull(4) ? (long?)null : reader.GetInt64(4), // Handle nullable Ordinal
+                    GroupSetID = reader.GetInt64(5)
+                };
                 modGroups.Add(modGroup);
             }
 

@@ -109,6 +109,7 @@ namespace ZO.LoadOrderManager
             plugin.GroupID = unassignedGroup.GroupID;
             plugin.GroupOrdinal = unassignedGroup.Plugins?.Count ?? 0;
             unassignedGroup.Plugins?.Add(plugin);
+            plugin.WriteMod();
         }
 
         private IEnumerable<LoadOrderItemViewModel> Flatten(ObservableCollection<LoadOrderItemViewModel> items)
@@ -129,54 +130,48 @@ namespace ZO.LoadOrderManager
             return true; // Add your logic here
         }
 
-        public void EditHighlightedItem()
+        public async void EditHighlightedItem(LoadOrderItemViewModel selectedItem)
         {
-            if (SelectedItem is LoadOrderItemViewModel selectedItem)
+            var underlyingObject = EntityTypeHelper.GetUnderlyingObject(selectedItem);
+
+            switch (selectedItem.EntityType)
             {
-                var underlyingObject = EntityTypeHelper.GetUnderlyingObject(selectedItem);
-
-                switch (selectedItem.EntityType)
-                {
-                    case EntityType.Group:
-                        var modGroup = underlyingObject as ModGroup;
-                        if (modGroup != null)
+                case EntityType.Group:
+                    var modGroup = underlyingObject as ModGroup;
+                    if (modGroup != null)
+                    {
+                        var editorWindow = new ModGroupEditorWindow(modGroup);
+                        if (await editorWindow.ShowDialogAsync() == true)
                         {
-                            var editorWindow = new ModGroupEditorWindow(modGroup);
-                            if (editorWindow.ShowDialog() == true)
-                            {
-                                // Handle successful edit
-                            }
+                            // Handle successful edit
                         }
-                        else
-                        {
-                            MessageBox.Show("ModGroup not found. Please create a new group using the group editor.", "Group Not Found", MessageBoxButton.OK, MessageBoxImage.Warning);
-                        }
-                        break;
+                    }
+                    else
+                    {
+                        MessageBox.Show("ModGroup not found. Please create a new group using the group editor.", "Group Not Found", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    }
+                    break;
 
-                    case EntityType.Plugin:
-                        var plugin = underlyingObject as Plugin;
-                        if (plugin != null)
+                case EntityType.Plugin:
+                    var plugin = underlyingObject as Plugin;
+                    if (plugin != null)
+                    {
+                        var pluginEditorWindow = new PluginEditorWindow(plugin);
+                        if (await pluginEditorWindow.ShowDialogAsync() == true)
                         {
-                            var pluginEditorWindow = new PluginEditorWindow(plugin);
-                            if (pluginEditorWindow.ShowDialog() == true)
-                            {
-                                // Handle successful edit
-                            }
+                            // Handle successful edit
                         }
-                        break;
+                    }
+                    break;
 
-                    default:
-                        MessageBox.Show("Please select a valid item to edit.", "Invalid Selection", MessageBoxButton.OK, MessageBoxImage.Warning);
-                        break;
-                }
-            }
-            else
-            {
-                MessageBox.Show("Please select a valid item to edit.", "Invalid Selection", MessageBoxButton.OK, MessageBoxImage.Warning);
+                default:
+                    MessageBox.Show("Please select a valid item to edit.", "Invalid Selection", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    break;
             }
 
-            RefreshData();
+            RefreshData(); // Refresh after editing each item
         }
+
 
 
     }

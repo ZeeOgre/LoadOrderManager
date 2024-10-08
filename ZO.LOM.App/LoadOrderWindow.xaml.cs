@@ -1,14 +1,12 @@
 using Microsoft.Win32;
 using System.Collections.ObjectModel;
-using System.Data.SQLite;
 using System.Diagnostics;
 using System.IO;
-using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using System.Windows.Media;
 using System.Windows.Navigation;
+using System.Windows.Media;
 
 namespace ZO.LoadOrderManager
 {
@@ -20,7 +18,6 @@ namespace ZO.LoadOrderManager
         private bool _isLoadOrderTreeViewInitialized = false;
         private bool _isCachedGroupSetTreeViewInitialized = false;
 
-     
         public LoadOrderWindow()
         {
             InitializationManager.StartInitialization(nameof(LoadOrderWindow));
@@ -35,10 +32,9 @@ namespace ZO.LoadOrderManager
                         ((LoadingWindow)App.Current.MainWindow).UpdateProgress(10, "Initializing LoadOrderWindow..."));
 
                     var viewModel = new LoadOrderWindowViewModel();
-                    
                     this.DataContext = viewModel;
-                    App.LogDebug("LoadOrderWindow: DataContext set to LoadOrderWindowViewModel");
 
+                    App.LogDebug("LoadOrderWindow: DataContext set to LoadOrderWindowViewModel");
 
                     App.Current.Dispatcher.Invoke(() =>
                         ((LoadingWindow)App.Current.MainWindow).UpdateProgress(50, "LoadOrderWindow initialized successfully."));
@@ -69,7 +65,7 @@ namespace ZO.LoadOrderManager
 
             App.LogDebug("Loading groups and plugins...");
 
-            // Final progress updates and window visibility adjustments
+            // Ensure final initialization steps and visibility adjustments
             if (!_isLoadOrderTreeViewInitialized)
             {
                 LoadOrderTreeView_Loaded(sender, e);
@@ -88,19 +84,14 @@ namespace ZO.LoadOrderManager
                 ((LoadingWindow)App.Current.MainWindow).UpdateProgress(99, "LoadOrderWindow components loaded."));
             InitializationManager.EndInitialization(nameof(LoadOrderWindow));
 
-            
             cmbGroupSet.SelectedItem = viewModel.SelectedGroupSet;
             cmbProfile.SelectedItem = viewModel.SelectedLoadOut;
-
 
             // Ensure window visibility after initialization
             this.Visibility = Visibility.Visible;
             this.Activate();
-
             InitializationManager.ReportProgress(100, "LoadOrderWindow fully visible");
         }
-
-
 
         private void LoadOrderWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
         {
@@ -131,33 +122,15 @@ namespace ZO.LoadOrderManager
             isSaved = false;
         }
 
-        private void TreeView_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
-        {
-            Debug.WriteLine("TreeView_SelectedItemChanged event triggered.");
-            if (DataContext is LoadOrderWindowViewModel viewModel)
-            {
-                viewModel.SelectedItem = e.NewValue;
-                Debug.WriteLine($"SelectedItem set to: {e.NewValue}");
-            }
-        }
-
-        private void TreeView_MouseDoubleClick(object sender, MouseButtonEventArgs e)
-        {
-            if (DataContext is LoadOrderWindowViewModel viewModel && viewModel.SelectedItem != null)
-            {
-                viewModel.EditHighlightedItem();
-            }
-        }
-
         private void TreeView_KeyDown(object sender, KeyEventArgs e)
         {
             if (DataContext is LoadOrderWindowViewModel viewModel)
             {
                 if (e.Key == Key.C && (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
                 {
-                    if (viewModel.SelectedItem != null)
+                    if (viewModel.SelectedItems.Count > 0)
                     {
-                        viewModel.CopyTextCommand.Execute(viewModel.SelectedItem);
+                        viewModel.CopyTextCommand.Execute(viewModel.SelectedItems[0]);
                     }
                 }
                 else if (e.Key == Key.Up)
@@ -170,16 +143,17 @@ namespace ZO.LoadOrderManager
                 }
                 else if (e.Key == Key.Delete)
                 {
-                    if (viewModel.SelectedItem != null)
-                    {
-                        viewModel.DeleteCommand.Execute(viewModel.SelectedItem);
-                    }
+                    viewModel.DeleteCommand.Execute(viewModel.SelectedItems[0]);
                 }
                 else if (e.Key == Key.Insert)
                 {
-                    if (viewModel.SelectedItem != null)
+                    if (viewModel.SelectedItems.Count > 0)
                     {
-                        viewModel.EditHighlightedItem();
+                        var firstSelectedItem = viewModel.SelectedItems[0] as LoadOrderItemViewModel;
+                        if (firstSelectedItem != null)
+                        {
+                            viewModel.EditHighlightedItem(firstSelectedItem);
+                        }
                     }
                 }
                 else if (e.Key == Key.Home)
@@ -192,37 +166,30 @@ namespace ZO.LoadOrderManager
                 }
                 else if (e.Key == Key.Up && (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
                 {
-                    if (viewModel.SelectedItem != null)
+                    if (viewModel.SelectedItems.Count > 0)
                     {
-                        viewModel.MoveUpCommand.Execute(viewModel.SelectedItem);
+                        viewModel.MoveUpCommand.Execute(viewModel.SelectedItems[0]);
                     }
                 }
                 else if (e.Key == Key.Down && (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
                 {
-                    if (viewModel.SelectedItem != null)
+                    if (viewModel.SelectedItems.Count > 0)
                     {
-                        viewModel.MoveDownCommand.Execute(viewModel.SelectedItem);
+                        viewModel.MoveDownCommand.Execute(viewModel.SelectedItems[0]);
                     }
                 }
             }
         }
 
-        private void TreeView_MouseRightButtonDown(object sender, MouseButtonEventArgs e)
+        private void SearchBox_KeyDown(object sender, KeyEventArgs e)
         {
-            var treeViewItem = VisualUpwardSearch(e.OriginalSource as DependencyObject);
-            if (treeViewItem != null)
+            if (e.Key == Key.Enter)
             {
-                treeViewItem.Focus();
-                e.Handled = true;
+                if (DataContext is LoadOrderWindowViewModel viewModel)
+                {
+                    viewModel.SearchCommand.Execute(null);
+                }
             }
-        }
-
-        private static TreeViewItem VisualUpwardSearch(DependencyObject source)
-        {
-            while (source != null && !(source is TreeViewItem))
-                source = VisualTreeHelper.GetParent(source);
-
-            return source as TreeViewItem;
         }
 
         private void LoadOrderTreeView_Loaded(object sender, RoutedEventArgs e)
@@ -241,33 +208,41 @@ namespace ZO.LoadOrderManager
             {
                 if (item is LoadOrderItemViewModel viewModel)
                 {
-                    var treeViewItem = (TreeViewItem)LoadOrderTreeView.ItemContainerGenerator.ContainerFromItem(item);
+                    var treeViewItem = LoadOrderTreeView.ItemContainerGenerator.ContainerFromItem(item) as TreeViewItem;
+
                     if (treeViewItem != null)
                     {
-                        if (viewModel.GroupID > 0)
-                        {
-                            treeViewItem.IsExpanded = expand;
-                        }
-                        else
+                        if (treeViewItem.IsExpanded != expand)
                         {
                             treeViewItem.IsExpanded = expand;
                         }
 
-                        ExpandOrCollapseGroups(treeViewItem.Items, expand);
+                        if (treeViewItem.HasItems && treeViewItem.IsExpanded == expand)
+                        {
+                            ExpandOrCollapseGroups(treeViewItem.Items, expand);
+                        }
                     }
                 }
             }
         }
 
-        private void SearchBox_KeyDown(object sender, KeyEventArgs e)
+        private void TreeView_MouseRightButtonDown(object sender, MouseButtonEventArgs e)
         {
-            if (e.Key == Key.Enter)
+            var treeViewItem = VisualUpwardSearch(e.OriginalSource as DependencyObject);
+            if (treeViewItem != null)
             {
-                if (DataContext is LoadOrderWindowViewModel viewModel)
-                {
-                    viewModel.SearchCommand.Execute(null);
-                }
+                treeViewItem.Focus();
+                e.Handled = true;
             }
+        }
+
+        private static TreeViewItem VisualUpwardSearch(DependencyObject source)
+        {
+            while (source != null && !(source is TreeViewItem))
+            {
+                source = VisualTreeHelper.GetParent(source);
+            }
+            return source as TreeViewItem;
         }
     }
 }

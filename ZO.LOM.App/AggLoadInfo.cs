@@ -246,6 +246,7 @@ namespace ZO.LoadOrderManager
                     loadOuts.Add(loadOut);
                 }
 
+                transaction.Commit();
                 // Assign the loaded load-outs to the appropriate property
                 LoadOuts = loadOuts;
 
@@ -255,7 +256,6 @@ namespace ZO.LoadOrderManager
 
                 
 
-                transaction.Commit();
             }
             catch (Exception)
             {
@@ -270,11 +270,11 @@ namespace ZO.LoadOrderManager
             var unassignedPluginDict = new Dictionary<long, Plugin>(); // Correct scope
 
             using var command = new SQLiteCommand(@"
-    SELECT DISTINCT * FROM (
-        SELECT *
-        FROM vwPluginGrpUnion
-        WHERE GroupSetID != @GroupSetIDz
-        AND GroupID NOT IN (-998, -999, 1));", conn);
+                SELECT DISTINCT * FROM (
+                    SELECT *
+                    FROM vwPluginGrpUnion
+                    WHERE GroupSetID != @GroupSetIDz
+                    AND GroupID NOT IN (-998, -999, 1));", conn);
 
             command.Parameters.AddWithValue("@GroupSetIDz", ActiveGroupSet.GroupSetID); // Corrected parameter
 
@@ -284,11 +284,15 @@ namespace ZO.LoadOrderManager
             {
                 var plugin = new Plugin();
                 LoadPluginFromReader(reader, unassignedPluginDict);
+
             }
+
+            reader.Close(); // Close the reader after reading the data
 
             // Populate unassignedPlugins list
             foreach (var plugin in unassignedPluginDict.Values)
             {
+                plugin.GroupSetID = ActiveGroupSet.GroupSetID;
                 unassignedPlugins.Add(plugin);
             }
 
@@ -303,6 +307,8 @@ namespace ZO.LoadOrderManager
             foreach (var plugin in unassignedPlugins)
             {
                 unassignedGroup.Plugins.Add(plugin);
+                plugin.GroupOrdinal = unassignedGroup.Plugins.Count;
+                plugin.WriteMod();
             }
         }
 

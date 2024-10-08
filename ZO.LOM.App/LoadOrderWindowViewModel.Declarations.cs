@@ -23,6 +23,22 @@ namespace ZO.LoadOrderManager
         public LoadOrdersViewModel LoadOrders { get; set; }
         public LoadOrdersViewModel CachedGroupSetLoadOrders { get; set; }
         public ObservableCollection<LoadOrderItemViewModel> Items { get; }
+        // Backing field for SelectedItems
+        private ObservableCollection<object> selectedItems;
+
+        // Property for SelectedItems with change notification
+        public ObservableCollection<object> SelectedItems
+        {
+            get => selectedItems;
+            set
+            {
+                selectedItems = value;
+                OnPropertyChanged(nameof(SelectedItems)); // Notify when SelectedItems changes
+            }
+        }
+
+        // Direct public property for SelectedCachedItems
+        public ObservableCollection<object> SelectedCachedItems { get; set; }
 
         // PropertyChanged Event
         public event PropertyChangedEventHandler? PropertyChanged;

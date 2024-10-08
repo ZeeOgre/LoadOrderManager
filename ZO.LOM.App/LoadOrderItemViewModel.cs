@@ -5,11 +5,19 @@ public class LoadOrderItemViewModel : ViewModelBase
 {
     private long groupID;
     private long? parentID;
-    private string displayName;
+    private string displayName = string.Empty;
     private EntityType entityType;
-    private Plugin pluginData;
+    private Plugin pluginData = new Plugin();
     private bool isActive;
     private ObservableCollection<LoadOrderItemViewModel> children = new ObservableCollection<LoadOrderItemViewModel>();
+
+    private bool isSelected;
+
+    public bool IsSelected
+    {
+        get => isSelected;
+        set => SetProperty(ref isSelected, value);
+    }
 
     public long GroupID
     {
@@ -71,7 +79,7 @@ public class LoadOrderItemViewModel : ViewModelBase
     {
         GroupID = plugin.GroupID ?? throw new ArgumentNullException(nameof(plugin.GroupID), "GroupID cannot be null");
         DisplayName = plugin.PluginName;
-        ParentID = plugin.GroupID; // We have the single "GetParent()" method, so we can just say that the GroupID is a parent to facilitate single calls to "get containing group"
+        ParentID = plugin.GroupID;
         PluginData = plugin;
         EntityType = EntityType.Plugin;
     }
@@ -112,6 +120,20 @@ public class LoadOrderItemViewModel : ViewModelBase
         }
     }
 
+    public override string ToString()
+    {
+        if (PluginData != null)
+        {
+            return PluginData.ToString();
+        }
+        else
+        {
+            var group = GetModGroup();
+            return group != null ? group.ToString() : base.ToString();
+        }
+    }
+
+
     public void HighlightSearchResults(string searchTerm)
     {
         if (string.IsNullOrWhiteSpace(searchTerm))
@@ -132,26 +154,42 @@ public class LoadOrderItemViewModel : ViewModelBase
     }
 
 
-    public override bool Equals(object obj)
+    public override bool Equals(object? obj)
     {
         if (obj is LoadOrderItemViewModel other)
         {
-            return this.GroupID == other.GroupID && this.EntityType == other.EntityType;
+            // First, compare GroupID and EntityType for an early break
+            if (this.GroupID != other.GroupID || this.EntityType != other.EntityType)
+            {
+                return false; // Early exit if GroupID or EntityType don't match
+            }
+
+            // If GroupID and EntityType match, compare PluginData (if applicable)
+            if (this.PluginData != null && other.PluginData != null)
+            {
+                return this.PluginData.PluginID == other.PluginData.PluginID;
+            }
+
+            // If PluginData is null, fallback to GroupID and EntityType comparison (already matched)
+            return true;
         }
         else if (obj is Plugin plugin)
         {
+            // Compare against a Plugin object directly based on PluginID
             return this.PluginData != null && this.PluginData.PluginID == plugin.PluginID;
         }
         else if (obj is ModGroup modGroup)
         {
+            // Compare against a ModGroup object based on GroupID
             return this.GroupID == modGroup.GroupID;
         }
+
         return false;
     }
 
     public override int GetHashCode()
     {
-        unchecked // Overflow is fine, just wrap
+        unchecked
         {
             int hash = 17;
             hash = hash * 23 + GroupID.GetHashCode();
@@ -163,7 +201,5 @@ public class LoadOrderItemViewModel : ViewModelBase
             return hash;
         }
     }
-
-
 
 }
