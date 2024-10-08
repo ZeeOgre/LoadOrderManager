@@ -38,6 +38,12 @@ namespace ZO.LoadOrderManager
             _clickTimer.Tick += ClickTimer_Tick;
         }
 
+        public Style ItemContainerStyle
+        {
+            get => (Style)GetValue(ItemContainerStyleProperty);
+            set => SetValue(ItemContainerStyleProperty, value);
+        }
+
         private void ClickTimer_Tick(object? sender, EventArgs e)
         {
             _clickTimer.Stop();
@@ -70,8 +76,28 @@ namespace ZO.LoadOrderManager
             }
         }
 
+        //private void MultiSelectTreeView_PreviewMouseDown(object sender, MouseButtonEventArgs e)
+        //{
+        //    if (e.OriginalSource is FrameworkElement element)
+        //    {
+        //        var item = GetTreeViewItemFromElement(element);
+        //        if (item != null)
+        //        {
+        //            _clickTimer.Start(); // Start click timer to track double-clicks
+        //            HandleSelection(item, e);
+        //        }
+        //    }
+        //}
+        
         private void MultiSelectTreeView_PreviewMouseDown(object sender, MouseButtonEventArgs e)
         {
+            // Ignore right-clicks to allow context menu to work
+            if (e.RightButton == MouseButtonState.Pressed)
+            {
+                return; // Let the right-click event pass through for context menu handling
+            }
+
+            // Continue with normal selection handling for other mouse buttons
             if (e.OriginalSource is FrameworkElement element)
             {
                 var item = GetTreeViewItemFromElement(element);

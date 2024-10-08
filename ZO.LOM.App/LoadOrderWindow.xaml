@@ -16,11 +16,13 @@
         <local:ItemStateToColorConverter x:Key="ItemStateToColorConverter"/>
         <!-- New converter -->
 
-        <Style TargetType="TreeViewItem">
+        
+        
+        <!--<Style TargetType="TreeViewItem">
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="Foreground" Value="Black"/>
-            <!-- Set a default foreground color if needed -->
-        </Style>
+            --><!-- Set a default foreground color if needed --><!--
+        </Style>-->
 
         <HierarchicalDataTemplate x:Key="GroupTemplate" ItemsSource="{Binding Children}">
             <Grid>
@@ -132,7 +134,7 @@
             </MenuItem>
         </Menu>
 
-        <Grid Grid.Row="1" Background="LightGray">
+        <Grid Grid.Row="1" Background="DarkGray">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="50"/>
                 <ColumnDefinition Width="250"/>
@@ -170,7 +172,7 @@
                         </MenuItem.ItemsSource>
                         <MenuItem.ItemTemplate>
                             <DataTemplate>
-                                <MenuItem Header="{Binding GroupName}" Command="{Binding DataContext.ChangeGroupCommand, RelativeSource={RelativeSource AncestorType=TreeView}}" CommandParameter="{Binding}" />
+                                <MenuItem Header="{Binding GroupName}" Command="{Binding DataContext.ChangeGroupCommand, RelativeSource={RelativeSource AncestorType=TreeView}}" CommandParameter="{Binding GroupID}" />
                             </DataTemplate>
                         </MenuItem.ItemTemplate>
                     </MenuItem>
@@ -253,7 +255,8 @@
                           DisplayMemberPath="GroupSetName" 
                           Width="200" Height="30" Margin="10,5,10,5" 
                           IsSynchronizedWithCurrentItem="True"
-                          HorizontalAlignment="Center"/>
+                          HorizontalAlignment="Center" BorderBrush="{x:Null}" Background="{DynamicResource {x:Static SystemColors.ControlLightBrushKey}}"
+                          />
                 <Button Content="Add New GroupSet"
                         Command="{Binding AddNewGroupSetCommand}"
                         Width="200" 

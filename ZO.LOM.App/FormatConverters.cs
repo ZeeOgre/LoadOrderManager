@@ -73,8 +73,58 @@ namespace ZO.LoadOrderManager
         }
     }
 
+    //public class ItemStateToColorConverter : IMultiValueConverter
+    //{
+    //    public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
+    //    {
+    //        if (values.Length < 3)
+    //            return Brushes.Transparent; // Default color if not enough values
+
+    //        bool isSelected = values[0] is bool selected && selected;
+    //        bool isHighlighted = values[1] is bool highlighted && highlighted;
+    //        EntityType type = values[2] is EntityType entityType ? entityType : EntityType.Url; // Default to Unknown if not valid
+
+    //        // Debugging
+    //        Debug.WriteLine($"Selected: {isSelected}, Highlighted: {isHighlighted}, Type: {type}");
+
+    //        if (isHighlighted)
+    //        {
+    //            return Brushes.LightGoldenrodYellow; // Highlighted color
+    //        }
+
+    //        if (isSelected)
+    //        {
+    //            return type == EntityType.Group ? Brushes.LightSeaGreen : Brushes.CornflowerBlue; // Selected color for groups and plugins
+    //        }
+
+    //        // Default colors based on the type when not selected
+    //        return type == EntityType.Group ? Brushes.LightBlue : Brushes.Transparent; // Groups default to LightBlue, plugins to Transparent
+    //    }
+
+
+    //    public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
+    //    {
+    //        throw new NotImplementedException();
+    //    }
+    //}
+
     public class ItemStateToColorConverter : IMultiValueConverter
     {
+        //private bool IsSystemInDarkMode()
+        //{
+        //    const string registryKey = @"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize";
+        //    const string registryValue = "AppsUseLightTheme";
+
+        //    object value = Microsoft.Win32.Registry.GetValue(registryKey, registryValue, null);
+        //    if (value != null && value is int intValue)
+        //    {
+        //        return intValue == 0; // 0 means dark mode, 1 means light mode
+        //    }
+
+        //    // Default to light mode if unable to detect
+        //    return false;
+        //}
+
         public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
         {
             if (values.Length < 3)
@@ -84,29 +134,62 @@ namespace ZO.LoadOrderManager
             bool isHighlighted = values[1] is bool highlighted && highlighted;
             EntityType type = values[2] is EntityType entityType ? entityType : EntityType.Url; // Default to Unknown if not valid
 
+            bool isDarkMode = Config.Instance.DarkMode;
+
+            string target = parameter as string ?? "Background"; // Check if we're dealing with background or foreground
+
+            if (target == "Foreground")
+            {
+                // Foreground Colors
+                return isDarkMode ? Brushes.White : Brushes.Black; // White text for Dark Mode, Black text for Light Mode
+            }
+
+
+
+
             // Debugging
-            Debug.WriteLine($"Selected: {isSelected}, Highlighted: {isHighlighted}, Type: {type}");
+            Debug.WriteLine($"Selected: {isSelected}, Highlighted: {isHighlighted}, Type: {type}, DarkMode: {isDarkMode}");
 
-            if (isHighlighted)
+            // Dark Mode Colors
+            if (isDarkMode)
             {
-                return Brushes.LightGoldenrodYellow; // Highlighted color
-            }
+                if (isHighlighted)
+                {
+                    return Brushes.DarkGoldenrod; // Highlighted color for Dark Mode
+                }
 
-            if (isSelected)
+                if (isSelected)
+                {
+                    return type == EntityType.Group ? Brushes.Teal : Brushes.SteelBlue; // Selected color for Dark Mode
+                }
+
+                // Default colors for Dark Mode
+                return type == EntityType.Group ? Brushes.DarkBlue : Brushes.DimGray;
+            }
+            // Light Mode Colors
+            else
             {
-                return type == EntityType.Group ? Brushes.LightSeaGreen : Brushes.CornflowerBlue; // Selected color for groups and plugins
-            }
+                if (isHighlighted)
+                {
+                    return Brushes.LightGoldenrodYellow; // Highlighted color for Light Mode
+                }
 
-            // Default colors based on the type when not selected
-            return type == EntityType.Group ? Brushes.LightBlue : Brushes.Transparent; // Groups default to LightBlue, plugins to Transparent
+                if (isSelected)
+                {
+                    return type == EntityType.Group ? Brushes.LightSeaGreen : Brushes.CornflowerBlue; // Selected color for Light Mode
+                }
+
+                // Default colors for Light Mode
+                return type == EntityType.Group ? Brushes.LightBlue : Brushes.Transparent;
+            }
         }
-
 
         public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
         {
             throw new NotImplementedException();
         }
     }
+
 
 
 

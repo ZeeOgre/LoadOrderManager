@@ -20,6 +20,7 @@ namespace ZO.LoadOrderManager
         public static readonly string dbFilePath = Path.Combine(localAppDataPath, "LoadOrderManager.db");
         private static bool _isVerificationInProgress = false; // Flag to track verification
         public List<FileInfo> MonitoredFiles { get; set; } = new List<FileInfo>();
+        public bool DarkMode { get; set; } = true;
 
         public static Config Instance
         {
@@ -49,7 +50,9 @@ namespace ZO.LoadOrderManager
             this.GameFolder = other.GameFolder;
             this.AutoCheckForUpdates = other.AutoCheckForUpdates;
             this.MonitoredFiles = other.MonitoredFiles;
+            this.DarkMode = other.DarkMode; // Update the DarkMode property
         }
+
 
         public static void Initialize()
         {
@@ -216,6 +219,7 @@ namespace ZO.LoadOrderManager
                     {
                         GameFolder = reader["GameFolder"]?.ToString(),
                         AutoCheckForUpdates = Convert.ToBoolean(reader["AutoCheckForUpdates"]),
+                        DarkMode = Convert.ToBoolean(reader["DarkMode"]),
                         MonitoredFiles = FileInfo.GetMonitoredFiles() // Ensure MonitoredFiles is loaded
                     };
                 }
@@ -235,20 +239,24 @@ namespace ZO.LoadOrderManager
                 _ = command.ExecuteNonQuery();
 
                 command.CommandText = @"
-                        INSERT INTO Config (
-                            GameFolder,
-                            AutoCheckForUpdates
-                        ) VALUES (
-                            @GameFolder,
-                            @AutoCheckForUpdates
-                        )";
+            INSERT INTO Config (
+                GameFolder,
+                AutoCheckForUpdates,
+                DarkMode
+            ) VALUES (
+                @GameFolder,
+                @AutoCheckForUpdates,
+                @DarkMode
+            )";
 
                 _ = command.Parameters.AddWithValue("@GameFolder", config.GameFolder ?? (object)DBNull.Value);
                 _ = command.Parameters.AddWithValue("@AutoCheckForUpdates", config.AutoCheckForUpdates ? 1 : 0);
+                _ = command.Parameters.AddWithValue("@DarkMode", config.DarkMode ? 1 : 0);
 
                 _ = command.ExecuteNonQuery();
             }
             transaction.Commit();
         }
+
     }
 }

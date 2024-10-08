@@ -1,0 +1,101 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- Dark Gray Background -->
+    <SolidColorBrush x:Key="PrimaryBackgroundBrush" Color="#2D2D2D"/>
+    <!-- Text Color for Dark Theme -->
+    <SolidColorBrush x:Key="PrimaryTextBrush" Color="White"/>
+    <!-- Button and ComboBox Background for Dark Theme -->
+    <SolidColorBrush x:Key="ButtonBackgroundBrush" Color="#444444"/>
+    <SolidColorBrush x:Key="ButtonBorderBrush" Color="#555555"/>
+    <SolidColorBrush x:Key="ComboBoxBackgroundBrush" Color="#444444"/>
+    <SolidColorBrush x:Key="ComboBoxForegroundBrush" Color="White"/>
+
+    <!-- Darker Menu and Status Bar Colors -->
+    <SolidColorBrush x:Key="MenuBarBackgroundBrush" Color="#1A1A1A"/>
+    <SolidColorBrush x:Key="StatusBarBackgroundBrush" Color="#1A1A1A"/>
+    <!-- TextBox Background and Foreground for Dark Theme -->
+    <SolidColorBrush x:Key="TextBoxBackgroundBrush" Color="#333333"/>
+    <SolidColorBrush x:Key="TextBoxForegroundBrush" Color="White"/>
+
+    <!-- Window Style -->
+    <Style TargetType="Window">
+        <Setter Property="Background" Value="{StaticResource PrimaryBackgroundBrush}"/>
+        <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrush}"/>
+    </Style>
+
+    <!-- Menu Style -->
+    <Style TargetType="Menu">
+        <Setter Property="Background" Value="{StaticResource MenuBarBackgroundBrush}"/>
+        <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrush}"/>
+    </Style>
+
+    <!-- TextBox Style for Dark Mode -->
+    <Style TargetType="TextBox">
+        <Setter Property="Background" Value="{StaticResource TextBoxBackgroundBrush}"/>
+        <Setter Property="Foreground" Value="{StaticResource TextBoxForegroundBrush}"/>
+        <Setter Property="BorderBrush" Value="#555555"/>
+    </Style>
+
+    <!-- Button Style for Dark Mode -->
+    <Style TargetType="Button">
+        <Setter Property="Background" Value="{StaticResource ButtonBackgroundBrush}"/>
+        <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource ButtonBorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+    </Style>
+
+    <!-- ComboBox Style for Dark Mode -->
+    <Style TargetType="ComboBox">
+        <Setter Property="Background" Value="{StaticResource ComboBoxBackgroundBrush}"/>
+        <Setter Property="Foreground" Value="{StaticResource ComboBoxForegroundBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource ButtonBorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+    </Style>
+
+    <!-- DataGrid Style -->
+    <Style TargetType="DataGrid">
+        <Setter Property="Background" Value="{StaticResource PrimaryBackgroundBrush}"/>
+        <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrush}"/>
+    </Style>
+
+    <!-- DataGridRow Style -->
+    <Style TargetType="DataGridRow">
+        <Setter Property="Background" Value="{StaticResource PrimaryBackgroundBrush}"/>
+        <!--<Setter Property="AlternatingRowBackground" Value="{StaticResource TextBoxBackgroundBrush}"/>-->
+        <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrush}"/>
+    </Style>
+
+    <!-- TreeViewItem Style -->
+    <Style TargetType="TreeViewItem">
+        <Setter Property="Background" Value="{StaticResource PrimaryBackgroundBrush}"/>
+        <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrush}"/>
+    </Style>
+
+    <!-- StatusBar Style -->
+    <Style TargetType="StatusBar">
+        <Setter Property="Background" Value="{StaticResource StatusBarBackgroundBrush}"/>
+        <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrush}"/>
+    </Style>
+
+    <!-- TextBlock Style -->
+    <Style TargetType="TextBlock">
+        <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrush}"/>
+    </Style>
+
+    <!-- Dark theme for Grid -->
+    <Style TargetType="Grid">
+        <Setter Property="Background" Value="{StaticResource PrimaryBackgroundBrush}"/>
+    </Style>
+
+    <!-- Dark theme for StackPanel -->
+    <Style TargetType="StackPanel">
+        <Setter Property="Background" Value="{StaticResource PrimaryBackgroundBrush}"/>
+    </Style>
+
+    <!-- Dark theme for Border -->
+    <Style TargetType="Border">
+        <Setter Property="Background" Value="{StaticResource PrimaryBackgroundBrush}"/>
+    </Style>
+
+</ResourceDictionary>

@@ -29,6 +29,36 @@ namespace ZO.LoadOrderManager
             _viewModel.SaveCompleted += OnSaveCompleted;
         }
 
+
+        private void ApplyTheme(bool DarkMode)
+        {
+            ResourceDictionary theme = new ResourceDictionary
+            {
+                Source = new Uri(DarkMode ? "Themes/DarkTheme.xaml" : "Themes/LightTheme.xaml", UriKind.Relative)
+            };
+
+            Application.Current.Resources.MergedDictionaries.Clear();
+            Application.Current.Resources.MergedDictionaries.Add(theme);
+        }
+
+        private void DarkModeCheckBox_Checked(object sender, RoutedEventArgs e)
+        {
+            // Set the DarkMode in the Config and apply the theme
+            Config.Instance.DarkMode = true;
+            
+            // Apply dark theme immediately
+            ApplyTheme(true);
+        }
+
+        private void DarkModeCheckBox_Unchecked(object sender, RoutedEventArgs e)
+        {
+            // Set the DarkMode in the Config and apply the theme
+            Config.Instance.DarkMode = false;
+            // Apply light theme immediately
+            ApplyTheme(false);
+        }
+
+
         // Close the window after saving
         private void OnSaveCompleted()
         {

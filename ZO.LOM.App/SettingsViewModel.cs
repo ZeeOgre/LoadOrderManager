@@ -3,10 +3,10 @@ using System;
 using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Input;
-using Windows.Media.ClosedCaptioning;
 
 namespace ZO.LoadOrderManager
 {
+
     public enum SettingsLaunchSource
     {
         MainWindow,
@@ -15,11 +15,12 @@ namespace ZO.LoadOrderManager
         MissingConfigDialog
     }
 
+
     public class SettingsViewModel : ViewModelBase
     {
         private Config _config;
         private readonly DbManager _dbManager;
-        
+
         public event Action SaveCompleted;
 
         // Bindable properties for UI
@@ -49,6 +50,21 @@ namespace ZO.LoadOrderManager
                 {
                     _config.GameFolder = value;
                     OnPropertyChanged();
+                }
+            }
+        }
+
+        public bool DarkMode
+        {
+            get => _config.DarkMode;
+            set
+            {
+                if (_config.DarkMode != value)
+                {
+                    _config.DarkMode = value;
+                    OnPropertyChanged();
+
+                    ApplyTheme(value);
                 }
             }
         }
@@ -283,12 +299,26 @@ namespace ZO.LoadOrderManager
                 // Save to Database
                 Config.SaveToDatabase();
 
-                SaveCompleted?.Invoke(); 
+                SaveCompleted?.Invoke();
             }
             catch (Exception ex)
             {
                 Console.WriteLine("Error saving configuration: " + ex.Message);
             }
+        }
+
+        private void ApplyTheme(bool isDarkMode)
+        {
+            App.Current.Dispatcher.Invoke(() =>
+            {
+                ResourceDictionary theme = new ResourceDictionary();
+                theme.Source = isDarkMode
+                    ? new Uri("Themes/DarkTheme.xaml", UriKind.Relative)
+                    : new Uri("Themes/LightTheme.xaml", UriKind.Relative);
+
+                App.Current.Resources.MergedDictionaries.Clear();
+                App.Current.Resources.MergedDictionaries.Add(theme);
+            });
         }
     }
 }

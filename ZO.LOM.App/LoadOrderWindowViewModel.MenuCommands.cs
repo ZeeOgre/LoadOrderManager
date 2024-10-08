@@ -44,23 +44,25 @@ namespace ZO.LoadOrderManager
         {
             get
             {
-                // Ensure the selected item exists and necessary data is available
-                if (SelectedItem == null || AggLoadInfo.Instance == null || SelectedGroupSet == null)
+                // Ensure selected items exist and necessary data is available
+                if (SelectedItems == null || AggLoadInfo.Instance == null || SelectedGroupSet == null)
                     return Enumerable.Empty<ModGroup>();
 
-                // Cast SelectedItem to LoadOrderItemViewModel to access necessary properties
-                if (!(SelectedItem is LoadOrderItemViewModel loadOrderItem))
+                // Cast SelectedItems to a collection of LoadOrderItemViewModel
+                var selectedItems = SelectedItems.OfType<LoadOrderItemViewModel>().ToList();
+
+                if (!selectedItems.Any())
                     return Enumerable.Empty<ModGroup>();
 
                 // Get all groups within the SelectedGroupSet
                 var allGroups = AggLoadInfo.Instance.Groups
                                   .Where(g => g.GroupSetID == SelectedGroupSet.GroupSetID);
 
-                // Exclude groups where the selected item (group/plugin) is already assigned
-                var currentParentOrGroupID = loadOrderItem.ParentID; // ParentID for groups or GroupID for plugins
+                // Get all ParentIDs from the selected items
+                var parentIDs = selectedItems.Select(item => item.ParentID).Distinct();
 
-                // Return groups excluding the one where the item is already contained
-                return allGroups.Where(g => g.GroupID != currentParentOrGroupID).Distinct();
+                // Exclude groups where any selected item is already assigned
+                return allGroups.Where(g => !parentIDs.Contains(g.GroupID)).Distinct();
             }
         }
 

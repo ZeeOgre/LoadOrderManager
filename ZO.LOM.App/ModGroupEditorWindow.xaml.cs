@@ -17,7 +17,7 @@ namespace ZO.LoadOrderManager
         {
             TaskCompletionSource<bool?> tcs = new TaskCompletionSource<bool?>();
             this.Closed += (s, e) => tcs.SetResult(this.DialogResult);
-            this.Show();
+            this.ShowDialog(); // Change this line to ShowDialog
             return tcs.Task;
         }
 

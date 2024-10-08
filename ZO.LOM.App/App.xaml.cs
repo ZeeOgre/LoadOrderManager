@@ -1,13 +1,16 @@
 ﻿using AutoUpdaterDotNET;
+using Microsoft.Win32;
 using System.Configuration;
 using System.Data.SQLite;
 using System.Diagnostics;
+using System.Drawing;
 using System.IO;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.Versioning;
 using System.Text;
 using System.Windows;
+using Windows.UI.ViewManagement;
 using ZO.LoadOrderManager.Properties;
 
 namespace ZO.LoadOrderManager
@@ -48,6 +51,7 @@ namespace ZO.LoadOrderManager
 
         protected override void OnStartup(StartupEventArgs e)
         {
+            
             App.LogDebug("OnStartup called");
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
             DispatcherUnhandledException += App_DispatcherUnhandledException;
@@ -55,6 +59,7 @@ namespace ZO.LoadOrderManager
             try
             {
                 base.OnStartup(e);
+                ApplyTheme(IsSystemInDarkMode());
                 App.LogDebug("Application_Startup called");
                 var updateUrl = Settings.Default.UpdateUrl;
 
@@ -87,6 +92,39 @@ namespace ZO.LoadOrderManager
                 _ = MessageBox.Show($"An error occurred during startup: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 Shutdown();
             }
+        }
+        
+        private void ApplyTheme(bool isDarkMode)
+        {
+            ResourceDictionary theme = new ResourceDictionary();
+            if (isDarkMode)
+            {
+                theme.Source = new Uri("Themes/DarkTheme.xaml", UriKind.Relative);
+            }
+            else
+            {
+                theme.Source = new Uri("Themes/LightTheme.xaml", UriKind.Relative);
+            }
+
+            // Clear existing resources and add the selected theme
+            Application.Current.Resources.MergedDictionaries.Clear();
+            Application.Current.Resources.MergedDictionaries.Add(theme);
+        }
+
+        private bool IsSystemInDarkMode()
+        {
+            const string registryKey = @"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize";
+            const string registryValue = "AppsUseLightTheme";
+
+            object value = Registry.GetValue(registryKey, registryValue, null);
+
+            if (value != null && value is int intValue)
+            {
+                return intValue == 0; // 0 means dark mode, 1 means light mode
+            }
+
+            // Default to light mode if unable to detect
+            return false;
         }
 
         public static void LogReaderData(SQLiteDataReader reader)
@@ -311,7 +349,11 @@ namespace ZO.LoadOrderManager
             if (textLoggingEnabled)
             {
                 string logFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "app.log");
-                File.AppendAllText(logFilePath, logMessage + Environment.NewLine);
+                using (var stream = new FileStream(logFilePath, FileMode.Append, FileAccess.Write, FileShare.ReadWrite))
+                using (var writer = new StreamWriter(stream))
+                {
+                    writer.WriteLine(logMessage + Environment.NewLine);
+                }
             }
         }
 

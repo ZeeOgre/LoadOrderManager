@@ -99,35 +99,40 @@ namespace ZO.LoadOrderManager
             }
         }
 
-        private object? _selectedItem;
-        public object? SelectedItem
+        private object _selectedItem;
+        public object SelectedItem
         {
-            get => _selectedItem;
+            get
+            {
+                if (SelectedItems != null && SelectedItems.Count > 0)
+                    return SelectedItems[0]; // Always return the first item in SelectedItems
+
+                return _selectedItem;
+            }
             set
             {
                 if (_selectedItem != value)
                 {
-                    if (_isSynchronizing || InitializationManager.IsAnyInitializing()) return; // Prevent re-entrance
+                    _selectedItem = value;
 
-                    _isSynchronizing = true;
-                    try
+                    if (SelectedItems != null)
                     {
-                        _selectedItem = value;
-                        OnPropertyChanged(nameof(SelectedItem));
-
-                        // Update Commands' CanExecute status
-                        ((RelayCommand<object>)MoveUpCommand).RaiseCanExecuteChanged();
-                        ((RelayCommand<object>)MoveDownCommand).RaiseCanExecuteChanged();
-
-                        UpdateStatusMessage();
+                        // Ensure that the new selected item is the first in SelectedItems
+                        if (_selectedItem != null)
+                        {
+                            // Remove it if it's already present, then add it to the first position
+                            SelectedItems.Remove(_selectedItem);
+                            SelectedItems.Insert(0, _selectedItem); // Insert at the first position
+                        }
                     }
-                    finally
-                    {
-                        _isSynchronizing = false;
-                    }
+
+                    OnPropertyChanged(nameof(SelectedItem));
                 }
             }
         }
+
+
+
 
 
         private LoadOut GetLoadOutForGroupSet(GroupSet groupSet)

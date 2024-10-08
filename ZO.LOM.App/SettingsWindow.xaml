@@ -84,10 +84,17 @@
                 <CheckBox Content="Automatically check at startup" IsChecked="{Binding AutoCheckAtStartup}" Margin="5" VerticalAlignment="Center"/>
                 <TextBlock Text="Version:" VerticalAlignment="Center" Margin="5"/>
                 <TextBlock Text="{x:Static local:App.Version}" VerticalAlignment="Center" Margin="5"/>
+                <Button Content="Check for Updates" Command="{Binding CheckForUpdatesCommand}" Width="100"  Margin="5"/>
+                <!-- Flip the checkbox and label for Dark Mode -->
+                
             </StackPanel>
-
-            <Button Content="Check for Updates" Command="{Binding CheckForUpdatesCommand}" Width="150" Grid.Column="1" Margin="5"/>
-            <Button Content="Load from YAML" Command="{Binding LoadFromYamlCommand}" Width="150" Grid.Column="2" Margin="5"/>
+            <CheckBox FlowDirection="RightToLeft" Content="Dark Mode" Grid.Column="1" 
+                      IsChecked="{Binding Path=DarkMode, Mode=TwoWay}" 
+                      Checked="DarkModeCheckBox_Checked"
+                      Unchecked="DarkModeCheckBox_Unchecked"
+                      VerticalAlignment="Center" Margin="5,0,0,0" HorizontalAlignment="Left" Width="79"/>
+            
+            <Button Content="Load from YAML" Command="{Binding LoadFromYamlCommand}" Width="100" Grid.Column="2" Margin="5"/>
             <Button Content="Save" Command="{Binding SaveCommand}" Width="100" Grid.Column="3" Margin="5"/>
         </Grid>
     </Grid>
