@@ -5,9 +5,9 @@
         <!-- Default Fallback Theme -->
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
-                <ResourceDictionary Source="Themes/ColorsLight.xaml" />
+                <!--<ResourceDictionary Source="Themes/ColorsDark.xaml" />
                 <ResourceDictionary Source="Themes/CommonStyle.xaml" />
-                <!-- Default to Light Theme -->
+                --><!-- Default to Light Theme -->
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Application.Resources>

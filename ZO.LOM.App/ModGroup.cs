@@ -315,7 +315,7 @@ namespace ZO.LoadOrderManager
         }
 
         // This method now calculates the group path based on the in-memory structure
-        private void CalculatePathToRootUsingCache()
+        public void CalculatePathToRootUsingCache()
         {
             if (PathToRoot.Any()) return;
 
@@ -441,6 +441,12 @@ namespace ZO.LoadOrderManager
         {
             if (string.IsNullOrEmpty(input)) return string.Empty;
             return Regex.Replace(input, @"[^a-zA-Z0-9]", "").Trim().ToLowerInvariant();
+        }
+        
+        public static ModGroup GetModGroupById(long groupId)
+        {
+            return AggLoadInfo.Instance.Groups
+                .FirstOrDefault(g => g.GroupID == groupId);
         }
 
         public ModGroup? FindMatchingModGroup()

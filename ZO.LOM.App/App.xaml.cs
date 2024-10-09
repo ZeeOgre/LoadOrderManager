@@ -153,7 +153,7 @@ namespace ZO.LoadOrderManager
             {
                 Config.InitializeNewInstance();
                 //ApplyModernTheme();
-                ApplyCustomTheme(Config.Instance.DarkMode);
+                //ApplyCustomTheme(Config.Instance.DarkMode);
 
                 App.LogDebug("Launching SettingsWindow in settings mode.");
                 var settingsWindow = new SettingsWindow(SettingsLaunchSource.CommandLine);
@@ -218,7 +218,7 @@ namespace ZO.LoadOrderManager
 
                         //ApplyModernTheme();
                         //ApplyCustomTreeViewTheme(Config.Instance.DarkMode);
-                        ApplyCustomTheme(null);
+                        //ApplyCustomTheme(null);
 
                         App.LogDebug("Initializing database manager...");
                         InitializationManager.StartInitialization(nameof(DbManager));

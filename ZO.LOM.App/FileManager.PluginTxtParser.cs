@@ -32,8 +32,19 @@ namespace ZO.LoadOrderManager
             ModGroup currentGroup = defaultModGroup;
 
             var groupParentMapping = new Dictionary<long, ModGroup> { { 0, defaultModGroup } };
-            var groupOrdinalTracker = new Dictionary<long, long> { { 1, 1 } };
-            var pluginOrdinalTracker = new Dictionary<long, long> { { 1, 1 } };
+            // Get the max ordinals from the cached collections
+            var (groupOrdinalTracker, pluginOrdinalTracker) = GetMaxOrdinalsFromCache(groupSet.GroupSetID, aggLoadInfo);
+
+            // Initialize the dictionaries if they are empty
+            if (!groupOrdinalTracker.Any())
+            {
+                groupOrdinalTracker[1] = 1;
+            }
+
+            if (!pluginOrdinalTracker.Any())
+            {
+                pluginOrdinalTracker[1] = 1;
+            }
 
             try
             {
@@ -178,6 +189,36 @@ namespace ZO.LoadOrderManager
             }
 
             return aggLoadInfo;
+        }
+
+        public static (Dictionary<long, long> groupOrdinalTracker, Dictionary<long, long> pluginOrdinalTracker) GetMaxOrdinalsFromCache(long groupSetID, AggLoadInfo aggLoadInfo)
+        {
+            var groupOrdinalTracker = new Dictionary<long, long>();
+            var pluginOrdinalTracker = new Dictionary<long, long>();
+
+            // Get the maximum ordinals for groups
+            var maxGroupOrdinals = aggLoadInfo.GroupSetGroups.Items
+                .Where(item => item.groupSetID == groupSetID)
+                .GroupBy(item => item.groupID)
+                .Select(g => new { GroupID = g.Key, MaxOrdinal = g.Max(item => item.Ordinal) + 1 });
+
+            foreach (var group in maxGroupOrdinals)
+            {
+                groupOrdinalTracker[group.GroupID] = group.MaxOrdinal;
+            }
+
+            // Get the maximum ordinals for plugins
+            var maxPluginOrdinals = aggLoadInfo.GroupSetPlugins.Items
+                .Where(item => item.groupSetID == groupSetID)
+                .GroupBy(item => item.groupID)
+                .Select(g => new { GroupID = g.Key, MaxOrdinal = g.Max(item => item.Ordinal) + 1 });
+
+            foreach (var plugin in maxPluginOrdinals)
+            {
+                pluginOrdinalTracker[plugin.GroupID] = plugin.MaxOrdinal;
+            }
+
+            return (groupOrdinalTracker, pluginOrdinalTracker);
         }
 
 

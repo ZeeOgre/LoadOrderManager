@@ -25,6 +25,9 @@ namespace ZO.LoadOrderManager
             SelectedItems = new ObservableCollection<object>();
             SelectedCachedItems = new ObservableCollection<object>();
 
+            AggLoadInfo.Instance.PropertyChanged += OnAggLoadInfoPropertyChanged;
+
+
             // Initialize collections and commands
             Items = new ObservableCollection<LoadOrderItemViewModel>();
             GroupSets = new ObservableCollection<GroupSet>();

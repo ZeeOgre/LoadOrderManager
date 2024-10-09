@@ -18,6 +18,7 @@ namespace ZO.LoadOrderManager
         private bool _isInitialDataLoaded = false;
         private bool _isSynchronizing = false;
 
+
         public ObservableCollection<GroupSet> GroupSets { get; set; }
         public ObservableCollection<LoadOut> LoadOuts { get; set; }
         public LoadOrdersViewModel LoadOrders { get; set; }
@@ -33,7 +34,10 @@ namespace ZO.LoadOrderManager
             set
             {
                 selectedItems = value;
-                OnPropertyChanged(nameof(SelectedItems)); // Notify when SelectedItems changes
+                if (!_isSynchronizing)
+                {
+                    OnPropertyChanged(nameof(SelectedItems)); // Notify only when not synchronizing
+                }
             }
         }
 
@@ -43,6 +47,41 @@ namespace ZO.LoadOrderManager
         // PropertyChanged Event
         public event PropertyChangedEventHandler? PropertyChanged;
 
+
+        public void StartSync()
+        {
+            _isSynchronizing = true;
+        }
+
+        public void EndSync()
+        {
+            _isSynchronizing = false;
+        }
+
+
+        private void OnAggLoadInfoPropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (_isSynchronizing)
+            {
+                return;
+            }
+
+            _isSynchronizing = true;
+
+            if (e.PropertyName == nameof(AggLoadInfo.ActiveGroupSet))
+            {
+                _selectedGroupSet = AggLoadInfo.Instance.ActiveGroupSet;
+                OnPropertyChanged(nameof(SelectedGroupSet));
+            }
+            else if (e.PropertyName == nameof(AggLoadInfo.ActiveLoadOut))
+            {
+                _selectedLoadOut = AggLoadInfo.Instance.ActiveLoadOut;
+                OnPropertyChanged(nameof(SelectedLoadOut));
+            }
+
+            _isSynchronizing = false;
+        }
+
         // Properties
         private GroupSet _selectedGroupSet;
         public GroupSet SelectedGroupSet
@@ -50,7 +89,11 @@ namespace ZO.LoadOrderManager
             get => _selectedGroupSet;
             set
             {
-                if (InitializationManager.IsAnyInitializing()) return;
+                if (_isSynchronizing || InitializationManager.IsAnyInitializing())
+                {
+                    return;
+                }
+                _isSynchronizing = true;
                 if (_selectedGroupSet != value)
                 {
                     // Check if the new value is different from the current value
@@ -63,9 +106,7 @@ namespace ZO.LoadOrderManager
                     SelectedLoadOut = GetLoadOutForGroupSet(SelectedGroupSet);
                     _selectedGroupSet = value ?? throw new ArgumentNullException(nameof(value));
                     OnPropertyChanged(nameof(SelectedGroupSet));
-
-                   
-
+                    _isSynchronizing = false;
                 }
             }
         }
@@ -78,7 +119,7 @@ namespace ZO.LoadOrderManager
             {
                 if (_selectedLoadOut != value)
                 {
-                    if (_isSynchronizing) return; // Prevent re-entrance
+                    if (_isSynchronizing || InitializationManager.IsAnyInitializing()) return; // Prevent re-entrance
 
                     _isSynchronizing = true;
                     try
@@ -115,18 +156,29 @@ namespace ZO.LoadOrderManager
                 {
                     _selectedItem = value;
 
-                    if (SelectedItems != null)
-                    {
-                        // Ensure that the new selected item is the first in SelectedItems
-                        if (_selectedItem != null)
-                        {
-                            // Remove it if it's already present, then add it to the first position
-                            SelectedItems.Remove(_selectedItem);
-                            SelectedItems.Insert(0, _selectedItem); // Insert at the first position
-                        }
-                    }
+                    if (_isSynchronizing)
+                        return; // Prevent re-entrance during synchronization
 
-                    OnPropertyChanged(nameof(SelectedItem));
+                    _isSynchronizing = true;
+                    try
+                    {
+                        if (SelectedItems != null)
+                        {
+                            // Ensure that the new selected item is the first in SelectedItems
+                            if (_selectedItem != null)
+                            {
+                                // Remove it if it's already present, then add it to the first position
+                                SelectedItems.Remove(_selectedItem);
+                                SelectedItems.Insert(0, _selectedItem); // Insert at the first position
+                            }
+                        }
+
+                        OnPropertyChanged(nameof(SelectedItem));
+                    }
+                    finally
+                    {
+                        _isSynchronizing = false;
+                    }
                 }
             }
         }
@@ -158,28 +210,8 @@ namespace ZO.LoadOrderManager
                 return firstLoadOut;
             }
 
-            // Prompt the user to create a new loadout
-            var result = MessageBox.Show("No LoadOuts found. Do you want to create a new LoadOut?", "Create LoadOut", MessageBoxButton.YesNo);
-            if (result == MessageBoxResult.Yes)
-            {
-                // Get the name for the new loadout
-                var inputDialog = new InputDialog("Enter the name for the new LoadOut:");
-                if (inputDialog.ShowDialog() == true)
-                {
-                    var newLoadoutName = inputDialog.ResponseText;
+            return AddNewLoadout(groupSet);
 
-                    // Create and add the new loadout to the groupset
-                    var newLoadOut = new LoadOut(groupSet)
-                    {
-                        Name = newLoadoutName
-                    };
-                    groupSet.LoadOuts.Add(newLoadOut);
-                    return newLoadOut;
-                }
-            }
-
-            // Return null if no loadout is found and the user chooses not to create a new one
-            return null;
         }
 
         public string StatusMessage
@@ -240,32 +272,6 @@ namespace ZO.LoadOrderManager
             else
             {
                 StatusMessage = "No item selected";
-            }
-        }
-
-        public void CreateNewLoadOut()
-        {
-            var result = MessageBox.Show("No LoadOuts found. Do you want to create a new LoadOut?", "Create LoadOut", MessageBoxButton.YesNo);
-            if (result == MessageBoxResult.Yes)
-            {
-                // Generate default name for the new loadout
-                var defaultLoadoutName = $"{SelectedGroupSet.GroupSetName}_Loadout_{AggLoadInfo.Instance.LoadOuts.Count + 1}";
-
-                // Show InputDialog to get the name of the new loadout
-                var inputDialog = new InputDialog("Enter the name for the new LoadOut:", defaultLoadoutName);
-                if (inputDialog.ShowDialog() == true)
-                {
-                    var newLoadoutName = inputDialog.ResponseText;
-
-                    // Create and add the new loadout to the selected GroupSet
-                    var newLoadOut = new LoadOut(SelectedGroupSet)
-                    {
-                        Name = newLoadoutName
-                    };
-                    AggLoadInfo.Instance.LoadOuts.Add(newLoadOut);
-                    SelectedLoadOut = newLoadOut;
-                    AggLoadInfo.Instance.ActiveLoadOut = newLoadOut;
-                }
             }
         }
     }

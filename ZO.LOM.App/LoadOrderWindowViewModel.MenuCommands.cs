@@ -89,7 +89,7 @@ namespace ZO.LoadOrderManager
             }
 
             // Perform the import
-            FileManager.ParsePluginsTxt(AggLoadInfo.Instance, pluginsFile);
+            FileManager.ParsePluginsTxt(aggLoadInfo, pluginsFile);
 
             // Update the UI or any other necessary components
             RefreshData();

@@ -47,8 +47,12 @@ namespace ZO.LoadOrderManager
                     {
                         existingFileInfo.DTStamp = dtStamp;
                         existingFileInfo.HASH = ZO.LoadOrderManager.FileInfo.ComputeHash(fileInfo.FullName);
-                        existingFileInfo.Flags = FileFlags.None;
+                        existingFileInfo.Flags = FileFlags.GameFolder;
+                        existingFileInfo.AbsolutePath = fileInfo.FullName;
                         ZO.LoadOrderManager.FileInfo.InsertFileInfo(existingFileInfo, existingPlugin.PluginID);
+
+                        // Check for affiliated archives
+                        AddAffiliatedFiles(fileInfo, existingPlugin.PluginID);
                     }
                 }
                 else
@@ -60,7 +64,7 @@ namespace ZO.LoadOrderManager
                     // Fetch or initialize the ordinal for the group
                     if (!groupOrdinalTracker.ContainsKey(groupID))
                     {
-                        groupOrdinalTracker[groupID] = DbManager.GetNextOrdinal(EntityType.Plugin, groupID, -1);
+                        groupOrdinalTracker[groupID] = AggLoadInfo.GetNextPluginOrdinal(groupID, groupSetID);
                     }
 
                     // Create a new Plugin object
@@ -85,10 +89,50 @@ namespace ZO.LoadOrderManager
                         Filename = pluginName,
                         DTStamp = dtStamp,
                         HASH = ZO.LoadOrderManager.FileInfo.ComputeHash(fileInfo.FullName),
-                        Flags = FileFlags.None
+                        Flags = FileFlags.GameFolder,
+                        AbsolutePath = fileInfo.FullName
                     };
                     ZO.LoadOrderManager.FileInfo.InsertFileInfo(newFileInfo, newPlugin.PluginID);
+
+                    // Check for affiliated archives
+                    AddAffiliatedFiles(fileInfo, newPlugin.PluginID);
                 }
+            }
+        }
+
+        private static void AddAffiliatedFiles(System.IO.FileInfo pluginFileInfo, long pluginId)
+        {
+            var dataFolder = pluginFileInfo.DirectoryName;
+            if (dataFolder == null) return;
+
+            var baseFileName = Path.GetFileNameWithoutExtension(pluginFileInfo.Name);
+            var ba2Files = Directory.GetFiles(dataFolder, $"{baseFileName}*.ba2");
+            var iniFiles = Directory.GetFiles(dataFolder, $"{baseFileName}.ini");
+
+            foreach (var ba2File in ba2Files)
+            {
+                var ba2FileInfo = new ZO.LoadOrderManager.FileInfo
+                {
+                    Filename = Path.GetFileName(ba2File),
+                    DTStamp = File.GetLastWriteTime(ba2File).ToString("yyyy-MM-dd HH:mm:ss"),
+                    HASH = ZO.LoadOrderManager.FileInfo.ComputeHash(ba2File),
+                    Flags = FileFlags.IsArchive | FileFlags.GameFolder,
+                    AbsolutePath = ba2File
+                };
+                ZO.LoadOrderManager.FileInfo.InsertFileInfo(ba2FileInfo, pluginId);
+            }
+
+            foreach (var iniFile in iniFiles)
+            {
+                var iniFileInfo = new ZO.LoadOrderManager.FileInfo
+                {
+                    Filename = Path.GetFileName(iniFile),
+                    DTStamp = File.GetLastWriteTime(iniFile).ToString("yyyy-MM-dd HH:mm:ss"),
+                    HASH = ZO.LoadOrderManager.FileInfo.ComputeHash(iniFile),
+                    Flags = FileFlags.GameFolder,
+                    AbsolutePath = iniFile
+                };
+                ZO.LoadOrderManager.FileInfo.InsertFileInfo(iniFileInfo, pluginId);
             }
         }
     }

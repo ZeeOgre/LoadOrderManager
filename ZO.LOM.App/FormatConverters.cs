@@ -46,9 +46,76 @@ namespace ZO.LoadOrderManager
 
 
 
+    //public class ItemStateToColorConverter : IMultiValueConverter
+    //{
+
+    //    public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
+    //    {
+    //        if (values.Length < 3)
+    //            return Brushes.Transparent; // Default color if not enough values
+
+    //        bool isSelected = values[0] is bool selected && selected;
+    //        bool isHighlighted = values[1] is bool highlighted && highlighted;
+    //        EntityType type = values[2] is EntityType entityType ? entityType : EntityType.Url; // Default to Unknown if not valid
+
+    //        bool isDarkMode = Config.Instance.DarkMode;
+
+    //        string target = parameter as string ?? "Background"; // Check if we're dealing with background or foreground
+
+    //        if (target == "Foreground")
+    //        {
+    //            // Foreground Colors
+    //            return isDarkMode ? Brushes.White : Brushes.Black; // White text for Dark Mode, Black text for Light Mode
+    //        }
+
+
+
+
+    //        // Debugging
+    //        Debug.WriteLine($"Selected: {isSelected}, Highlighted: {isHighlighted}, Type: {type}, DarkMode: {isDarkMode}");
+
+    //        // Dark Mode Colors
+    //        if (isDarkMode)
+    //        {
+    //            if (isHighlighted)
+    //            {
+    //                return Brushes.DarkGoldenrod; // Highlighted color for Dark Mode
+    //            }
+
+    //            if (isSelected)
+    //            {
+    //                return type == EntityType.Group ? Brushes.Teal : Brushes.SteelBlue; // Selected color for Dark Mode
+    //            }
+
+    //            // Default colors for Dark Mode
+    //            return type == EntityType.Group ? Brushes.LightBlue : Brushes.Transparent;
+    //        }
+    //        // Light Mode Colors
+    //        else
+    //        {
+    //            if (isHighlighted)
+    //            {
+    //                return Brushes.LightGoldenrodYellow; // Highlighted color for Light Mode
+    //            }
+
+    //            if (isSelected)
+    //            {
+    //                return type == EntityType.Group ? Brushes.LightSeaGreen : Brushes.CornflowerBlue; // Selected color for Light Mode
+    //            }
+
+    //            // Default colors for Light Mode
+    //            return type == EntityType.Group ? Brushes.LightBlue : Brushes.Transparent;
+    //        }
+    //    }
+
+    //    public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
+    //    {
+    //        throw new NotImplementedException();
+    //    }
+    //}
+
     public class ItemStateToColorConverter : IMultiValueConverter
     {
-
         public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
         {
             if (values.Length < 3)
@@ -58,54 +125,40 @@ namespace ZO.LoadOrderManager
             bool isHighlighted = values[1] is bool highlighted && highlighted;
             EntityType type = values[2] is EntityType entityType ? entityType : EntityType.Url; // Default to Unknown if not valid
 
-            bool isDarkMode = Config.Instance.DarkMode;
-
             string target = parameter as string ?? "Background"; // Check if we're dealing with background or foreground
 
+            // Foreground color handling
             if (target == "Foreground")
             {
-                // Foreground Colors
-                return isDarkMode ? Brushes.White : Brushes.Black; // White text for Dark Mode, Black text for Light Mode
+                var foregroundBrush = Application.Current.TryFindResource("SelectedForegroundBrush") as SolidColorBrush;
+                return foregroundBrush ?? Brushes.Black; // Fallback to black if no resource found
             }
 
+            // Retrieve resource brushes dynamically based on the current theme
+            var groupBrush = Application.Current.TryFindResource("GroupBackgroundBrush") as SolidColorBrush;
+            var pluginBrush = Application.Current.TryFindResource("PluginBackgroundBrush") as SolidColorBrush;
+            var highlightBrush = Application.Current.TryFindResource("SearchHighlightBackgroundBrush") as SolidColorBrush;
+            var selectedGroupBrush = Application.Current.TryFindResource("SelectedGroupBackgroundBrush") as SolidColorBrush;
+            var selectedPluginBrush = Application.Current.TryFindResource("SelectedPluginBackgroundBrush") as SolidColorBrush;
 
-
-
-            // Debugging
-            Debug.WriteLine($"Selected: {isSelected}, Highlighted: {isHighlighted}, Type: {type}, DarkMode: {isDarkMode}");
-
-            // Dark Mode Colors
-            if (isDarkMode)
+            // Handle highlighted state (for search results)
+            if (isHighlighted)
             {
-                if (isHighlighted)
-                {
-                    return Brushes.DarkGoldenrod; // Highlighted color for Dark Mode
-                }
-
-                if (isSelected)
-                {
-                    return type == EntityType.Group ? Brushes.Teal : Brushes.SteelBlue; // Selected color for Dark Mode
-                }
-
-                // Default colors for Dark Mode
-                return type == EntityType.Group ? Brushes.LightBlue : Brushes.Transparent;
+                return highlightBrush ?? Brushes.Yellow; // Fallback to yellow if no resource found
             }
-            // Light Mode Colors
-            else
+
+            // Handle selected state
+            if (isSelected)
             {
-                if (isHighlighted)
-                {
-                    return Brushes.LightGoldenrodYellow; // Highlighted color for Light Mode
-                }
-
-                if (isSelected)
-                {
-                    return type == EntityType.Group ? Brushes.LightSeaGreen : Brushes.CornflowerBlue; // Selected color for Light Mode
-                }
-
-                // Default colors for Light Mode
-                return type == EntityType.Group ? Brushes.LightBlue : Brushes.Transparent;
+                return type == EntityType.Group
+                    ? (selectedGroupBrush ?? Brushes.Teal)  // Fallback to teal for selected groups
+                    : (selectedPluginBrush ?? Brushes.SteelBlue); // Fallback to steel blue for selected plugins
             }
+
+            // Default colors for groups and plugins
+            return type == EntityType.Group
+                ? (groupBrush ?? Brushes.LightBlue) // Fallback to light blue for groups
+                : (pluginBrush ?? Brushes.Transparent); // Fallback to transparent for plugins
         }
 
         public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)

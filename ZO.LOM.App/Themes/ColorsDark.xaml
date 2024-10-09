@@ -1,44 +1,66 @@
 ﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
-    <!-- Dark Theme Colors -->
+    <!-- Colors for Dark Theme -->
     <Color x:Key="ControlBackgroundColor">#333333</Color>
-    <Color x:Key="ControlForegroundColor">#FFFFFF</Color>
-    <Color x:Key="ButtonBackgroundColor">#444444</Color>
-    <Color x:Key="ButtonForegroundColor">#FFFFFF</Color>
     <Color x:Key="ControlBorderColor">#555555</Color>
-    <Color x:Key="TextBoxBackgroundColor">#444444</Color>
+    <Color x:Key="ControlForegroundColor">#FFFFFF</Color>
+
+    <!-- Disabled State -->
+    <Color x:Key="DisabledBackgroundColor">#444444</Color>
+    <Color x:Key="DisabledBorderColor">#666666</Color>
+
+    <!-- Hover State -->
+    <Color x:Key="HoverBackgroundColor">#555555</Color>
+    <Color x:Key="HoverBorderColor">#777777</Color>
+
+    <!-- Selection State -->
+    <Color x:Key="SelectedBackgroundColor">#1E90FF</Color>
+    <!-- DodgerBlue -->
+    <Color x:Key="SelectedForegroundColor">#FFFFFF</Color>
+
+    <!-- Plugin and Group Colors -->
+    <Color x:Key="PluginBackgroundColor">#00000000</Color>
+    <!-- Transparent -->
+    <Color x:Key="GroupBackgroundColor">#008080</Color>
+    <!-- Teal -->
+    <Color x:Key="SearchHighlightBackgroundColor">#B8860B</Color>
+    <!-- DarkGoldenrod -->
+
+    <!-- TextBox -->
+    <Color x:Key="TextBoxBackgroundColor">#333333</Color>
     <Color x:Key="TextBoxForegroundColor">#FFFFFF</Color>
 
-    <!-- Brushes -->
-    <SolidColorBrush x:Key="ControlBackground" Color="{StaticResource ControlBackgroundColor}" />
-    <SolidColorBrush x:Key="ControlForeground" Color="{StaticResource ControlForegroundColor}" />
-    <SolidColorBrush x:Key="ButtonBackground" Color="{StaticResource ButtonBackgroundColor}" />
-    <SolidColorBrush x:Key="ButtonForeground" Color="{StaticResource ButtonForegroundColor}" />
+    <!-- Brushes for Dark Theme -->
+    <SolidColorBrush x:Key="ControlBackgroundBrush" Color="{StaticResource ControlBackgroundColor}" />
     <SolidColorBrush x:Key="ControlBorderBrush" Color="{StaticResource ControlBorderColor}" />
-    <SolidColorBrush x:Key="TextBoxBackground" Color="{StaticResource TextBoxBackgroundColor}" />
-    <SolidColorBrush x:Key="TextBoxForeground" Color="{StaticResource TextBoxForegroundColor}" />
-    <SolidColorBrush x:Key="PluginBackground" Color="Transparent" />
-    <SolidColorBrush x:Key="PluginForeground" Color="White" />
-    <SolidColorBrush x:Key="GroupBackground" Color="LightBlue" />
-    <SolidColorBrush x:Key="SelectedBackground" Color="SteelBlue" />
-    <SolidColorBrush x:Key="SelectedForeground" Color="White" />
-    <SolidColorBrush x:Key="SearchHighlightBackground" Color="Yellow" />
-    <SolidColorBrush x:Key="SearchHighlightBorder" Color="Orange" />
-    <SolidColorBrush x:Key="TreeMouseOver" Color="LightCyan" />
-    <SolidColorBrush x:Key="ButtonBackgroundBrush" Color="#303030" />
-    <SolidColorBrush x:Key="ButtonForegroundBrush" Color="#FFFFFF" />
+    <SolidColorBrush x:Key="ControlForegroundBrush" Color="{StaticResource ControlForegroundColor}" />
 
-    <SolidColorBrush x:Key="DisabledBackgroundBrush" Color="#404040" />
-    <SolidColorBrush x:Key="DisabledBorderBrush" Color="#606060" />
+    <SolidColorBrush x:Key="DisabledBackgroundBrush" Color="{StaticResource DisabledBackgroundColor}" />
+    <SolidColorBrush x:Key="DisabledBorderBrush" Color="{StaticResource DisabledBorderColor}" />
 
-    <SolidColorBrush x:Key="HoverBackgroundBrush" Color="#505050" />
-    <SolidColorBrush x:Key="HoverBorderBrush" Color="#808080" />
+    <SolidColorBrush x:Key="HoverBackgroundBrush" Color="{StaticResource HoverBackgroundColor}" />
+    <SolidColorBrush x:Key="HoverBorderBrush" Color="{StaticResource HoverBorderColor}" />
 
-    <!-- New Brushes -->
-    <SolidColorBrush x:Key="ButtonBorderBrush" Color="#555555" />
-    <SolidColorBrush x:Key="ComboBoxBackgroundBrush" Color="#333333" />
-    <SolidColorBrush x:Key="ComboBoxBorderBrush" Color="#555555" />
-    <SolidColorBrush x:Key="ComboBoxForegroundBrush" Color="#FFFFFF" />
+    <SolidColorBrush x:Key="SelectedBackgroundBrush" Color="{StaticResource SelectedBackgroundColor}" />
+    <SolidColorBrush x:Key="SelectedForegroundBrush" Color="{StaticResource SelectedForegroundColor}" />
+
+    <SolidColorBrush x:Key="PluginBackgroundBrush" Color="{StaticResource PluginBackgroundColor}" />
+    <SolidColorBrush x:Key="GroupBackgroundBrush" Color="{StaticResource GroupBackgroundColor}" />
+    <SolidColorBrush x:Key="SearchHighlightBackgroundBrush" Color="{StaticResource SearchHighlightBackgroundColor}" />
+
+    <!-- TextBox -->
+    <SolidColorBrush x:Key="TextBoxBackgroundBrush" Color="{StaticResource TextBoxBackgroundColor}" />
+    <SolidColorBrush x:Key="TextBoxForegroundBrush" Color="{StaticResource TextBoxForegroundColor}" />
+
+    <SolidColorBrush x:Key="PluginForegroundBrush" Color="White" />
+    <SolidColorBrush x:Key="SearchHighlightBorderBrush" Color="DarkGoldenrod" />
+    <Color x:Key="SelectedGroupBackgroundColor">#005050</Color>
+    <!-- Darker teal -->
+    <Color x:Key="SelectedPluginBackgroundColor">#1E90FF</Color>
+    <!-- DodgerBlue -->
+    <SolidColorBrush x:Key="SelectedGroupBackgroundBrush" Color="{StaticResource SelectedGroupBackgroundColor}" />
+    <SolidColorBrush x:Key="SelectedPluginBackgroundBrush" Color="{StaticResource SelectedPluginBackgroundColor}" />
+
 
 </ResourceDictionary>

@@ -10,6 +10,8 @@ public class LoadOrderItemViewModel : ViewModelBase
     private Plugin pluginData = new Plugin();
     private bool isActive;
     private ObservableCollection<LoadOrderItemViewModel> children = new ObservableCollection<LoadOrderItemViewModel>();
+    
+    public long? Ordinal { get; set; } // Expose Ordinal directly
 
     private bool isSelected;
 
@@ -72,6 +74,7 @@ public class LoadOrderItemViewModel : ViewModelBase
         ParentID = group.ParentID;
         DisplayName = group.DisplayName;
         EntityType = EntityType.Group;
+        Ordinal = group.Ordinal; // Set Ordinal from the group
     }
 
     // Constructor for plugin items
@@ -82,6 +85,7 @@ public class LoadOrderItemViewModel : ViewModelBase
         ParentID = plugin.GroupID;
         PluginData = plugin;
         EntityType = EntityType.Plugin;
+        Ordinal = plugin.GroupOrdinal; // Set Ordinal from the plugin
     }
 
     public LoadOrderItemViewModel()

@@ -2,11 +2,11 @@
 
 namespace ZO.LoadOrderManager
 {
-    public partial class SelectGroupSetWindow : Window
+    public partial class GroupSetSelector : Window
     {
         public GroupSet SelectedGroupSet { get; private set; }
 
-        public SelectGroupSetWindow()
+        public GroupSetSelector()
         {
             InitializeComponent();
             cmbGroupSets.ItemsSource = AggLoadInfo.Instance.GroupSets;

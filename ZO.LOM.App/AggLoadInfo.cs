@@ -580,6 +580,77 @@ namespace ZO.LoadOrderManager
             DataRefreshed?.Invoke(this, EventArgs.Empty);
         }
 
+
+
+        public static long GetNextPluginOrdinal(long groupID, long? groupSetID = null)
+        {
+            // Use Instance.GroupSetID if groupSetID is null
+            var effectiveGroupSetID = groupSetID ?? Instance.ActiveGroupSet.GroupSetID;
+
+            var maxOrdinal = Instance.GroupSetPlugins.Items
+                .Where(item => item.groupID == groupID && item.groupSetID == effectiveGroupSetID)
+                .Select(item => item.Ordinal)
+                .DefaultIfEmpty(0)
+                .Max();
+
+            return maxOrdinal + 1;
+        }
+
+        public static long GetNextGroupOrdinal(long groupID, long? groupSetID = null)
+        {
+            // Use Instance.GroupSetID if groupSetID is null
+            var effectiveGroupSetID = groupSetID ?? Instance.ActiveGroupSet.GroupSetID;
+
+            var maxOrdinal = Instance.GroupSetGroups.Items
+                .Where(item => item.groupSetID == effectiveGroupSetID && item.groupID == groupID)
+                .Max(item => (long?)item.Ordinal) ?? 0;
+
+            return maxOrdinal + 1;
+        }
+
+
+        public static List<ModGroup> GetAllGroupChildren(long groupID)
+        {
+            return Instance.GroupSetGroups.Items
+                .Where(gsg => gsg.parentID == groupID)
+                .Select(gsg => Instance.Groups.FirstOrDefault(g => g.GroupID == gsg.groupID))
+                .Where(group => group != null) // Exclude null groups
+                .ToList();
+        }
+
+        public static List<Plugin> GetAllPluginChildren(long groupID)
+        {
+            return Instance.GroupSetPlugins.Items
+                .Where(gsp => gsp.groupID == groupID)
+                .Select(gsp => Instance.Plugins.FirstOrDefault(p => p.PluginID == gsp.pluginID))
+                .Where(plugin => plugin != null) // Exclude null plugins
+                .ToList();
+        }
+
+        public static List<LoadOrderItemViewModel> GetAllSiblings(object item)
+        {
+            List<LoadOrderItemViewModel> siblings = new List<LoadOrderItemViewModel>();
+
+            if (item is LoadOrderItemViewModel viewModel)
+            {
+                if (viewModel.EntityType == EntityType.Plugin)
+                {
+                    // Get all siblings for a Plugin
+                    var groupID = viewModel.GroupID;
+                    siblings.AddRange(GetAllPluginChildren(groupID).Select(p => new LoadOrderItemViewModel(p)));
+                }
+                else if (viewModel.EntityType == EntityType.Group)
+                {
+                    // Get all siblings for a Group
+                    var parentID = viewModel.ParentID;
+                    siblings.AddRange(GetAllGroupChildren((long)parentID).Select(g => new LoadOrderItemViewModel(g)));
+                }
+            }
+
+            return siblings;
+        }
+
+
         public event PropertyChangedEventHandler? PropertyChanged;
 
         protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)

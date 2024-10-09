@@ -238,7 +238,7 @@ namespace ZO.LoadOrderManager
             if (result == MessageBoxResult.Yes)
             {
                 // Step 2: Copy an existing GroupSet
-                var selectGroupSetWindow = new SelectGroupSetWindow();
+                var selectGroupSetWindow = new GroupSetSelector();
                 if (selectGroupSetWindow.ShowDialog() == true)
                 {
                     var existingGroupSet = selectGroupSetWindow.SelectedGroupSet;
@@ -259,23 +259,16 @@ namespace ZO.LoadOrderManager
             else
             {
                 // Step 3: Create a new GroupSet
-                newGroupSet = new GroupSet { GroupSetName = newGroupName };
-                InitializeNewGroupSet(newGroupSet);
+                newGroupSet = GroupSet.CreateEmptyGroupSet();
+                newGroupSet.GroupSetName = newGroupName;
+                
             }
 
-            // Step 4: Create a new AggLoadInfo instance with the new GroupSet
-            var newAggLoadInfo = new AggLoadInfo();
-            newAggLoadInfo.GroupSets.Add(newGroupSet);
-            var newLoadOut = new LoadOut(newGroupSet) { LoadOutName = "LO_" + newGroupName };
-            newAggLoadInfo.LoadOuts.Add(newLoadOut);
+            var newLoadOut = AddNewLoadout(newGroupSet);
 
-            // Step 5: Copy the new AggLoadInfo instance over the existing one
-            AggLoadInfo.Instance = newAggLoadInfo;
             AggLoadInfo.Instance.ActiveGroupSet = newGroupSet;
             AggLoadInfo.Instance.ActiveLoadOut = newLoadOut;
 
-            // Add the new GroupSet to the collection
-            GroupSets.Add(newGroupSet);
         }
 
         private string PromptForGroupName()
@@ -292,7 +285,7 @@ namespace ZO.LoadOrderManager
         private GroupSet SelectExistingGroupSet()
         {
             // Implement a dialog to select an existing GroupSet
-            var dialog = new SelectGroupSetDialog(GroupSets);
+            var dialog = new GroupSetSelector();
             if (dialog.ShowDialog() == true)
             {
                 return dialog.SelectedGroupSet;
@@ -300,20 +293,27 @@ namespace ZO.LoadOrderManager
             return null;
         }
 
-        private void InitializeNewGroupSet(GroupSet groupSet)
+        private LoadOut AddNewLoadout(GroupSet? groupSet = null)
         {
-            // Add group 1 and -997
-            groupSet.ModGroups.Add(new ModGroup { Id = 1 });
-            groupSet.ModGroups.Add(new ModGroup { Id = -997 });
+            // Step 1: Ask the user if they want to copy an existing GroupSet or create a new one
 
-            // Add an empty default loadout
-            groupSet.LoadOuts.Add(new LoadOut(groupSet));
-        }
+            groupSet ??= AggLoadInfo.Instance.ActiveGroupSet;
+            var newLoadOutName = $"NEW_LO_{groupSet.GroupSetName}";
+            var dialog = new InputDialog("Enter the name for the new LoadOut:",newLoadOutName);
+            if (dialog.ShowDialog() == true)
+            {
+                newLoadOutName = dialog.ResponseText;
+            }
+            LoadOut newLoadOut = new LoadOut(groupSet) { Name = newLoadOutName };
+            groupSet.LoadOuts.Add(newLoadOut);
 
 
-        private void AddNewLoadout()
-        {
-            // Logic for adding a new Loadout skeleton
+            if (AggLoadInfo.Instance.ActiveLoadOut == null || AggLoadInfo.Instance.ActiveLoadOut.GroupSetID != groupSet.GroupSetID)
+            {
+                AggLoadInfo.Instance.ActiveLoadOut = newLoadOut;
+            }
+
+            return newLoadOut;
         }
 
 
