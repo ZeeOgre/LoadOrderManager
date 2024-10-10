@@ -1,0 +1,33 @@
+﻿<metro:MetroWindow x:Class="ZO.LoadOrderManager.LoadOutEditor"
+                   xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                   xmlns:metro="http://metro.mahapps.com/winfx/xaml/controls"
+                   Style="{StaticResource MaterialDesignWindow}"
+                   xmlns:local="clr-namespace:ZO.LoadOrderManager"
+                   Title="LoadOut Editor" Height="400" Width="300">
+    <Grid Margin="10">
+        <StackPanel>
+            <TextBlock Text="LoadOut Name:" FontWeight="Bold"/>
+            <TextBox x:Name="LoadOutNameTextBox" Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
+
+            <TextBlock Text="Group Set ID:" FontWeight="Bold"/>
+            <TextBox x:Name="GroupSetIDTextBox" Text="{Binding GroupSetID}" IsReadOnly="True" Margin="0,0,0,10"/>
+            <Grid Margin="0,10,0,10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <TextBlock Text="Favorite:" FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,5,0" Grid.Column="0"/>
+                <CheckBox IsChecked="{Binding IsFavorite}" VerticalAlignment="Center" Margin="10,0,0,0" Grid.Column="1"/>
+            </Grid>
+
+
+            <Button Content="Save" Click="SaveButton_Click" Width="100" HorizontalAlignment="Right"/>
+            <Button Content="Cancel" Click="CancelButton_Click" Width="100" HorizontalAlignment="Right" Margin="0,5,0,0"/>
+        </StackPanel>
+    </Grid>
+</metro:MetroWindow>

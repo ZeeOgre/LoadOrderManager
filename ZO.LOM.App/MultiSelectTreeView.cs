@@ -11,12 +11,8 @@ namespace ZO.LoadOrderManager
 {
     public class MultiSelectTreeView : TreeView
     {
-        private bool _isSynchronizing = false; // Flag to suppress notifications
-        private bool _isInitializing = true; // Suppress initialization notifications during setup
-        private bool _isUpdatingSelection = false;
-        private bool _isDoubleClick = false;
+        private bool _isUpdatingSelection = false; // Flag to suppress notifications
         private TreeViewItem _firstSelectedItem = null; // Store the first selected item for Shift-click
-        private System.Windows.Threading.DispatcherTimer _clickTimer;
 
         public static readonly DependencyProperty SelectedItemsProperty =
             DependencyProperty.Register(nameof(SelectedItems), typeof(ObservableCollection<object>), typeof(MultiSelectTreeView), new PropertyMetadata(new ObservableCollection<object>(), OnSelectedItemsChanged));
@@ -31,32 +27,16 @@ namespace ZO.LoadOrderManager
             }
         }
 
-        // Style property to visually distinguish groups, plugins, and selection states
-        public Style ItemContainerStyle
-        {
-            get => base.ItemContainerStyle;
-            set => base.ItemContainerStyle = value; // Apply styles based on selection state or type (group/plugin)
-        }
-
         public MultiSelectTreeView()
         {
             SelectedItems = new ObservableCollection<object>();
             PreviewMouseDown += MultiSelectTreeView_PreviewMouseDown;
-            Loaded += MultiSelectTreeView_Loaded;
-
-            // Initialize the click timer to differentiate between single and double-clicks
-            _clickTimer = new System.Windows.Threading.DispatcherTimer
-            {
-                Interval = TimeSpan.FromMilliseconds(300) // Adjust time for double-click interval
-            };
-            _clickTimer.Tick += ClickTimer_Tick;
         }
 
         private static void OnSelectedItemsChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             var treeView = d as MultiSelectTreeView;
-
-            if (treeView != null && !treeView._isInitializing && !treeView._isUpdatingSelection && !Equals(e.OldValue, e.NewValue))
+            if (treeView != null && !treeView._isUpdatingSelection && !Equals(e.OldValue, e.NewValue))
             {
                 treeView._isUpdatingSelection = true;
                 // Logic for handling selection change can be added here if necessary
@@ -64,28 +44,20 @@ namespace ZO.LoadOrderManager
             }
         }
 
-        private void MultiSelectTreeView_Loaded(object sender, RoutedEventArgs e)
-        {
-            _isInitializing = false;
-        }
-
         private void MultiSelectTreeView_PreviewMouseDown(object sender, MouseButtonEventArgs e)
         {
-            // Ignore right-clicks to allow context menu to work
+            // Allow right-click event for context menu handling
             if (e.RightButton == MouseButtonState.Pressed)
             {
                 return; // Let the right-click event pass through for context menu handling
             }
 
-            // Continue with normal selection handling for other mouse buttons
             if (e.OriginalSource is FrameworkElement element)
             {
                 var item = GetTreeViewItemFromElement(element);
                 if (item != null)
                 {
-                    // Start the click timer to track double-clicks
-                    _clickTimer.Start();
-                    HandleSelection(item, e); // Handle single or multiple selection
+                    HandleSelection(item, e);
                 }
             }
         }
@@ -106,40 +78,25 @@ namespace ZO.LoadOrderManager
                 _isUpdatingSelection = true; // Suppress updates during selection
                 var dataContext = item.DataContext as LoadOrderItemViewModel;
 
-                if (dataContext == null) return;
-
-                // Handle double-click
-                if (e.ClickCount == 2)
-                {
-                    HandleDoubleClick(item);
-                    return;
-                }
-
-                // Handle Ctrl-click (for toggling selection)
                 if (Keyboard.Modifiers == ModifierKeys.Control)
                 {
                     if (!SelectedItems.Contains(dataContext))
                     {
                         SelectedItems.Add(dataContext);
                         dataContext.IsSelected = true;
-                        System.Diagnostics.Debug.WriteLine($"Ctrl-click selected: {dataContext.DisplayName} | PluginID: {dataContext.PluginData.PluginID}, GroupID: {dataContext.GroupID}");
                     }
                     else
                     {
                         SelectedItems.Remove(dataContext);
                         dataContext.IsSelected = false;
-                        System.Diagnostics.Debug.WriteLine($"Ctrl-click deselected: {dataContext.DisplayName} | PluginID: {dataContext.PluginData.PluginID}, GroupID: {dataContext.GroupID}");
                     }
                 }
-                // Handle Shift-click (for range selection)
                 else if (Keyboard.Modifiers == ModifierKeys.Shift)
                 {
-                    System.Diagnostics.Debug.WriteLine($"Shift-click detected | Last item selected: {dataContext.DisplayName} | PluginID: {dataContext.PluginData.PluginID}, GroupID: {dataContext.GroupID}");
-
+                    System.Diagnostics.Debug.WriteLine("Shift-click detected.");
                     if (_firstSelectedItem == null)
                     {
                         _firstSelectedItem = item;
-                        System.Diagnostics.Debug.WriteLine($"First item selected: {_firstSelectedItem.DataContext} | PluginID: {dataContext.PluginData.PluginID}, GroupID: {dataContext.GroupID}");
                     }
                     else
                     {
@@ -149,83 +106,33 @@ namespace ZO.LoadOrderManager
                         if (firstDataContext != null && lastDataContext != null)
                         {
                             System.Diagnostics.Debug.WriteLine($"First item: {firstDataContext.DisplayName}, Last item: {lastDataContext.DisplayName}");
-                            SelectRange(firstDataContext, lastDataContext); // Perform range selection
-                            _firstSelectedItem = null; // Reset after range selection
+
+                            // Get the selected range from the SelectRange method
+                            var selectedRange = SelectRange(firstDataContext, lastDataContext);
+                            foreach (var rangeItem in selectedRange)
+                            {
+                                if (!SelectedItems.Contains(rangeItem))
+                                {
+                                    SelectedItems.Add(rangeItem);
+                                    rangeItem.IsSelected = true;
+                                }
+                            }
                         }
+
+                        _firstSelectedItem = null; // Reset after range selection
                     }
                 }
-                // Normal single-click (clear other selections and select only this item)
                 else
                 {
-                    ClearSelections();
+                    ClearSelection();
                     SelectedItems.Add(dataContext);
                     dataContext.IsSelected = true;
                     _firstSelectedItem = item; // Set the first selected item for potential Shift-click
-                    System.Diagnostics.Debug.WriteLine($"Single-click selected: {dataContext.DisplayName} | PluginID: {dataContext.PluginData.PluginID}, GroupID: {dataContext.GroupID}");
                 }
             }
             finally
             {
                 _isUpdatingSelection = false; // End suppression, allow updates
-            }
-
-            // Debugging output for the count of selected items
-            System.Diagnostics.Debug.WriteLine($"SelectedItems count: {SelectedItems.Count}");
-        }
-
-
-
-        private void ClearSelections()
-        {
-            foreach (var item in SelectedItems.OfType<LoadOrderItemViewModel>())
-            {
-                item.IsSelected = false;
-            }
-            SelectedItems.Clear();
-
-            // Debugging output after clearing selections
-            System.Diagnostics.Debug.WriteLine("Cleared all selections.");
-        }
-
-
-        private void HandleDoubleClick(TreeViewItem item)
-        {
-            var dataContext = item.DataContext as LoadOrderItemViewModel;
-            System.Diagnostics.Debug.WriteLine($"Double-click detected on: {dataContext?.DisplayName}");
-
-            if (DataContext is LoadOrderWindowViewModel viewModel && SelectedItems.Count > 0)
-            {
-                var firstSelectedItem = SelectedItems[0] as LoadOrderItemViewModel;
-                viewModel?.EditHighlightedItem(firstSelectedItem);
-            }
-        }
-
-        private void ClickTimer_Tick(object? sender, EventArgs e)
-        {
-            _clickTimer.Stop();
-        }
-
-        // Handles the entity selection logic (Shift-click or Ctrl-click)
-        private void HandleEntitySelection(LoadOrderItemViewModel firstItem, LoadOrderItemViewModel lastItem, bool isShiftClick)
-        {
-            // Ensure correct order of start and end items
-            var startIndex = Items.IndexOf(firstItem);
-            var endIndex = Items.IndexOf(lastItem);
-            if (startIndex > endIndex)
-            {
-                (startIndex, endIndex) = (endIndex, startIndex); // Swap if necessary
-            }
-
-            if (firstItem.EntityType == lastItem.EntityType)
-            {
-                // Both are the same entity type (either group or plugin), proceed with range selection
-                var selectedRange = SelectRange(firstItem, lastItem);
-                MarkItemsAsSelected(selectedRange);
-            }
-            else
-            {
-                // Handle the outlier case where first is a plugin and second is a group
-                HandleMismatchedSelection(firstItem, lastItem);
             }
         }
 
@@ -244,19 +151,28 @@ namespace ZO.LoadOrderManager
             {
                 // Handle range selection for plugins using GroupSetPlugins (gsp)
                 var pluginRange = GetPluginRange(firstItem.PluginData.PluginID, lastItem.PluginData.PluginID);
+                DebugItemsSource();
                 selectedRange = SelectViewModelsByPluginID(pluginRange);
             }
 
-            // Return the selected range
             return selectedRange;
         }
+        private void DebugItemsSource()
+        {
+            var allItems = ItemsSource.OfType<LoadOrderItemViewModel>().ToList();
+            System.Diagnostics.Debug.WriteLine($"Total view models in ItemsSource: {allItems.Count}");
 
-
+            foreach (var item in allItems)
+            {
+                System.Diagnostics.Debug.WriteLine($"ViewModel in ItemsSource: {item.DisplayName} | PluginID: {item.PluginData.PluginID}, GroupID: {item.GroupID}");
+            }
+        }
         private List<long> GetGroupRange(long startGroupID, long endGroupID)
         {
             var groupRange = AggLoadInfo.Instance.GroupSetGroups
-                .Where(g => g.groupID >= Math.Min(startGroupID, endGroupID) && g.groupID <= Math.Max(startGroupID, endGroupID))
-                .OrderBy(g => g.Ordinal)
+                .Where(g => g.groupID >= Math.Min(startGroupID, endGroupID) && g.groupID <= Math.Max(startGroupID, endGroupID) && g.groupSetID == AggLoadInfo.Instance.ActiveGroupSet.GroupSetID)
+                .OrderBy(g => g.parentID)
+                .ThenBy(g => g.Ordinal)
                 .Select(g => g.groupID)
                 .ToList();
 
@@ -266,75 +182,80 @@ namespace ZO.LoadOrderManager
         private List<long> GetPluginRange(long startPluginID, long endPluginID)
         {
             var pluginRange = AggLoadInfo.Instance.GroupSetPlugins
-                .Where(p => p.pluginID >= Math.Min(startPluginID, endPluginID) && p.pluginID <= Math.Max(startPluginID, endPluginID))
-                .OrderBy(p => p.Ordinal)
+                .Where(p => p.pluginID >= Math.Min(startPluginID, endPluginID) && p.pluginID <= Math.Max(startPluginID, endPluginID) && p.groupSetID == AggLoadInfo.Instance.ActiveGroupSet.GroupSetID)
+                .OrderBy(p => p.groupID)
+                .ThenBy(p => p.Ordinal)
                 .Select(p => p.pluginID)
                 .ToList();
 
             return pluginRange;
         }
 
+        private List<LoadOrderItemViewModel> SelectViewModelsByPluginID(List<long> pluginIDs)
+        {
+            var loadOrderWindowViewModel = DataContext as LoadOrderWindowViewModel;
+            if (loadOrderWindowViewModel == null)
+            {
+                System.Diagnostics.Debug.WriteLine("LoadOrderWindowViewModel not found.");
+                return new List<LoadOrderItemViewModel>();
+            }
 
+            // Get the flattened list of plugins
+            var flattenedPlugins = loadOrderWindowViewModel.GetFlattenedList(EntityType.Plugin);
+
+            System.Diagnostics.Debug.WriteLine($"Looking for PluginID matches in the flattened plugin list: {string.Join(", ", pluginIDs)}");
+
+            var selectedItems = flattenedPlugins.Where(vm => pluginIDs.Contains(vm.PluginData.PluginID)).ToList();
+
+            System.Diagnostics.Debug.WriteLine($"Found {selectedItems.Count} matching plugin view models.");
+
+            foreach (var item in selectedItems)
+            {
+                System.Diagnostics.Debug.WriteLine($"Matched Plugin: {item.DisplayName} | PluginID: {item.PluginData.PluginID}");
+            }
+
+            return selectedItems;
+        }
 
         private List<LoadOrderItemViewModel> SelectViewModelsByGroupID(List<long> groupIDs)
         {
-            return ItemsSource.OfType<LoadOrderItemViewModel>()
-                .Where(vm => groupIDs.Contains(vm.GroupID))
-                .ToList();
-        }
-
-        private List<LoadOrderItemViewModel> SelectViewModelsByPluginID(List<long> pluginIDs)
-        {
-            return ItemsSource.OfType<LoadOrderItemViewModel>()
-                .Where(vm => pluginIDs.Contains(vm.PluginData.PluginID))
-                .ToList();
-        }
-
-
-        private void HandleMismatchedSelection(LoadOrderItemViewModel firstItem, LoadOrderItemViewModel lastItem)
-        {
-            if (firstItem.EntityType == EntityType.Plugin && lastItem.EntityType == EntityType.Group)
+            var loadOrderWindowViewModel = DataContext as LoadOrderWindowViewModel;
+            if (loadOrderWindowViewModel == null)
             {
-                // Plugin first, group second – select the containing group
-                var containingGroup = firstItem.GroupID;
-                var groupItem = GetByGroupId(containingGroup);
-
-                if (groupItem != null)
-                {
-                    HandleEntitySelection(firstItem, groupItem, true); // Recursive call
-                }
+                System.Diagnostics.Debug.WriteLine("LoadOrderWindowViewModel not found.");
+                return new List<LoadOrderItemViewModel>();
             }
-            else
+
+            // Get the flattened list of groups
+            var flattenedGroups = loadOrderWindowViewModel.GetFlattenedList(EntityType.Group);
+
+            System.Diagnostics.Debug.WriteLine($"Looking for GroupID matches in the flattened group list: {string.Join(", ", groupIDs)}");
+
+            var selectedItems = flattenedGroups.Where(vm => groupIDs.Contains(vm.GroupID)).ToList();
+
+            System.Diagnostics.Debug.WriteLine($"Found {selectedItems.Count} matching group view models.");
+
+            foreach (var item in selectedItems)
             {
-                // Normal case, group first, plugin second (handled directly)
-                HandleEntitySelection(firstItem, lastItem, true);
+                System.Diagnostics.Debug.WriteLine($"Matched Group: {item.DisplayName} | GroupID: {item.GroupID}");
             }
+
+            return selectedItems;
         }
 
-        private LoadOrderItemViewModel GetByGroupId(long groupId)
-        {
-            return Items.OfType<LoadOrderItemViewModel>()
-                .FirstOrDefault(item => item.EntityType == EntityType.Group && item.GroupID == groupId);
-        }
 
-        private void MarkItemsAsSelected(List<LoadOrderItemViewModel> items)
+
+        private void ClearSelection()
         {
-            foreach (var item in items)
+            foreach (var item in SelectedItems)
             {
-                item.IsSelected = true;
-
-                // Debugging output for selection
-                System.Diagnostics.Debug.WriteLine($"Selected: {item.DisplayName}");
-
-                if (!SelectedItems.Contains(item))
+                if (item is LoadOrderItemViewModel viewModel)
                 {
-                    SelectedItems.Add(item);
+                    viewModel.IsSelected = false;
                 }
             }
 
-            // Debugging output for the count of selected items
-            System.Diagnostics.Debug.WriteLine($"SelectedItems count: {SelectedItems.Count}");
+            SelectedItems.Clear();
         }
-
     }
 }

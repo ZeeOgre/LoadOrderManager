@@ -4,12 +4,12 @@
         xmlns:metro="http://metro.mahapps.com/winfx/xaml/controls"
         Style="{StaticResource MaterialDesignWindow}"
         xmlns:local="clr-namespace:ZO.LoadOrderManager"
-                Title="Input" Height="150" Width="300">
-    <StackPanel>
+                Title="Input" Height="160" Width="310">
+    <StackPanel Margin="5,5,5,4">
         <Label x:Name="lblQuestion" Margin="10"/>
         <TextBox x:Name="txtAnswer" Margin="10"/>
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-            <Button Content="OK" Width="75" Margin="10" Click="btnDialogOk_Click"/>
+            <Button Content="OK" Width="75" Margin="15" Click="btnDialogOk_Click"/>
         </StackPanel>
     </StackPanel>
 </metro:MetroWindow>

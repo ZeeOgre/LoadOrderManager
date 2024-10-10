@@ -43,166 +43,291 @@ namespace ZO.LoadOrderManager
             return SelectedLoadOut != null && SelectedGroupSet != null;
         }
 
-        private bool CanMoveUp()
+        public bool CanMoveUp()
         {
-            if (SelectedItems == null || SelectedItems.Count == 0)
+            // Check if the current item is a LoadOrderItemViewModel and if GroupSetID equals 1
+            if (!(SelectedItems.FirstOrDefault() is LoadOrderItemViewModel loadOrderItem) || loadOrderItem.GroupSetID == 1)
                 return false;
 
-            // Ensure that for all selected items, they can move up
-            foreach (var item in SelectedItems)
-            {
-                if (item is LoadOrderItemViewModel loadOrderItem)
-                {
-                    var underlyingObject = EntityTypeHelper.GetUnderlyingObject(loadOrderItem);
+            // Normal check for move up if not from cached and GroupSetID is not 1
+            var selectedItems = SelectedItems.OfType<LoadOrderItemViewModel>().ToList();
+            var lowestParentID = selectedItems.Min(item => item.ParentID);
 
-                    if (underlyingObject is ModGroup modGroup)
-                    {
-                        var previousItem = AggLoadInfo.Instance.Groups
-                            .FirstOrDefault(g => g.ParentID == modGroup.ParentID && g.Ordinal == modGroup.Ordinal - 1);
-                        if (previousItem == null)
-                            return false;
-                    }
-                    else if (underlyingObject is Plugin plugin)
-                    {
-                        var previousItem = AggLoadInfo.Instance.Plugins
-                            .FirstOrDefault(p => p.GroupID == plugin.GroupID && p.GroupOrdinal == plugin.GroupOrdinal - 1);
-                        if (previousItem == null)
-                            return false;
-                    }
+            var firstItem = selectedItems.FirstOrDefault(item => item.ParentID == lowestParentID);
+            if (firstItem != null)
+            {
+                if (firstItem.EntityType == EntityType.Group)
+                {
+                    return AggLoadInfo.Instance.GroupSetGroups.Items
+                        .Any(g => g.groupID == firstItem.GroupID && g.Ordinal > 1);
+                }
+                else if (firstItem.EntityType == EntityType.Plugin)
+                {
+                    return AggLoadInfo.Instance.GroupSetPlugins.Items
+                        .Any(p => p.pluginID == firstItem.PluginData.PluginID && p.Ordinal > 1);
                 }
             }
 
-            return true;
+            return false;
         }
 
-
-        private bool CanMoveDown()
+        public bool CanMoveDown()
         {
-            if (SelectedItems == null || SelectedItems.Count == 0)
+            // Check if the current item is a LoadOrderItemViewModel and if GroupSetID equals 1
+            if (!(SelectedItems.FirstOrDefault() is LoadOrderItemViewModel loadOrderItem) || loadOrderItem.GroupSetID == 1)
                 return false;
 
-            // Ensure that for all selected items, they can move up
-            foreach (var item in SelectedItems)
-            {
-                if (item is LoadOrderItemViewModel loadOrderItem)
-                {
-                    var underlyingObject = EntityTypeHelper.GetUnderlyingObject(loadOrderItem);
+            // Normal check for move down if not from cached and GroupSetID is not 1
+            var selectedItems = SelectedItems.OfType<LoadOrderItemViewModel>().ToList();
+            var lowestParentID = selectedItems.Min(item => item.ParentID);
 
-                    if (underlyingObject is ModGroup modGroup)
-                    {
-                        var previousItem = AggLoadInfo.Instance.Groups
-                            .FirstOrDefault(g => g.ParentID == modGroup.ParentID && g.Ordinal == modGroup.Ordinal + 1);
-                        if (previousItem == null)
-                            return false;
-                    }
-                    else if (underlyingObject is Plugin plugin)
-                    {
-                        var previousItem = AggLoadInfo.Instance.Plugins
-                            .FirstOrDefault(p => p.GroupID == plugin.GroupID && p.GroupOrdinal == plugin.GroupOrdinal + 1);
-                        if (previousItem == null)
-                            return false;
-                    }
+            var lastItem = selectedItems.LastOrDefault(item => item.ParentID == lowestParentID);
+            if (lastItem != null)
+            {
+                if (lastItem.EntityType == EntityType.Group)
+                {
+                    return AggLoadInfo.Instance.GroupSetGroups.Items
+                        .Any(g => g.groupID == lastItem.GroupID && g.Ordinal < AggLoadInfo.Instance.GroupSetGroups.Items.Max(gr => gr.Ordinal));
+                }
+                else if (lastItem.EntityType == EntityType.Plugin)
+                {
+                    return AggLoadInfo.Instance.GroupSetPlugins.Items
+                        .Any(p => p.pluginID == lastItem.PluginData.PluginID && p.Ordinal < AggLoadInfo.Instance.GroupSetPlugins.Items.Max(pl => pl.Ordinal));
                 }
             }
 
-            return true;
+            return false;
         }
 
+
+
+        //private void MoveUp(LoadOrderItemViewModel loadOrderItem)
+        //{
+        //    var underlyingObject = EntityTypeHelper.GetUnderlyingObject(loadOrderItem);
+
+        //    if (underlyingObject is ModGroup modGroup)
+        //    {
+        //        var previousItem = AggLoadInfo.Instance.Groups
+        //            .FirstOrDefault(g => g.ParentID == modGroup.ParentID && g.Ordinal == modGroup.Ordinal - 1);
+
+        //        if (previousItem != null)
+        //        {
+        //            // Swap locations
+        //            modGroup.SwapLocations(previousItem);
+
+        //            // Refresh all data to update the ViewModel
+        //            AggLoadInfo.Instance.RefreshAllData();
+        //        }
+        //    }
+        //    else if (underlyingObject is Plugin plugin)
+        //    {
+        //        var previousItem = AggLoadInfo.Instance.Plugins
+        //            .FirstOrDefault(p => p.GroupID == plugin.GroupID && p.GroupOrdinal == plugin.GroupOrdinal - 1);
+
+        //        if (previousItem != null)
+        //        {
+        //            // Swap locations
+        //            plugin.SwapLocations(previousItem);
+
+        //            // Refresh all data to update the ViewModel
+        //            AggLoadInfo.Instance.RefreshAllData();
+        //        }
+        //    }
+        //}
+
+
+        //private void MoveDown(LoadOrderItemViewModel loadOrderItem)
+        //{
+        //    var underlyingObject = EntityTypeHelper.GetUnderlyingObject(loadOrderItem);
+
+        //    if (underlyingObject is ModGroup modGroup)
+        //    {
+        //        var nextItem = AggLoadInfo.Instance.Groups
+        //            .FirstOrDefault(g => g.ParentID == modGroup.ParentID && g.Ordinal == modGroup.Ordinal + 1);
+
+        //        if (nextItem != null)
+        //        {
+        //            // Swap locations
+        //            modGroup.SwapLocations(nextItem);
+
+        //            // Refresh all data to update the ViewModel
+        //            AggLoadInfo.Instance.RefreshAllData();
+        //        }
+        //    }
+        //    else if (underlyingObject is Plugin plugin)
+        //    {
+        //        var nextItem = AggLoadInfo.Instance.Plugins
+        //            .FirstOrDefault(p => p.GroupID == plugin.GroupID && p.GroupOrdinal == plugin.GroupOrdinal + 1);
+
+        //        if (nextItem != null)
+        //        {
+        //            // Swap locations
+        //            plugin.SwapLocations(nextItem);
+
+        //            // Refresh all data to update the ViewModel
+        //            AggLoadInfo.Instance.RefreshAllData();
+        //        }
+        //    }
+        //}
         private void MoveUp(LoadOrderItemViewModel loadOrderItem)
         {
-            var underlyingObject = EntityTypeHelper.GetUnderlyingObject(loadOrderItem);
+            var selectedItems = SelectedItems.OfType<LoadOrderItemViewModel>().ToList();
 
-            if (underlyingObject is ModGroup modGroup)
+            // Find the lowest ParentID from the selected items
+            var lowestParentID = selectedItems.Min(item => item.ParentID);
+
+            // Filter the items that match the lowest ParentID
+            var itemsToMove = selectedItems.Where(item => item.ParentID == lowestParentID).ToList();
+
+            var firstItem = itemsToMove.FirstOrDefault();
+            if (firstItem != null)
             {
-                var previousItem = AggLoadInfo.Instance.Groups
-                    .FirstOrDefault(g => g.ParentID == modGroup.ParentID && g.Ordinal == modGroup.Ordinal - 1);
-
-                if (previousItem != null)
+                if (firstItem.EntityType == EntityType.Group)
                 {
-                    // Swap locations
-                    modGroup.SwapLocations(previousItem);
+                    // Find the previous sibling for ModGroup using GroupSetGroups (gsg)
+                    var groupTuple = AggLoadInfo.Instance.GroupSetGroups.Items
+                        .FirstOrDefault(g => g.groupID == firstItem.GroupID && g.groupSetID == firstItem.GroupSetID);
 
-                    // Refresh all data to update the ViewModel
-                    AggLoadInfo.Instance.RefreshAllData();
+                    if (groupTuple != default)
+                    {
+                        var previousTuple = AggLoadInfo.Instance.GroupSetGroups.Items
+                            .FirstOrDefault(g => g.parentID == groupTuple.parentID && g.Ordinal == groupTuple.Ordinal - 1);
+
+                        if (previousTuple != default)
+                        {
+                            var previousModGroup = ModGroup.LoadModGroup(previousTuple.groupID, previousTuple.groupSetID);
+                            ((ModGroup)firstItem.UnderlyingObject).SwapLocations(previousModGroup);
+                        }
+                    }
+                }
+                else if (firstItem.EntityType == EntityType.Plugin)
+                {
+                    // Find the previous sibling for Plugin using GroupSetPlugins (gsp)
+                    var pluginTuple = AggLoadInfo.Instance.GroupSetPlugins.Items
+                        .FirstOrDefault(p => p.pluginID == firstItem.PluginData.PluginID && p.groupSetID == firstItem.GroupSetID);
+
+                    if (pluginTuple != default)
+                    {
+                        var previousPluginTuple = AggLoadInfo.Instance.GroupSetPlugins.Items
+                            .FirstOrDefault(p => p.groupID == pluginTuple.groupID && p.Ordinal == pluginTuple.Ordinal - 1);
+
+                        if (previousPluginTuple != default)
+                        {
+                            var previousPlugin = Plugin.LoadPlugin(previousPluginTuple.pluginID, null, previousPluginTuple.groupSetID);
+                            ((Plugin)firstItem.UnderlyingObject).SwapLocations(previousPlugin);
+                        }
+                    }
                 }
             }
-            else if (underlyingObject is Plugin plugin)
-            {
-                var previousItem = AggLoadInfo.Instance.Plugins
-                    .FirstOrDefault(p => p.GroupID == plugin.GroupID && p.GroupOrdinal == plugin.GroupOrdinal - 1);
 
-                if (previousItem != null)
-                {
-                    // Swap locations
-                    plugin.SwapLocations(previousItem);
-
-                    // Refresh all data to update the ViewModel
-                    AggLoadInfo.Instance.RefreshAllData();
-                }
-            }
+            // Refresh all data to update the ViewModel after the move
+            AggLoadInfo.Instance.RefreshAllData();
         }
-
 
         private void MoveDown(LoadOrderItemViewModel loadOrderItem)
         {
-            var underlyingObject = EntityTypeHelper.GetUnderlyingObject(loadOrderItem);
+            var selectedItems = SelectedItems.OfType<LoadOrderItemViewModel>().ToList();
 
-            if (underlyingObject is ModGroup modGroup)
+            // Find the lowest ParentID from the selected items
+            var lowestParentID = selectedItems.Min(item => item.ParentID);
+
+            // Filter the items that match the lowest ParentID
+            var itemsToMove = selectedItems.Where(item => item.ParentID == lowestParentID).ToList();
+
+            var lastItem = itemsToMove.LastOrDefault();
+            if (lastItem != null)
             {
-                var nextItem = AggLoadInfo.Instance.Groups
-                    .FirstOrDefault(g => g.ParentID == modGroup.ParentID && g.Ordinal == modGroup.Ordinal + 1);
-
-                if (nextItem != null)
+                if (lastItem.EntityType == EntityType.Group)
                 {
-                    // Swap locations
-                    modGroup.SwapLocations(nextItem);
+                    // Find the next sibling for ModGroup using GroupSetGroups (gsg)
+                    var groupTuple = AggLoadInfo.Instance.GroupSetGroups.Items
+                        .FirstOrDefault(g => g.groupID == lastItem.GroupID && g.groupSetID == AggLoadInfo.Instance.ActiveGroupSet.GroupSetID);
 
-                    // Refresh all data to update the ViewModel
-                    AggLoadInfo.Instance.RefreshAllData();
+                    if (groupTuple != default)
+                    {
+                        var nextTuple = AggLoadInfo.Instance.GroupSetGroups.Items
+                            .FirstOrDefault(g => g.parentID == groupTuple.parentID && g.Ordinal == groupTuple.Ordinal + 1);
+
+                        if (nextTuple != default)
+                        {
+                            var nextModGroup = ModGroup.LoadModGroup(nextTuple.groupID, nextTuple.groupSetID);
+                            ((ModGroup)lastItem.UnderlyingObject).SwapLocations(nextModGroup);
+                        }
+                    }
+                }
+                else if (lastItem.EntityType == EntityType.Plugin)
+                {
+                    // Find the next sibling for Plugin using GroupSetPlugins (gsp)
+                    var pluginTuple = AggLoadInfo.Instance.GroupSetPlugins.Items
+                        .FirstOrDefault(p => p.pluginID == lastItem.PluginData.PluginID && p.groupSetID == AggLoadInfo.Instance.ActiveGroupSet.GroupSetID);
+
+                    if (pluginTuple != default)
+                    {
+                        var nextPluginTuple = AggLoadInfo.Instance.GroupSetPlugins.Items
+                            .FirstOrDefault(p => p.groupID == pluginTuple.groupID && p.Ordinal == pluginTuple.Ordinal + 1);
+
+                        if (nextPluginTuple != default)
+                        {
+                            var nextPlugin = Plugin.LoadPlugin(nextPluginTuple.pluginID, null, nextPluginTuple.groupSetID);
+                            ((Plugin)lastItem.UnderlyingObject).SwapLocations(nextPlugin);
+                        }
+                    }
                 }
             }
-            else if (underlyingObject is Plugin plugin)
-            {
-                var nextItem = AggLoadInfo.Instance.Plugins
-                    .FirstOrDefault(p => p.GroupID == plugin.GroupID && p.GroupOrdinal == plugin.GroupOrdinal + 1);
 
-                if (nextItem != null)
-                {
-                    // Swap locations
-                    plugin.SwapLocations(nextItem);
-
-                    // Refresh all data to update the ViewModel
-                    AggLoadInfo.Instance.RefreshAllData();
-                }
-            }
+            // Refresh all data to update the ViewModel after the move
+            AggLoadInfo.Instance.RefreshAllData();
         }
 
 
-        private ObservableCollection<LoadOrderItemViewModel> GetFlattenedList(EntityType entityType)
+        public ObservableCollection<LoadOrderItemViewModel> GetFlattenedList(EntityType entityType)
         {
             var flattenedList = new List<LoadOrderItemViewModel>();
 
+            System.Diagnostics.Debug.WriteLine($"Flattening list for EntityType: {entityType}");
+
             foreach (var item in LoadOrders.Items)
             {
-                if (entityType == EntityType.Group && item.EntityType == EntityType.Group)
-                {
-                    flattenedList.Add(item);
-                }
-                else if (entityType == EntityType.Plugin && item.EntityType == EntityType.Plugin)
-                {
-                    flattenedList.Add(item);
-                }
+                FlattenItem(item, entityType, flattenedList);
             }
 
-            // Sort the list based on Ordinal for ModGroup and GroupOrdinal for Plugin
+            // Simplified sorting using exposed properties Ordinal and ParentID/GroupID
             var orderedList = flattenedList
-                .OrderBy(i => i.EntityType == EntityType.Group
-                    ? ((ModGroup?)i.GetModGroup())?.Ordinal ?? 0
-                    : ((Plugin?)i.PluginData)?.GroupOrdinal ?? 0)
+                .OrderBy(i => i.ParentID)  // Sort by ParentID first to maintain group hierarchy
+                .ThenBy(i => i.Ordinal)    // Then sort by Ordinal within each parent
                 .ToList();
+
+            System.Diagnostics.Debug.WriteLine($"Flattened list contains {orderedList.Count} items after sorting.");
+
+            foreach (var item in orderedList)
+            {
+                System.Diagnostics.Debug.WriteLine($"Flattened Item: {item.DisplayName} | PluginID: {item.PluginData?.PluginID}, GroupID: {item.GroupID}");
+            }
 
             return new ObservableCollection<LoadOrderItemViewModel>(orderedList);
         }
+
+
+        private void FlattenItem(LoadOrderItemViewModel item, EntityType entityType, List<LoadOrderItemViewModel> flattenedList)
+        {
+            // Add the item to the flattened list if it matches the entity type
+            if (item.EntityType == entityType)
+            {
+                flattenedList.Add(item);
+                System.Diagnostics.Debug.WriteLine($"Added {item.DisplayName} to flattened list.");
+            }
+
+            // Recursively process child items only for groups (because plugins don't have children)
+            if (item.EntityType == EntityType.Group && item.Children != null && item.Children.Any())
+            {
+                foreach (var child in item.Children)
+                {
+                    FlattenItem(child, entityType, flattenedList);
+                }
+            }
+        }
+
+
 
         public ICommand AddNewGroupSetCommand => new RelayCommand(_ => AddNewGroupSet());
         public ICommand AddNewLoadoutCommand => new RelayCommand(_ => AddNewLoadout());
@@ -215,104 +340,52 @@ namespace ZO.LoadOrderManager
             diffViewer.ShowDialog();
         }
 
-        private void AddNewGroupSet()
-        {
-            // Step 1: Ask the user if they want to copy an existing GroupSet or create a new one
-            var result = MessageBox.Show("Do you want to copy an existing GroupSet?", "Add New GroupSet", MessageBoxButton.YesNoCancel);
-
-            if (result == MessageBoxResult.Cancel)
-            {
-                return; // User canceled the operation
-            }
-
-            string newGroupName = PromptForGroupName();
-            if (string.IsNullOrEmpty(newGroupName))
-            {
-                MessageBox.Show("Group name cannot be empty.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                return;
-            }
-
-            GroupSet newGroupSet;
-
-            if (result == MessageBoxResult.Yes)
-            {
-                // Step 2: Copy an existing GroupSet
-                var selectGroupSetWindow = new GroupSetSelector();
-                if (selectGroupSetWindow.ShowDialog() == true)
-                {
-                    var existingGroupSet = selectGroupSetWindow.SelectedGroupSet;
-                    if (existingGroupSet == null)
-                    {
-                        MessageBox.Show("No existing GroupSet selected.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                        return;
-                    }
-
-                    newGroupSet = existingGroupSet.Clone();
-                    newGroupSet.GroupSetName = newGroupName;
-                }
-                else
-                {
-                    return; // User canceled the operation
-                }
-            }
-            else
-            {
-                // Step 3: Create a new GroupSet
-                newGroupSet = GroupSet.CreateEmptyGroupSet();
-                newGroupSet.GroupSetName = newGroupName;
-                
-            }
-
-            var newLoadOut = AddNewLoadout(newGroupSet);
-
-            AggLoadInfo.Instance.ActiveGroupSet = newGroupSet;
-            AggLoadInfo.Instance.ActiveLoadOut = newLoadOut;
-
-        }
-
-        private string PromptForGroupName()
-        {
-            // Use the InputDialog to prompt the user for the new group name
-            var dialog = new InputDialog("Enter the name for the new GroupSet:");
-            if (dialog.ShowDialog() == true)
-            {
-                return dialog.ResponseText;
-            }
-            return null;
-        }
-
-        private GroupSet SelectExistingGroupSet()
-        {
-            // Implement a dialog to select an existing GroupSet
-            var dialog = new GroupSetSelector();
-            if (dialog.ShowDialog() == true)
-            {
-                return dialog.SelectedGroupSet;
-            }
-            return null;
-        }
 
         private LoadOut AddNewLoadout(GroupSet? groupSet = null)
         {
-            // Step 1: Ask the user if they want to copy an existing GroupSet or create a new one
-
+            // Step 1: Use the provided groupSet or fall back to the active one
             groupSet ??= AggLoadInfo.Instance.ActiveGroupSet;
+
+            // Create a default name for the new LoadOut
             var newLoadOutName = $"NEW_LO_{groupSet.GroupSetName}";
-            var dialog = new InputDialog("Enter the name for the new LoadOut:",newLoadOutName);
+            var dialog = new InputDialog("Enter the name for the new LoadOut:", newLoadOutName);
             if (dialog.ShowDialog() == true)
             {
                 newLoadOutName = dialog.ResponseText;
             }
+
+            // Create the new LoadOut
             LoadOut newLoadOut = new LoadOut(groupSet) { Name = newLoadOutName };
+
+            // Add to the LoadOuts of the GroupSet
             groupSet.LoadOuts.Add(newLoadOut);
 
-
+            // Set it as the active LoadOut if appropriate
             if (AggLoadInfo.Instance.ActiveLoadOut == null || AggLoadInfo.Instance.ActiveLoadOut.GroupSetID != groupSet.GroupSetID)
             {
                 AggLoadInfo.Instance.ActiveLoadOut = newLoadOut;
             }
 
+            // Save the new LoadOut to the database
+            newLoadOut.WriteProfile();
+
+            // Optionally refresh the UI or data context
+            //OnPropertyChanged(nameof(AggLoadInfo.Instance.LoadOuts));
+            
             return newLoadOut;
+        }
+
+
+        private void AddNewGroupSet()
+        {
+            // Create a new GroupSetEditor window with a new GroupSet (no arguments)
+            var groupSetEditor = new GroupSetEditor();
+
+            // Show the dialog for the new GroupSetEditor
+            groupSetEditor.ShowDialog();
+
+            // Optionally, refresh the AggLoadInfo instance or the view as needed
+            AggLoadInfo.Instance.RefreshAllData();
         }
 
 

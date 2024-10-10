@@ -38,8 +38,8 @@
                 </Grid.Background>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="50"/>
-                    <ColumnDefinition Width="250"/>
-                    <ColumnDefinition Width="400"/>
+                    <ColumnDefinition Width="*" MinWidth="250"/>
+                    <ColumnDefinition Width="2*" MinWidth="400"/>
                     <ColumnDefinition Width="50"/>
                     <ColumnDefinition Width="150"/>
                     <ColumnDefinition Width="250"/>
@@ -61,8 +61,10 @@
 
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="50"/>
-                    <ColumnDefinition Width="250"/>
-                    <ColumnDefinition Width="400"/>
+                    <ColumnDefinition Width="*" MinWidth="250"/>
+                    <!-- Set MinWidth -->
+                    <ColumnDefinition Width="2*" MinWidth="400"/>
+                    <!-- Use * for dynamic width -->
                     <ColumnDefinition Width="50"/>
                     <ColumnDefinition Width="150"/>
                     <ColumnDefinition Width="250"/>
@@ -140,8 +142,10 @@
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="50"/>
-                <ColumnDefinition Width="250"/>
-                <ColumnDefinition Width="400"/>
+                <ColumnDefinition Width="*" MinWidth="250"/>
+                <!-- Set MinWidth -->
+                <ColumnDefinition Width="2*" MinWidth="400"/>
+                <!-- Use * for dynamic width -->
                 <ColumnDefinition Width="50"/>
                 <ColumnDefinition Width="150"/>
                 <ColumnDefinition Width="250"/>
@@ -210,8 +214,8 @@
                 <ContextMenu x:Key="ItemContextMenu">
                     <MenuItem Header="Edit" Command="{Binding DataContext.EditCommand, RelativeSource={RelativeSource AncestorType=TreeView}}" CommandParameter="{Binding}" />
                     <MenuItem Header="Copy" Command="{Binding DataContext.CopyTextCommand, RelativeSource={RelativeSource AncestorType=TreeView}}" CommandParameter="{Binding}" />
-                    <MenuItem Header="Move Up" Command="{Binding DataContext.MoveUpCommand, RelativeSource={RelativeSource AncestorType=TreeView}}" CommandParameter="{Binding}" />
-                    <MenuItem Header="Move Down" Command="{Binding DataContext.MoveDownCommand, RelativeSource={RelativeSource AncestorType=TreeView}}" CommandParameter="{Binding}" />
+                    <!--<MenuItem Header="Move Up" Command="{Binding DataContext.MoveUpCommand, RelativeSource={RelativeSource AncestorType=TreeView}}" CommandParameter="{Binding}" />
+                    <MenuItem Header="Move Down" Command="{Binding DataContext.MoveDownCommand, RelativeSource={RelativeSource AncestorType=TreeView}}" CommandParameter="{Binding}" />-->
                     <MenuItem Header="Change Group">
                         <MenuItem.ItemsSource>
                             <Binding Path="DataContext.ValidGroups" RelativeSource="{RelativeSource AncestorType=TreeView}"/>
@@ -222,8 +226,8 @@
                             </DataTemplate>
                         </MenuItem.ItemTemplate>
                     </MenuItem>
-                    <MenuItem Header="Delete" Command="{Binding DataContext.DeleteCommand, RelativeSource={RelativeSource AncestorType=TreeView}}" CommandParameter="{Binding}" />
-                    <MenuItem Header="Enable/Disable" Tag="menu" Command="{Binding DataContext.ToggleEnableCommand, RelativeSource={RelativeSource AncestorType=TreeView}}" CommandParameter="{Binding}" />
+                    <!--<MenuItem Header="Delete" Command="{Binding DataContext.DeleteCommand, RelativeSource={RelativeSource AncestorType=TreeView}}" CommandParameter="{Binding}" />
+                    <MenuItem Header="Enable/Disable" Tag="menu" Command="{Binding DataContext.ToggleEnableCommand, RelativeSource={RelativeSource AncestorType=TreeView}}" CommandParameter="{Binding}" />-->
                 </ContextMenu>
             </TreeView.Resources>
 

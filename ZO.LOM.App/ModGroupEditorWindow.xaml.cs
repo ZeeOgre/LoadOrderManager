@@ -146,5 +146,36 @@ namespace ZO.LoadOrderManager
         {
 
         }
+
+        private void EditPlugin_Click(object sender, RoutedEventArgs e)
+        {
+            // Retrieve the plugin associated with the clicked item
+            // Use the data context or another method to get the corresponding plugin
+            // Assuming you have a way to identify which plugin is being edited:
+            var selectedPlugin = /* Logic to identify the selected plugin */;
+
+            if (selectedPlugin != null)
+            {
+                // Open the plugin editor with the selected plugin
+                var pluginEditor = new PluginEditorWindow(selectedPlugin);
+                pluginEditor.ShowDialog();
+            }
+        }
+
+        private void DeletePlugin_Click(object sender, RoutedEventArgs e)
+        {
+            // Retrieve the plugin associated with the clicked item
+            var selectedPlugin = /* Logic to identify the selected plugin */;
+
+            if (selectedPlugin != null)
+            {
+                // Remove the plugin from the ModGroup's collection
+                _tempModGroup.PluginIDs.Remove(selectedPlugin.PluginID);
+
+                // Update the UI accordingly
+                LoadPlugins(); // Refresh the displayed plugins
+            }
+        }
+
     }
 }

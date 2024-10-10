@@ -10,10 +10,21 @@ public class LoadOrderItemViewModel : ViewModelBase
     private Plugin pluginData = new Plugin();
     private bool isActive;
     private ObservableCollection<LoadOrderItemViewModel> children = new ObservableCollection<LoadOrderItemViewModel>();
-    
+    public object? UnderlyingObject => EntityTypeHelper.GetUnderlyingObject(this);
+
     public long? Ordinal { get; set; } // Expose Ordinal directly
 
     private bool isSelected;
+
+
+    private long groupSetId;
+
+    // Expose GroupSetID directly
+    public long GroupSetID
+    {
+        get => groupSetId;
+        set => SetProperty(ref groupSetId, value);
+    }
 
     public bool IsSelected
     {
@@ -70,6 +81,7 @@ public class LoadOrderItemViewModel : ViewModelBase
     // Constructor for group items
     public LoadOrderItemViewModel(ModGroup group)
     {
+        GroupSetID = group.GroupSetID ?? AggLoadInfo.Instance.ActiveGroupSet.GroupSetID;
         GroupID = group.GroupID ?? throw new ArgumentNullException(nameof(group.GroupID), "GroupID cannot be null");
         ParentID = group.ParentID;
         DisplayName = group.DisplayName;
@@ -80,6 +92,7 @@ public class LoadOrderItemViewModel : ViewModelBase
     // Constructor for plugin items
     public LoadOrderItemViewModel(Plugin plugin)
     {
+        GroupSetID = plugin.GroupSetID ?? AggLoadInfo.Instance.ActiveGroupSet.GroupSetID;
         GroupID = plugin.GroupID ?? throw new ArgumentNullException(nameof(plugin.GroupID), "GroupID cannot be null");
         DisplayName = plugin.PluginName;
         ParentID = plugin.GroupID;

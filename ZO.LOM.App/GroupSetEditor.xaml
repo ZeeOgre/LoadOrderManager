@@ -8,27 +8,97 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
         Title="GroupSet Editor" Height="700" Width="800">
-    <Grid>
-        <StackPanel Margin="10">
-            <TextBlock Text="GroupSet ID:" FontWeight="Bold"/>
-            <TextBox Text="{Binding ActiveGroupSet.GroupSetID}" IsReadOnly="True" Background="LightGray" IsTabStop="False" Width="200" Margin="0,0,0,10"/>
+    <Grid Margin="10">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <!-- Labels -->
+            <ColumnDefinition Width="Auto"/>
+            <!-- Text Boxes -->
+            <ColumnDefinition Width="*"/>
+            <!-- Flags -->
+        </Grid.ColumnDefinitions>
 
-            <TextBlock Text="GroupSet Name:" FontWeight="Bold"/>
-            <TextBox Text="{Binding ActiveGroupSet.GroupSetName}" Width="200" Margin="0,0,0,10"/>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <!-- Row for GroupSet ID -->
+            <RowDefinition Height="Auto"/>
+            <!-- Row for GroupSet Name -->
+            <RowDefinition Height="Auto"/>
+            <!-- Row for Flags -->
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <!-- Row for Mod Groups -->
+            <RowDefinition Height="Auto"/>
+            <!-- Row for Add Mod Group Button -->
+            <RowDefinition Height="Auto"/>
+            <!-- Row for Plugins -->
+            <RowDefinition Height="Auto"/>
+            <!-- Row for Add Plugin Button -->
+            <RowDefinition Height="Auto"/>
+            <!-- Row for LoadOuts -->
+            <RowDefinition Height="Auto"/>
+            <!-- Row for Add LoadOut Button -->
+            <RowDefinition Height="Auto"/>
+            <!-- Row for Save Button -->
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
 
-            <TextBlock Text="Mod Groups:" FontWeight="Bold"/>
-            <ListBox ItemsSource="{Binding ActiveGroupSet.ModGroups}" DisplayMemberPath="GroupName" Height="100" Margin="0,0,0,10"/>
-            <Button Content="Add Mod Group" Command="{Binding AddModGroupCommand}" Width="150" HorizontalAlignment="Right" Margin="0,0,0,10"/>
+        <!-- Row 0-->
+        <TextBlock Text="GroupSet ID:" FontWeight="Bold" Grid.Row="0" Grid.Column="0" VerticalAlignment="Center"/>
+        <TextBox Text="{Binding ActiveGroupSet.GroupSetID}" IsReadOnly="True" Background="LightGray" IsTabStop="False" Width="50" Margin="5,0,0,10" Grid.Row="0" VerticalAlignment="Center" HorizontalAlignment="Left" Grid.Column="1"/>
+        <CheckBox Content="Favorite:" IsChecked="{Binding ActiveGroupSet.IsFavorite}" Grid.Row="0" Grid.Column="1" Margin="5,0,0,10" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+        <TextBlock Text="Flags:" FontWeight="Bold" Grid.Row="0" Grid.Column="2" VerticalAlignment="Center" Margin="10,0,0,5"/>
+        
+        <!-- Flags on Row 1 and 2 -->
+        <CheckBox Content="Default Group" IsChecked="{Binding ActiveGroupSet.IsDefaultGroup}" Grid.Row="1" Grid.Column="2" HorizontalAlignment="Left" Margin="25,0,0,5"/>
+        <CheckBox Content="Read Only" IsChecked="{Binding ActiveGroupSet.IsReadOnly}" Grid.Row="1" Grid.Column="2" HorizontalAlignment="Right" Margin="0,0,15,5"/>
+        <CheckBox Content="Ready to Load" IsChecked="{Binding ActiveGroupSet.IsReadyToLoad}" Grid.Row="2" Grid.Column="2" HorizontalAlignment="Left" Margin="25,0,25,5"/>
+        <CheckBox Content="Files Loaded" IsChecked="{Binding ActiveGroupSet.AreFilesLoaded}" Grid.Row="2" Grid.Column="2" HorizontalAlignment="right" Margin="5"/>
+        
+        <!-- GroupSet Name - Row 1 -->
+        <TextBlock Text="GroupSet Name:" FontWeight="Bold" Grid.Row="2" Grid.Column="0"/>
+        <TextBox Name="TBGroupSetName" Text="{Binding ActiveGroupSet.GroupSetName}" Width="200" Margin="5,0,0,10" Grid.Row="2" Grid.Column="1"/>
 
-            <TextBlock Text="Plugins:" FontWeight="Bold"/>
-            <ListBox ItemsSource="{Binding ActiveGroupSet.Plugins}" DisplayMemberPath="PluginName" Height="100" Margin="0,0,0,10"/>
-            <Button Content="Add Plugin" Command="{Binding AddPluginCommand}" Width="150" HorizontalAlignment="Right" Margin="0,0,0,10"/>
+        <!-- Mod Groups -->
+        <TextBlock Text="Mod Groups:" FontWeight="Bold" Grid.Row="3" Grid.Column="0" Margin="0,10,0,0"/>
+        <ListBox ItemsSource="{Binding ActiveGroupSet.ModGroups}" DisplayMemberPath="GroupName" Height="100" Margin="0,0,0,10" Grid.ColumnSpan="3" Grid.Row="4" MouseRightButtonDown="ModGroups_MouseRightButtonDown">
+            <ListBox.ContextMenu>
+                <ContextMenu>
+                    <MenuItem Header="Edit" Click="EditModGroup_Click" />
+                    <MenuItem Header="Remove" Click="RemoveModGroup_Click" />
+                </ContextMenu>
+            </ListBox.ContextMenu>
+        </ListBox>
+        <Button Content="Add Mod Group" Command="{Binding AddModGroupCommand}" Width="150" HorizontalAlignment="Right" Margin="0,0,0,10" Grid.Row="5" Grid.Column="2"/>
 
-            <TextBlock Text="LoadOuts:" FontWeight="Bold"/>
-            <ListBox ItemsSource="{Binding ActiveGroupSet.LoadOuts}" DisplayMemberPath="Name" Height="100" Margin="0,0,0,10"/>
-            <Button Content="Add LoadOut" Command="{Binding AddLoadOutCommand}" Width="150" HorizontalAlignment="Right" Margin="0,0,0,10"/>
 
-            <Button Content="Save" Command="{Binding SaveCommand}" Width="100" HorizontalAlignment="Center" Margin="0,20,0,0"/>
-        </StackPanel>
+        <!-- Plugins -->
+        <TextBlock Text="Plugins:" FontWeight="Bold" Grid.Row="6" Grid.Column="0" Margin="0,10,0,0"/>
+        <ListBox ItemsSource="{Binding ActiveGroupSet.Plugins}" DisplayMemberPath="PluginName" Height="100" Margin="0,0,0,10" Grid.ColumnSpan="3" Grid.Row="7" MouseRightButtonDown="Plugins_MouseRightButtonDown">
+            <ListBox.ContextMenu>
+                <ContextMenu>
+                    <MenuItem Header="Edit" Click="EditPlugin_Click" />
+                    <MenuItem Header="Remove" Click="RemovePlugin_Click" />
+                </ContextMenu>
+            </ListBox.ContextMenu>
+        </ListBox>
+        <Button Content="Add Plugin" Command="{Binding AddPluginCommand}" Width="150" HorizontalAlignment="Right" Margin="0,0,0,10" Grid.Row="8" Grid.Column="2"/>
+
+        <!-- LoadOuts -->
+        <TextBlock Text="LoadOuts:" FontWeight="Bold" Grid.Row="9" Grid.Column="0" Margin="0,10,0,0"/>
+        <ListBox ItemsSource="{Binding ActiveGroupSet.LoadOuts}" DisplayMemberPath="Name" Height="100" Margin="0,0,0,10" Grid.ColumnSpan="3" Grid.Row="10">
+            <ListBox.ContextMenu>
+                <ContextMenu>
+                    <MenuItem Header="Edit" Click="EditLoadOut_Click"/>
+                    <MenuItem Header="Delete" Click="DeleteLoadOut_Click"/>
+                </ContextMenu>
+            </ListBox.ContextMenu>
+        </ListBox>
+
+        <Button Content="Add LoadOut" Command="{Binding AddLoadOutCommand}" Width="150" HorizontalAlignment="Right" Margin="0,0,0,10" Grid.Row="11" Grid.Column="2"/>
+
+        <!-- Save Button -->
+        <Button Content="Save" Command="{Binding SaveCommand}" Width="100" HorizontalAlignment="Center" Margin="0,20,0,0" Grid.Row="12" Grid.ColumnSpan="3"/>
     </Grid>
 </metro:MetroWindow>
