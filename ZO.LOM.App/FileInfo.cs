@@ -3,10 +3,12 @@ using System.IO;
 using System.IO.Compression;
 using System.Net.NetworkInformation;
 using System.Runtime.InteropServices;
+using System.IO.Hashing;
 using System.Security.Cryptography;
 using System.Text;
 using System.Windows;
 using YamlDotNet.Serialization;
+
 
 namespace ZO.LoadOrderManager
 {
@@ -350,13 +352,42 @@ namespace ZO.LoadOrderManager
         }
 
 
+        //public static string ComputeHash(string filePath)
+        //{
+        //    using var sha256 = SHA256.Create();
+        //    using var stream = System.IO.File.OpenRead(filePath);
+        //    var hashBytes = sha256.ComputeHash(stream);
+        //    return BitConverter.ToString(hashBytes).Replace("-", "").ToLowerInvariant();
+        //}
+
+
         public static string ComputeHash(string filePath)
         {
-            using var sha256 = SHA256.Create();
-            using var stream = System.IO.File.OpenRead(filePath);
-            var hashBytes = sha256.ComputeHash(stream);
+            const int bufferSize = 8 * 1024 * 1024; // 8MB buffer
+
+            using var stream = new FileStream(
+                filePath,
+                FileMode.Open,
+                FileAccess.Read,
+                FileShare.Read,
+                bufferSize: bufferSize,
+                useAsync: false);
+
+            var hasher = new XxHash64();
+
+            byte[] buffer = new byte[bufferSize];
+            int bytesRead;
+            while ((bytesRead = stream.Read(buffer, 0, buffer.Length)) > 0)
+            {
+                hasher.Append(buffer.AsSpan(0, bytesRead));
+            }
+
+            byte[] hashBytes = hasher.GetCurrentHash();
+
             return BitConverter.ToString(hashBytes).Replace("-", "").ToLowerInvariant();
         }
+
+
 
         public override string ToString()
         {

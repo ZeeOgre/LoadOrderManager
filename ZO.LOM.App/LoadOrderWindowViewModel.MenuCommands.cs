@@ -68,36 +68,50 @@ namespace ZO.LoadOrderManager
 
 
 
-
-        private void ImportPlugins(AggLoadInfo? aggLoadInfo = null, string? pluginsFile = null)
-        {
-            if (SelectedItem != null)
-            {
-                StatusMessage = SelectedItem.ToString();
-            }
-            // If no AggLoadInfo is provided, use the singleton instance
-            aggLoadInfo ??= AggLoadInfo.Instance;
-
-            // Ensure the selected loadout is set in the AggLoadInfo object
-            if (SelectedLoadOut != null)
-            {
-                aggLoadInfo.ActiveLoadOut = SelectedLoadOut;
-            }
-            else
-            {
-                throw new InvalidOperationException("No loadout selected for importing plugins.");
-            }
-
-            // Perform the import
-            FileManager.ParsePluginsTxt(aggLoadInfo, pluginsFile);
-
-            // Update the UI or any other necessary components
-            RefreshData();
-        }
-
         private void SaveAsNewLoadout()
         {
+            if (SelectedLoadOut == null)
+            {
+                MessageBox.Show("No loadout selected.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
 
+            // Prompt the user for a new loadout name, pre-filling with the existing name appended with "_new"
+            var dialog = new InputDialog("Enter a new name for the loadout:", SelectedLoadOut.Name + "_new");
+            if (dialog.ShowDialog() != true || string.IsNullOrWhiteSpace(dialog.ResponseText))
+            {
+                MessageBox.Show("Loadout name cannot be empty.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+            var newLoadoutName = dialog.ResponseText;
+
+            // Create a new blank loadout
+            var newLoadout = new LoadOut
+            {
+                Name = newLoadoutName,
+                GroupSetID = SelectedLoadOut.GroupSetID,
+                enabledPlugins = new ObservableHashSet<long>()
+            };
+
+            // Copy the enabled plugins from the selected loadout
+            foreach (var plugin in SelectedLoadOut.enabledPlugins)
+            {
+                newLoadout.enabledPlugins.Add(plugin);
+            }
+
+            // Save the new loadout to the database
+            newLoadout.WriteProfile();
+
+            // Add the new loadout to AggLoadInfo.Instance
+            AggLoadInfo.Instance.LoadOuts.Add(newLoadout);
+
+            // Set the new loadout as the active loadout
+            AggLoadInfo.Instance.ActiveLoadOut = newLoadout;
+
+            // Notify the UI to refresh the view
+            OnPropertyChanged(nameof(AggLoadInfo.Instance.LoadOuts));
+            OnPropertyChanged(nameof(AggLoadInfo.Instance.ActiveLoadOut));
         }
 
         private void OpenGameFolder()
@@ -166,6 +180,33 @@ namespace ZO.LoadOrderManager
             OpenFile(contentCatalogPath);
         }
 
+        private void ImportPlugins(AggLoadInfo? aggLoadInfo = null, string? pluginsFile = null)
+        {
+            if (SelectedItem != null)
+            {
+                StatusMessage = SelectedItem.ToString();
+            }
+            // If no AggLoadInfo is provided, use the singleton instance
+            aggLoadInfo ??= AggLoadInfo.Instance;
+
+            // Ensure the selected loadout is set in the AggLoadInfo object
+            if (SelectedLoadOut != null)
+            {
+                aggLoadInfo.ActiveLoadOut = SelectedLoadOut;
+            }
+            else
+            {
+                throw new InvalidOperationException("No loadout selected for importing plugins.");
+            }
+
+            // Perform the import
+            FileManager.ParsePluginsTxt(aggLoadInfo, pluginsFile);
+
+            // Update the UI or any other necessary components
+            RefreshData();
+        }
+
+
         private void ImportContextCatalog()
         {
             var openFileDialog = new OpenFileDialog
@@ -189,7 +230,7 @@ namespace ZO.LoadOrderManager
 
         private void ScanGameFolder()
         {
-            FileManager.ScanGameDirectoryForStrays();
+            FileManager.ScanGameDirectoryForStraysAsync();
         }
 
         private void SettingsWindow()

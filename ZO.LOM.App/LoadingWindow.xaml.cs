@@ -1,8 +1,5 @@
 using MahApps.Metro.Controls;
-using System.Diagnostics;
 using System.Windows;
-using System.Windows.Controls; // Add this line
-using System.Windows.Media.Animation; // Add this line
 
 namespace ZO.LoadOrderManager
 {
@@ -11,6 +8,7 @@ namespace ZO.LoadOrderManager
         public LoadingWindow()
         {
             InitializeComponent();
+            this.WindowStartupLocation = WindowStartupLocation.CenterOwner;
         }
 
         public void UpdateProgress(long progress, string message)
@@ -19,7 +17,9 @@ namespace ZO.LoadOrderManager
             MessageLabel.Content = message;
         }
 
-
+        public void ShowInForeground()
+        {
+            this.Show();
+        }
     }
 }
-

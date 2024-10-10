@@ -1,10 +1,12 @@
+using MahApps.Metro.Controls;
 using System.IO;
+using System.Windows;
 
 namespace ZO.LoadOrderManager
 {
-    public static partial class FileManager
+    partial class FileManager
     {
-        public static void ScanGameDirectoryForStrays()
+        public static async Task ScanGameDirectoryForStraysAsync()
         {
             App.LogDebug("Scan Game Directory For Strays");
             var gameFolder = FileManager.GameFolder;
@@ -13,14 +15,29 @@ namespace ZO.LoadOrderManager
                 .Concat(Directory.GetFiles(dataFolder, "*.esm"))
                 .ToList();
 
+            var loadingWindow = new LoadingWindow
+            {
+                Owner = Application.Current.MainWindow // Set the owner to the main window
+            };
+            loadingWindow.ShowInForeground();
+            loadingWindow.Activate(); // Ensure the window is brought to the foreground
+            loadingWindow.UpdateProgress(1, "Starting scan...");
+
             // Dictionary to track the highest ordinal for each group
             var groupOrdinalTracker = new Dictionary<long, long>();
 
             // HashSet to track processed filenames
             var processedFilenames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
+            int totalFiles = pluginFiles.Count;
+            int currentFileIndex = 0;
+
             foreach (var pluginFile in pluginFiles)
             {
+                currentFileIndex++;
+                long progress = 1 + (98 * currentFileIndex / totalFiles);
+                loadingWindow.UpdateProgress(progress, $"Processing {Path.GetFileName(pluginFile)}...");
+
                 var fileInfo = new System.IO.FileInfo(pluginFile);
                 var pluginName = fileInfo.Name.ToLowerInvariant();
 
@@ -97,7 +114,15 @@ namespace ZO.LoadOrderManager
                     // Check for affiliated archives
                     AddAffiliatedFiles(fileInfo, newPlugin.PluginID);
                 }
+
+                
+
+                // Allow UI to update
+                await Task.Delay(10);
             }
+
+            loadingWindow.UpdateProgress(100, "Scan complete.");
+            loadingWindow.Close();
         }
 
         private static void AddAffiliatedFiles(System.IO.FileInfo pluginFileInfo, long pluginId)
@@ -136,4 +161,5 @@ namespace ZO.LoadOrderManager
             }
         }
     }
+
 }

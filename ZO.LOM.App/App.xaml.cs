@@ -11,9 +11,9 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.Versioning;
 using System.Text;
-using System.Windows;
-using Windows.UI.ViewManagement;
 using ZO.LoadOrderManager.Properties;
+using System.Windows;
+
 
 namespace ZO.LoadOrderManager
 {

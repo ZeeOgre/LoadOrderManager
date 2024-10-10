@@ -157,6 +157,21 @@ public class LoadOrderItemViewModel : ViewModelBase
         }
     }
 
+    public static LoadOrderItemViewModel? GetPluginModelByID(long? pluginID, long? groupSetID = null)
+    {
+        groupSetID ??= AggLoadInfo.Instance.ActiveGroupSet.GroupSetID;
+        var plugin = AggLoadInfo.Instance.Plugins.FirstOrDefault(p => p.PluginID == pluginID && p.GroupSetID == groupSetID);
+        return plugin != null ? new LoadOrderItemViewModel(plugin) : null;
+    }
+
+    public static LoadOrderItemViewModel? GetGroupModelByID(long? groupID, long? groupSetID = null)
+    {
+        groupSetID ??= AggLoadInfo.Instance.ActiveGroupSet.GroupSetID;
+        var group = AggLoadInfo.Instance.Groups
+            .FirstOrDefault(g => g.GroupID == groupID && g.GroupSetID == groupSetID);
+        return group != null ? new LoadOrderItemViewModel(group) : null;
+    }
+
 
     public override bool Equals(object? obj)
     {

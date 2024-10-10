@@ -72,11 +72,18 @@
   <!-- Package references for the project -->
   <ItemGroup>
     <PackageReference Include="Autoupdater.NET.Official" Version="1.9.2" />
+    <PackageReference Include="DiffPlex" Version="1.7.2" />
+    <PackageReference Include="DiffPlex.Wpf" Version="1.4.0" />
+    <PackageReference Include="MahApps.Metro.IconPacks.MaterialDesign" Version="5.0.0" />
+    <PackageReference Include="MaterialDesignColors" Version="3.1.0" />
+    <PackageReference Include="MaterialDesignThemes" Version="5.1.0" />
+    <PackageReference Include="MaterialDesignThemes.MahApps" Version="3.1.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.8" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.8" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="SharpCompress" Version="0.37.2" />
     <PackageReference Include="System.Data.SQLite" Version="1.0.118" />
+    <PackageReference Include="system.io.hashing" Version="8.0.0" />
     <PackageReference Include="YamlDotNet" Version="16.0.0" />
   </ItemGroup>
   <!-- Define properties for paths -->

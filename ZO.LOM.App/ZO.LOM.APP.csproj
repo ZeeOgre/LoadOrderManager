@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net8.0-windows10.0.17763.0</TargetFramework>
+    <TargetFramework>net8.0-windows10.0.20348.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>True</UseWPF>
@@ -27,7 +27,7 @@
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <StartupObject></StartupObject>
     <EnforceCodeStyleInBuild>True</EnforceCodeStyleInBuild>
-    <SupportedOSPlatformVersion>7.0</SupportedOSPlatformVersion>
+    <SupportedOSPlatformVersion>10.0.20348.0</SupportedOSPlatformVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='GitRelease|AnyCPU'">
