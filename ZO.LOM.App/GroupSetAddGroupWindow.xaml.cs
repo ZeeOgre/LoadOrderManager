@@ -1,10 +1,11 @@
-﻿using System.Collections.ObjectModel;
+using MahApps.Metro.Controls;
+using System.Collections.ObjectModel;
 using System.Windows.Controls;
 using System.Windows;
 
 namespace ZO.LoadOrderManager
 {
-    public partial class GroupSetAddGroupWindow : Window
+    public partial class GroupSetAddGroupWindow : MetroWindow
     {
         private ModGroup _newModGroup;
         private ObservableCollection<GroupSet> _availableGroupSets;

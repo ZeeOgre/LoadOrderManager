@@ -1,8 +1,9 @@
+using MahApps.Metro.Controls;
 using System.Windows;
 
 namespace ZO.LoadOrderManager
 {
-    public partial class MissingConfigDialog : Window
+    public partial class MissingConfigDialog : MetroWindow
     {
         public MissingConfigDialog()
         {

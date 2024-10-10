@@ -7,10 +7,11 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Navigation;
 using System.Windows.Media;
+using MahApps.Metro.Controls;
 
 namespace ZO.LoadOrderManager
 {
-    public partial class LoadOrderWindow : Window
+    public partial class LoadOrderWindow : MetroWindow
     {
         private bool isSaved;
         private long SelectedLoadOutID;
@@ -28,16 +29,24 @@ namespace ZO.LoadOrderManager
             {
                 if (AggLoadInfo.Instance != null)
                 {
-                    App.Current.Dispatcher.Invoke(() =>
-                        ((LoadingWindow)App.Current.MainWindow).UpdateProgress(10, "Initializing LoadOrderWindow..."));
+                    if (App.Current.MainWindow is LoadingWindow loadingWindow)
+                    {
+                        App.Current.Dispatcher.Invoke(() =>
+                            loadingWindow.UpdateProgress(10, "Initializing LoadOrderWindow..."));
 
-                    var viewModel = new LoadOrderWindowViewModel();
-                    this.DataContext = viewModel;
+                        var viewModel = new LoadOrderWindowViewModel();
+                        this.DataContext = viewModel;
 
-                    App.LogDebug("LoadOrderWindow: DataContext set to LoadOrderWindowViewModel");
+                        App.LogDebug("LoadOrderWindow: DataContext set to LoadOrderWindowViewModel");
 
-                    App.Current.Dispatcher.Invoke(() =>
-                        ((LoadingWindow)App.Current.MainWindow).UpdateProgress(50, "LoadOrderWindow initialized successfully."));
+                        App.Current.Dispatcher.Invoke(() =>
+                            loadingWindow.UpdateProgress(50, "LoadOrderWindow initialized successfully."));
+                    }
+                    else
+                    {
+                        MessageBox.Show("MainWindow is not of type LoadingWindow.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                        Close();
+                    }
                 }
                 else
                 {
@@ -80,8 +89,11 @@ namespace ZO.LoadOrderManager
                 InitializationManager.ReportProgress(95, "Cached group set tree view initialized");
             }
 
-            App.Current.Dispatcher.Invoke(() =>
-                ((LoadingWindow)App.Current.MainWindow).UpdateProgress(99, "LoadOrderWindow components loaded."));
+            if (App.Current.MainWindow is LoadingWindow loadingWindow)
+            {
+                App.Current.Dispatcher.Invoke(() =>
+                    loadingWindow.UpdateProgress(99, "LoadOrderWindow components loaded."));
+            }
             InitializationManager.EndInitialization(nameof(LoadOrderWindow));
 
             cmbGroupSet.SelectedItem = viewModel.SelectedGroupSet;

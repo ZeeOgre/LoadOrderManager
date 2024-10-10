@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using ZO.LoadOrderManager;
 
 public class LoadOrderItemViewModel : ViewModelBase

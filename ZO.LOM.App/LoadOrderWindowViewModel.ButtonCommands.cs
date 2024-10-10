@@ -1,5 +1,4 @@
 using Microsoft.Win32;
-using ModernWpf.Controls;
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;

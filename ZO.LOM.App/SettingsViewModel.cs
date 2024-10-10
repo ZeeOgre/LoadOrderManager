@@ -71,6 +71,8 @@ namespace ZO.LoadOrderManager
                         //((App)Application.Current).ApplyModernTheme();
                         ((App)Application.Current).ApplyCustomTheme(_config.DarkMode);
                     });
+                    Save();
+                    
                 }
             }
         }

@@ -1,3 +1,4 @@
+using MahApps.Metro.Controls;
 using System.Collections.ObjectModel;
 using System.Data.SQLite;
 using System.Windows;
@@ -5,7 +6,7 @@ using System.Windows.Controls;
 
 namespace ZO.LoadOrderManager
 {
-    public partial class ModGroupEditorWindow : Window
+    public partial class ModGroupEditorWindow : MetroWindow
     {
         private ModGroup _originalModGroup;
         private ModGroup _tempModGroup;

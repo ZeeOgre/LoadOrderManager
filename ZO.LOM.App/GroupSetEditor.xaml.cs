@@ -1,9 +1,10 @@
-﻿using System.Windows;
+using MahApps.Metro.Controls;
+using System.Windows;
 using System.Windows.Input;
 
 namespace ZO.LoadOrderManager
 {
-    public partial class GroupSetEditor : Window
+    public partial class GroupSetEditor : MetroWindow
     {
         private AggLoadInfo _aggLoadInfo;
 

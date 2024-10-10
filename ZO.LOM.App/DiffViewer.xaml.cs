@@ -1,4 +1,5 @@
-﻿using System;
+using MahApps.Metro.Controls;
+using System;
 using System.IO;
 using System.Text;
 using System.Windows;
@@ -8,7 +9,7 @@ using System.Windows.Media;
 
 namespace ZO.LoadOrderManager
 {
-    public partial class DiffViewer : Window
+    public partial class DiffViewer : MetroWindow
     {
         private string? filePath1;
         private string? filePath2;

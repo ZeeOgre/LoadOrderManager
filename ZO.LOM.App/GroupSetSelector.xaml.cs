@@ -1,8 +1,9 @@
-﻿using System.Windows;
+using MahApps.Metro.Controls;
+using System.Windows;
 
 namespace ZO.LoadOrderManager
 {
-    public partial class GroupSetSelector : Window
+    public partial class GroupSetSelector : MetroWindow
     {
         public GroupSet SelectedGroupSet { get; private set; }
 

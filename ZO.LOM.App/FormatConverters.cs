@@ -130,6 +130,11 @@ namespace ZO.LoadOrderManager
             // Foreground color handling
             if (target == "Foreground")
             {
+                if (isHighlighted)
+                {
+                    return Brushes.Black; // Set foreground to black for better readability when highlighted
+                }
+
                 var foregroundBrush = Application.Current.TryFindResource("SelectedForegroundBrush") as SolidColorBrush;
                 return foregroundBrush ?? Brushes.Black; // Fallback to black if no resource found
             }
@@ -166,6 +171,8 @@ namespace ZO.LoadOrderManager
             throw new NotImplementedException();
         }
     }
+
+
 
 
 

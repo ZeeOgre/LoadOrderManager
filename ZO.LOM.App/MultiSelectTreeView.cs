@@ -206,127 +206,127 @@ namespace ZO.LoadOrderManager
             System.Diagnostics.Debug.WriteLine("Selection cleared.");
         }
 
+        //private void SelectRange(TreeViewItem startItem, TreeViewItem endItem)
+        //{
+        //    // Get the entity type and group IDs from the selected items
+        //    var startItemDataContext = (LoadOrderItemViewModel)startItem.DataContext;
+        //    var endItemDataContext = (LoadOrderItemViewModel)endItem.DataContext;
+
+        //    var startGroupID = startItemDataContext.GroupID;
+        //    var endGroupID = endItemDataContext.GroupID;
+
+        //    // Find the path to the root for both start and end groups
+        //    var startGroupPath = ModGroup.GetModGroupById(startGroupID)?.CalculatePathToRootUsingCache();
+        //    var endGroupPath = ModGroup.GetModGroupById(endGroupID)?.CalculatePathToRootUsingCache();
+
+        //    // Find the lowest common parent
+        //    var commonParentID = FindLowestCommonParent(startGroupPath, endGroupPath);
+
+        //    // Get all groups in the range under the common parent
+        //    var groupsInRange = AggLoadInfo.Instance.GroupSetGroups.Items
+        //        .Where(g => g.parentID == commonParentID &&
+        //                    g.Ordinal >= Math.Min(startItemDataContext.Ordinal, endItemDataContext.Ordinal) &&
+        //                    g.Ordinal <= Math.Max(startItemDataContext.Ordinal, endItemDataContext.Ordinal))
+        //        .ToList();
+
+        //    // Clear the current selection
+        //    ClearSelection();
+
+        //    // Select all groups found in the range
+        //    foreach (var group in groupsInRange)
+        //    {
+        //        var loadOrderItem = FindLoadOrderItemByGroupID(group.groupID);
+        //        if (loadOrderItem != null)
+        //        {
+        //            loadOrderItem.IsSelected = true;
+        //            SelectedItems.Add(loadOrderItem);
+        //            System.Diagnostics.Debug.WriteLine($"Shift-click detected. Added group to selection: {loadOrderItem.DisplayName}");
+        //        }
+        //    }
+
+        //    // Now get all plugins in the range of the selected groups
+        //    var pluginsInRange = AggLoadInfo.Instance.GroupSetPlugins.Items
+        //        .Where(p =>
+        //            groupsInRange.Any(g => g.groupID == p.groupID) &&
+        //            p.groupSetID == commonParentID && // Ensure it belongs to the same GroupSet
+        //            p.Ordinal >= Math.Min(startItemDataContext.Ordinal, endItemDataContext.Ordinal) &&
+        //            p.Ordinal <= Math.Max(startItemDataContext.Ordinal, endItemDataContext.Ordinal))
+        //        .ToList();
+
+        //    // Select all plugins found in the range
+        //    foreach (var plugin in pluginsInRange)
+        //    {
+        //        var pluginItem = FindLoadOrderItemByPluginID(plugin.pluginID);
+        //        if (pluginItem != null)
+        //        {
+        //            pluginItem.IsSelected = true;
+        //            SelectedItems.Add(pluginItem);
+        //            System.Diagnostics.Debug.WriteLine($"Shift-click detected. Added plugin to selection: {pluginItem.DisplayName}");
+        //        }
+        //    }
+        //}
+
+
+
         private void SelectRange(TreeViewItem startItem, TreeViewItem endItem)
         {
-            // Get the entity type and group IDs from the selected items
-            var startItemDataContext = (LoadOrderItemViewModel)startItem.DataContext;
-            var endItemDataContext = (LoadOrderItemViewModel)endItem.DataContext;
+            // Collect all items, regardless of visibility or expansion
+            var allItems = new List<LoadOrderItemViewModel>();
 
-            var startGroupID = startItemDataContext.GroupID;
-            var endGroupID = endItemDataContext.GroupID;
+            // Collect all the items, flattened
+            CollectAllItems(Items, allItems);
 
-            // Find the path to the root for both start and end groups
-            var startGroupPath = ModGroup.GetModGroupById(startGroupID)?.CalculatePathToRootUsingCache();
-            var endGroupPath = ModGroup.GetModGroupById(endGroupID)?.CalculatePathToRootUsingCache();
+            int startIndex = allItems.IndexOf((LoadOrderItemViewModel)startItem.DataContext);
+            int endIndex = allItems.IndexOf((LoadOrderItemViewModel)endItem.DataContext);
 
-            // Find the lowest common parent
-            var commonParentID = FindLowestCommonParent(startGroupPath, endGroupPath);
+            // Ensure indices are valid
+            if (startIndex < 0 || endIndex < 0) return;
 
-            // Get all groups in the range under the common parent
-            var groupsInRange = AggLoadInfo.Instance.GroupSetGroups.Items
-                .Where(g => g.parentID == commonParentID &&
-                            g.Ordinal >= Math.Min(startItemDataContext.Ordinal, endItemDataContext.Ordinal) &&
-                            g.Ordinal <= Math.Max(startItemDataContext.Ordinal, endItemDataContext.Ordinal))
-                .ToList();
-
-            // Clear the current selection
-            ClearSelection();
-
-            // Select all groups found in the range
-            foreach (var group in groupsInRange)
+            // Make sure startIndex is less than endIndex
+            if (startIndex > endIndex)
             {
-                var loadOrderItem = FindLoadOrderItemByGroupID(group.groupID);
-                if (loadOrderItem != null)
-                {
-                    loadOrderItem.IsSelected = true;
-                    SelectedItems.Add(loadOrderItem);
-                    System.Diagnostics.Debug.WriteLine($"Shift-click detected. Added group to selection: {loadOrderItem.DisplayName}");
-                }
+                (startIndex, endIndex) = (endIndex, startIndex);
             }
 
-            // Now get all plugins in the range of the selected groups
-            var pluginsInRange = AggLoadInfo.Instance.GroupSetPlugins.Items
-                .Where(p =>
-                    groupsInRange.Any(g => g.groupID == p.groupID) &&
-                    p.groupSetID == commonParentID && // Ensure it belongs to the same GroupSet
-                    p.Ordinal >= Math.Min(startItemDataContext.Ordinal, endItemDataContext.Ordinal) &&
-                    p.Ordinal <= Math.Max(startItemDataContext.Ordinal, endItemDataContext.Ordinal))
-                .ToList();
+            // Clear current selection
+            ClearSelection();
 
-            // Select all plugins found in the range
-            foreach (var plugin in pluginsInRange)
+            // Select items in the range
+            for (int i = startIndex; i <= endIndex; i++)
             {
-                var pluginItem = FindLoadOrderItemByPluginID(plugin.pluginID);
-                if (pluginItem != null)
+                var item = allItems[i];
+                if (item != null)
                 {
-                    pluginItem.IsSelected = true;
-                    SelectedItems.Add(pluginItem);
-                    System.Diagnostics.Debug.WriteLine($"Shift-click detected. Added plugin to selection: {pluginItem.DisplayName}");
+                    item.IsSelected = true;
+                    SelectedItems.Add(item);
+                    System.Diagnostics.Debug.WriteLine($"Shift-click selected: {item.DisplayName}");
                 }
             }
         }
 
 
+        private void CollectAllItems(ItemCollection items, List<LoadOrderItemViewModel> result)
+        {
+            foreach (var item in items)
+            {
+                if (item is LoadOrderItemViewModel dataContext)
+                {
+                    // Add the item to the result list
+                    result.Add(dataContext);
+                    System.Diagnostics.Debug.WriteLine($"Collected: {dataContext.DisplayName}");
 
-        //private void SelectRange(TreeViewItem startItem, TreeViewItem endItem)
-        //{
-        //    // Collect all items, regardless of visibility or expansion
-        //    var allItems = new List<LoadOrderItemViewModel>();
+                    // Recursively collect children if any
+                    if (dataContext.Children != null)
+                    {
+                        foreach (var child in dataContext.Children)
+                        {
+                            result.Add(child);
+                            System.Diagnostics.Debug.WriteLine($"Collected child: {child.DisplayName}");
+                        }
+                    }
+                }
+            }
+        }
 
-//    // Collect all the items, flattened
-//    CollectAllItems(Items, allItems);
-
-//    int startIndex = allItems.IndexOf((LoadOrderItemViewModel)startItem.DataContext);
-//    int endIndex = allItems.IndexOf((LoadOrderItemViewModel)endItem.DataContext);
-
-//    // Ensure indices are valid
-//    if (startIndex < 0 || endIndex < 0) return;
-
-//    // Make sure startIndex is less than endIndex
-//    if (startIndex > endIndex)
-//    {
-//        (startIndex, endIndex) = (endIndex, startIndex);
-//    }
-
-//    // Clear current selection
-//    ClearSelection();
-
-//    // Select items in the range
-//    for (int i = startIndex; i <= endIndex; i++)
-//    {
-//        var item = allItems[i];
-//        if (item != null)
-//        {
-//            item.IsSelected = true;
-//            SelectedItems.Add(item);
-//            System.Diagnostics.Debug.WriteLine($"Shift-click selected: {item.DisplayName}");
-//        }
-//    }
-//}
-
-
-//private void CollectAllItems(ItemCollection items, List<LoadOrderItemViewModel> result)
-//{
-//    foreach (var item in items)
-//    {
-//        if (item is LoadOrderItemViewModel dataContext)
-//        {
-//            // Add the item to the result list
-//            result.Add(dataContext);
-//            System.Diagnostics.Debug.WriteLine($"Collected: {dataContext.DisplayName}");
-
-//            // Recursively collect children if any
-//            if (dataContext.Children != null)
-//            {
-//                foreach (var child in dataContext.Children)
-//                {
-//                    result.Add(child);
-//                    System.Diagnostics.Debug.WriteLine($"Collected child: {child.DisplayName}");
-//                }
-//            }
-//        }
-//    }
-//}
-
-
-
+    }
+}

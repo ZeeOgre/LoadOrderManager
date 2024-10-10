@@ -1,6 +1,8 @@
-﻿<Window x:Class="ZO.LoadOrderManager.SettingsWindow"
+﻿<metro:MetroWindow x:Class="ZO.LoadOrderManager.SettingsWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:metro="http://metro.mahapps.com/winfx/xaml/controls"
+        Style="{StaticResource MaterialDesignWindow}"
         xmlns:local="clr-namespace:ZO.LoadOrderManager"
         Title="Settings" Height="600" Width="800">
     <Grid>
@@ -80,22 +82,22 @@
                 <ColumnDefinition Width="Auto"/>
                 <!-- New column for Load from YAML -->
             </Grid.ColumnDefinitions>
-            <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+            <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,10,0">
                 <CheckBox Content="Automatically check at startup" IsChecked="{Binding AutoCheckAtStartup}" Margin="5" VerticalAlignment="Center"/>
                 <TextBlock Text="Version:" VerticalAlignment="Center" Margin="5"/>
                 <TextBlock Text="{x:Static local:App.Version}" VerticalAlignment="Center" Margin="5"/>
                 <Button Content="Check for Updates" Command="{Binding CheckForUpdatesCommand}" Width="100"  Margin="5"/>
                 <!-- Flip the checkbox and label for Dark Mode -->
-                
+
             </StackPanel>
-            <CheckBox FlowDirection="RightToLeft" Content="Dark Mode" Grid.Column="1" 
+            <CheckBox FlowDirection="RightToLeft" Content="Dark Mode" 
                       IsChecked="{Binding Path=DarkMode, Mode=TwoWay}" 
                       Checked="DarkModeCheckBox_Checked"
                       Unchecked="DarkModeCheckBox_Unchecked"
-                      VerticalAlignment="Center" Margin="5,0,0,0" HorizontalAlignment="Left" Width="79"/>
-            
+                      VerticalAlignment="Center" Margin="471,0,0,0" HorizontalAlignment="Left" Width="89" Grid.ColumnSpan="2"/>
+
             <Button Content="Load from YAML" Command="{Binding LoadFromYamlCommand}" Width="100" Grid.Column="2" Margin="5"/>
             <Button Content="Save" Command="{Binding SaveCommand}" Width="100" Grid.Column="3" Margin="5"/>
         </Grid>
     </Grid>
-</Window>
+</metro:MetroWindow>

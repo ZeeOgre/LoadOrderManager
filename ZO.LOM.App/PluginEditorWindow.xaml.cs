@@ -1,8 +1,9 @@
+using MahApps.Metro.Controls;
 using System.Windows;
 
 namespace ZO.LoadOrderManager
 {
-    public partial class PluginEditorWindow : Window
+    public partial class PluginEditorWindow : MetroWindow
     {
         public Task<bool?> ShowDialogAsync()
         {

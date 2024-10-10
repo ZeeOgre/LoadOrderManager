@@ -1,14 +1,22 @@
-﻿<Application x:Class="ZO.LoadOrderManager.App"
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Application x:Class="ZO.LoadOrderManager.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes">
     <Application.Resources>
-        <!-- Default Fallback Theme -->
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
-                <!--<ResourceDictionary Source="Themes/ColorsDark.xaml" />
-                <ResourceDictionary Source="Themes/CommonStyle.xaml" />
-                --><!-- Default to Light Theme -->
+                <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesignTheme.Window.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Controls.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Fonts.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Themes/Dark.Blue.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Themes/Light.Blue.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/Themes/ColorsDark.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/Themes/ColorsLight.xaml" />
             </ResourceDictionary.MergedDictionaries>
+            <Color x:Key="GroupBackgroundBrushDarkMode">#FF003366</Color>
+            <Color x:Key="GroupBackgroundBrushLightMode">#FFD3E4FF</Color>
+            <Color x:Key="SelectedForegroundBrush">#FF000000</Color>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

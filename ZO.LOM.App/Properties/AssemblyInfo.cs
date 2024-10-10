@@ -1,9 +1,9 @@
-﻿using System.Reflection;
+using System.Reflection;
 using System.Windows;
 
 [assembly: AssemblyTitle("LoadOrderManager")]
 [assembly: AssemblyProduct("LoadOrderManager")]
-[assembly: AssemblyCopyright("Copyright ©  ZeeOgre 2024")]
+[assembly: AssemblyCopyright("Copyright �  ZeeOgre 2024")]
 [assembly: AssemblyVersion("0.0.1.0")]
 [assembly: AssemblyFileVersion("0.0.1.0")]
 

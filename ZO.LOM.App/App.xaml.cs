@@ -1,4 +1,6 @@
-﻿using AutoUpdaterDotNET;
+using MahApps.Metro.Controls;
+using AutoUpdaterDotNET;
+using ControlzEx.Theming;
 using Microsoft.Win32;
 using System.Configuration;
 using System.Data.SQLite;
@@ -93,38 +95,47 @@ namespace ZO.LoadOrderManager
         //    });
         //}
 
-
-        public void ApplyCustomTheme(bool? isDarkMode)
+        public void ApplyCustomTheme(bool isDarkMode)
         {
-            string assemblyName = Assembly.GetExecutingAssembly().GetName().Name;
-            ResourceDictionary colorDict = new ResourceDictionary();
-
-            if (isDarkMode == null)
+            var theme = isDarkMode ? ThemeManager.BaseColorDarkConst : ThemeManager.BaseColorLightConst;
+            Application.Current.Dispatcher.Invoke(() =>
             {
-                isDarkMode = IsSystemInDarkMode(); // Use system settings
-            }
-
-            // Load appropriate color dictionary
-            if (isDarkMode == true)
-            {
-                colorDict.Source = new Uri($"/{assemblyName};component/Themes/ColorsDark.xaml", UriKind.Relative);
-            }
-            else
-            {
-                colorDict.Source = new Uri($"/{assemblyName};component/Themes/ColorsLight.xaml", UriKind.Relative);
-            }
-
-            // Clear existing dictionaries and load the new one
-            Application.Current.Resources.MergedDictionaries.Clear();
-            Application.Current.Resources.MergedDictionaries.Add(colorDict);
-
-            // Also add the shared style dictionary (common between both modes)
-            ResourceDictionary styleDict = new ResourceDictionary
-            {
-                Source = new Uri($"/{assemblyName};component/Themes/CommonStyle.xaml", UriKind.Relative)
-            };
-            Application.Current.Resources.MergedDictionaries.Add(styleDict);
+                ThemeManager.Current.ChangeThemeBaseColor(Application.Current, theme);
+                ThemeManager.Current.ChangeThemeColorScheme(Application.Current, "Blue");
+            });
         }
+
+        //public void ApplyCustomTheme(bool? isDarkMode)
+        //{
+        //    string assemblyName = Assembly.GetExecutingAssembly().GetName().Name;
+        //    ResourceDictionary colorDict = new ResourceDictionary();
+
+        //    if (isDarkMode == null)
+        //    {
+        //        isDarkMode = IsSystemInDarkMode(); // Use system settings
+        //    }
+
+        //    // Load appropriate color dictionary
+        //    if (isDarkMode == true)
+        //    {
+        //        colorDict.Source = new Uri($"/{assemblyName};component/Themes/ColorsDark.xaml", UriKind.Relative);
+        //    }
+        //    else
+        //    {
+        //        colorDict.Source = new Uri($"/{assemblyName};component/Themes/ColorsLight.xaml", UriKind.Relative);
+        //    }
+
+        //    // Clear existing dictionaries and load the new one
+        //    Application.Current.Resources.MergedDictionaries.Clear();
+        //    Application.Current.Resources.MergedDictionaries.Add(colorDict);
+
+        //    // Also add the shared style dictionary (common between both modes)
+        //    ResourceDictionary styleDict = new ResourceDictionary
+        //    {
+        //        Source = new Uri($"/{assemblyName};component/Themes/CommonStyle.xaml", UriKind.Relative)
+        //    };
+        //    Application.Current.Resources.MergedDictionaries.Add(styleDict);
+        //}
 
 
 
@@ -152,8 +163,8 @@ namespace ZO.LoadOrderManager
             try
             {
                 Config.InitializeNewInstance();
-                //ApplyModernTheme();
-                //ApplyCustomTheme(Config.Instance.DarkMode);
+                
+                ApplyCustomTheme(IsSystemInDarkMode());
 
                 App.LogDebug("Launching SettingsWindow in settings mode.");
                 var settingsWindow = new SettingsWindow(SettingsLaunchSource.CommandLine);
@@ -218,7 +229,7 @@ namespace ZO.LoadOrderManager
 
                         //ApplyModernTheme();
                         //ApplyCustomTreeViewTheme(Config.Instance.DarkMode);
-                        //ApplyCustomTheme(null);
+                        ApplyCustomTheme(Config.Instance.DarkMode);
 
                         App.LogDebug("Initializing database manager...");
                         InitializationManager.StartInitialization(nameof(DbManager));
@@ -402,5 +413,14 @@ namespace ZO.LoadOrderManager
         }
 
 
+    }
+    public static class ThemeHelper
+    {
+        public static void ApplyTheme(bool isDarkMode)
+        {
+            var theme = isDarkMode ? "BaseDark" : "BaseLight";
+            var accent = "Blue";
+            ThemeManager.Current.ChangeTheme(Application.Current, $"{theme}.{accent}");
+        }
     }
 }

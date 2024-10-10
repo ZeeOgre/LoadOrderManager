@@ -1,6 +1,9 @@
-<Window x:Class="ZO.LoadOrderManager.ModGroupEditorWindow"
+<metro:MetroWindow x:Class="ZO.LoadOrderManager.ModGroupEditorWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:metro="http://metro.mahapps.com/winfx/xaml/controls"
+        Style="{StaticResource MaterialDesignWindow}"
+        xmlns:local="clr-namespace:ZO.LoadOrderManager"
         Title="LoadOrderManager - ModGroup Editor" Height="500" Width="400">
     <Grid>
         <StackPanel Margin="10">
@@ -29,4 +32,4 @@
 
         </StackPanel>
     </Grid>
-</Window>
+</metro:MetroWindow>

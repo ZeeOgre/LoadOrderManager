@@ -1,8 +1,9 @@
-﻿using System.Windows;
+using MahApps.Metro.Controls;
+using System.Windows;
 
 namespace ZO.LoadOrderManager
 {
-    public partial class SettingsWindow : Window
+    public partial class SettingsWindow : MetroWindow
     {
 
         public Task<bool?> ShowDialogAsync()

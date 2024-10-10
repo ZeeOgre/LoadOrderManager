@@ -1,10 +1,11 @@
+using MahApps.Metro.Controls;
 using System.Diagnostics;
 using System.Windows;
 using System.Windows.Navigation;
 
 namespace ZO.LoadOrderManager
 {
-    public partial class UrlInputDialog : Window
+    public partial class UrlInputDialog : MetroWindow
     {
         private readonly Plugin _modItem; // Add a private field for ModItem
         public string PluginName { get; }
