@@ -36,36 +36,49 @@ namespace ZO.LoadOrderManager
             if (string.IsNullOrEmpty(searchText))
             {
                 // If search text is empty, show all items
-                RefreshData();
+                
             }
             else
             {
                 // Filter and highlight Groups and Plugins based on the search text
                 var matchingItems = flatList.Where(item =>
-    (item.DisplayName != null && item.DisplayName.Contains(searchText, StringComparison.OrdinalIgnoreCase)) ||
-    (item.PluginData != null &&
-     (item.PluginData.PluginName?.Contains(searchText, StringComparison.OrdinalIgnoreCase) == true ||
-      item.PluginData.Description?.Contains(searchText, StringComparison.OrdinalIgnoreCase) == true))
+                (item.DisplayName != null && item.DisplayName.Contains(searchText, StringComparison.OrdinalIgnoreCase)) ||
+                (item.PluginData != null &&
+                (item.PluginData.PluginName?.Contains(searchText, StringComparison.OrdinalIgnoreCase) == true ||
+                item.PluginData.Description?.Contains(searchText, StringComparison.OrdinalIgnoreCase) == true))
 );
 
                 foreach (var item in matchingItems)
                 {
                     item.IsHighlighted = true;
                 }
-
-                // Notify the UI about the changes
-                OnPropertyChanged(nameof(LoadOrders.Items));
             }
         }
 
+        private void SwapLocations(LoadOrderItemViewModel item1, LoadOrderItemViewModel item2)
+        {
+            var underlyingObject1 = EntityTypeHelper.GetUnderlyingObject(item1);
+            var underlyingObject2 = EntityTypeHelper.GetUnderlyingObject(item2);
+
+            if (underlyingObject1 is ModGroup modGroup1 && underlyingObject2 is ModGroup modGroup2)
+            {
+                modGroup1.SwapLocations(modGroup2);
+            }
+            else if (underlyingObject1 is Plugin plugin1 && underlyingObject2 is Plugin plugin2)
+            {
+                plugin1.SwapLocations(plugin2);
+            }
+
+            OnPropertyChanged(nameof(LoadOrders.Items));
+        }
 
         public void SelectPreviousItem()
         {
-            if (SelectedItem is not LoadOrderItemViewModel selectedItem || Items == null || Items.Count == 0)
+            if (SelectedItems.Count == 0)
                 return;
 
             var flatList = Flatten(LoadOrders.Items).ToList();
-            var currentIndex = flatList.IndexOf(selectedItem);
+            var currentIndex = flatList.IndexOf((LoadOrderItemViewModel)SelectedItem);
 
             if (currentIndex > 0)
             {
@@ -75,11 +88,11 @@ namespace ZO.LoadOrderManager
 
         public void SelectNextItem()
         {
-            if (SelectedItem is not LoadOrderItemViewModel selectedItem || Items == null || Items.Count == 0)
+            if (SelectedItems.Count == 0)
                 return;
 
             var flatList = Flatten(LoadOrders.Items).ToList();
-            var currentIndex = flatList.IndexOf(selectedItem);
+            var currentIndex = flatList.IndexOf((LoadOrderItemViewModel)SelectedItem);
 
             if (currentIndex < flatList.Count - 1)
             {
@@ -114,16 +127,32 @@ namespace ZO.LoadOrderManager
 
         private IEnumerable<LoadOrderItemViewModel> Flatten(ObservableCollection<LoadOrderItemViewModel> items)
         {
-            foreach (var item in items)
+            if (_cachedFlatList != null)
             {
-                yield return item;
+                return _cachedFlatList;
+            }
 
-                foreach (var child in Flatten(item.Children))
+            var flatList = new List<LoadOrderItemViewModel>();
+            var stack = new Stack<LoadOrderItemViewModel>(items);
+
+            while (stack.Count > 0)
+            {
+                var currentItem = stack.Pop();
+                flatList.Add(currentItem);
+
+                if (currentItem.Children != null && currentItem.Children.Count > 0)
                 {
-                    yield return child;
+                    foreach (var child in currentItem.Children.Reverse())
+                    {
+                        stack.Push(child);
+                    }
                 }
             }
+
+            _cachedFlatList = flatList;
+            return flatList;
         }
+
 
         private bool CanExecuteEdit(object parameter)
         {
@@ -169,7 +198,7 @@ namespace ZO.LoadOrderManager
                     break;
             }
 
-            RefreshData(); // Refresh after editing each item
+           
         }
 
 

@@ -502,15 +502,10 @@ namespace ZO.LoadOrderManager
             other.ParentID = tempParentID;
             other.Ordinal = tempOrdinal;
 
-            var aggLoadInfo = AggLoadInfo.Instance;
-            aggLoadInfo.GroupSetGroups.Items.Remove(thisTuple);
-            aggLoadInfo.GroupSetGroups.Items.Remove(otherTuple);
-
-            aggLoadInfo.GroupSetGroups.Items.Add(((long)this.GroupID!, (long)this.GroupSetID!, this.ParentID, (long)this.Ordinal!));
-            aggLoadInfo.GroupSetGroups.Items.Add(((long)other.GroupID!, (long)other.GroupSetID!, other.ParentID, (long)other.Ordinal!));
 
             this.WriteGroup();
             other.WriteGroup();
+            AggLoadInfo.Instance.RefreshMetadataFromDB();
         }
     }
 }

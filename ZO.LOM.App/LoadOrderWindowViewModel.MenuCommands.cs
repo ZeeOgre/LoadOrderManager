@@ -23,8 +23,6 @@ namespace ZO.LoadOrderManager
         public ICommand OpenGameSaveFolderCommand { get; }
         public ICommand OpenAppDataFolderCommand { get; }
         public ICommand OpenGameSettingsCommand { get; }
-        //public ICommand OpenPluginEditorCommand { get; }
-        //public ICommand OpenGroupEditorCommand { get; }
         public ICommand OpenGameLocalAppDataCommand { get; }
         
         public ICommand SettingsWindowCommand { get; }
@@ -109,9 +107,8 @@ namespace ZO.LoadOrderManager
             // Set the new loadout as the active loadout
             AggLoadInfo.Instance.ActiveLoadOut = newLoadout;
 
-            // Notify the UI to refresh the view
-            OnPropertyChanged(nameof(AggLoadInfo.Instance.LoadOuts));
-            OnPropertyChanged(nameof(AggLoadInfo.Instance.ActiveLoadOut));
+            // Refresh the UI   
+            OnPropertyChanged(nameof(LoadOuts));
         }
 
         private void OpenGameFolder()
@@ -180,25 +177,52 @@ namespace ZO.LoadOrderManager
             OpenFile(contentCatalogPath);
         }
 
+        private bool AskUserForConfirmation(string message)
+        {
+            var result = MessageBox.Show(message, "Confirmation", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            return result == MessageBoxResult.Yes;
+        }
+
         private void ImportPlugins(AggLoadInfo? aggLoadInfo = null, string? pluginsFile = null)
         {
-            if (SelectedItem != null)
-            {
-                StatusMessage = SelectedItem.ToString();
-            }
-            // If no AggLoadInfo is provided, use the singleton instance
-            aggLoadInfo ??= AggLoadInfo.Instance;
+            bool isNewGroupSet = false;
 
-            // Ensure the selected loadout is set in the AggLoadInfo object
-            if (SelectedLoadOut != null)
+            // If no AggLoadInfo is provided, ask the user if they want to set up a new GroupSet
+            if (aggLoadInfo == null)
             {
-                aggLoadInfo.ActiveLoadOut = SelectedLoadOut;
-            }
-            else
-            {
-                throw new InvalidOperationException("No loadout selected for importing plugins.");
+                isNewGroupSet = AskUserForConfirmation("Do you want to import into a new GroupSet?");
+                if (isNewGroupSet)
+                {
+                    // Create a new GroupSet
+                    GroupSet newGroupSet = GroupSet.CreateEmptyGroupSet();
+                    aggLoadInfo = new AggLoadInfo(newGroupSet.GroupSetID);
+                }
+                else
+                {
+                    // Use the singleton instance if no new GroupSet is created
+                    aggLoadInfo = AggLoadInfo.Instance;
+                }
             }
 
+            // Ask the user if they want to import into a new LoadOut
+            bool isNewLoadOut = AskUserForConfirmation("Do you want to import into a new LoadOut?");
+            if (isNewLoadOut)
+            {
+                // Prompt the user for a new loadout name
+                var dialog = new InputDialog("Enter the name for your new LoadOut", "NewLoadOut");
+                if (dialog.ShowDialog() != true || string.IsNullOrWhiteSpace(dialog.ResponseText))
+                {
+                    MessageBox.Show("Loadout name cannot be empty.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+
+                var newLoadoutName = dialog.ResponseText;
+
+                // Create a new LoadOut with the provided name
+                LoadOut newLoadOut = new LoadOut(aggLoadInfo.ActiveGroupSet) { Name = newLoadoutName };
+                aggLoadInfo.ActiveLoadOut = newLoadOut;
+            }
+            
             // Perform the import
             FileManager.ParsePluginsTxt(aggLoadInfo, pluginsFile);
 
@@ -209,28 +233,48 @@ namespace ZO.LoadOrderManager
 
         private void ImportContextCatalog()
         {
-            var openFileDialog = new OpenFileDialog
-            {
-                InitialDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "starfield"),
-                Filter = "Text files (*.txt)|*.txt|All files (*.*)|*.*",
-                Title = "Select ContentCatalog.txt file"
-            };
 
-            if (openFileDialog.ShowDialog() == true)
-            {
-                var selectedFile = openFileDialog.FileName;
-                FileManager.ParseContentCatalogTxt(selectedFile);
+            FileManager.ParseContentCatalogTxt();
+            //var openFileDialog = new OpenFileDialog
+            //{
+            //    InitialDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "starfield"),
+            //    Filter = "Text files (*.txt)|*.txt|All files (*.*)|*.*",
+            //    Title = "Select ContentCatalog.txt file"
+            //};
 
-                _ = MessageBox.Show("Content catalog imported successfully.", "Import Content Catalog", MessageBoxButton.OK, MessageBoxImage.Information);
+            //if (openFileDialog.ShowDialog() == true)
+            //{
+            //    var selectedFile = openFileDialog.FileName;
+            //    FileManager.ParseContentCatalogTxt(selectedFile);
 
-                RefreshData();
-            }
+            //    _ = MessageBox.Show("Content catalog imported successfully.", "Import Content Catalog", MessageBoxButton.OK, MessageBoxImage.Information);
+
+            //    RefreshData();
+            //}
         }
         
 
-        private void ScanGameFolder()
+void ScanGameFolder()
         {
-            FileManager.ScanGameDirectoryForStraysAsync();
+            // Prompt the user to choose between a full scan and a quick scan
+            var result = MessageBox.Show("Do you want to perform a full scan?", "Scan Type", MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
+
+            // Check the user's choice
+            if (result == MessageBoxResult.Yes)
+            {
+                // Perform a full scan
+                FileManager.ScanGameDirectoryForStraysAsync(fullScan: true);
+            }
+            else if (result == MessageBoxResult.No)
+            {
+                // Perform a quick scan
+                FileManager.ScanGameDirectoryForStraysAsync(fullScan: false);
+            }
+            else
+            {
+                // User canceled the operation
+                MessageBox.Show("Scan operation canceled.", "Canceled", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
         }
 
         private void SettingsWindow()
@@ -392,8 +436,8 @@ namespace ZO.LoadOrderManager
                     plugin.ChangeGroup(newGroupId);
                 }
 
-                AggLoadInfo.Instance.RefreshAllData();
             }
+
             else
             {
                 throw new ArgumentException("Parameter must be a long representing the new group ID.", nameof(parameter));

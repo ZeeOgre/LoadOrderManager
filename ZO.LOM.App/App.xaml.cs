@@ -13,6 +13,10 @@ using System.Runtime.Versioning;
 using System.Text;
 using ZO.LoadOrderManager.Properties;
 using System.Windows;
+using MaterialDesignColors;
+using MaterialDesignThemes.Wpf;
+using System.Windows.Media;
+
 
 
 namespace ZO.LoadOrderManager
@@ -86,61 +90,61 @@ namespace ZO.LoadOrderManager
             }
         }
 
-        // Apply the ModernWpf theme
-        //public void ApplyModernTheme()
-        //{
-        //    Application.Current.Dispatcher.Invoke(() =>
-        //    {
-        //        ModernWpf.ThemeManager.Current.ApplicationTheme = Config.Instance.DarkMode ? ModernWpf.ApplicationTheme.Dark : ModernWpf.ApplicationTheme.Light;
-        //    });
-        //}
+
+
+
 
         public void ApplyCustomTheme(bool isDarkMode)
         {
             var theme = isDarkMode ? ThemeManager.BaseColorDarkConst : ThemeManager.BaseColorLightConst;
             Application.Current.Dispatcher.Invoke(() =>
             {
+                // Remove existing Resource Dictionaries related to themes.
+                var existingDictionaries = Application.Current.Resources.MergedDictionaries.ToList();
+                foreach (var dictionary in existingDictionaries)
+                {
+                    if (dictionary.Source != null &&
+                        (dictionary.Source.OriginalString.Contains("MaterialDesignTheme.Light.xaml") ||
+                         dictionary.Source.OriginalString.Contains("MaterialDesignTheme.Dark.xaml") ||
+                         dictionary.Source.OriginalString.Contains("MahApps.Metro;component/Styles/Themes/Light.Blue.xaml") ||
+                         dictionary.Source.OriginalString.Contains("MahApps.Metro;component/Styles/Themes/Dark.Blue.xaml") ||
+                         dictionary.Source.OriginalString.Contains("Themes/ColorsLight.xaml") ||
+                         dictionary.Source.OriginalString.Contains("Themes/ColorsDark.xaml")))
+                    {
+                        Application.Current.Resources.MergedDictionaries.Remove(dictionary);
+                    }
+                }
+
+                // Load new theme dictionaries based on the selected mode
+                var materialDesignResourcePath = isDarkMode
+                    ? "pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesignTheme.Dark.xaml"
+                    : "pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesignTheme.Light.xaml";
+
+                var mahAppsResourcePath = isDarkMode
+                    ? "pack://application:,,,/MahApps.Metro;component/Styles/Themes/Dark.Blue.xaml"
+                    : "pack://application:,,,/MahApps.Metro;component/Styles/Themes/Light.Blue.xaml";
+
+                var customColorResourcePath = isDarkMode
+                    ? "pack://application:,,,/Themes/ColorsDark.xaml"
+                    : "pack://application:,,,/Themes/ColorsLight.xaml";
+
+                Application.Current.Resources.MergedDictionaries.Add(new ResourceDictionary() { Source = new Uri(materialDesignResourcePath) });
+                Application.Current.Resources.MergedDictionaries.Add(new ResourceDictionary() { Source = new Uri(mahAppsResourcePath) });
+                Application.Current.Resources.MergedDictionaries.Add(new ResourceDictionary() { Source = new Uri(customColorResourcePath) });
+
+                // Apply MahApps theme
                 ThemeManager.Current.ChangeThemeBaseColor(Application.Current, theme);
                 ThemeManager.Current.ChangeThemeColorScheme(Application.Current, "Blue");
+
+                // Restart the application to apply the new theme
+                //RestartApplication();
             });
         }
 
-        //public void ApplyCustomTheme(bool? isDarkMode)
-        //{
-        //    string assemblyName = Assembly.GetExecutingAssembly().GetName().Name;
-        //    ResourceDictionary colorDict = new ResourceDictionary();
-
-        //    if (isDarkMode == null)
-        //    {
-        //        isDarkMode = IsSystemInDarkMode(); // Use system settings
-        //    }
-
-        //    // Load appropriate color dictionary
-        //    if (isDarkMode == true)
-        //    {
-        //        colorDict.Source = new Uri($"/{assemblyName};component/Themes/ColorsDark.xaml", UriKind.Relative);
-        //    }
-        //    else
-        //    {
-        //        colorDict.Source = new Uri($"/{assemblyName};component/Themes/ColorsLight.xaml", UriKind.Relative);
-        //    }
-
-        //    // Clear existing dictionaries and load the new one
-        //    Application.Current.Resources.MergedDictionaries.Clear();
-        //    Application.Current.Resources.MergedDictionaries.Add(colorDict);
-
-        //    // Also add the shared style dictionary (common between both modes)
-        //    ResourceDictionary styleDict = new ResourceDictionary
-        //    {
-        //        Source = new Uri($"/{assemblyName};component/Themes/CommonStyle.xaml", UriKind.Relative)
-        //    };
-        //    Application.Current.Resources.MergedDictionaries.Add(styleDict);
-        //}
 
 
 
-
-        // Helper method to check system's dark mode setting using the registry
+        //Helper method to check system's dark mode setting using the registry
         private bool IsSystemInDarkMode()
         {
             const string registryKey = @"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize";
@@ -227,8 +231,6 @@ namespace ZO.LoadOrderManager
                         InitializationManager.ReportProgress(20, "Configuration initialized");
                         InitializationManager.EndInitialization(nameof(Config));
 
-                        //ApplyModernTheme();
-                        //ApplyCustomTreeViewTheme(Config.Instance.DarkMode);
                         ApplyCustomTheme(Config.Instance.DarkMode);
 
                         App.LogDebug("Initializing database manager...");
@@ -301,23 +303,11 @@ namespace ZO.LoadOrderManager
             }
         }
 
-        private async static void RestartApplication()
+        public static void RestartApplication()
         {
-            App.LogDebug("Preparing to restart application...");
-            try
-            {
-                App.LogDebug("Calling Application.Current.Shutdown()...");
-                Application.Current.Shutdown();
-
-                await Task.Delay(1000);
-
-                App.LogDebug("Restarting application...");
-                _ = Process.Start(Application.ResourceAssembly.Location);
-            }
-            catch (Exception ex)
-            {
-                App.LogDebug($"Exception during restart: {ex.Message}");
-            }
+            var exeName = Process.GetCurrentProcess().MainModule.FileName;
+            Process.Start(exeName);
+            Application.Current.Shutdown();
         }
 
         private static Assembly? OnAssemblyResolve(object? sender, ResolveEventArgs args)

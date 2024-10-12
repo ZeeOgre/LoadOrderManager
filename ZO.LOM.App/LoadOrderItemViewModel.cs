@@ -122,6 +122,34 @@ public class LoadOrderItemViewModel : ViewModelBase
         return AggLoadInfo.Instance.Groups.FirstOrDefault(g => g.GroupID == ParentID.Value);
     }
 
+    public void SwapLocations(LoadOrderItemViewModel other)
+    {
+        if (other == null || other.entityType != entityType)
+        {
+            return;
+        }
+
+        // Check the EntityType of the current item
+        if (EntityType == EntityType.Plugin)
+        {
+            // Swap locations for plugins
+            var currentPlugin = PluginData;
+            var otherPlugin = other.PluginData;
+
+            // Perform the swap logic for plugins
+            currentPlugin.SwapLocations(otherPlugin);
+        }
+        else if (EntityType == EntityType.Group)
+        {
+            // Swap locations for groups
+            var currentGroup = GetModGroup();
+            var otherGroup = other.GetModGroup();
+
+            // Perform the swap logic for groups
+            currentGroup.SwapLocations(otherGroup);
+        }
+    }
+
     private bool _isHighlighted;
 
     public bool IsHighlighted
@@ -149,7 +177,6 @@ public class LoadOrderItemViewModel : ViewModelBase
             return group != null ? group.ToString() : base.ToString();
         }
     }
-
 
     public void HighlightSearchResults(string searchTerm)
     {
@@ -184,7 +211,6 @@ public class LoadOrderItemViewModel : ViewModelBase
             .FirstOrDefault(g => g.GroupID == groupID && g.GroupSetID == groupSetID);
         return group != null ? new LoadOrderItemViewModel(group) : null;
     }
-
 
     public override bool Equals(object? obj)
     {

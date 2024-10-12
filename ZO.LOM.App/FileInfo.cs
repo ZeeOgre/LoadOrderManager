@@ -88,12 +88,12 @@ namespace ZO.LoadOrderManager
             AbsolutePath = filename;
         }
 
-        public FileInfo(System.IO.FileInfo fileInfo, string gameFolderPath)
+        public FileInfo(System.IO.FileInfo fileInfo, string gameFolderPath, bool checkHash = true)
         {
             Filename = fileInfo.Name.ToLowerInvariant();
             RelativePath = Path.GetRelativePath(Path.Combine(gameFolderPath, "data"), fileInfo.FullName);
             DTStamp = fileInfo.LastWriteTime.ToString("o");
-            HASH = ComputeHash(fileInfo.FullName);
+            if (checkHash) { HASH = ComputeHash(fileInfo.FullName); }
             Flags = CheckFileFlags(fileInfo);
             AbsolutePath = Flags.HasFlag(FileFlags.IsJunction) ? GetJunctionTarget(fileInfo.FullName) : fileInfo.FullName;
         }
@@ -103,7 +103,13 @@ namespace ZO.LoadOrderManager
             Filename = filename.ToLowerInvariant();
             RelativePath = null;
             DTStamp = DateTime.Now.ToString("o");
-            HASH = ComputeHash(filename);
+            if (storeFile == true)
+            {
+                HASH = ComputeHash(filename);
+                FileContent = System.IO.File.ReadAllBytes(filename); // Store raw file content
+                CompressedContent = CompressFile(FileContent); // Store compressed content
+            }
+            
             AbsolutePath = filename;
 
             if (monitor)
@@ -281,9 +287,14 @@ namespace ZO.LoadOrderManager
             return currentHash == HASH;
         }
 
-        public static FileInfo FileCheck(string filename)
+        public static FileInfo FileCheck(string filename, bool checkHash)
         {
-            var currentHash = ComputeHash(filename);
+            string? currentHash = null;
+            if (checkHash)
+            {
+                currentHash = ComputeHash(filename);
+            }
+
             using var connection = DbManager.Instance.GetConnection();
             using var command = new SQLiteCommand(connection);
             command.CommandText = "SELECT * FROM FileInfo WHERE Filename = @Filename";
@@ -320,18 +331,13 @@ namespace ZO.LoadOrderManager
 
                 if (fileInfo.Filename == filename.ToLowerInvariant())
                 {
-                    if (fileInfo.HASH == currentHash && (fileInfo.FileContent == null || fileInfo.FileContent.Length == 0))
+                    if (checkHash && fileInfo.HASH != currentHash)
                     {
                         fileInfo.HASH = currentHash;
-                        fileInfo.DTStamp = new System.IO.FileInfo(fileInfo.AbsolutePath).LastWriteTime.ToString("o");
-                        fileInfo.FileContent = System.IO.File.ReadAllBytes(fileInfo.AbsolutePath);
-                        fileInfo.CompressedContent = fileInfo.CompressFile(fileInfo.FileContent);
-                        fileInfo.SetFlagsBasedOnPath(); // Set flags based on path
-                        InsertFileInfo(fileInfo);
                     }
-                    else
+
+                    if (fileInfo.FileContent == null || fileInfo.FileContent.Length == 0 || (checkHash && fileInfo.HASH == currentHash))
                     {
-                        fileInfo.HASH = currentHash;
                         fileInfo.DTStamp = new System.IO.FileInfo(fileInfo.AbsolutePath).LastWriteTime.ToString("o");
                         fileInfo.FileContent = System.IO.File.ReadAllBytes(fileInfo.AbsolutePath);
                         fileInfo.CompressedContent = fileInfo.CompressFile(fileInfo.FileContent);
@@ -352,13 +358,41 @@ namespace ZO.LoadOrderManager
         }
 
 
-        //public static string ComputeHash(string filePath)
-        //{
-        //    using var sha256 = SHA256.Create();
-        //    using var stream = System.IO.File.OpenRead(filePath);
-        //    var hashBytes = sha256.ComputeHash(stream);
-        //    return BitConverter.ToString(hashBytes).Replace("-", "").ToLowerInvariant();
-        //}
+        public static List<FileInfo> GetAllFiles()
+        {
+            var fileInfos = new List<FileInfo>();
+
+            using var connection = DbManager.Instance.GetConnection();
+
+            using (var pragmaCommand = new SQLiteCommand("PRAGMA read_uncommitted = true;", connection))
+            {
+                pragmaCommand.ExecuteNonQuery();
+            }
+
+            using var command = new SQLiteCommand(
+                "SELECT DISTINCT FileID, Filename, RelativePath, DTStamp, HASH, Flags, AbsolutePath " +
+                "FROM vwPluginFiles", connection);
+
+            _ = command.Parameters.AddWithValue("@GameFolderFlag", (long)FileFlags.GameFolder);
+
+            using var reader = command.ExecuteReader();
+            while (reader.Read())
+            {
+                var fileInfo = new FileInfo
+                {
+                    FileID = reader.GetInt64(0),
+                    Filename = reader.GetString(1),
+                    RelativePath = reader.IsDBNull(2) ? string.Empty : reader.GetString(2),
+                    DTStamp = reader.IsDBNull(3) ? string.Empty : reader.GetString(3),
+                    HASH = reader.IsDBNull(4) ? string.Empty : reader.GetString(4),
+                    Flags = reader.IsDBNull(5) ? FileFlags.None : (FileFlags)reader.GetInt64(5),
+                    AbsolutePath = reader.IsDBNull(6) ? string.Empty : reader.GetString(6)
+                };
+                fileInfos.Add(fileInfo);
+            }
+
+            return fileInfos;
+        }
 
 
         public static string ComputeHash(string filePath)
@@ -430,7 +464,7 @@ namespace ZO.LoadOrderManager
             return fileInfos;
         }
 
-        public static void InsertFileInfo(FileInfo fileInfo, long pluginId)
+        public static FileInfo InsertFileInfo(FileInfo fileInfo, long pluginId)
         {
             using var connection = DbManager.Instance.GetConnection();
 
@@ -495,6 +529,7 @@ namespace ZO.LoadOrderManager
 #endif
 
                 transaction.Commit();
+                return fileInfo;
             }
             catch (Exception ex)
             {
@@ -506,7 +541,7 @@ namespace ZO.LoadOrderManager
             }
         }
 
-        public static void InsertFileInfo(FileInfo fileInfo)
+        public static FileInfo InsertFileInfo(FileInfo fileInfo)
         {
             using var connection = DbManager.Instance.GetConnection();
 
@@ -572,6 +607,7 @@ namespace ZO.LoadOrderManager
 #endif
 
                 transaction.Commit();
+                return fileInfo;
             }
             catch (Exception ex)
             {

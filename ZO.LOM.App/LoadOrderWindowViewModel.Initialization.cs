@@ -25,47 +25,57 @@ namespace ZO.LoadOrderManager
             SelectedItems = new ObservableCollection<object>();
             SelectedCachedItems = new ObservableCollection<object>();
 
-            AggLoadInfo.Instance.PropertyChanged += OnAggLoadInfoPropertyChanged;
-
-
-            // Initialize collections and commands
-            Items = new ObservableCollection<LoadOrderItemViewModel>();
             GroupSets = new ObservableCollection<GroupSet>();
             LoadOuts = new ObservableCollection<LoadOut>();
+
             LoadOrders = new LoadOrdersViewModel();
             CachedGroupSetLoadOrders = new LoadOrdersViewModel();
 
-            // Initialize commands
-            SearchCommand = new RelayCommand(_ => Search(SearchText));
+            if (LoadOrders != null && LoadOrders.Items != null)
+            {
+                LoadOrders.Items.CollectionChanged += (s, e) =>
+                {
+                    if (!InitializationManager.IsAnyInitializing() && !_isSynchronizing)
+                    {
+                        RebuildFlatList();
+                    }
+                };
+            }
+            
 
-            //MultiSelectCommand enabled items;
-            MoveUpCommand = new RelayCommand<object?>(param => HandleMultipleSelectedItems(MoveUp), param => CanMoveUp());
-            MoveDownCommand = new RelayCommand<object?>(param => HandleMultipleSelectedItems(MoveDown), param => CanMoveDown());
-            EditHighlightedItemCommand = new RelayCommand<object?>(param => HandleMultipleSelectedItems(EditHighlightedItem), param => CanExecuteCheckAllItems());
-            CopyTextCommand = new RelayCommand<object?>(param => HandleMultipleSelectedItems(CopyText), param => CanExecuteCheckAllItems());
-            DeleteCommand = new RelayCommand<object?>(param => HandleMultipleSelectedItems(Delete), param => CanExecuteCheckAllItems());
-            EditCommand = new RelayCommand<object?>(param => HandleMultipleSelectedItems(EditHighlightedItem), param => CanExecuteCheckAllItems());
-            ToggleEnableCommand = new RelayCommand<object?>(param => HandleMultipleSelectedItems(item => ToggleEnable(item, param)), param => CanExecuteCheckAllItems());
-            ChangeGroupCommand = new RelayCommandWithParameter(param => HandleMultipleSelectedItems(item => ChangeGroup(item, param)), param => CanExecuteCheckAllItems());
+            SearchCommand = new RelayCommand(_ => Search(SearchText)); // LoadOrderWindowViewModel.TreeCommands.cs
+
+            MoveUpCommand = new RelayCommand<object?>(param => HandleMultipleSelectedItems(MoveUp), param => CanMoveUp()); // LoadOrderWindowViewModel.ButtonCommands.cs
+            MoveDownCommand = new RelayCommand<object?>(param => HandleMultipleSelectedItems(MoveDown), param => CanMoveDown()); // LoadOrderWindowViewModel.ButtonCommands.cs
+            EditHighlightedItemCommand = new RelayCommand<object?>(param => HandleMultipleSelectedItems(EditHighlightedItem), param => CanExecuteCheckAllItems()); // LoadOrderWindowViewModel.TreeCommands.cs
+            CopyTextCommand = new RelayCommand<object?>(param => HandleMultipleSelectedItems(CopyText), param => CanExecuteCheckAllItems()); // LoadOrderWindowViewModel.MenuCommands.cs
+            DeleteCommand = new RelayCommand<object?>(param => HandleMultipleSelectedItems(Delete), param => CanExecuteCheckAllItems()); // LoadOrderWindowViewModel.MenuCommands.cs
+            EditCommand = new RelayCommand<object?>(param => HandleMultipleSelectedItems(EditHighlightedItem), param => CanExecuteCheckAllItems()); // LoadOrderWindowViewModel.TreeCommands.cs
+            ToggleEnableCommand = new RelayCommand<object?>(param => HandleMultipleSelectedItems(item => ToggleEnable(item, param)), param => CanExecuteCheckAllItems()); // LoadOrderWindowViewModel.MenuCommands.cs
+            ChangeGroupCommand = new RelayCommandWithParameter(param => HandleMultipleSelectedItems(item => ChangeGroup(item, param)), param => CanExecuteCheckAllItems()); // LoadOrderWindowViewModel.MenuCommands.cs
+
+            SaveAsNewLoadoutCommand = new RelayCommand<object?>(param => SaveAsNewLoadout()); // LoadOrderWindowViewModel.MenuCommands.cs
+            OpenGameFolderCommand = new RelayCommand<object?>(param => OpenGameFolder(), _ => true); // LoadOrderWindowViewModel.MenuCommands.cs
+            OpenGameSaveFolderCommand = new RelayCommand<object?>(param => OpenGameSaveFolder(), _ => true); // LoadOrderWindowViewModel.MenuCommands.cs
+            EditPluginsCommand = new RelayCommand<object?>(param => EditPlugins(), _ => true); // LoadOrderWindowViewModel.MenuCommands.cs
+            EditContentCatalogCommand = new RelayCommand<object?>(param => EditContentCatalog(), _ => true); // LoadOrderWindowViewModel.MenuCommands.cs
+            ImportContextCatalogCommand = new RelayCommand<object?>(param => ImportContextCatalog()); // LoadOrderWindowViewModel.MenuCommands.cs
+            ScanGameFolderCommand = new RelayCommand<object?>(param => ScanGameFolder(), _ => true); // LoadOrderWindowViewModel.MenuCommands.cs
+            SavePluginsCommand = new RelayCommand(param => SavePlugins(), param => CanSavePlugins()); // LoadOrderWindowViewModel.ButtonCommands.cs
+            OpenAppDataFolderCommand = new RelayCommand<object?>(param => OpenAppDataFolder(), _ => true); // LoadOrderWindowViewModel.MenuCommands.cs
+            OpenGameLocalAppDataCommand = new RelayCommand<object?>(param => OpenGameLocalAppData(), _ => true); // LoadOrderWindowViewModel.MenuCommands.cs
+            SettingsWindowCommand = new RelayCommand<object?>(param => SettingsWindow(), _ => true); // LoadOrderWindowViewModel.MenuCommands.cs
+            ImportFromYamlCommand = new RelayCommand<object?>(param => ImportFromYaml()); // LoadOrderWindowViewModel.MenuCommands.cs
+            OpenGameSettingsCommand = new RelayCommand<object?>(param => OpenGameSettings(), _ => true); // LoadOrderWindowViewModel.MenuCommands.cs
+            RefreshDataCommand = new RelayCommand<object?>(param => RefreshData(), _ => true); // LoadOrderWindowViewModel.Initialization.cs
+
+            EditGroupSetCommand = new RelayCommand(ExecuteEditGroupSetCommand, CanExecuteEditGroupSetCommand); // LoadOrderWindowViewModel.ContextMenuCommands.cs
+            RemoveGroupSetCommand = new RelayCommand(ExecuteRemoveGroupSetCommand, CanExecuteRemoveGroupSetCommand); // LoadOrderWindowViewModel.ContextMenuCommands.cs
+            EditLoadOutCommand = new RelayCommand(ExecuteEditLoadOutCommand, CanExecuteEditLoadOutCommand); // LoadOrderWindowViewModel.ContextMenuCommands.cs
+            RemoveLoadOutCommand = new RelayCommand(ExecuteRemoveLoadOutCommand, CanExecuteRemoveLoadOutCommand); // LoadOrderWindowViewModel.ContextMenuCommands.cs
+            AddNewLoadOutCommand = new RelayCommand(ExecuteAddNewLoadOutCommand, CanExecuteAddNewLoadOutCommand); // LoadOrderWindowViewModel.ContextMenuCommands.cs
 
 
-            SaveAsNewLoadoutCommand = new RelayCommand<object?>(param => SaveAsNewLoadout());
-            OpenGameFolderCommand = new RelayCommand<object?>(param => OpenGameFolder(), _ => true);
-            OpenGameSaveFolderCommand = new RelayCommand<object?>(param => OpenGameSaveFolder(), _ => true);
-            EditPluginsCommand = new RelayCommand<object?>(param => EditPlugins(), _ => true);
-            EditContentCatalogCommand = new RelayCommand<object?>(param => EditContentCatalog(), _ => true);
-            ImportContextCatalogCommand = new RelayCommand<object?>(param => ImportContextCatalog());
-            ScanGameFolderCommand = new RelayCommand<object?>(param => ScanGameFolder(), _ => true);
-            SavePluginsCommand = new RelayCommand(param => SavePlugins(), param => CanSavePlugins());
-            OpenAppDataFolderCommand = new RelayCommand<object?>(param => OpenAppDataFolder(), _ => true);
-            OpenGameLocalAppDataCommand = new RelayCommand<object?>(param => OpenGameLocalAppData(), _ => true);
-            SettingsWindowCommand = new RelayCommand<object?>(param => SettingsWindow(), _ => true);
-            ImportFromYamlCommand = new RelayCommand<object?>(param => ImportFromYaml());
-            OpenGameSettingsCommand = new RelayCommand<object?>(param => OpenGameSettings(), _ => true);
-            //OpenPluginEditorCommand = new RelayCommand<object?>(param => OpenPluginEditor());
-            //OpenGroupEditorCommand = new RelayCommand<object?>(param => OpenGroupEditor());
-            RefreshDataCommand = new RelayCommand<object?>(param => RefreshData(), _ => true);
-           
             // Load initial data
             LoadInitialData();
         }
@@ -83,7 +93,7 @@ namespace ZO.LoadOrderManager
                 if (AggLoadInfo.Instance != null)
                 {
                     // Clear existing items and select active GroupSet and LoadOut
-                    Items.Clear();
+                    //Items.Clear();
                     GroupSets.Clear();
                     LoadOuts.Clear();
 
@@ -98,8 +108,9 @@ namespace ZO.LoadOrderManager
                     }
 
                     // Initialize LoadOrders and CachedGroupSetLoadOrders with the selected GroupSet and LoadOut
-                    LoadOrders.LoadData(_selectedGroupSet, _selectedLoadOut,false,false);
-                    CachedGroupSetLoadOrders.LoadData(AggLoadInfo.Instance.GetCachedGroupSet1(), LoadOut.Load(1),true,true);
+                    LoadOrders.LoadData(_selectedGroupSet, _selectedLoadOut, false, false);
+                    CachedGroupSetLoadOrders.LoadData(AggLoadInfo.Instance.GetCachedGroupSet1(), LoadOut.Load(1), true, true);
+                    RebuildFlatList();
 
                     InitializationManager.ReportProgress(95, "Initial data loaded into view");
 
@@ -136,6 +147,7 @@ namespace ZO.LoadOrderManager
                 {
                     LoadOrders.RefreshData();
                     CachedGroupSetLoadOrders.RefreshData();
+                    RebuildFlatList();
                 });
 
                 StatusMessage = $"Loaded plugins for profile: {SelectedLoadOut.Name}";

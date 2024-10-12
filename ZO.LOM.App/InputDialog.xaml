@@ -4,7 +4,7 @@
         xmlns:metro="http://metro.mahapps.com/winfx/xaml/controls"
         Style="{StaticResource MaterialDesignWindow}"
         xmlns:local="clr-namespace:ZO.LoadOrderManager"
-                Title="Input" Height="160" Width="310">
+                Title="Input" Height="200" Width="310">
     <StackPanel Margin="5,5,5,4">
         <Label x:Name="lblQuestion" Margin="10"/>
         <TextBox x:Name="txtAnswer" Margin="10"/>

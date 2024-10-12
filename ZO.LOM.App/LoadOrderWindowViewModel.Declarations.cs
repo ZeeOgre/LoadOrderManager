@@ -1,5 +1,6 @@
 using System;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Diagnostics.Eventing.Reader;
@@ -17,14 +18,20 @@ namespace ZO.LoadOrderManager
         private string _searchText;
         private bool _isInitialDataLoaded = false;
         private bool _isSynchronizing = false;
-
+        private List<LoadOrderItemViewModel>? _cachedFlatList;
+        private bool _isRefreshing = false;
 
         public ObservableCollection<GroupSet> GroupSets { get; set; }
         public ObservableCollection<LoadOut> LoadOuts { get; set; }
+
         public LoadOrdersViewModel LoadOrders { get; set; }
         public LoadOrdersViewModel CachedGroupSetLoadOrders { get; set; }
-        public ObservableCollection<LoadOrderItemViewModel> Items { get; }
-        // Backing field for SelectedItems
+        
+        
+        //public ObservableCollection<LoadOrderItemViewModel> Items { get; }
+        //// Backing field for SelectedItems
+        
+        
         private ObservableCollection<object> selectedItems;
 
         // Property for SelectedItems with change notification
@@ -47,6 +54,13 @@ namespace ZO.LoadOrderManager
         // PropertyChanged Event
         public event PropertyChangedEventHandler? PropertyChanged;
 
+        private void RebuildFlatList()
+        {
+            _isRefreshing = true;
+            _cachedFlatList = Flatten(LoadOrders.Items).ToList();
+            _isRefreshing = false;
+            //OnPropertyChanged(nameof(LoadOrders.Items)); // Notify UI about the change
+        }
 
         public void StartSync()
         {
@@ -58,28 +72,42 @@ namespace ZO.LoadOrderManager
             _isSynchronizing = false;
         }
 
-
+        private bool _isHandlingAggLoadInfoPropertyChanged = false;
         private void OnAggLoadInfoPropertyChanged(object sender, PropertyChangedEventArgs e)
         {
-            if (_isSynchronizing)
+            if (_isSynchronizing || _isHandlingAggLoadInfoPropertyChanged)
             {
                 return;
             }
+            _isHandlingAggLoadInfoPropertyChanged = true;
+            StartSync();
 
-            _isSynchronizing = true;
-
-            if (e.PropertyName == nameof(AggLoadInfo.ActiveGroupSet))
+            try
             {
-                _selectedGroupSet = AggLoadInfo.Instance.ActiveGroupSet;
-                OnPropertyChanged(nameof(SelectedGroupSet));
+                if (e.PropertyName == nameof(AggLoadInfo.ActiveGroupSet))
+                {
+                    if (!ReferenceEquals(_selectedGroupSet, AggLoadInfo.Instance.ActiveGroupSet))
+                    {
+                        _selectedGroupSet = AggLoadInfo.Instance.ActiveGroupSet;
+                        _selectedLoadOut = AggLoadInfo.Instance.ActiveLoadOut; // Set SelectedLoadOut without notification
+                        OnPropertyChanged(nameof(SelectedGroupSet));
+                        OnPropertyChanged(nameof(SelectedLoadOut));
+                    }
+                }
+                else if (e.PropertyName == nameof(AggLoadInfo.ActiveLoadOut))
+                {
+                    if (!ReferenceEquals(_selectedLoadOut, AggLoadInfo.Instance.ActiveLoadOut))
+                    {
+                        _selectedLoadOut = AggLoadInfo.Instance.ActiveLoadOut;
+                        OnPropertyChanged(nameof(SelectedLoadOut));
+                    }
+                }
             }
-            else if (e.PropertyName == nameof(AggLoadInfo.ActiveLoadOut))
+            finally
             {
-                _selectedLoadOut = AggLoadInfo.Instance.ActiveLoadOut;
-                OnPropertyChanged(nameof(SelectedLoadOut));
+                EndSync();
+                _isHandlingAggLoadInfoPropertyChanged = false;
             }
-
-            _isSynchronizing = false;
         }
 
         // Properties
@@ -93,21 +121,18 @@ namespace ZO.LoadOrderManager
                 {
                     return;
                 }
-                _isSynchronizing = true;
+                StartSync();
                 if (_selectedGroupSet != value)
                 {
                     // Check if the new value is different from the current value
                     if (AggLoadInfo.Instance.ActiveGroupSet != value)
                     {
-                        // Update ActiveGroupSet in AggLoadInfo and refresh views
+                        // Update ActiveGroupSet in AggLoadInfo
                         AggLoadInfo.Instance.ActiveGroupSet = value;
-                        //ReloadViews();
                     }
-                    SelectedLoadOut = GetLoadOutForGroupSet(SelectedGroupSet);
                     _selectedGroupSet = value ?? throw new ArgumentNullException(nameof(value));
-                    OnPropertyChanged(nameof(SelectedGroupSet));
-                    _isSynchronizing = false;
                 }
+                EndSync();
             }
         }
 
@@ -118,23 +143,21 @@ namespace ZO.LoadOrderManager
             set
             {
                 if (_selectedLoadOut != value)
-                {
+                {   
                     if (_isSynchronizing || InitializationManager.IsAnyInitializing()) return; // Prevent re-entrance
 
-                    _isSynchronizing = true;
+                    StartSync();
                     try
                     {
                         
 
-                        // Usage:
                         AggLoadInfo.Instance.ActiveLoadOut = _selectedLoadOut;
                         OnPropertyChanged(nameof(SelectedLoadOut));
-                        RefreshCheckboxes();
                         
                     }
                     finally
                     {
-                        _isSynchronizing = false;
+                        EndSync();
                     }
                 }
             }
@@ -159,7 +182,7 @@ namespace ZO.LoadOrderManager
                     if (_isSynchronizing)
                         return; // Prevent re-entrance during synchronization
 
-                    _isSynchronizing = true;
+                    StartSync();
                     try
                     {
                         if (SelectedItems != null)
@@ -177,42 +200,13 @@ namespace ZO.LoadOrderManager
                     }
                     finally
                     {
-                        _isSynchronizing = false;
+                        EndSync();
                     }
                 }
             }
         }
 
 
-
-
-
-        private LoadOut GetLoadOutForGroupSet(GroupSet groupSet)
-        {
-            // Try to find the favorite loadout
-            var favoriteLoadOut = groupSet.LoadOuts.FirstOrDefault(l => l.IsFavorite);
-            if (favoriteLoadOut != null)
-            {
-                return favoriteLoadOut;
-            }
-
-            // Try to find the default loadout
-            var defaultLoadOut = groupSet.LoadOuts.FirstOrDefault(l => l.Name == "Default");
-            if (defaultLoadOut != null)
-            {
-                return defaultLoadOut;
-            }
-
-            // Try to find the first loadout
-            var firstLoadOut = groupSet.LoadOuts.FirstOrDefault();
-            if (firstLoadOut != null)
-            {
-                return firstLoadOut;
-            }
-
-            return AddNewLoadout(groupSet);
-
-        }
 
         public string StatusMessage
         {
@@ -241,22 +235,24 @@ namespace ZO.LoadOrderManager
         }
 
         // Named Methods used in Properties
-        private void ReloadViews()
-        {
-            // Notify that the data has changed
-            OnPropertyChanged(nameof(AggLoadInfo.Instance.Groups));
-            OnPropertyChanged(nameof(AggLoadInfo.Instance.Plugins));
-            OnPropertyChanged(nameof(AggLoadInfo.Instance.LoadOuts));
+        //private void ReloadViews()
+        //{
+         
+            
+        //    // Notify that the data has changed
+        //    //OnPropertyChanged(nameof(AggLoadInfo.Instance.Groups));
+        //    //OnPropertyChanged(nameof(AggLoadInfo.Instance.Plugins));
+        //    //OnPropertyChanged(nameof(AggLoadInfo.Instance.LoadOuts));
 
-            // Refresh checkboxes based on the new data
-            RefreshCheckboxes();
-        }
+        //    // Refresh checkboxes based on the new data
+        //    //RefreshCheckboxes();
+        //}
 
-        public void RefreshCheckboxes()
-        {
-            // Notify that the SelectedLoadOut has changed
-            OnPropertyChanged(nameof(SelectedLoadOut));
-        }
+        ////public void RefreshCheckboxes()
+        ////{
+        ////    // Notify that the SelectedLoadOut has changed
+        ////    OnPropertyChanged(nameof(SelectedLoadOut));
+        ////}
 
         public void UpdateStatus(string message)
         {

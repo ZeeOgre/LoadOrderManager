@@ -68,6 +68,10 @@ namespace ZO.LoadOrderManager
                     FileManager.ParseContentCatalogTxt();
                     InitializationManager.ReportProgress(84, "Content catalog parsed");
 
+
+                    //FileManager.ScanGameDirectoryForStraysAsync();
+                    FileManager.ScanGameDirectoryForStrays(true);
+
                     FileManager.MarkLoadOutComplete(AggLoadInfo.Instance);
                     InitializationManager.ReportProgress(85, "LoadOut marked complete");
 

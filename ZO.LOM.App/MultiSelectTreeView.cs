@@ -31,6 +31,7 @@ namespace ZO.LoadOrderManager
         {
             SelectedItems = new ObservableCollection<object>();
             PreviewMouseDown += MultiSelectTreeView_PreviewMouseDown;
+            MouseDoubleClick += MultiSelectTreeView_MouseDoubleClick; // Add this line
         }
 
         private static void OnSelectedItemsChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -59,6 +60,38 @@ namespace ZO.LoadOrderManager
                 {
                     HandleSelection(item, e);
                 }
+            }
+        }
+
+        private void MultiSelectTreeView_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            if (e.OriginalSource is FrameworkElement element)
+            {
+                var item = GetTreeViewItemFromElement(element);
+                if (item != null)
+                {
+                    var dataContext = item.DataContext as LoadOrderItemViewModel;
+                    if (dataContext != null)
+                    {
+                        LaunchEditor(dataContext);
+                    }
+                }
+            }
+        }
+
+        private void LaunchEditor(LoadOrderItemViewModel item)
+        {
+            if (item.EntityType == EntityType.Group)
+            {
+                // Launch the editor for ModGroup
+                var modGroupEditor = new ModGroupEditorWindow(item.GetModGroup());
+                modGroupEditor.ShowDialog();
+            }
+            else if (item.EntityType == EntityType.Plugin)
+            {
+                // Launch the editor for Plugin
+                var pluginEditor = new PluginEditorWindow(item.PluginData);
+                pluginEditor.ShowDialog();
             }
         }
 
@@ -105,7 +138,9 @@ namespace ZO.LoadOrderManager
 
                         if (firstDataContext != null && lastDataContext != null)
                         {
-                            System.Diagnostics.Debug.WriteLine($"First item: {firstDataContext.DisplayName}, Last item: {lastDataContext.DisplayName}");
+                            System.Diagnostics.Debug.WriteLine($"First item: {firstDataContext.DisplayName} Grp-{firstDataContext.ParentID} Ord-{firstDataContext.Ordinal}" +
+                                $", Last item: {lastDataContext.DisplayName} Grp-{lastDataContext.ParentID} Ord-{lastDataContext.Ordinal}" +
+                                $"");
 
                             // Get the selected range from the SelectRange method
                             var selectedRange = SelectRange(firstDataContext, lastDataContext);
@@ -157,6 +192,7 @@ namespace ZO.LoadOrderManager
 
             return selectedRange;
         }
+
         private void DebugItemsSource()
         {
             var allItems = ItemsSource.OfType<LoadOrderItemViewModel>().ToList();
@@ -164,32 +200,70 @@ namespace ZO.LoadOrderManager
 
             foreach (var item in allItems)
             {
-                System.Diagnostics.Debug.WriteLine($"ViewModel in ItemsSource: {item.DisplayName} | PluginID: {item.PluginData.PluginID}, GroupID: {item.GroupID}");
+                System.Diagnostics.Debug.WriteLine($"ViewModel in ItemsSource: {item.DisplayName} | PluginID: {item.PluginData.PluginID}, GroupID: {item.GroupID} Ordinal: {item.Ordinal}");
             }
         }
+
         private List<long> GetGroupRange(long startGroupID, long endGroupID)
         {
-            var groupRange = AggLoadInfo.Instance.GroupSetGroups
-                .Where(g => g.groupID >= Math.Min(startGroupID, endGroupID) && g.groupID <= Math.Max(startGroupID, endGroupID) && g.groupSetID == AggLoadInfo.Instance.ActiveGroupSet.GroupSetID)
-                .OrderBy(g => g.parentID)
-                .ThenBy(g => g.Ordinal)
+            // First, gather all groups that belong to the active GroupSet
+            var filteredGroups = AggLoadInfo.Instance.GroupSetGroups
+                .Where(g => g.groupSetID == AggLoadInfo.Instance.ActiveGroupSet.GroupSetID)
+                .OrderBy(g => g.parentID)    // Ensure we maintain the hierarchical structure
+                .ThenBy(g => g.Ordinal)      // Further sort by the Ordinal within the hierarchy
+                .ToList();
+
+            // Find the indices of start and end GroupIDs
+            int startIndex = filteredGroups.FindIndex(g => g.groupID == startGroupID);
+            int endIndex = filteredGroups.FindIndex(g => g.groupID == endGroupID);
+
+            // Ensure that startIndex is less than or equal to endIndex by swapping if necessary
+            if (startIndex > endIndex)
+            {
+                (startIndex, endIndex) = (endIndex, startIndex); // Swap the indices
+            }
+
+            // Now traverse the filtered groups and collect the range between startIndex and endIndex
+            var selectedGroups = filteredGroups
+                .Skip(startIndex)
+                .Take(endIndex - startIndex + 1)
                 .Select(g => g.groupID)
                 .ToList();
 
-            return groupRange;
+            return selectedGroups;
         }
+
 
         private List<long> GetPluginRange(long startPluginID, long endPluginID)
         {
-            var pluginRange = AggLoadInfo.Instance.GroupSetPlugins
-                .Where(p => p.pluginID >= Math.Min(startPluginID, endPluginID) && p.pluginID <= Math.Max(startPluginID, endPluginID) && p.groupSetID == AggLoadInfo.Instance.ActiveGroupSet.GroupSetID)
+            // First, gather all plugins that belong to the active GroupSet
+            var filteredPlugins = AggLoadInfo.Instance.GroupSetPlugins
+                .Where(p => p.groupSetID == AggLoadInfo.Instance.ActiveGroupSet.GroupSetID)
                 .OrderBy(p => p.groupID)
                 .ThenBy(p => p.Ordinal)
+                .ToList();
+
+            // Find the indices of start and end PluginIDs
+            int startIndex = filteredPlugins.FindIndex(p => p.pluginID == startPluginID);
+            int endIndex = filteredPlugins.FindIndex(p => p.pluginID == endPluginID);
+
+            // Ensure that startIndex is less than or equal to endIndex by swapping if necessary
+            if (startIndex > endIndex)
+            {
+                (startIndex, endIndex) = (endIndex, startIndex); // Swap the indices
+            }
+
+            // Collect all pluginIDs between startIndex and endIndex (inclusive)
+            var selectedPlugins = filteredPlugins
+                .Skip(startIndex)
+                .Take(endIndex - startIndex + 1)
                 .Select(p => p.pluginID)
                 .ToList();
 
-            return pluginRange;
+            // Return the selected pluginIDs
+            return selectedPlugins;
         }
+
 
         private List<LoadOrderItemViewModel> SelectViewModelsByPluginID(List<long> pluginIDs)
         {
@@ -211,7 +285,7 @@ namespace ZO.LoadOrderManager
 
             foreach (var item in selectedItems)
             {
-                System.Diagnostics.Debug.WriteLine($"Matched Plugin: {item.DisplayName} | PluginID: {item.PluginData.PluginID}");
+                System.Diagnostics.Debug.WriteLine($"Matched Plugin: {item.DisplayName} | PluginID: {item.PluginData.PluginID} | Ordinal {item.Ordinal}");
             }
 
             return selectedItems;

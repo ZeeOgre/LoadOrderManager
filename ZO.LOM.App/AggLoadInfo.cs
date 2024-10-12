@@ -11,10 +11,14 @@ using System.Windows.Input;
 
 namespace ZO.LoadOrderManager
 {
+
     public class AggLoadInfo : INotifyPropertyChanged
     {
+
+
         private static readonly Lazy<AggLoadInfo> _instance = new Lazy<AggLoadInfo>(() => new AggLoadInfo());
         public static AggLoadInfo Instance => _instance.Value;
+
 
         public ObservableCollection<Plugin> Plugins { get; set; } = new ObservableCollection<Plugin>();
         public ObservableCollection<ModGroup> Groups { get; set; } = new ObservableCollection<ModGroup>();
@@ -24,9 +28,38 @@ namespace ZO.LoadOrderManager
         public GroupSetGroupCollection GroupSetGroups { get; set; } = new GroupSetGroupCollection();
         public GroupSetPluginCollection GroupSetPlugins { get; set; } = new GroupSetPluginCollection();
         public ProfilePluginCollection ProfilePlugins { get; set; } = new ProfilePluginCollection();
-        
-        public event EventHandler? DataRefreshed;
+        private bool _isRefreshing = false;
+        private bool isDirty;
+        public void SetDirty(bool value)
+        {
+            lock (_refreshLock)
+            {
+                isDirty = value;
+            }
+        }
 
+        private static bool _initialized = false;
+        private static readonly object _initLock = new object();
+        private static readonly object _refreshLock = new object();
+        private bool _isUpdatingGroupSet = false;
+
+        public event EventHandler? DataRefreshed;
+        private void InitializeEventHandlers()
+        {
+            // Core property change
+            PropertyChanged += AggLoadInfo_PropertyChanged;
+
+            // Underlying collection changed
+            Plugins.CollectionChanged += CommonCollectionChangedHandler;
+            Groups.CollectionChanged += CommonCollectionChangedHandler;
+            LoadOuts.CollectionChanged += CommonCollectionChangedHandler;
+            GroupSets.CollectionChanged += CommonCollectionChangedHandler;
+            GroupSetGroups.Items.CollectionChanged += CommonCollectionChangedHandler;
+            GroupSetPlugins.Items.CollectionChanged += CommonCollectionChangedHandler;
+            ProfilePlugins.Items.CollectionChanged += CommonCollectionChangedHandler;
+        }
+
+        private LoadOut _activeLoadOut; 
         public LoadOut ActiveLoadOut
         {
             get => _activeLoadOut;
@@ -35,17 +68,12 @@ namespace ZO.LoadOrderManager
                 if (_activeLoadOut != value)
                 {
                     _activeLoadOut = value;
-                    
-                    if (_activeLoadOut != null)
-                    {
-                        _activeLoadOut.enabledPlugins = LoadEnabledPlugins(_activeLoadOut.ProfileID);
-                    }
+                    OnPropertyChanged();
                 }
             }
         }
 
-        private LoadOut _activeLoadOut;
-
+        private GroupSet _activeGroupSet; 
         public GroupSet ActiveGroupSet
         {
             get => _activeGroupSet;
@@ -54,29 +82,97 @@ namespace ZO.LoadOrderManager
                 if (_activeGroupSet != value)
                 {
                     _activeGroupSet = value ?? throw new ArgumentNullException(nameof(value));
-                    OnPropertyChanged(nameof(ActiveGroupSet));
-                    //// Only trigger InitFromDatabase if initialization is complete
-                    //if (_initialized)
-                    //{
-                    //    InitFromDatabase();
-                    //}
-                    // Check if the ActiveGroupSet has changed and reload data if necessary
                     if (_activeGroupSet != null && _activeGroupSet != _cachedGroupSet1 && _initialized)
                     {
                         LoadGroupSetState();
                     }
+                    HandleActiveGroupSetChange();
+                    OnPropertyChanged();
 
-                    //OnPropertyChanged();
                 }
             }
         }
 
-        private GroupSet _activeGroupSet;
-        private static bool _initialized = false;
-        private static readonly object _lock = new object();
+        private void HandleActiveGroupSetChange()
+        {
+            // Perform prework here
+            if (_activeGroupSet != null && _activeGroupSet != _cachedGroupSet1 && _initialized)
+            {
+                LoadGroupSetState();
+            }
+
+            if (_activeLoadOut != null)
+            {
+                var newLoadOut = GetLoadOutForGroupSet(_activeGroupSet);
+
+                if (newLoadOut != ActiveLoadOut)
+                {
+                    ActiveLoadOut = newLoadOut;
+                }
+            }
+        }
+
+            private void RaiseDataRefreshed()
+        {
+            lock (_refreshLock)
+            {
+                DataRefreshed?.Invoke(this, EventArgs.Empty);
+            }
+        }
+
+        
+
+        private void CommonCollectionChangedHandler(object? sender, NotifyCollectionChangedEventArgs e)
+        {
+            if (sender == null) return;
+
+            lock (_refreshLock)
+            {
+                if (_isRefreshing) return; // Prevent recursive calls
+                _isRefreshing = true;
+
+                try
+                {
+                    // Set the dirty flag (if needed)
+                    SetDirty(true);
+
+                    // Raise the DataRefreshed event
+                    RaiseDataRefreshed();
+                }
+                finally
+                {
+                    _isRefreshing = false;
+                }
+            }
+        }
+
+
+
+
+        private string? GetPropertyName(object sender)
+        {
+            var properties = GetType().GetProperties();
+            foreach (var property in properties)
+            {
+                if (property.GetValue(this) == sender)
+                {
+                    return property.Name;
+                }
+            }
+            return null;
+        }
+
+
+        public void PerformLockedAction(Action action)
+        {
+            lock (_refreshLock)
+            {
+                action.Invoke();
+            }
+        }
 
         private ObservableCollection<GroupSet>? _cachedGroupSets;
-      
+
         public ObservableCollection<GroupSet> GetGroupSets()
         {
             if (_cachedGroupSets == null)
@@ -93,10 +189,27 @@ namespace ZO.LoadOrderManager
             return _cachedGroupSet1;
         }
 
+        private void InitializeChangeMonitors()
+        {
+            // Core property change
+            PropertyChanged += AggLoadInfo_PropertyChanged;
+
+            // Underlying collection changed
+            Plugins.CollectionChanged += CommonCollectionChangedHandler;
+            Groups.CollectionChanged += CommonCollectionChangedHandler;
+            LoadOuts.CollectionChanged += CommonCollectionChangedHandler;
+            GroupSets.CollectionChanged += CommonCollectionChangedHandler;
+            GroupSetGroups.Items.CollectionChanged += CommonCollectionChangedHandler;
+            GroupSetPlugins.Items.CollectionChanged += CommonCollectionChangedHandler;
+            ProfilePlugins.Items.CollectionChanged += CommonCollectionChangedHandler;
+        }
+
+
+
         private AggLoadInfo()
         {
-            PropertyChanged = null;
-            GroupSet.GroupSetChanged += OnGroupSetChanged;
+            
+            InitializeChangeMonitors();
         }
 
         public AggLoadInfo(long groupSetID)
@@ -110,16 +223,38 @@ namespace ZO.LoadOrderManager
             {
                 ActiveGroupSet = GroupSet.LoadGroupSet(groupSetID) ?? throw new InvalidOperationException("GroupSet not found.");
                 InitFromDatabase();
+                InitializeChangeMonitors();
 
             }
         }
 
+        private void AggLoadInfo_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(ActiveLoadOut))
+            {
+                if (ActiveLoadOut != null)
+                {
+                    ActiveLoadOut.enabledPlugins = LoadEnabledPlugins(ActiveLoadOut.ProfileID);
+                }
+            }
+            else if (e.PropertyName == nameof(ActiveGroupSet))
+            {
+                if (ActiveGroupSet != null)
+                {
+                    ActiveLoadOut = GetLoadOutForGroupSet(ActiveGroupSet);
+
+                }
+            }
+        }
+
+        
+
         public void InitFromDatabase()
         {
-            if (_initialized) return;
+            
             if (ActiveGroupSet.GroupSetID == 0) return;
 
-            lock (_lock)
+            lock (_initLock)
             {
                 if (_initialized) return;
 
@@ -127,10 +262,10 @@ namespace ZO.LoadOrderManager
                 Groups.Clear();
                 LoadOuts.Clear();
 
-                //if (_activeLoadOut != null && !LoadOuts.Contains(_activeLoadOut))
-                //{
-                //    LoadOuts.Add(_activeLoadOut);
-                //}
+                if (_activeLoadOut != null && !LoadOuts.Contains(_activeLoadOut))
+                {
+                    LoadOuts.Add(_activeLoadOut);
+                }
 
                 if (_activeGroupSet != null && !GroupSets.Contains(_activeGroupSet))
                 {
@@ -156,7 +291,7 @@ namespace ZO.LoadOrderManager
                 }
                 InitializationManager.ReportProgress(35, "GroupSet 1 cached");
 
-               
+
                 LoadGroupSetState();
                 RefreshMetadataFromDB();
 
@@ -167,150 +302,214 @@ namespace ZO.LoadOrderManager
 
         private void LoadGroupSetState()
         {
-            using var connection = DbManager.Instance.GetConnection();
-            using var transaction = connection.BeginTransaction();
-
-            try
+            lock (_initLock)
             {
-                // Your existing logic to load group set state
-                // ...
+                lock (_refreshLock)
+                {
 
-                // First command and reader for vwPluginGrpUnion
-                using var command1 = new SQLiteCommand(@"
+                    using var connection = DbManager.Instance.GetConnection();
+                    using var transaction = connection.BeginTransaction();
+
+                    try
+                    {
+                        // Your existing logic to load group set state
+                        // ...
+
+                        // First command and reader for vwPluginGrpUnion
+                        using var command1 = new SQLiteCommand(@"
                     SELECT DISTINCT * FROM (
                         SELECT *
                         FROM vwPluginGrpUnion
-                        WHERE GroupSetID = @GroupSetID);", connection);
-                command1.Parameters.AddWithValue("@GroupSetID", ActiveGroupSet.GroupSetID);
+                        WHERE GroupSetID = @GroupSetID OR 1);", connection);
+                        command1.Parameters.AddWithValue("@GroupSetID", ActiveGroupSet.GroupSetID);
 
-                Console.WriteLine($"GroupSetID: {ActiveGroupSet.GroupSetID}");
-                Console.WriteLine($"Executing query: {command1.CommandText} with GroupSetID = {ActiveGroupSet.GroupSetID}");
+                        Console.WriteLine($"GroupSetID: {ActiveGroupSet.GroupSetID}");
+                        Console.WriteLine($"Executing query: {command1.CommandText} with GroupSetID = {ActiveGroupSet.GroupSetID}");
 
-                using var reader1 = command1.ExecuteReader();
-                var pluginDict = new Dictionary<long, Plugin>();
-                var groupDict = new Dictionary<long, ModGroup>();
+                        using var reader1 = command1.ExecuteReader();
+                        var pluginDict = new Dictionary<long, Plugin>();
+                        var groupDict = new Dictionary<long, ModGroup>();
 
-                while (reader1.Read())
-                {
-                    LoadPluginFromReader(reader1, pluginDict);
-                    LoadGroupFromReader(reader1, groupDict);
-                }
-
-                if (!groupDict.ContainsKey(1))
-                {
-                    var cachedGroup1 = _cachedGroupSet1?.ModGroups.FirstOrDefault(g => g.GroupID == 1);
-                    if (cachedGroup1 != null)
-                    {
-                        var clonedGroup = cachedGroup1.Clone();
-                        Groups.Add(clonedGroup);
-                        groupDict[1] = clonedGroup;
-                    }
-                }
-
-                foreach (var plugin in pluginDict.Values)
-                {
-                    if (plugin.GroupID.HasValue && groupDict.ContainsKey(plugin.GroupID.Value))
-                    {
-                        var modGroup = groupDict[plugin.GroupID.Value];
-                        if (!modGroup.Plugins.Contains(plugin))
+                        while (reader1.Read())
                         {
-                            modGroup.Plugins.Add(plugin);
+                            LoadPluginFromReader(reader1, pluginDict);
+                            LoadGroupFromReader(reader1, groupDict);
                         }
-                    }
-                }
 
-                // Second command and reader for vwLoadOuts
-                using var command2 = new SQLiteCommand(@"
+                        if (!groupDict.ContainsKey(1))
+                        {
+                            var cachedGroup1 = Groups.FirstOrDefault(g => g.GroupID == 1 && g.GroupSetID == 1);
+                            if (cachedGroup1 != null)
+                            {
+                                var clonedGroup = cachedGroup1.Clone();
+                                Groups.Add(clonedGroup);
+                                groupDict[1] = clonedGroup;
+                            }
+                        }
+
+                        foreach (var plugin in pluginDict.Values)
+                        {
+                            if (plugin.GroupID.HasValue && groupDict.ContainsKey(plugin.GroupID.Value))
+                            {
+                                var modGroup = groupDict[plugin.GroupID.Value];
+                                if (!modGroup.Plugins.Contains(plugin))
+                                {
+                                    modGroup.Plugins.Add(plugin);
+                                }
+                            }
+                        }
+
+                        // Second command and reader for vwLoadOuts
+                        using var command2 = new SQLiteCommand(@"
                     SELECT DISTINCT ProfileID, ProfileName, GroupSetID
                     FROM vwLoadOuts
                     WHERE GroupSetID = @GroupSetID;", connection);
-                command2.Parameters.AddWithValue("@GroupSetID", ActiveGroupSet.GroupSetID);
+                        command2.Parameters.AddWithValue("@GroupSetID", ActiveGroupSet.GroupSetID);
 
-                using var reader2 = command2.ExecuteReader();
-                var loadOuts = new ObservableCollection<LoadOut>();
+                        using var reader2 = command2.ExecuteReader();
+                        var loadOuts = new ObservableCollection<LoadOut>();
 
-                while (reader2.Read())
-                {
-                    var profileID = reader2.GetInt64(0);
-                    var name = reader2.GetString(1);
-                    var groupSetID = reader2.GetInt64(2);
+                        while (reader2.Read())
+                        {
+                            var profileID = reader2.GetInt64(0);
+                            var name = reader2.GetString(1);
+                            var groupSetID = reader2.GetInt64(2);
 
-                    var loadOut = new LoadOut
+                            var loadOut = new LoadOut
+                            {
+                                ProfileID = profileID,
+                                GroupSetID = groupSetID,
+                                Name = name,
+                                enabledPlugins = LoadEnabledPlugins(profileID)
+                            };
+
+                            loadOuts.Add(loadOut);
+                        }
+
+                        transaction.Commit();
+                        // Assign the loaded load-outs to the appropriate property
+                        LoadOuts = loadOuts;
+
+                        // Create and populate Group -997 with unassigned plugins
+                        CreateAndPopulateGroup997(connection, pluginDict);
+
+
+
+                    }
+                    catch (Exception)
                     {
-                        ProfileID = profileID,
-                        GroupSetID = groupSetID,
-                        Name = name,
-                        enabledPlugins = LoadEnabledPlugins(profileID)
-                    };
-
-                    loadOuts.Add(loadOut);
+                        transaction.Rollback();
+                        throw;
+                    }
                 }
-
-                transaction.Commit();
-                // Assign the loaded load-outs to the appropriate property
-                LoadOuts = loadOuts;
-
-                // Create and populate Group -997 with unassigned plugins
-                CreateAndPopulateGroup997(connection, pluginDict);
-
-
-                
-
-            }
-            catch (Exception)
-            {
-                transaction.Rollback();
-                throw;
             }
         }
 
+
         private void CreateAndPopulateGroup997(SQLiteConnection conn, Dictionary<long, Plugin> pluginDict)
         {
-            var unassignedPlugins = new List<Plugin>();
-            var unassignedPluginDict = new Dictionary<long, Plugin>(); // Correct scope
+            // Step 1: Start a transaction to handle everything in one go
+            using var transaction = conn.BeginTransaction();
 
-            using var command = new SQLiteCommand(@"
-                SELECT DISTINCT * FROM (
-                    SELECT *
-                    FROM vwPluginGrpUnion
-                    WHERE GroupSetID != @GroupSetIDz
-                    AND GroupID NOT IN (-998, -999, 1));", conn);
+            var sqlCommandText = @"
+    -- Step 1: Insert all unassigned plugins into GroupSetPlugins for GroupID -997
+    INSERT INTO GroupSetPlugins (GroupSetID, GroupID, PluginID, Ordinal)
+    SELECT @GroupSetIDz, -997, PluginID, ROW_NUMBER() OVER (ORDER BY PluginID)
+    FROM Plugins
+    WHERE PluginID IN (
+        SELECT DISTINCT PluginID
+        FROM vwPluginGrpUnion
+        WHERE GroupSetID != @GroupSetIDz
+        AND GroupID NOT IN (-998, -999, 1)
+    )
+    RETURNING PluginID;
+    ";
 
-            command.Parameters.AddWithValue("@GroupSetIDz", ActiveGroupSet.GroupSetID); // Corrected parameter
+            // Execute the SQL and capture the results (PluginIDs of inserted plugins)
+            using var command = new SQLiteCommand(sqlCommandText, conn);
+            command.Parameters.AddWithValue("@GroupSetIDz", ActiveGroupSet.GroupSetID);
 
             using var reader = command.ExecuteReader();
 
-            while (reader.Read())
-            {
-                var plugin = new Plugin();
-                LoadPluginFromReader(reader, unassignedPluginDict);
-
-            }
-
-            reader.Close(); // Close the reader after reading the data
-
-            // Populate unassignedPlugins list
-            foreach (var plugin in unassignedPluginDict.Values)
-            {
-                plugin.GroupSetID = ActiveGroupSet.GroupSetID;
-                unassignedPlugins.Add(plugin);
-            }
-
+            // Step 2: Build the unassignedGroup (-997) using the PluginIDs returned from the insert
             var unassignedGroup = Groups.FirstOrDefault(g => g.GroupID == -997);
             if (unassignedGroup == null)
             {
-                unassignedGroup = new ModGroup(-997, "Unassigned", "Plugins not assigned to any group",1,9997,ActiveGroupSet.GroupSetID);
+                unassignedGroup = new ModGroup(-997, "Unassigned", "Plugins not assigned to any group", 1, 9997, ActiveGroupSet.GroupSetID);
                 Groups.Add(unassignedGroup);
             }
 
             unassignedGroup.Plugins.Clear();
-            foreach (var plugin in unassignedPlugins)
+
+            while (reader.Read())
             {
-                unassignedGroup.Plugins.Add(plugin);
-                plugin.GroupOrdinal = unassignedGroup.Plugins.Count;
-                plugin.WriteMod();
+                var pluginID = reader.GetInt64(0); // Capture PluginID from the returned result
+                if (pluginDict.TryGetValue(pluginID, out var plugin))
+                {
+                    unassignedGroup.Plugins.Add(plugin);
+                    plugin.GroupOrdinal = unassignedGroup.Plugins.Count;
+                }
             }
+
+            // Commit the transaction after all steps are completed
+            transaction.Commit();
+
+            // Step 3: Call RefreshMetaData to update the object model with the latest data
+
+            RefreshMetadataFromDB();
         }
+
+
+
+
+
+        //private void CreateAndPopulateGroup997(SQLiteConnection conn, Dictionary<long, Plugin> pluginDict)
+        //{
+        //    var unassignedPlugins = new List<Plugin>();
+        //    var unassignedPluginDict = new Dictionary<long, Plugin>(); // Correct scope
+
+        //    using var command = new SQLiteCommand(@"
+        //        SELECT DISTINCT * FROM (
+        //            SELECT *
+        //            FROM vwPluginGrpUnion
+        //            WHERE GroupSetID != @GroupSetIDz
+        //            AND GroupID NOT IN (-998, -999, 1));", conn);
+
+        //    command.Parameters.AddWithValue("@GroupSetIDz", ActiveGroupSet.GroupSetID); // Corrected parameter
+
+        //    using var reader = command.ExecuteReader();
+
+        //    while (reader.Read())
+        //    {
+        //        var plugin = new Plugin();
+        //        LoadPluginFromReader(reader, unassignedPluginDict);
+
+        //    }
+
+        //    reader.Close(); // Close the reader after reading the data
+
+        //    // Populate unassignedPlugins list
+        //    foreach (var plugin in unassignedPluginDict.Values)
+        //    {
+        //        plugin.GroupSetID = ActiveGroupSet.GroupSetID;
+        //        unassignedPlugins.Add(plugin);
+        //    }
+
+        //    var unassignedGroup = Groups.FirstOrDefault(g => g.GroupID == -997);
+        //    if (unassignedGroup == null)
+        //    {
+        //        unassignedGroup = new ModGroup(-997, "Unassigned", "Plugins not assigned to any group", 1, 9997, ActiveGroupSet.GroupSetID);
+        //        Groups.Add(unassignedGroup);
+        //    }
+
+        //    unassignedGroup.Plugins.Clear();
+        //    foreach (var plugin in unassignedPlugins)
+        //    {
+        //        unassignedGroup.Plugins.Add(plugin);
+        //        plugin.GroupOrdinal = unassignedGroup.Plugins.Count;
+        //        plugin.WriteMod();
+        //    }
+        //}
 
         private ObservableHashSet<long> LoadEnabledPlugins(long profileID, SQLiteConnection? connection = null)
         {
@@ -448,58 +647,158 @@ namespace ZO.LoadOrderManager
 
         private void OnGroupSetChanged(object? sender, NotifyCollectionChangedEventArgs e)
         {
-            // Check if the changed group set is the current ActiveGroupSet
-            if (e.NewItems?.Contains(ActiveGroupSet) == true)
+            if (_isUpdatingGroupSet)
             {
-                // Refresh the ActiveGroupSet using the LoadGroupSet method
-                ActiveGroupSet = GroupSet.LoadGroupSet(ActiveGroupSet.GroupSetID);
+                return; // Prevent reentrancy within the same thread
             }
 
-            _cachedGroupSets = GetGroupSets();
+            _isUpdatingGroupSet = true; // Indicate that the method is running
+
+            try
+            {
+                // Check if the changed group set is the current ActiveGroupSet
+                if (e.NewItems?.Contains(ActiveGroupSet) == true)
+                {
+                    // Refresh the ActiveGroupSet using the LoadGroupSet method
+                    ActiveGroupSet = GroupSet.LoadGroupSet(ActiveGroupSet.GroupSetID);
+                }
+
+                _cachedGroupSets = GetGroupSets();
+            }
+            finally
+            {
+                _isUpdatingGroupSet = false; // Reset the flag
+                RaiseDataRefreshed();
+            }
         }
 
         public void UpdatePlugin(Plugin plugin)
         {
-            // Check for existing entry in GroupSetPlugins for this plugin
-            var existingGroupSetPlugin = GroupSetPlugins.Items.FirstOrDefault(gsp => gsp.pluginID == plugin.PluginID);
-
-            // Handle the update based on existing GroupSet
-            if (existingGroupSetPlugin != default)
+            lock (_refreshLock)
             {
-                // If the GroupID changes, we remove the old entry and add a new one
-                if (existingGroupSetPlugin.groupID != plugin.GroupID)
-                {
-                    GroupSetPlugins.Items.Remove(existingGroupSetPlugin);
+                // Check for existing entry in GroupSetPlugins for this plugin
+                var existingGroupSetPlugin = GroupSetPlugins.Items.FirstOrDefault(gsp => gsp.pluginID == plugin.PluginID);
 
-                    // Add the new entry with updated GroupID and Ordinal
+                // Handle the update based on existing GroupSet
+                if (existingGroupSetPlugin != default)
+                {
+                    // If the GroupID changes, we remove the old entry and add a new one
+                    if (existingGroupSetPlugin.groupID != plugin.GroupID)
+                    {
+                        GroupSetPlugins.Items.Remove(existingGroupSetPlugin);
+
+                        // Add the new entry with updated GroupID and Ordinal
+                        GroupSetPlugins.Items.Add((ActiveGroupSet.GroupSetID, plugin.GroupID ?? -1, plugin.PluginID, plugin.GroupOrdinal ?? 1));
+                    }
+                    else if (existingGroupSetPlugin.Ordinal != plugin.GroupOrdinal)
+                    {
+                        // Update Ordinal if only the order has changed
+                        existingGroupSetPlugin = (existingGroupSetPlugin.groupSetID, existingGroupSetPlugin.groupID, existingGroupSetPlugin.pluginID, plugin.GroupOrdinal ?? 1);
+                    }
+                }
+                else
+                {
+                    // If no entry exists, insert new entry
                     GroupSetPlugins.Items.Add((ActiveGroupSet.GroupSetID, plugin.GroupID ?? -1, plugin.PluginID, plugin.GroupOrdinal ?? 1));
                 }
-                else if (existingGroupSetPlugin.Ordinal != plugin.GroupOrdinal)
-                {
-                    // Update Ordinal if only the order has changed
-                    existingGroupSetPlugin = (existingGroupSetPlugin.groupSetID, existingGroupSetPlugin.groupID, existingGroupSetPlugin.pluginID, plugin.GroupOrdinal ?? 1);
-                }
-            }
-            else
-            {
-                // If no entry exists, insert new entry
-                GroupSetPlugins.Items.Add((ActiveGroupSet.GroupSetID, plugin.GroupID ?? -1, plugin.PluginID, plugin.GroupOrdinal ?? 1));
-            }
 
-            // Finally, save the plugin changes
-            plugin.WriteMod();
+                // Finally, save the plugin changes
+                plugin.WriteMod();
+            }
         }
 
         public void UpdateModGroup(ModGroup group)
         {
+            lock (_refreshLock)
+            {
+                // Check for existing entry in GroupSetGroups for this group
+                var existingGroupSetGroup = GroupSetGroups.Items.FirstOrDefault(gsg => gsg.groupID == (long)group.GroupID);
 
+                // Handle the update based on existing GroupSet
+                if (existingGroupSetGroup != default)
+                {
+                    // If the ParentID changes, we remove the old entry and add a new one
+                    if (existingGroupSetGroup.parentID != group.ParentID)
+                    {
+                        GroupSetGroups.Items.Remove(existingGroupSetGroup);
+
+                        // Add the new entry with updated ParentID and Ordinal
+                        GroupSetGroups.Items.Add(((long)group.GroupID, (long)ActiveGroupSet.GroupSetID, (long?)group.ParentID, (long)group.Ordinal));
+                    }
+                    else if (existingGroupSetGroup.Ordinal != group.Ordinal)
+                    {
+                        // Update Ordinal if only the order has changed
+                        var updatedGroupSetGroup = (existingGroupSetGroup.groupID, existingGroupSetGroup.groupSetID, existingGroupSetGroup.parentID, (long)group.Ordinal);
+                        GroupSetGroups.Items[GroupSetGroups.Items.IndexOf(existingGroupSetGroup)] = updatedGroupSetGroup;
+                    }
+                }
+                else
+                {
+                    // If no entry exists, insert new entry
+                    GroupSetGroups.Items.Add(((long)group.GroupID, (long)ActiveGroupSet.GroupSetID, (long?)group.ParentID, (long)group.Ordinal));
+                }
+
+                // Finally, save the group changes
+                group.WriteGroup();
+            }
         }
 
         public void UpdateLoadOut(LoadOut loadOut)
         {
+            lock (_refreshLock)
+            {
+                // Check for existing entry in LoadOuts for this loadOut
+                var existingLoadOut = LoadOuts.FirstOrDefault(lo => lo.GroupSetID == (long)loadOut.GroupSetID);
 
-        }   
+                // Handle the update based on existing LoadOut
+                if (existingLoadOut != default)
+                {
+                    // If the GroupSetID changes, we remove the old entry and add a new one
+                    if (existingLoadOut.GroupSetID != loadOut.GroupSetID)
+                    {
+                        LoadOuts.Remove(existingLoadOut);
 
+                        // Add the new entry with updated GroupSetID
+                        LoadOuts.Add(loadOut);
+                    }
+                }
+                else
+                {
+                    // If no entry exists, insert new entry
+                    LoadOuts.Add(loadOut);
+                }
+
+                // Finally, save the loadOut changes
+                loadOut.WriteProfile();
+            }
+        }
+
+        private LoadOut GetLoadOutForGroupSet(GroupSet groupSet)
+        {
+            // Try to find the favorite loadout
+            var favoriteLoadOut = AggLoadInfo.Instance.LoadOuts.FirstOrDefault(l => l.IsFavorite);
+            if (favoriteLoadOut != null)
+            {
+                return favoriteLoadOut;
+            }
+
+            // Try to find the default loadout
+            var defaultLoadOut = AggLoadInfo.Instance.LoadOuts.FirstOrDefault(l => l.Name == "(Default)");
+            if (defaultLoadOut != null)
+            {
+                return defaultLoadOut;
+            }
+
+            // Try to find the first loadout
+            var firstLoadOut = AggLoadInfo.Instance.LoadOuts.FirstOrDefault();
+            if (firstLoadOut != null)
+            {
+                return firstLoadOut;
+            }
+
+            return new LoadOut(groupSet) {  Name = "(Default)"};
+
+        }
 
         public void Save()
         {
@@ -571,17 +870,16 @@ namespace ZO.LoadOrderManager
             _cachedGroupSet1 = backupCachedGroupSet1;
 
             // Notify that the data has been refreshed
-            OnPropertyChanged(nameof(Groups));
-            OnPropertyChanged(nameof(Plugins));
-            OnPropertyChanged(nameof(LoadOuts));
-            OnPropertyChanged(nameof(GroupSets));
+            //OnPropertyChanged(nameof(Groups));
+            //OnPropertyChanged(nameof(Plugins));
+            //OnPropertyChanged(nameof(LoadOuts));
+            //OnPropertyChanged(nameof(GroupSets));
 
             // Raise the DataRefreshed event
-            DataRefreshed?.Invoke(this, EventArgs.Empty);
+            RaiseDataRefreshed();
         }
 
-
-
+        
         public static long GetNextPluginOrdinal(long groupID, long? groupSetID = null)
         {
             // Use Instance.GroupSetID if groupSetID is null
@@ -608,7 +906,6 @@ namespace ZO.LoadOrderManager
             return maxOrdinal + 1;
         }
 
-
         public static List<ModGroup> GetAllGroupChildren(long groupID)
         {
             return Instance.GroupSetGroups.Items
@@ -618,6 +915,17 @@ namespace ZO.LoadOrderManager
                 .ToList();
         }
 
+        public static ModGroup? GetGroupNeighbor(long groupID, long ordinal, bool up)
+        {
+            long targetOrdinal = up ? ordinal - 1 : ordinal + 1;
+
+            return Instance.GroupSetGroups.Items
+                .Where(gsg => gsg.parentID == groupID && gsg.Ordinal == targetOrdinal)
+                .Select(gsg => Instance.Groups.FirstOrDefault(g => g.GroupID == gsg.groupID))
+                .Where(group => group != null) // Exclude null groups
+                .FirstOrDefault();
+        }
+
         public static List<Plugin> GetAllPluginChildren(long groupID)
         {
             return Instance.GroupSetPlugins.Items
@@ -625,6 +933,18 @@ namespace ZO.LoadOrderManager
                 .Select(gsp => Instance.Plugins.FirstOrDefault(p => p.PluginID == gsp.pluginID))
                 .Where(plugin => plugin != null) // Exclude null plugins
                 .ToList();
+        }
+        
+        public static Plugin? GetPluginNeighbor(long groupID, long ordinal, bool up)
+        {
+            // Determine the target ordinal based on the direction
+            long targetOrdinal = up ? ordinal - 1 : ordinal + 1;
+
+            // Find the neighbor plugin
+            return Instance.GroupSetPlugins.Items
+                .Where(gsp => gsp.groupID == groupID && gsp.Ordinal == targetOrdinal)
+                .Select(gsp => Instance.Plugins.FirstOrDefault(p => p.PluginID == gsp.pluginID))
+                .FirstOrDefault();
         }
 
         public static List<LoadOrderItemViewModel> GetAllSiblings(object item)
@@ -650,6 +970,36 @@ namespace ZO.LoadOrderManager
             return siblings;
         }
 
+        public static LoadOrderItemViewModel? GetNeighbor(LoadOrderItemViewModel item, bool up)
+        {
+            if (!item.Ordinal.HasValue)
+            {
+                return null;
+            }
+
+            long targetOrdinal = up ? (long)item.Ordinal - 1 : (long)item.Ordinal + 1;
+
+            if (item.EntityType == EntityType.Plugin)
+            {
+                return Instance.GroupSetPlugins.Items
+                    .Where(gsp => gsp.groupID == item.GroupID && gsp.Ordinal == targetOrdinal)
+                    .Select(gsp => Instance.Plugins.FirstOrDefault(p => p.PluginID == gsp.pluginID))
+                    .Where(plugin => plugin != null)
+                    .Select(plugin => new LoadOrderItemViewModel(plugin))
+                    .FirstOrDefault();
+            }
+            else if (item.EntityType == EntityType.Group)
+            {
+                return Instance.GroupSetGroups.Items
+                    .Where(gsg => gsg.groupID == item.GroupID && gsg.Ordinal == targetOrdinal)
+                    .Select(gsg => Instance.Groups.FirstOrDefault(g => g.GroupID == gsg.groupID))
+                    .Where(group => group != null)
+                    .Select(group => new LoadOrderItemViewModel(group))
+                    .FirstOrDefault();
+            }
+
+            return null;
+        }
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -659,6 +1009,111 @@ namespace ZO.LoadOrderManager
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
-        
+        public AggLoadInfo NavigateCachedGroupSets(string direction)
+        {
+            if (_cachedGroupSets == null || !_cachedGroupSets.Any()) return null;
+
+            int currentIndex = _cachedGroupSets.IndexOf(ActiveGroupSet);
+            if (currentIndex == -1) return null;
+
+            GroupSet? targetGroupSet = direction switch
+            {
+                "Next" => currentIndex + 1 < _cachedGroupSets.Count ? _cachedGroupSets[currentIndex + 1] : null,
+                "Previous" => currentIndex - 1 >= 0 ? _cachedGroupSets[currentIndex - 1] : null,
+                "First" => _cachedGroupSets.FirstOrDefault(),
+                "Last" => _cachedGroupSets.LastOrDefault(),
+                _ => null
+            };
+
+            if (targetGroupSet != null)
+            {
+                ActiveGroupSet = targetGroupSet;
+                Instance.RefreshAllData();
+                return new AggLoadInfo(targetGroupSet.GroupSetID);
+            }
+            return null;//by construction this should never be able to happen
+        }
+
+        public void DeleteGroupSet(GroupSet groupSet)
+        {
+            if (groupSet == null) throw new ArgumentNullException(nameof(groupSet));
+
+            if (groupSet.IsReadOnly || groupSet.IsFavorite || groupSet.IsDefaultGroup)
+            {
+                throw new InvalidOperationException("Cannot delete a GroupSet that is ReadOnly, Favorite, or Default.");
+            }
+
+            var gsID = groupSet.GroupSetID;
+
+            GroupSet.DeleteRecord(gsID);
+
+            if (ActiveGroupSet == groupSet)
+            {
+                var newGroupSet = GroupSets.FirstOrDefault(gs => gs.IsFavorite) ?? GroupSets.FirstOrDefault();
+                ActiveGroupSet = newGroupSet;
+            }
+            else
+            {
+                RefreshAllData();
+            }
+
+            if (Instance.ActiveGroupSet == groupSet)
+            {
+                var newGroupSet = GroupSets.FirstOrDefault(gs => gs.IsFavorite) ?? GroupSets.FirstOrDefault();
+                Instance.ActiveGroupSet = newGroupSet;
+            }
+            else
+            {
+                Instance.RefreshAllData();
+            }
+
+
+
+
+        }
+
+
+            public void PopulateLoadOrders(LoadOrdersViewModel viewModel, GroupSet groupSet, LoadOut loadOut, bool suppress997, bool isCached = false)
+            {
+                // Clear existing items
+                viewModel.Items.Clear();
+                viewModel.SelectedGroupSet = groupSet;
+                viewModel.SelectedLoadOut = loadOut;
+                viewModel.Suppress997 = suppress997;
+                viewModel.IsCached = isCached;
+
+                var activeGroupSetID = groupSet.GroupSetID;
+                var isCachedGroupSet = groupSet == GetCachedGroupSet1();
+
+                var sortedGroups = GetSortedGroups(activeGroupSetID);
+
+                var groupDictionary = new Dictionary<long, LoadOrderItemViewModel>();
+
+                // Populate the groups
+                foreach (var group in sortedGroups)
+                {
+                    if (group.GroupID == -997 && suppress997)
+                        continue;
+
+                    var groupItem = new LoadOrderItemViewModel(group);
+                    groupDictionary[group.GroupID] = groupItem;
+
+                    // Handle parent-child relationships
+                    if (group.ParentID.HasValue && groupDictionary.ContainsKey(group.ParentID.Value))
+                    {
+                        groupDictionary[group.ParentID.Value].Children.Add(groupItem);
+                    }
+                    else
+                    {
+                        viewModel.Items.Add(groupItem);
+                    }
+
+                    // Add plugins to each group
+                    AddPluginsToGroup(groupItem, activeGroupSetID, loadOut, suppress997);
+                }
+           }
+        }
+
+
     }
-}
+

@@ -13,6 +13,7 @@ namespace ZO.LoadOrderManager
         Plugin,
         Group,
         LoadOut,
+        GroupSet,
         Url
     }
 

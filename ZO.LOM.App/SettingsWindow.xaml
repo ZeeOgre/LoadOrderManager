@@ -71,6 +71,9 @@
         <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="10">
             <Button Content="Vacuum/Reindex Database" Command="{Binding VacuumReindexCommand}" Width="150" Margin="5"/>
             <Button Content="Clean Ordinals" Command="{Binding CleanOrdinalsCommand}" Width="150" Margin="5"/>
+            <Label Content="Select Palette:" Grid.Row="0" Grid.Column="0" Margin="5" VerticalAlignment="Center"/>
+
+          
         </StackPanel>
 
         <!-- Version/Check for Updates/Save/Load from YAML (Row 3) -->

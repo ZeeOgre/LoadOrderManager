@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
+using System.ComponentModel;
 using System.Data.SQLite;
 using ZO.LoadOrderManager;
 
@@ -14,13 +15,36 @@ public enum GroupFlags
     FilesLoaded = 16
 }
 
-public class GroupSet
+public class GroupSet : INotifyPropertyChanged
 {
+    public event PropertyChangedEventHandler PropertyChanged;
+
+    
     public long GroupSetID { get; set; }
     public string GroupSetName { get; set; } = string.Empty;
-    public GroupFlags GroupSetFlags { get; set; }
-    public ObservableCollection<ModGroup> ModGroups { get; set; } = new ObservableCollection<ModGroup>();
-    public ObservableCollection<LoadOut> LoadOuts { get; set; } = new ObservableCollection<LoadOut>();
+    private GroupFlags _groupSetFlags;
+    public GroupFlags GroupSetFlags
+    {
+        get => _groupSetFlags;
+        set
+        {
+            if (_groupSetFlags != value)
+            {
+                _groupSetFlags = value;
+                OnPropertyChanged(nameof(GroupSetFlags));
+                OnPropertyChanged(nameof(IsUninitialized));
+                OnPropertyChanged(nameof(IsDefaultGroup));
+                OnPropertyChanged(nameof(IsReadOnly));
+                OnPropertyChanged(nameof(IsFavorite));
+                OnPropertyChanged(nameof(IsReadyToLoad));
+                OnPropertyChanged(nameof(AreFilesLoaded));
+            }
+        }
+    }
+
+
+    //public ObservableCollection<ModGroup> ModGroups { get; set; } = new ObservableCollection<ModGroup>();
+    //public ObservableCollection<LoadOut> LoadOuts { get; set; } = new ObservableCollection<LoadOut>();
 
     // Constructor to create a new GroupSet or load an existing one
     public GroupSet(long groupSetID, string groupSetName, GroupFlags groupSetFlags)
@@ -109,11 +133,11 @@ public class GroupSet
 
             // Load associated ModGroups
             var modGroupsList = ModGroup.LoadModGroupsByGroupSet(groupSetID);
-            groupSet.ModGroups = new ObservableCollection<ModGroup>(modGroupsList);
+            //groupSet.ModGroups = new ObservableCollection<ModGroup>(modGroupsList);
 
             // Load associated LoadOuts
             var loadOuts = GetAllLoadOuts(groupSetID);
-            groupSet.LoadOuts = new ObservableCollection<LoadOut>(loadOuts);
+            //groupSet.LoadOuts = new ObservableCollection<LoadOut>(loadOuts);
 
             return groupSet;
         }
@@ -178,21 +202,88 @@ public class GroupSet
     }
 
     // Flag checks
-    public bool IsUninitialized => (GroupSetFlags & GroupFlags.Uninitialized) == GroupFlags.Uninitialized;
-    public bool IsDefaultGroup => (GroupSetFlags & GroupFlags.DefaultGroup) == GroupFlags.DefaultGroup;
-    public bool IsReadOnly => (GroupSetFlags & GroupFlags.ReadOnly) == GroupFlags.ReadOnly;
-    public bool IsFavorite => (GroupSetFlags & GroupFlags.Favorite) == GroupFlags.Favorite;
-    public bool IsReadyToLoad => (GroupSetFlags & GroupFlags.ReadyToLoad) == GroupFlags.ReadyToLoad;
-    public bool AreFilesLoaded => (GroupSetFlags & GroupFlags.FilesLoaded) == GroupFlags.FilesLoaded;
+    public bool IsUninitialized
+    {
+        get => (GroupSetFlags & GroupFlags.Uninitialized) == GroupFlags.Uninitialized;
+        set
+        {
+            if (value)
+                GroupSetFlags |= GroupFlags.Uninitialized;
+            else
+                GroupSetFlags &= ~GroupFlags.Uninitialized;
+            OnPropertyChanged(nameof(IsUninitialized));
+        }
+    }
+    public bool IsDefaultGroup
+    {
+        get => (GroupSetFlags & GroupFlags.DefaultGroup) == GroupFlags.DefaultGroup;
+        set
+        {
+            if (value)
+                GroupSetFlags |= GroupFlags.DefaultGroup;
+            else
+                GroupSetFlags &= ~GroupFlags.DefaultGroup;
+            OnPropertyChanged(nameof(IsDefaultGroup));
+        }
+    }
+    public bool IsReadOnly
+    {
+        get => (GroupSetFlags & GroupFlags.ReadOnly) == GroupFlags.ReadOnly;
+        set
+        {
+            if (value)
+                GroupSetFlags |= GroupFlags.ReadOnly;
+            else
+                GroupSetFlags &= ~GroupFlags.ReadOnly;
+            OnPropertyChanged(nameof(IsReadOnly));
+        }
+    }
+    public bool IsFavorite
+    {
+        get => (GroupSetFlags & GroupFlags.Favorite) == GroupFlags.Favorite;
+        set
+        {
+            if (value)
+                GroupSetFlags |= GroupFlags.Favorite;
+            else
+                GroupSetFlags &= ~GroupFlags.Favorite;
+            OnPropertyChanged(nameof(IsFavorite));
+        }
+    }
+    public bool IsReadyToLoad
+    {
+        get => (GroupSetFlags & GroupFlags.ReadyToLoad) == GroupFlags.ReadyToLoad;
+        set
+        {
+            if (value)
+                GroupSetFlags |= GroupFlags.ReadyToLoad;
+            else
+                GroupSetFlags &= ~GroupFlags.ReadyToLoad;
+            OnPropertyChanged(nameof(IsReadyToLoad));
+        }
+    }
+    public bool AreFilesLoaded
+    {
+        get => (GroupSetFlags & GroupFlags.FilesLoaded) == GroupFlags.FilesLoaded;
+        set
+        {
+            if (value)
+                GroupSetFlags |= GroupFlags.FilesLoaded;
+            else
+                GroupSetFlags &= ~GroupFlags.FilesLoaded;
+            OnPropertyChanged(nameof(AreFilesLoaded));
+        }
+    }
+
 
     // Clone method
     public GroupSet Clone()
     {
         var clonedGroupSet = new GroupSet(this.GroupSetID, this.GroupSetName, this.GroupSetFlags);
-        foreach (var modGroup in this.ModGroups)
-        {
-            clonedGroupSet.ModGroups.Add(modGroup.Clone());
-        }
+        //foreach (var modgroup in this.modgroups)
+        //{
+        //    clonedgroupset.modgroups.add(modgroup.clone());
+        //}
         return clonedGroupSet;
     }
 
@@ -253,4 +344,76 @@ public class GroupSet
         }
         return loadOuts;
     }
+
+
+    // DeleteRecord method
+    public static void DeleteRecord(long groupSetID)
+    {
+        using var connection = DbManager.Instance.GetConnection();
+        using var transaction = connection.BeginTransaction();
+
+        try
+        {
+            var groupSet = LoadGroupSet(groupSetID);
+            if (groupSet == null)
+            {
+                throw new InvalidOperationException($"GroupSet with ID {groupSetID} not found.");
+            }
+
+            // Check if GroupSet is read-only, favorite, or default group
+            if (groupSet.IsReadOnly)
+            {
+                throw new InvalidOperationException("Cannot delete a read-only GroupSet.");
+            }
+            if (groupSet.IsFavorite)
+            {
+                throw new InvalidOperationException("Cannot delete a favorite GroupSet.");
+            }
+            if (groupSet.IsDefaultGroup)
+            {
+                throw new InvalidOperationException("Cannot delete the default GroupSet.");
+            }
+
+            using var command = new SQLiteCommand(connection);
+
+            // Delete from GroupSetGroups
+            command.CommandText = "DELETE FROM GroupSetGroups WHERE GroupSetID = @GroupSetID;";
+            command.Parameters.AddWithValue("@GroupSetID", groupSetID);
+            command.ExecuteNonQuery();
+
+            // Delete from GroupSetPlugins
+            command.CommandText = "DELETE FROM GroupSetPlugins WHERE GroupSetID = @GroupSetID;";
+            command.ExecuteNonQuery();
+
+            // Delete from LoadOutProfiles
+            command.CommandText = "DELETE FROM LoadOutProfiles WHERE GroupSetID = @GroupSetID;";
+            command.ExecuteNonQuery();
+
+            // Delete from GroupSets
+            command.CommandText = "DELETE FROM GroupSets WHERE GroupSetID = @GroupSetID;";
+            command.ExecuteNonQuery();
+
+            transaction.Commit();
+
+            // Refresh AggLoadInfo after deletion
+            if (AggLoadInfo.Instance.ActiveGroupSet?.GroupSetID == groupSetID)
+            {
+                AggLoadInfo.Instance.ActiveGroupSet = AggLoadInfo.Instance.GroupSets.FirstOrDefault(gs => gs.IsFavorite) ?? AggLoadInfo.Instance.GroupSets.FirstOrDefault();
+            }
+            AggLoadInfo.Instance.RefreshAllData();
+        }
+        catch (Exception ex)
+        {
+            transaction.Rollback();
+            App.LogDebug($"Error deleting GroupSet: {ex.Message}");
+            throw;
+        }
+    }
+
+
+    protected void OnPropertyChanged(string propertyName)
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    }
+
 }

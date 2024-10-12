@@ -99,7 +99,6 @@
                                     </CheckBox.CommandParameter>
                                 </CheckBox>
 
-
                                 <TextBlock Text="{Binding Name}" Margin="5,0,0,0"/>
                             </StackPanel>
                         </DataTemplate>

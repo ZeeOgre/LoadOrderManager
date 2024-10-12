@@ -48,92 +48,92 @@ namespace ZO.LoadOrderManager
             return LevenshteinDistance(str1, str2);
         }
 
-        public static LoadOrdersViewModel CreateLoadOrdersViewModel(GroupSet groupSet, LoadOut loadOut, bool suppress997, bool isCached = false)
-        {
-            var viewModel = new LoadOrdersViewModel
-            {
-                SelectedGroupSet = groupSet,
-                SelectedLoadOut = loadOut,
-                Suppress997 = suppress997,
-                IsCached = isCached
-            };
-            PopulateLoadOrdersViewModel(viewModel, groupSet, loadOut, suppress997, isCached);
-            return viewModel;
-        }
+    //    public static LoadOrdersViewModel CreateLoadOrdersViewModel(GroupSet groupSet, LoadOut loadOut, bool suppress997, bool isCached = false)
+    //    {
+    //        var viewModel = new LoadOrdersViewModel
+    //        {
+    //            SelectedGroupSet = groupSet,
+    //            SelectedLoadOut = loadOut,
+    //            Suppress997 = suppress997,
+    //            IsCached = isCached
+    //        };
+    //        PopulateLoadOrdersViewModel(viewModel, groupSet, loadOut, suppress997, isCached);
+    //        return viewModel;
+    //    }
 
-        public static void PopulateLoadOrdersViewModel(LoadOrdersViewModel viewModel, GroupSet groupSet, LoadOut loadOut, bool suppress997, bool isCached = false)
-        {
-            Application.Current.Dispatcher.Invoke(() =>
-            {
-                viewModel.Items.Clear();
-                viewModel.SelectedGroupSet = groupSet;
-                viewModel.SelectedLoadOut = loadOut;
-                viewModel.Suppress997 = suppress997;
-                viewModel.IsCached = isCached;
+    //    public static void PopulateLoadOrdersViewModel(LoadOrdersViewModel viewModel, GroupSet groupSet, LoadOut loadOut, bool suppress997, bool isCached = false)
+    //    {
+    //        Application.Current.Dispatcher.Invoke(() =>
+    //        {
+    //            viewModel.Items.Clear();
+    //            viewModel.SelectedGroupSet = groupSet;
+    //            viewModel.SelectedLoadOut = loadOut;
+    //            viewModel.Suppress997 = suppress997;
+    //            viewModel.IsCached = isCached;
 
-                var activeGroupSetID = groupSet.GroupSetID;
-                var isCachedGroupSet = groupSet == AggLoadInfo.Instance.GetCachedGroupSet1();
+    //            var activeGroupSetID = groupSet.GroupSetID;
+    //            var isCachedGroupSet = groupSet == AggLoadInfo.Instance.GetCachedGroupSet1();
 
-                var sortedGroups = GetSortedGroups(activeGroupSetID);
+    //            var sortedGroups = GetSortedGroups(activeGroupSetID);
 
-                var groupDictionary = new Dictionary<long, LoadOrderItemViewModel>();
+    //            var groupDictionary = new Dictionary<long, LoadOrderItemViewModel>();
 
-                foreach (var group in sortedGroups)
-                {
-                    if (group.GroupID == -997 && suppress997)
-                        continue;
+    //            foreach (var group in sortedGroups)
+    //            {
+    //                if (group.GroupID == -997 && suppress997)
+    //                    continue;
 
-                    var groupItem = new LoadOrderItemViewModel(group);
-                    groupDictionary[(long)group.GroupID] = groupItem;
+    //                var groupItem = new LoadOrderItemViewModel(group);
+    //                groupDictionary[(long)group.GroupID] = groupItem;
 
-                    if (group.ParentID.HasValue && groupDictionary.ContainsKey(group.ParentID.Value))
-                    {
-                        groupDictionary[group.ParentID.Value].Children.Add(groupItem);
-                    }
-                    else
-                    {
-                        viewModel.Items.Add(groupItem);
-                    }
+    //                if (group.ParentID.HasValue && groupDictionary.ContainsKey(group.ParentID.Value))
+    //                {
+    //                    groupDictionary[group.ParentID.Value].Children.Add(groupItem);
+    //                }
+    //                else
+    //                {
+    //                    viewModel.Items.Add(groupItem);
+    //                }
 
-                    AddPluginsToGroup(groupItem, activeGroupSetID, loadOut, suppress997);
-                }
-            });
-        }
+    //                AddPluginsToGroup(groupItem, activeGroupSetID, loadOut, suppress997);
+    //            }
+    //        });
+    //    }
 
-        private static List<ModGroup> GetSortedGroups(long groupSetID)
-        {
-            var groupSetGroups = AggLoadInfo.Instance.GroupSetGroups.Items
-                .Where(g => g.groupSetID == groupSetID)
-                .Select(g => (groupID: g.groupID, groupSetID: g.groupSetID, parentID: g.parentID, Ordinal: g.Ordinal))
-                .OrderBy(g => g.parentID)
-                .ThenBy(g => g.Ordinal)
-                .ToList();
+    //    private static List<ModGroup> GetSortedGroups(long groupSetID)
+    //    {
+    //        var groupSetGroups = AggLoadInfo.Instance.GroupSetGroups.Items
+    //            .Where(g => g.groupSetID == groupSetID)
+    //            .Select(g => (groupID: g.groupID, groupSetID: g.groupSetID, parentID: g.parentID, Ordinal: g.Ordinal))
+    //            .OrderBy(g => g.parentID)
+    //            .ThenBy(g => g.Ordinal)
+    //            .ToList();
 
-            var sortedGroups = groupSetGroups
-                .Select(g => ModGroup.LoadModGroup(g.groupID, g.groupSetID))
-                .Where(g => g != null)
-                .ToList();
+    //        var sortedGroups = groupSetGroups
+    //            .Select(g => ModGroup.LoadModGroup(g.groupID, g.groupSetID))
+    //            .Where(g => g != null)
+    //            .ToList();
 
-            return sortedGroups;
-        }
+    //        return sortedGroups;
+    //    }
 
-        private static void AddPluginsToGroup(LoadOrderItemViewModel parentItem, long groupSetID, LoadOut loadOut, bool? suppress997 = false)
-        {
-            var groupPlugins = AggLoadInfo.Instance.GroupSetPlugins.Items
-                .Where(p => p.groupSetID == groupSetID && p.groupID == parentItem.GroupID)
-                .Select(p => (groupSetID: p.groupSetID, groupID: p.groupID, pluginID: p.pluginID, Ordinal: p.Ordinal))
-                .OrderBy(p => p.Ordinal)
-                .ToList();
+    //    private static void AddPluginsToGroup(LoadOrderItemViewModel parentItem, long groupSetID, LoadOut loadOut, bool? suppress997 = false)
+    //    {
+    //        var groupPlugins = AggLoadInfo.Instance.GroupSetPlugins.Items
+    //            .Where(p => p.groupSetID == groupSetID && p.groupID == parentItem.GroupID)
+    //            .Select(p => (groupSetID: p.groupSetID, groupID: p.groupID, pluginID: p.pluginID, Ordinal: p.Ordinal))
+    //            .OrderBy(p => p.Ordinal)
+    //            .ToList();
 
-            foreach (var plugin in groupPlugins)
-            {
-                var pluginItem = new LoadOrderItemViewModel(Plugin.LoadPlugin(plugin.pluginID, null, AggLoadInfo.Instance.ActiveGroupSet.GroupSetID))
-                {
-                    IsActive = loadOut.enabledPlugins.Contains(plugin.pluginID)
-                };
-                parentItem.Children.Add(pluginItem);
-            }
-        }
+    //        foreach (var plugin in groupPlugins)
+    //        {
+    //            var pluginItem = new LoadOrderItemViewModel(Plugin.LoadPlugin(plugin.pluginID, null, AggLoadInfo.Instance.ActiveGroupSet.GroupSetID))
+    //            {
+    //                IsActive = loadOut.enabledPlugins.Contains(plugin.pluginID)
+    //            };
+    //            parentItem.Children.Add(pluginItem);
+    //        }
+    //    }
     }
 }
 

@@ -69,7 +69,7 @@ namespace ZO.LoadOrderManager
                     {
                         // Apply the modern theme and custom TreeView theme
                         //((App)Application.Current).ApplyModernTheme();
-                        ((App)Application.Current).ApplyCustomTheme(_config.DarkMode);
+                        //((App)Application.Current).ApplyCustomTheme(_config.DarkMode);
                     });
                     Save();
                     
@@ -160,57 +160,66 @@ namespace ZO.LoadOrderManager
         {
             try
             {
-                using (var connection = DbManager.Instance.GetConnection())
+                // Suppress all ObservableCollection change notifications using UniversalCollectionDisabler
+                using (var universalDisabler = new UniversalCollectionDisabler(AggLoadInfo.Instance))
                 {
-                    using (var transaction = connection.BeginTransaction())
+                    using (var connection = DbManager.Instance.GetConnection())
                     {
-                        const string cleanOrdinalsQuery = @"
-                            WITH OrderedGSP AS (
-                                SELECT GroupSetID, GroupID, PluginID,
-                                       ROW_NUMBER() OVER (PARTITION BY GroupSetID, GroupID ORDER BY Ordinal) AS NewOrdinal
-                                FROM GroupSetPlugins
-                            )
-                            UPDATE GroupSetPlugins
-                            SET Ordinal = OrderedGSP.NewOrdinal
-                            FROM OrderedGSP
-                            WHERE GroupSetPlugins.GroupSetID = OrderedGSP.GroupSetID
-                              AND GroupSetPlugins.GroupID = OrderedGSP.GroupID
-                              AND GroupSetPlugins.PluginID = OrderedGSP.PluginID;
-
-                            WITH OrderedGSG AS (
-                                SELECT GroupSetID, ParentID, GroupID,
-                                       CASE WHEN GroupID < 0 THEN -GroupID + 9000
-                                            ELSE ROW_NUMBER() OVER (PARTITION BY GroupSetID, ParentID ORDER BY Ordinal)
-                                       END AS NewOrdinal
-                                FROM GroupSetGroups
-                            )
-                            UPDATE GroupSetGroups
-                            SET Ordinal = OrderedGSG.NewOrdinal
-                            FROM OrderedGSG
-                            WHERE GroupSetGroups.GroupSetID = OrderedGSG.GroupSetID
-                              AND GroupSetGroups.ParentID = OrderedGSG.ParentID
-                              AND GroupSetGroups.GroupID = OrderedGSG.GroupID;
-                        ";
-
-                        using (var command = connection.CreateCommand())
+                        using (var transaction = connection.BeginTransaction())
                         {
-                            command.CommandText = cleanOrdinalsQuery;
-                            command.Transaction = transaction;
-                            command.ExecuteNonQuery();
-                        }
+                            const string cleanOrdinalsQuery = @"
+                    WITH OrderedGSP AS (
+                        SELECT GroupSetID, GroupID, PluginID,
+                               ROW_NUMBER() OVER (PARTITION BY GroupSetID, GroupID ORDER BY Ordinal) AS NewOrdinal
+                        FROM GroupSetPlugins
+                    )
+                    UPDATE GroupSetPlugins
+                    SET Ordinal = OrderedGSP.NewOrdinal
+                    FROM OrderedGSP
+                    WHERE GroupSetPlugins.GroupSetID = OrderedGSP.GroupSetID
+                      AND GroupSetPlugins.GroupID = OrderedGSP.GroupID
+                      AND GroupSetPlugins.PluginID = OrderedGSP.PluginID;
 
-                        transaction.Commit();
+                    WITH OrderedGSG AS (
+                        SELECT GroupSetID, ParentID, GroupID,
+                               CASE WHEN GroupID < 0 THEN -GroupID + 9000
+                                    ELSE ROW_NUMBER() OVER (PARTITION BY GroupSetID, ParentID ORDER BY Ordinal)
+                               END AS NewOrdinal
+                        FROM GroupSetGroups
+                    )
+                    UPDATE GroupSetGroups
+                    SET Ordinal = OrderedGSG.NewOrdinal
+                    FROM OrderedGSG
+                    WHERE GroupSetGroups.GroupSetID = OrderedGSG.GroupSetID
+                      AND GroupSetGroups.ParentID = OrderedGSG.ParentID
+                      AND GroupSetGroups.GroupID = OrderedGSG.GroupID;
+                ";
+
+                            using (var command = connection.CreateCommand())
+                            {
+                                command.CommandText = cleanOrdinalsQuery;
+                                command.Transaction = transaction;
+                                command.ExecuteNonQuery();
+                            }
+
+                            transaction.Commit();
+                        }
                     }
+
+                    // Refresh metadata from the database after the transaction
+                    AggLoadInfo.Instance.RefreshMetadataFromDB();
                 }
 
-                AggLoadInfo.Instance.RefreshMetadataFromDB();
+                // Inform the user of success
                 MessageBox.Show("Ordinals cleaned successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
             {
+                // Handle and inform the user of any errors
                 MessageBox.Show($"Error during cleaning ordinals: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+
 
         private void CompareFile(FileInfo file)
         {

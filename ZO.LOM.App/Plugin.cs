@@ -221,21 +221,24 @@ namespace ZO.LoadOrderManager
             }
         }
 
-        public Plugin(System.IO.FileInfo file)
+        public Plugin(System.IO.FileInfo file, bool? fullScan = false)
         {
             var dataPath = Path.Combine(Config.Instance.GameFolder ?? string.Empty, "data");
             var relativePath = Path.GetRelativePath(dataPath, file.FullName);
 
             PluginName = file.Name.ToLowerInvariant(); // Normalize case before storing
             Description = PluginName;
+            string? newHash = null;
+            if (fullScan == true) newHash = FileInfo.ComputeHash(file.FullName);
             Files = new List<FileInfo>
             {
+                
                 new FileInfo
                 {
                     Filename = file.Name,
                     RelativePath = relativePath,
                     DTStamp = file.LastWriteTime.ToString("yyyy-MM-dd HH:mm:ss"),
-                    HASH = FileInfo.ComputeHash(file.FullName),
+                    HASH = newHash,
                     Flags = FileFlags.None
                 }
             };
@@ -324,6 +327,19 @@ namespace ZO.LoadOrderManager
                             this.BethesdaID = !string.IsNullOrEmpty(this.BethesdaID) ? this.BethesdaID : (reader.IsDBNull(1) ? string.Empty : reader.GetString(1));
                             this.NexusID = !string.IsNullOrEmpty(this.NexusID) ? this.NexusID : (reader.IsDBNull(2) ? string.Empty : reader.GetString(2));
 
+                            if (!reader.IsDBNull(3))
+                            {
+                                ModState existingState = (ModState)reader.GetInt64(3);
+                                ModState newState = this.State | existingState; // Merge the current state with the new state using bitwise OR
+
+                                // Validate the new state to ensure no conflicting conditions
+                                if (newState.HasFlag(ModState.None) && newState != ModState.None)
+                                {
+                                    newState = ModState.None; // If None is set, ensure no other flags are set
+                                }
+
+                                this.State = newState;
+                            }
                             // Retrieve the existing State value from the database and merge with the new value
                             if (!reader.IsDBNull(3))
                             {
@@ -461,21 +477,21 @@ namespace ZO.LoadOrderManager
             // If groupSetID is null, use the ActiveGroupSet.GroupSetID from the singleton
             var activeGroupSetID = newGroupSetId ?? AggLoadInfo.Instance.ActiveGroupSet.GroupSetID;
 
-            // Adjust ordinals in the in-memory collection first
-            var groupPlugins = AggLoadInfo.Instance.GroupSetPlugins.Items
-                .Where(gsp => gsp.groupID == this.GroupID && gsp.groupSetID == activeGroupSetID && gsp.Ordinal > this.GroupOrdinal)
-                .OrderBy(gsp => gsp.Ordinal)
-                .ToList();
+            //// Adjust ordinals in the in-memory collection first
+            //var groupPlugins = AggLoadInfo.Instance.GroupSetPlugins.Items
+            //    .Where(gsp => gsp.groupID == this.GroupID && gsp.groupSetID == activeGroupSetID && gsp.Ordinal > this.GroupOrdinal)
+            //    .OrderBy(gsp => gsp.Ordinal)
+            //    .ToList();
 
-            // Update the in-memory ordinals by shifting them down by 1
-            foreach (var plugin in groupPlugins)
-            {
-                var updatedPlugin = (plugin.groupSetID, plugin.groupID, plugin.pluginID, plugin.Ordinal - 1);
+            //// Update the in-memory ordinals by shifting them down by 1
+            //foreach (var plugin in groupPlugins)
+            //{
+            //    var updatedPlugin = (plugin.groupSetID, plugin.groupID, plugin.pluginID, plugin.Ordinal - 1);
 
-                // Remove the old entry and add the updated one
-                AggLoadInfo.Instance.GroupSetPlugins.Items.Remove(plugin);
-                AggLoadInfo.Instance.GroupSetPlugins.Items.Add(updatedPlugin);
-            }
+            //    // Remove the old entry and add the updated one
+            //    AggLoadInfo.Instance.GroupSetPlugins.Items.Remove(plugin);
+            //    AggLoadInfo.Instance.GroupSetPlugins.Items.Add(updatedPlugin);
+            //}
 
             using var connection = DbManager.Instance.GetConnection();
 
@@ -530,7 +546,112 @@ namespace ZO.LoadOrderManager
             this.GroupID = newGroupId;
             this.GroupSetID = newGroupSetId;
             this.GroupOrdinal = null; // The new ordinal will be set by the database
+
+            AggLoadInfo.Instance.RefreshMetadataFromDB();
+
         }
+
+
+        public void AddModToGroup(ModGroup newGroup, AggLoadInfo? aggLoadInfo = null)
+        {
+            aggLoadInfo ??= AggLoadInfo.Instance;
+
+
+            using var connection = DbManager.Instance.GetConnection();
+            using var transaction = connection.BeginTransaction();
+
+            try
+            {
+                // Insert the plugin into the new group with the ordinal set to max + 1
+                using var insertCommand = new SQLiteCommand(connection)
+                {
+              CommandText = @"
+                INSERT INTO GroupSetPlugins (GroupID, GroupSetID, PluginID, Ordinal)
+                VALUES (@NewGroupID, @NewGroupSetID, @PluginID, (
+                    SELECT COALESCE(MAX(Ordinal), 0) + 1
+                    FROM GroupSetPlugins
+                    WHERE GroupID = @NewGroupID AND GroupSetID = @NewGroupSetID
+                ))
+                RETURNING Ordinal;"
+                };
+
+                insertCommand.Parameters.AddWithValue("@NewGroupID", newGroup.GroupID);
+                insertCommand.Parameters.AddWithValue("@NewGroupSetID", aggLoadInfo.ActiveGroupSet.GroupSetID);
+                insertCommand.Parameters.AddWithValue("@PluginID", this.PluginID);
+
+                this.GroupOrdinal = (long)insertCommand.ExecuteScalar();
+                transaction.Commit();
+            }
+            catch (Exception ex)
+            {
+                transaction.Rollback();
+#if WINDOWS
+                App.LogDebug($"Plugin.AddModToGroup: Error adding mod to group: {ex.Message}");
+#endif
+                throw;
+            }
+            AggLoadInfo.Instance.RefreshMetadataFromDB();
+            
+
+            // Update the in-memory object
+            this.GroupID = newGroup.GroupID;
+            this.GroupSetID = aggLoadInfo.ActiveGroupSet.GroupSetID;
+            
+            aggLoadInfo.Groups.FirstOrDefault(g => g.GroupID == newGroup.GroupID)?.Plugins.Add(this);
+            newGroup.Plugins.Add(this);
+            
+        }
+
+        public void RemoveModFromGroup(ModGroup oldGroup, AggLoadInfo? aggLoadInfo = null)
+        {
+            aggLoadInfo ??= AggLoadInfo.Instance;
+
+            using var connection = DbManager.Instance.GetConnection();
+            using var transaction = connection.BeginTransaction();
+
+            try
+            {
+                // Remove the plugin from the group
+                using var deleteCommand = new SQLiteCommand(connection)
+                {
+                    CommandText = @"
+                DELETE FROM GroupSetPlugins
+                WHERE PluginID = @PluginID AND GroupID = @OldGroupID AND GroupSetID = @OldGroupSetID;
+
+                -- Decrement the ordinals of the old siblings after removing the plugin
+                UPDATE GroupSetPlugins
+                SET Ordinal = Ordinal - 1
+                WHERE GroupID = @OldGroupID AND GroupSetID = @OldGroupSetID AND Ordinal > @OldOrdinal;"
+                };
+
+                deleteCommand.Parameters.AddWithValue("@PluginID", this.PluginID);
+                deleteCommand.Parameters.AddWithValue("@OldGroupID", oldGroup.GroupID);
+                deleteCommand.Parameters.AddWithValue("@OldGroupSetID", aggLoadInfo.ActiveGroupSet.GroupSetID);
+                deleteCommand.Parameters.AddWithValue("@OldOrdinal", this.GroupOrdinal);
+
+                deleteCommand.ExecuteNonQuery();
+                transaction.Commit();
+            }
+            catch (Exception ex)
+            {
+                transaction.Rollback();
+#if WINDOWS
+                App.LogDebug($"Plugin.RemoveModFromGroup: Error removing mod from group: {ex.Message}");
+#endif
+                throw;
+            }
+
+            aggLoadInfo.RefreshMetadataFromDB();
+
+            // Update the in-memory object
+            this.GroupID = null;
+            this.GroupSetID = null;
+            this.GroupOrdinal = null;
+            aggLoadInfo.Groups.FirstOrDefault(g => g.GroupID == oldGroup.GroupID)?.Plugins.Remove(this);
+            oldGroup.Plugins.Remove(this);
+
+        }
+
 
         public void SwapLocations(Plugin other)
         {
@@ -558,20 +679,11 @@ namespace ZO.LoadOrderManager
             other.GroupSetID = tempGroupSetID;
             other.GroupOrdinal = tempGroupOrdinal;
 
-            // Update GroupSetPlugins in AggLoadInfo
-            var aggLoadInfo = AggLoadInfo.Instance;
-
-            // Remove old tuples
-            aggLoadInfo.GroupSetPlugins.Items.Remove(thisTuple);
-            aggLoadInfo.GroupSetPlugins.Items.Remove(otherTuple);
-
-            // Add new tuples with swapped information
-            aggLoadInfo.GroupSetPlugins.Items.Add(((long)this.GroupSetID, (long)this.GroupID, this.PluginID, (long)this.GroupOrdinal));
-            aggLoadInfo.GroupSetPlugins.Items.Add(((long)other.GroupSetID, (long)other.GroupID, other.PluginID, (long)other.GroupOrdinal));
 
             // Write the changes to the database
             this.WriteMod();
             other.WriteMod();
+            AggLoadInfo.Instance.RefreshMetadataFromDB();
         }
 
         public override bool Equals(object obj)
