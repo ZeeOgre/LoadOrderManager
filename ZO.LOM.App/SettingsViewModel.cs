@@ -72,7 +72,7 @@ namespace ZO.LoadOrderManager
                         //((App)Application.Current).ApplyCustomTheme(_config.DarkMode);
                     });
                     Save();
-                    
+
                 }
             }
         }
@@ -161,13 +161,12 @@ namespace ZO.LoadOrderManager
             try
             {
                 // Suppress all ObservableCollection change notifications using UniversalCollectionDisabler
-                using (var universalDisabler = new UniversalCollectionDisabler(AggLoadInfo.Instance))
+
+                using (var connection = DbManager.Instance.GetConnection())
                 {
-                    using (var connection = DbManager.Instance.GetConnection())
+                    using (var transaction = connection.BeginTransaction())
                     {
-                        using (var transaction = connection.BeginTransaction())
-                        {
-                            const string cleanOrdinalsQuery = @"
+                        const string cleanOrdinalsQuery = @"
                     WITH OrderedGSP AS (
                         SELECT GroupSetID, GroupID, PluginID,
                                ROW_NUMBER() OVER (PARTITION BY GroupSetID, GroupID ORDER BY Ordinal) AS NewOrdinal
@@ -195,30 +194,29 @@ namespace ZO.LoadOrderManager
                       AND GroupSetGroups.GroupID = OrderedGSG.GroupID;
                 ";
 
-                            using (var command = connection.CreateCommand())
-                            {
-                                command.CommandText = cleanOrdinalsQuery;
-                                command.Transaction = transaction;
-                                command.ExecuteNonQuery();
-                            }
-
-                            transaction.Commit();
+                        using (var command = connection.CreateCommand())
+                        {
+                            command.CommandText = cleanOrdinalsQuery;
+                            command.Transaction = transaction;
+                            command.ExecuteNonQuery();
                         }
-                    }
 
-                    // Refresh metadata from the database after the transaction
-                    AggLoadInfo.Instance.RefreshMetadataFromDB();
+                        transaction.Commit();
+                    }
                 }
 
+                // Refresh metadata from the database after the transaction
+                AggLoadInfo.Instance.RefreshMetadataFromDB();
+            
                 // Inform the user of success
                 MessageBox.Show("Ordinals cleaned successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
-            }
+        }
             catch (Exception ex)
             {
                 // Handle and inform the user of any errors
                 MessageBox.Show($"Error during cleaning ordinals: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
-        }
+}
 
 
         private void CompareFile(FileInfo file)

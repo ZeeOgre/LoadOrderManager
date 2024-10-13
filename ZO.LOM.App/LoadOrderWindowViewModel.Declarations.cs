@@ -56,11 +56,18 @@ namespace ZO.LoadOrderManager
 
         private void RebuildFlatList()
         {
+            if (_isRefreshing || _isSynchronizing) return;  // Prevent unnecessary rebuilds
             _isRefreshing = true;
+
+            // Rebuild flat list here
             _cachedFlatList = Flatten(LoadOrders.Items).ToList();
+
             _isRefreshing = false;
-            //OnPropertyChanged(nameof(LoadOrders.Items)); // Notify UI about the change
+
+            // Optionally notify UI if bound to UI elements
+            
         }
+
 
         public void StartSync()
         {

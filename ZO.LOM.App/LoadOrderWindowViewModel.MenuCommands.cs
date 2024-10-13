@@ -60,7 +60,9 @@ namespace ZO.LoadOrderManager
                 var parentIDs = selectedItems.Select(item => item.ParentID).Distinct();
 
                 // Exclude groups where any selected item is already assigned
-                return allGroups.Where(g => !parentIDs.Contains(g.GroupID)).Distinct();
+                return allGroups.Where(g => !parentIDs.Contains(g.GroupID))
+                    .Distinct(); //Only get one
+                     // Put them in order by group
             }
         }
 

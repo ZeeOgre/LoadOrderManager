@@ -25,7 +25,7 @@ public class LoadOrdersViewModel : ViewModelBase
 
     public void LoadData(GroupSet groupSet, LoadOut loadOut, bool suppress997 = false, bool isCached = false)
     {
-        Application.Current.Dispatcher.Invoke(() => Items.Clear());
+        Items.Clear();
         AggLoadInfo.Instance.PopulateLoadOrders(this, groupSet, loadOut, suppress997, isCached);
     }
 
@@ -36,9 +36,11 @@ public class LoadOrdersViewModel : ViewModelBase
         var activeLoadOut = AggLoadInfo.Instance.ActiveLoadOut;
 
         AggLoadInfo.Instance.PopulateLoadOrders(this, activeGroupSet, activeLoadOut, suppress997: true);
+        OnPropertyChanged(nameof(Items));
+
 
         // If there is a cached group, also populate it
-        var cachedGroupSet = AggLoadInfo.Instance.GetCachedGroupSet1();
+        var cachedGroupSet = AggLoadInfo.GetCachedGroupSet1();
         if (cachedGroupSet != null)
         {
             var cachedViewModel = new LoadOrdersViewModel();

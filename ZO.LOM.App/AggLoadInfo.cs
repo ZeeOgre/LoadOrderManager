@@ -7,6 +7,7 @@ using System.Data.SQLite;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Input;
 
 namespace ZO.LoadOrderManager
@@ -29,6 +30,8 @@ namespace ZO.LoadOrderManager
         public GroupSetPluginCollection GroupSetPlugins { get; set; } = new GroupSetPluginCollection();
         public ProfilePluginCollection ProfilePlugins { get; set; } = new ProfilePluginCollection();
         private bool _isRefreshing = false;
+        private bool _refreshPending = false;
+        private readonly object _eventLock = new object();
         private bool isDirty;
         public void SetDirty(bool value)
         {
@@ -50,8 +53,8 @@ namespace ZO.LoadOrderManager
             PropertyChanged += AggLoadInfo_PropertyChanged;
 
             // Underlying collection changed
-            Plugins.CollectionChanged += CommonCollectionChangedHandler;
-            Groups.CollectionChanged += CommonCollectionChangedHandler;
+            //Plugins.CollectionChanged += CommonCollectionChangedHandler;
+            //Groups.CollectionChanged += CommonCollectionChangedHandler;
             LoadOuts.CollectionChanged += CommonCollectionChangedHandler;
             GroupSets.CollectionChanged += CommonCollectionChangedHandler;
             GroupSetGroups.Items.CollectionChanged += CommonCollectionChangedHandler;
@@ -112,15 +115,26 @@ namespace ZO.LoadOrderManager
             }
         }
 
-            private void RaiseDataRefreshed()
+        private void RaiseDataRefreshed()
         {
-            lock (_refreshLock)
+            lock (_eventLock)
             {
-                DataRefreshed?.Invoke(this, EventArgs.Empty);
+                if (_refreshPending) return;  // Prevent multiple triggers
+                _refreshPending = true;
+
+                // Schedule the actual refresh in a short delay
+                Task.Delay(100).ContinueWith(_ =>
+                {
+                    lock (_eventLock)
+                    {
+                        _refreshPending = false;
+                        DataRefreshed?.Invoke(this, EventArgs.Empty);
+                    }
+                });
             }
         }
 
-        
+
 
         private void CommonCollectionChangedHandler(object? sender, NotifyCollectionChangedEventArgs e)
         {
@@ -182,10 +196,14 @@ namespace ZO.LoadOrderManager
             return _cachedGroupSets;
         }
 
-        private GroupSet? _cachedGroupSet1;
+        private static GroupSet? _cachedGroupSet1; // Make this static
 
-        public GroupSet? GetCachedGroupSet1()
+        public static GroupSet? GetCachedGroupSet1()
         {
+            if (_cachedGroupSet1 == null)
+            {
+                _cachedGroupSet1 = GroupSet.LoadGroupSet(1);  // Load GroupSet1 from the database
+            }
             return _cachedGroupSet1;
         }
 
@@ -195,8 +213,8 @@ namespace ZO.LoadOrderManager
             PropertyChanged += AggLoadInfo_PropertyChanged;
 
             // Underlying collection changed
-            Plugins.CollectionChanged += CommonCollectionChangedHandler;
-            Groups.CollectionChanged += CommonCollectionChangedHandler;
+            //Plugins.CollectionChanged += CommonCollectionChangedHandler;
+            //Groups.CollectionChanged += CommonCollectionChangedHandler;
             LoadOuts.CollectionChanged += CommonCollectionChangedHandler;
             GroupSets.CollectionChanged += CommonCollectionChangedHandler;
             GroupSetGroups.Items.CollectionChanged += CommonCollectionChangedHandler;
@@ -320,7 +338,7 @@ namespace ZO.LoadOrderManager
                     SELECT DISTINCT * FROM (
                         SELECT *
                         FROM vwPluginGrpUnion
-                        WHERE GroupSetID = @GroupSetID OR 1);", connection);
+                        WHERE GroupSetID = @GroupSetID OR GroupSetID = 1);", connection);
                         command1.Parameters.AddWithValue("@GroupSetID", ActiveGroupSet.GroupSetID);
 
                         Console.WriteLine($"GroupSetID: {ActiveGroupSet.GroupSetID}");
@@ -389,6 +407,14 @@ namespace ZO.LoadOrderManager
                         transaction.Commit();
                         // Assign the loaded load-outs to the appropriate property
                         LoadOuts = loadOuts;
+
+                        var matchingActiveLoadOut = LoadOuts.FirstOrDefault(l => l.ProfileID == ActiveLoadOut?.ProfileID);
+                        if (matchingActiveLoadOut != null)
+                        {
+                            ActiveLoadOut = matchingActiveLoadOut; // Sync ActiveLoadOut
+                        }
+
+
 
                         // Create and populate Group -997 with unassigned plugins
                         CreateAndPopulateGroup997(connection, pluginDict);
@@ -1073,7 +1099,10 @@ namespace ZO.LoadOrderManager
         }
 
 
-            public void PopulateLoadOrders(LoadOrdersViewModel viewModel, GroupSet groupSet, LoadOut loadOut, bool suppress997, bool isCached = false)
+        public void PopulateLoadOrders(LoadOrdersViewModel viewModel, GroupSet groupSet, LoadOut loadOut, bool suppress997, bool isCached = false)
+        {
+            // Ensure the method runs on the UI thread
+            Application.Current.Dispatcher.Invoke(() =>
             {
                 // Clear existing items
                 viewModel.Items.Clear();
@@ -1086,7 +1115,6 @@ namespace ZO.LoadOrderManager
                 var isCachedGroupSet = groupSet == GetCachedGroupSet1();
 
                 var sortedGroups = GetSortedGroups(activeGroupSetID);
-
                 var groupDictionary = new Dictionary<long, LoadOrderItemViewModel>();
 
                 // Populate the groups
@@ -1096,7 +1124,7 @@ namespace ZO.LoadOrderManager
                         continue;
 
                     var groupItem = new LoadOrderItemViewModel(group);
-                    groupDictionary[group.GroupID] = groupItem;
+                    groupDictionary[(long)group.GroupID] = groupItem;
 
                     // Handle parent-child relationships
                     if (group.ParentID.HasValue && groupDictionary.ContainsKey(group.ParentID.Value))
@@ -1105,15 +1133,66 @@ namespace ZO.LoadOrderManager
                     }
                     else
                     {
+                        // No need to invoke dispatcher again, you're already on UI thread
                         viewModel.Items.Add(groupItem);
                     }
 
                     // Add plugins to each group
                     AddPluginsToGroup(groupItem, activeGroupSetID, loadOut, suppress997);
                 }
-           }
+            });
         }
 
 
+        public List<ModGroup> GetSortedGroups(long groupSetID)
+        {
+            var groupSetGroups = AggLoadInfo.Instance.GroupSetGroups.Items
+                .Where(g => g.groupSetID == groupSetID)
+                .Select(g => new { g.groupID, g.parentID, g.Ordinal })
+                .OrderBy(g => g.parentID)  // Sorting by parentID first
+                .ThenBy(g => g.Ordinal)    // Then by Ordinal within each parent
+                .ToList();
+
+            // Convert the groupSetGroups into actual ModGroup instances
+            var sortedGroups = groupSetGroups
+                .Select(g => ModGroup.LoadModGroup(g.groupID, groupSetID)) // LoadModGroup ensures correct loading
+                .Where(g => g != null) // Exclude any null results
+                .ToList();
+
+            return sortedGroups;
+        }
+
+
+        public void AddPluginsToGroup(LoadOrderItemViewModel groupItem, long groupSetID, LoadOut loadOut, bool suppress997)
+        {
+            // This method should add the plugins for the given group
+            var groupID = groupItem.GroupID;
+
+            // Fetch the plugins for the given group and groupSetID
+            var plugins = GroupSetPlugins.Items
+                .Where(gsp => gsp.groupID == groupID && gsp.groupSetID == groupSetID)
+                .Select(gsp => Plugins.FirstOrDefault(p => p.PluginID == gsp.pluginID))
+                .Where(plugin => plugin != null) // Ensure we don't include null plugins
+                .ToList();
+
+            foreach (var plugin in plugins)
+            {
+                var pluginItem = new LoadOrderItemViewModel(plugin)
+                {
+                    IsActive = loadOut.enabledPlugins.Contains(plugin.PluginID) // Set IsActive based on enabledPlugins collection
+                };
+
+                // Optionally handle suppression of Group -997
+                if (groupID == -997 && suppress997)
+                    continue;
+
+                groupItem.Children.Add(pluginItem); // Add plugin to group’s children
+            }
+        }
+
+
+
     }
+}
+   
 

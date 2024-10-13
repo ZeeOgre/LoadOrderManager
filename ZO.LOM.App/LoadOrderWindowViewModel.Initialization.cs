@@ -109,7 +109,7 @@ namespace ZO.LoadOrderManager
 
                     // Initialize LoadOrders and CachedGroupSetLoadOrders with the selected GroupSet and LoadOut
                     LoadOrders.LoadData(_selectedGroupSet, _selectedLoadOut, false, false);
-                    CachedGroupSetLoadOrders.LoadData(AggLoadInfo.Instance.GetCachedGroupSet1(), LoadOut.Load(1), true, true);
+                    CachedGroupSetLoadOrders.LoadData(AggLoadInfo.GetCachedGroupSet1(), LoadOut.Load(1), true, true);
                     RebuildFlatList();
 
                     InitializationManager.ReportProgress(95, "Initial data loaded into view");

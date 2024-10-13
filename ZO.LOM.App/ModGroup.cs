@@ -232,32 +232,6 @@ namespace ZO.LoadOrderManager
                 // Step 2: Commit the transaction
                 transaction.Commit();
 
-                // Step 2: Update in-memory AggLoadInfo for the group move and sibling updates
-                var siblingsToUpdate = aggLoadInfoInstance.GroupSetGroups.Items
-                    .Where(g => g.parentID == this.ParentID && g.groupSetID == this.GroupSetID && g.groupID != this.GroupID)
-                    .OrderBy(g => g.Item4) // Item4 represents Ordinal
-                    .ToList();
-
-                foreach (var sibling in siblingsToUpdate)
-                {
-                    if (sibling.Item4 > this.Ordinal)
-                    {
-                        // Update sibling ordinal in memory
-                        aggLoadInfoInstance.GroupSetGroups.Items.Remove(sibling);
-                        aggLoadInfoInstance.GroupSetGroups.Items.Add((sibling.Item1, sibling.Item2, sibling.Item3, sibling.Item4 - 1));
-                    }
-                }
-
-                // Update the group's new ParentID and Ordinal in memory
-                var newOrdinal = aggLoadInfoInstance.GroupSetGroups.Items
-                    .Where(g => g.groupID == this.GroupID && g.groupSetID == this.GroupSetID)
-                    .Select(g => g.Item4) // Get the ordinal after the update
-                    .FirstOrDefault();
-
-                aggLoadInfoInstance.GroupSetGroups.Items.Remove((this.GroupSetID ?? 1, this.GroupID ?? 1, this.ParentID, this.Ordinal ?? 1));
-                aggLoadInfoInstance.GroupSetGroups.Items.Add((this.GroupSetID ?? 1, this.GroupID ?? 1, newParentId, newOrdinal));
-
-
             }
             catch (Exception ex)
             {
@@ -266,7 +240,7 @@ namespace ZO.LoadOrderManager
                 App.LogDebug($"ChangeGroup error: {ex.Message}");
                 throw;
             }
-
+            AggLoadInfo.Instance.RefreshMetadataFromDB();
             // Save the current group after all changes
             this.WriteGroup();
         }

@@ -47,21 +47,36 @@ namespace ZO.LoadOrderManager
 
         private void MultiSelectTreeView_PreviewMouseDown(object sender, MouseButtonEventArgs e)
         {
-            // Allow right-click event for context menu handling
-            if (e.RightButton == MouseButtonState.Pressed)
-            {
-                return; // Let the right-click event pass through for context menu handling
-            }
-
             if (e.OriginalSource is FrameworkElement element)
             {
                 var item = GetTreeViewItemFromElement(element);
+
                 if (item != null)
                 {
-                    HandleSelection(item, e);
+                    // Right-click logic
+                    if (e.RightButton == MouseButtonState.Pressed)
+                    {
+                        if (!item.IsSelected)
+                        {
+                            // Force the selection on right-click if the item is not selected
+                            item.IsSelected = true;
+                        }
+
+                        // Set focus to the TreeViewItem to ensure context menu behaves as expected
+                        item.Focus();
+                        return; // Allow right-click to pass through for context menu
+                    }
+
+                    // Left-click logic
+                    if (e.LeftButton == MouseButtonState.Pressed)
+                    {
+                        HandleSelection(item, e); // Immediate selection handling
+                    }
                 }
             }
         }
+
+
 
         private void MultiSelectTreeView_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {

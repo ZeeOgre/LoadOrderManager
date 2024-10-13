@@ -361,7 +361,7 @@
                         </ContextMenu>
                     </ComboBox.ContextMenu>
                 </ComboBox>
-                <Button Content="Add New GroupSet"
+                 <Button Content="Add New GroupSet"
          Command="{Binding AddNewGroupSetCommand}"
          Width="200" 
          HorizontalAlignment="Center" 
