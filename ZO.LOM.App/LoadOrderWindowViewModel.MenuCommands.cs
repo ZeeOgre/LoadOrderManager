@@ -431,12 +431,15 @@ void ScanGameFolder()
 
                 if (underlyingObject is ModGroup modGroup)
                 {
-                    modGroup.ChangeGroup(newGroupId);
+                    if (item.GroupID > 1) modGroup.ChangeGroup(newGroupId);
                 }
                 else if (underlyingObject is Plugin plugin)
                 {
                     plugin.ChangeGroup(newGroupId);
+                    
                 }
+                item.ParentID = newGroupId;
+
 
             }
 
@@ -444,11 +447,11 @@ void ScanGameFolder()
             {
                 throw new ArgumentException("Parameter must be a long representing the new group ID.", nameof(parameter));
             }
+            RefreshData();
         }
 
 
 
-        private bool CanExecuteChangeGroup(object parameter) { return true; }
 
         private void ToggleEnable(LoadOrderItemViewModel itemViewModel, object sender)
         {

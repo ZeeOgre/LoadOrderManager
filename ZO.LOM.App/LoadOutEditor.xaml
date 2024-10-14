@@ -1,33 +1,91 @@
 ﻿<metro:MetroWindow x:Class="ZO.LoadOrderManager.LoadOutEditor"
-                   xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-                   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                   xmlns:metro="http://metro.mahapps.com/winfx/xaml/controls"
-                   Style="{StaticResource MaterialDesignWindow}"
-                   xmlns:local="clr-namespace:ZO.LoadOrderManager"
-                   Title="LoadOut Editor" Height="400" Width="300">
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:metro="http://metro.mahapps.com/winfx/xaml/controls"
+        xmlns:mahappsIcons="http://metro.mahapps.com/winfx/xaml/iconpacks"
+        Style="{StaticResource MaterialDesignWindow}"
+        xmlns:local="clr-namespace:ZO.LoadOrderManager"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        Title="LoadOut Editor" Height="400" Width="300">
     <Grid Margin="10">
-        <StackPanel>
-            <TextBlock Text="LoadOut Name:" FontWeight="Bold"/>
-            <TextBox x:Name="LoadOutNameTextBox" Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="2*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
 
-            <TextBlock Text="Group Set ID:" FontWeight="Bold"/>
-            <TextBox x:Name="GroupSetIDTextBox" Text="{Binding GroupSetID}" IsReadOnly="True" Margin="0,0,0,10"/>
-            <Grid Margin="0,10,0,10">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                </Grid.RowDefinitions>
+        <TextBlock Text="LoadOut Name:" FontWeight="Bold" Grid.Row="0" Grid.Column="0" VerticalAlignment="Center"/>
+        <TextBox x:Name="LoadOutNameTextBox" Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Grid.Row="1" Grid.Column="0" Margin="0,0,0,10"/>
 
-                <TextBlock Text="Favorite:" FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,5,0" Grid.Column="0"/>
-                <CheckBox IsChecked="{Binding IsFavorite}" VerticalAlignment="Center" Margin="10,0,0,0" Grid.Column="1"/>
-            </Grid>
+        <TextBlock Text="Group Set ID:" FontWeight="Bold" Grid.Row="2" Grid.Column="0" VerticalAlignment="Center"/>
+        <TextBox x:Name="GroupSetIDTextBox" Text="{Binding GroupSetID}" IsReadOnly="True" Grid.Row="3" Grid.Column="0" Margin="0,0,0,10"/>
+
+        <TextBlock Text="Favorite:" FontWeight="Bold" Grid.Row="4" Grid.Column="0" VerticalAlignment="Center"/>
+        <CheckBox x:Name="IsFavoriteCheckbox" IsChecked="{Binding IsFavorite}" Grid.Row="5" Grid.Column="0" VerticalAlignment="Center" Margin="10,0,0,0"/>
+
+        <ScrollViewer x:Name="PluginIDGrid" VerticalScrollBarVisibility="Auto" Grid.Row="6" Grid.Column="0" HorizontalScrollBarVisibility="Disabled" Margin="0,10,0,10">
+            <ItemsControl ItemsSource="{Binding enabledPlugins}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <UniformGrid Columns="6"/>
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <TextBlock Text="{Binding}" Margin="5"/>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
 
 
-            <Button Content="Save" Click="SaveButton_Click" Width="100" HorizontalAlignment="Right"/>
-            <Button Content="Cancel" Click="CancelButton_Click" Width="100" HorizontalAlignment="Right" Margin="0,5,0,0"/>
+        <StackPanel Orientation="Horizontal" Grid.Row="7" Grid.Column="0" HorizontalAlignment="Center" Margin="0,10,0,10">
+            <!-- First Record Button -->
+            <Button Command="{Binding FirstRecordCommand}" Style="{StaticResource MahApps.Styles.Button.Circle}" Width="30" Height="30" Margin="5">
+                <mahappsIcons:PackIconMaterial Kind="SkipBackward" />
+            </Button>
+            <!-- Previous Record Button -->
+            <Button Command="{Binding PreviousRecordCommand}" Style="{StaticResource MahApps.Styles.Button.Circle}" Width="30" Height="30" Margin="5">
+                <mahappsIcons:PackIconMaterial Kind="ChevronLeft" />
+            </Button>
+
+            <TextBox x:Name ="ProfileIDTextBox" Text="{Binding ProfileID, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}" 
+                     Width="25" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="5">
+            </TextBox>
+
+            <!-- Next Record Button -->
+            <Button Command="{Binding NextRecordCommand}" Style="{StaticResource MahApps.Styles.Button.Circle}" Width="30" Height="30" Margin="5">
+                <mahappsIcons:PackIconMaterial Kind="ChevronRight" />
+            </Button>
+            <!-- Last Record Button -->
+            <Button Command="{Binding LastRecordCommand}" Style="{StaticResource MahApps.Styles.Button.Circle}" Width="30" Height="30" Margin="5">
+                <mahappsIcons:PackIconMaterial Kind="SkipForward" />
+            </Button>
+            <!-- New Record Button -->
+            <Button Command="{Binding AddNewCommand}" Style="{StaticResource MahApps.Styles.Button.Circle}" Width="30" Height="30" Margin="10,5">
+                <mahappsIcons:PackIconMaterial Kind="PlusBox" />
+            </Button>
+            <!-- Delete Record Button -->
+            <Button Command="{Binding DeleteCommand}" Style="{StaticResource MahApps.Styles.Button.Circle}" Width="30" Height="30" Margin="5">
+                <mahappsIcons:PackIconMaterial Kind="DeleteForever" />
+            </Button>
+        </StackPanel>
+
+        <StackPanel Orientation="Horizontal" Grid.Row="8" Grid.Column="0" HorizontalAlignment="Right" Margin="0,5,0,0">
+            <Button Content="Save" Click="SaveButton_Click" Width="100"/>
+            <Button Content="Cancel" Click="CancelButton_Click" Width="100" Margin="5,0,0,0"/>
         </StackPanel>
     </Grid>
 </metro:MetroWindow>
+

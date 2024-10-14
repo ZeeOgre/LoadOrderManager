@@ -96,12 +96,14 @@ namespace ZO.LoadOrderManager
         public static GroupSet? FindFavoriteGroupSet()
         {
             var groupSets = AggLoadInfo.LoadGroupSetsFromDatabase();
+            AggLoadInfo.GroupSets = new ObservableCollection<GroupSet>(groupSets);
             return groupSets.FirstOrDefault(gs => gs.IsFavorite);
         }
 
         public static LoadOut? FindFavoriteLoadOut(GroupSet groupSet)
         {
             var loadOuts = GroupSet.GetAllLoadOuts(groupSet.GroupSetID);
+            AggLoadInfo.Instance.LoadOuts = new ObservableCollection<LoadOut>(loadOuts);
             return loadOuts.FirstOrDefault(lo => lo.IsFavorite);
         }
 
@@ -119,6 +121,7 @@ namespace ZO.LoadOrderManager
 
             AggLoadInfo.Instance.ActiveGroupSet = favoriteGroupSet;
             AggLoadInfo.Instance.ActiveLoadOut = favoriteLoadOut;
+            
         }
 
         public static void MarkLoadOutComplete(AggLoadInfo aggLoadInfo)

@@ -1,47 +1,41 @@
-using Microsoft.Win32;
 using System;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
-using System.Diagnostics;
-using System.IO;
 using System.Linq;
-using System.Timers;
+using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Input;
-using ZO.LoadOrderManager;
-using Timer = System.Timers.Timer;
 
 namespace ZO.LoadOrderManager
 {
-    public partial class LoadOrderWindowViewModel : INotifyPropertyChanged
+    public partial class LoadOrderWindowViewModel
     {
-        public ICommand RefreshDataCommand { get; }
-
+        // Constructor to initialize data and load essential properties
         public LoadOrderWindowViewModel()
         {
+            // Set ActiveGroupSet and ActiveLoadOut to selected properties
             _selectedGroupSet = AggLoadInfo.Instance.ActiveGroupSet;
             _selectedLoadOut = AggLoadInfo.Instance.ActiveLoadOut;
 
+            // Initialize ObservableCollections for GroupSets, LoadOuts, and selection
+            GroupSets = new ObservableCollection<GroupSet>();
+            LoadOuts = new ObservableCollection<LoadOut>();
             SelectedItems = new ObservableCollection<object>();
             SelectedCachedItems = new ObservableCollection<object>();
 
-            GroupSets = new ObservableCollection<GroupSet>();
-            LoadOuts = new ObservableCollection<LoadOut>();
-
+            // Initialize the LoadOrders ViewModels
             LoadOrders = new LoadOrdersViewModel();
             CachedGroupSetLoadOrders = new LoadOrdersViewModel();
 
-            if (LoadOrders != null && LoadOrders.Items != null)
-            {
-                LoadOrders.Items.CollectionChanged += (s, e) =>
-                {
-                    if (!InitializationManager.IsAnyInitializing() && !_isSynchronizing)
-                    {
-                        RebuildFlatList();
-                    }
-                };
-            }
-            
+            // Rebuild Flat List whenever LoadOrders Items are updated
+            //if (LoadOrders?.Items != null)
+            //{
+            //    LoadOrders.Items.CollectionChanged += (s, e) =>
+            //    {
+            //        if (!_isSynchronizing)
+            //        {
+            //            RebuildFlatList();
+            //        }
+            //    };
+            //}
 
             SearchCommand = new RelayCommand(_ => Search(SearchText)); // LoadOrderWindowViewModel.TreeCommands.cs
 
@@ -67,37 +61,36 @@ namespace ZO.LoadOrderManager
             SettingsWindowCommand = new RelayCommand<object?>(param => SettingsWindow(), _ => true); // LoadOrderWindowViewModel.MenuCommands.cs
             ImportFromYamlCommand = new RelayCommand<object?>(param => ImportFromYaml()); // LoadOrderWindowViewModel.MenuCommands.cs
             OpenGameSettingsCommand = new RelayCommand<object?>(param => OpenGameSettings(), _ => true); // LoadOrderWindowViewModel.MenuCommands.cs
-            RefreshDataCommand = new RelayCommand<object?>(param => RefreshData(), _ => true); // LoadOrderWindowViewModel.Initialization.cs
+            
 
             EditGroupSetCommand = new RelayCommand(ExecuteEditGroupSetCommand, CanExecuteEditGroupSetCommand); // LoadOrderWindowViewModel.ContextMenuCommands.cs
-            RemoveGroupSetCommand = new RelayCommand(ExecuteRemoveGroupSetCommand, CanExecuteRemoveGroupSetCommand); // LoadOrderWindowViewModel.ContextMenuCommands.cs
             EditLoadOutCommand = new RelayCommand(ExecuteEditLoadOutCommand, CanExecuteEditLoadOutCommand); // LoadOrderWindowViewModel.ContextMenuCommands.cs
-            RemoveLoadOutCommand = new RelayCommand(ExecuteRemoveLoadOutCommand, CanExecuteRemoveLoadOutCommand); // LoadOrderWindowViewModel.ContextMenuCommands.cs
-            AddNewLoadOutCommand = new RelayCommand(ExecuteAddNewLoadOutCommand, CanExecuteAddNewLoadOutCommand); // LoadOrderWindowViewModel.ContextMenuCommands.cs
-
-
+          
             // Load initial data
             LoadInitialData();
         }
 
+        // Load initial data for the ViewModel
         private void LoadInitialData()
         {
             if (_isInitialDataLoaded)
             {
-                return;
+                return; // Prevent double loading
             }
 
             InitializationManager.StartInitialization(nameof(LoadOrderWindowViewModel));
+
             try
             {
                 if (AggLoadInfo.Instance != null)
                 {
-                    // Clear existing items and select active GroupSet and LoadOut
-                    //Items.Clear();
+                    StartSync();
+                    // Clear existing GroupSets and LoadOuts
                     GroupSets.Clear();
                     LoadOuts.Clear();
 
-                    foreach (var groupSet in AggLoadInfo.Instance.GroupSets)
+                    // Populate GroupSets and LoadOuts
+                    foreach (var groupSet in AggLoadInfo.GroupSets)
                     {
                         GroupSets.Add(groupSet);
                     }
@@ -107,15 +100,12 @@ namespace ZO.LoadOrderManager
                         LoadOuts.Add(loadOut);
                     }
 
-                    // Initialize LoadOrders and CachedGroupSetLoadOrders with the selected GroupSet and LoadOut
+                    // Load LoadOrders and CachedGroupSetLoadOrders
                     LoadOrders.LoadData(_selectedGroupSet, _selectedLoadOut, false, false);
                     CachedGroupSetLoadOrders.LoadData(AggLoadInfo.GetCachedGroupSet1(), LoadOut.Load(1), true, true);
+                    EndSync();
+                    // Rebuild FlatList for the current view
                     RebuildFlatList();
-
-                    InitializationManager.ReportProgress(95, "Initial data loaded into view");
-
-                    StatusMessage = $"Loaded plugins for profile: {SelectedLoadOut.Name}";
-                    UpdateStatus(StatusMessage);
 
                     _isInitialDataLoaded = true;
                 }
@@ -123,42 +113,63 @@ namespace ZO.LoadOrderManager
             finally
             {
                 InitializationManager.EndInitialization(nameof(LoadOrderWindowViewModel));
-                // Refresh data in the view
-                RefreshData();
+                RefreshData(); // Trigger UI update
             }
         }
 
-        private LoadOrderItemViewModel CreateGroupViewModel(ModGroup group)
-        {
-            return new LoadOrderItemViewModel(group);
-        }
-
+        // Refresh data for the LoadOrders and CachedGroupSetLoadOrders
         private async void RefreshData()
         {
             if (InitializationManager.IsAnyInitializing()) return;
 
+            // Disable UI
+            IsUiEnabled = false;
+
+            // Update status message for UI
             UpdateStatus("Refreshing data...");
 
             if (SelectedLoadOut != null && !_isSynchronizing)
             {
                 _isSynchronizing = true;
-                // Using async to improve performance and avoid blocking the UI
-                await Task.Run(() =>
+                try
                 {
-                    LoadOrders.RefreshData();
-                    CachedGroupSetLoadOrders.RefreshData();
-                    RebuildFlatList();
-                });
+                    // Asynchronous task for data fetching
+                    await Task.Run(() =>
+                    {
+                        // Perform data refresh (on a background thread)
+                        LoadOrders.RefreshData();
+                        //CachedGroupSetLoadOrders.RefreshData();
+                    });
 
-                StatusMessage = $"Loaded plugins for profile: {SelectedLoadOut.Name}";
+                    // Update the status message after successful load
+                    StatusMessage = $"Loaded plugins for profile: {SelectedLoadOut.Name}";
+                }
+                catch (Exception ex)
+                {
+                    // Handle any exceptions that occurred during the data loading
+                    StatusMessage = $"Error refreshing data: {ex.Message}";
+                }
+                finally
+                {
+                    // Ensure synchronization flag is reset
+                    _isSynchronizing = false;
+
+                    // Ensure the flat list is rebuilt (on the UI thread)
+                    Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        RebuildFlatList(); // Rebuild the flat list to reflect the latest state
+                        UpdateStatus(StatusMessage); // Update the status message
+                    });
+                }
             }
             else
             {
                 StatusMessage = "No LoadOut selected.";
             }
-            _isSynchronizing = false;
 
-            UpdateStatus(StatusMessage);
+            // Re-enable UI
+            IsUiEnabled = true;
         }
+
     }
 }

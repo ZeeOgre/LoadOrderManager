@@ -38,8 +38,8 @@
         </Grid.RowDefinitions>
 
         <!-- Row 0-->
-        <TextBlock Text="GroupSet ID:" FontWeight="Bold" Grid.Row="0" Grid.Column="0" VerticalAlignment="Center"/>
-        <TextBox Text="{Binding ActiveGroupSet.GroupSetID}" IsReadOnly="True" Background="LightGray" Foreground="Black" IsTabStop="False" Width="50" Margin="5,0,0,10" Grid.Row="0" VerticalAlignment="Center" HorizontalAlignment="Left" Grid.Column="1"/>
+        <TextBlock Text="GroupSet ID:" FontWeight="Bold" Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+        <TextBox Text="{Binding ActiveGroupSet.GroupSetID}" IsReadOnly="True" Background="LightGray" Foreground="Black" IsTabStop="False" Width="50" Margin="5,0,0,10" Grid.Row="0" VerticalAlignment="Center" HorizontalAlignment="Right" Grid.Column="1"/>
         <CheckBox Content="Favorite:" IsChecked="{Binding ActiveGroupSet.IsFavorite}" Grid.Row="0" Grid.Column="1" Margin="5,0,0,10" VerticalAlignment="Center" HorizontalAlignment="Center"/>
         <TextBlock Text="Flags:" FontWeight="Bold" Grid.Row="0" Grid.Column="2" VerticalAlignment="Center" Margin="10,0,0,5"/>
 
@@ -47,80 +47,102 @@
         <CheckBox Content="Default Group" IsChecked="{Binding ActiveGroupSet.IsDefaultGroup}" Grid.Row="1" Grid.Column="2" HorizontalAlignment="Left" Margin="25,0,0,5"/>
         <CheckBox Content="Read Only" IsChecked="{Binding ActiveGroupSet.IsReadOnly}" Grid.Row="1" Grid.Column="2" HorizontalAlignment="Right" Margin="0,0,15,5"/>
         <CheckBox Content="Ready to Load" IsChecked="{Binding ActiveGroupSet.IsReadyToLoad}" Grid.Row="2" Grid.Column="2" HorizontalAlignment="Left" Margin="25,0,25,5"/>
-        <CheckBox Content="Files Loaded" IsChecked="{Binding ActiveGroupSet.AreFilesLoaded}" Grid.Row="2" Grid.Column="2" HorizontalAlignment="right" Margin="5"/>
+        <CheckBox Content="Files Loaded" IsChecked="{Binding ActiveGroupSet.AreFilesLoaded}" Grid.Row="2" Grid.Column="2" HorizontalAlignment="Right" Margin="5"/>
 
         <!-- GroupSet Name - Row 1 -->
         <TextBlock Text="GroupSet Name:" FontWeight="Bold" Grid.Row="2" Grid.Column="0"/>
         <TextBox Name="TBGroupSetName" Text="{Binding ActiveGroupSet.GroupSetName}" Width="200" Margin="5,0,0,10" Grid.Row="2" Grid.Column="1"/>
 
-        <!-- Mod Groups -->
+        <!-- Mod Groups ListBox -->
         <TextBlock Text="Mod Groups:" FontWeight="Bold" Grid.Row="3" Grid.Column="0" Margin="0,10,0,0"/>
-        <ListBox Name="ModGroupsListBox" ItemsSource="{Binding ActiveGroupSet.ModGroups}" DisplayMemberPath="GroupName" Height="100" Margin="0,0,0,10" Grid.ColumnSpan="3" Grid.Row="4" MouseRightButtonDown="ModGroups_MouseRightButtonDown">
+        <ListBox Name="ModGroupsListBox" Grid.Row="4" Grid.ColumnSpan="3" ItemsSource="{Binding Groups}" DisplayMemberPath="GroupName"
+                 Height="Auto" Margin="0,0,0,10" MouseDoubleClick="ModGroupsListBox_MouseDoubleClick">
+            <ListBox.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <UniformGrid Columns="4"/>
+                </ItemsPanelTemplate>
+            </ListBox.ItemsPanel>
             <ListBox.ContextMenu>
                 <ContextMenu>
-                    <MenuItem Header="Edit" Click="EditModGroup_Click" />
-                    <MenuItem Header="Remove" Click="RemoveModGroup_Click" />
+                    <MenuItem Header="Edit" Click="EditModGroup_Click"/>
+                    <MenuItem Header="Remove" Click="RemoveModGroup_Click"/>
                 </ContextMenu>
             </ListBox.ContextMenu>
         </ListBox>
-        <Button Content="Add Mod Group" Command="{Binding AddModGroupCommand}" Width="150" HorizontalAlignment="Right" Margin="0,0,0,10" Grid.Row="5" Grid.Column="2"/>
+        <Button Content="Add Mod Group" Click="AddModGroup_Click" Width="150" HorizontalAlignment="Right" Margin="0,0,0,10" Grid.Row="5" Grid.Column="2"/>
 
-        <!-- Plugins -->
+        <!-- Plugins ListBox -->
         <TextBlock Text="Plugins:" FontWeight="Bold" Grid.Row="6" Grid.Column="0" Margin="0,10,0,0"/>
-        <ListBox Name="PluginsListBox" ItemsSource="{Binding ActiveGroupSet.Plugins}" DisplayMemberPath="PluginName" Height="100" Margin="0,0,0,10" Grid.ColumnSpan="3" Grid.Row="7" MouseRightButtonDown="Plugins_MouseRightButtonDown">
+        <ListBox Name="PluginsListBox" Grid.Row="7" Grid.ColumnSpan="3" ItemsSource="{Binding Plugins}" DisplayMemberPath="PluginName"
+                 Height="Auto" Margin="0,0,0,10" MouseDoubleClick="PluginsListBox_MouseDoubleClick">
+            <ListBox.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <UniformGrid Columns="3"/>
+                </ItemsPanelTemplate>
+            </ListBox.ItemsPanel>
             <ListBox.ContextMenu>
                 <ContextMenu>
-                    <MenuItem Header="Edit" Click="EditPlugin_Click" />
-                    <MenuItem Header="Remove" Click="RemovePlugin_Click" />
+                    <MenuItem Header="Edit" Click="EditPlugin_Click"/>
+                    <MenuItem Header="Remove" Click="RemovePlugin_Click"/>
                 </ContextMenu>
             </ListBox.ContextMenu>
         </ListBox>
-        <Button Content="Add Plugin" Command="{Binding AddPluginCommand}" Width="150" HorizontalAlignment="Right" Margin="0,0,0,10" Grid.Row="8" Grid.Column="2"/>
+        <Button Content="Add Plugin" Click="AddPlugin_Click" Width="150" HorizontalAlignment="Right" Margin="0,0,0,10" Grid.Row="8" Grid.Column="2"/>
 
-        <!-- LoadOuts -->
+        <!-- LoadOuts ListBox -->
         <TextBlock Text="LoadOuts:" FontWeight="Bold" Grid.Row="9" Grid.Column="0" Margin="0,10,0,0"/>
-
-        <ListBox Name="LoadOutsListBox" ItemsSource="{Binding ActiveGroupSet.LoadOuts}" DisplayMemberPath="Name" Height="100" Margin="0,0,0,10" Grid.ColumnSpan="3" Grid.Row="10">
+        <ListBox Name="LoadOutsListBox" Grid.Row="10" Grid.ColumnSpan="3" ItemsSource="{Binding LoadOuts}" DisplayMemberPath="Name"
+                 Height="Auto" Margin="0,0,0,10" MouseDoubleClick="LoadOutsListBox_MouseDoubleClick">
+            <ListBox.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <UniformGrid Columns="3"/>
+                </ItemsPanelTemplate>
+            </ListBox.ItemsPanel>
             <ListBox.ContextMenu>
                 <ContextMenu>
                     <MenuItem Header="Edit" Click="EditLoadOut_Click"/>
-                    <MenuItem Header="Delete" Click="RemoveLoadOut_Click"/>
+                    <MenuItem Header="Remove" Click="RemoveLoadOut_Click"/>
                 </ContextMenu>
             </ListBox.ContextMenu>
         </ListBox>
-        <Button Content="Add LoadOut" Command="{Binding AddLoadOutCommand}" Width="150" HorizontalAlignment="Right" Margin="0,0,0,10" Grid.Row="11" Grid.Column="2"/>
-
+        <Button Content="Add LoadOut" Click="AddLoadOut_Click" Width="150" HorizontalAlignment="Right" Margin="0,0,0,10" Grid.Row="11" Grid.Column="2"/>
+        
+        <Button x:Name="ImportFilesButton" Content="Import Files" Click="ImportFiles_Click" Width="100" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0,20,0,0" Grid.Row="12" Grid.Column="0"/>
         <!-- Save Button -->
-        <Button Content="Save" Command="{Binding SaveCommand}" Width="100" HorizontalAlignment="Center" Margin="0,20,0,0" Grid.Row="12" Grid.ColumnSpan="3"/>
-        <!-- Row 12: Record Browser -->
-        <StackPanel Grid.Row="13" Grid.ColumnSpan="3" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10,0,0">
+        <Button Content="Save" Click="SaveButton_Click" Width="100" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0,20,0,0" Grid.Row="12" Grid.Column="1"/>
+        <!-- Record Browser -->
+        <StackPanel Grid.Row="13" Grid.ColumnSpan="3" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10,0,10">
             <!-- First Record Button -->
-            <Button Command="{Binding FirstRecordCommand}" Style="{StaticResource MahApps.Styles.Button.Circle}" Width="30" Height="30" Margin="5">
-                <mahappsIcons:PackIconMaterial Kind="SkipBackward" />
+            <Button Click="FirstRecord_Click" Style="{StaticResource MahApps.Styles.Button.Circle}" Width="30" Height="30" Margin="5">
+                <mahappsIcons:PackIconMaterial Kind="SkipBackward"/>
             </Button>
             <!-- Previous Record Button -->
-            <Button Command="{Binding PreviousRecordCommand}" Style="{StaticResource MahApps.Styles.Button.Circle}" Width="30" Height="30" Margin="5">
-                <mahappsIcons:PackIconMaterial Kind="ChevronLeft" />
+            <Button Click="PreviousRecord_Click" Style="{StaticResource MahApps.Styles.Button.Circle}" Width="30" Height="30" Margin="5">
+                <mahappsIcons:PackIconMaterial Kind="ChevronLeft"/>
             </Button>
             <!-- Current Record Info -->
-            <TextBlock Text="{Binding CurrentRecordInfo}" VerticalAlignment="Center" Margin="10,0" />
+            <TextBox Text="{Binding ActiveGroupSet.GroupSetID, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                     Width="25" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="5">
+                <TextBox.InputBindings>
+                    <KeyBinding Key="Enter" Command="{Binding JumpToRecordCommand}" CommandParameter="{Binding Text, ElementName=TBGroupSetName}"/>
+                </TextBox.InputBindings>
+            </TextBox>
             <!-- Next Record Button -->
-            <Button Command="{Binding NextRecordCommand}" Style="{StaticResource MahApps.Styles.Button.Circle}" Width="30" Height="30" Margin="5">
-                <mahappsIcons:PackIconMaterial Kind="ChevronRight" />
+            <Button Click="NextRecord_Click" Style="{StaticResource MahApps.Styles.Button.Circle}" Width="30" Height="30" Margin="5">
+                <mahappsIcons:PackIconMaterial Kind="ChevronRight"/>
             </Button>
             <!-- Last Record Button -->
-            <Button Command="{Binding LastRecordCommand}" Style="{StaticResource MahApps.Styles.Button.Circle}" Width="30" Height="30" Margin="5">
-                <mahappsIcons:PackIconMaterial Kind="SkipForward" />
+            <Button Click="LastRecord_Click" Style="{StaticResource MahApps.Styles.Button.Circle}" Width="30" Height="30" Margin="5">
+                <mahappsIcons:PackIconMaterial Kind="SkipForward"/>
             </Button>
             <!-- New Record Button -->
-            <Button Command="{Binding NewRecordCommand}" Style="{StaticResource MahApps.Styles.Button.Circle}" Width="30" Height="30" Margin="10,5">
-                <mahappsIcons:PackIconMaterial Kind="PlusBox" />
+            <Button Click="NewRecord_Click" Style="{StaticResource MahApps.Styles.Button.Circle}" Width="30" Height="30" Margin="10,5">
+                <mahappsIcons:PackIconMaterial Kind="PlusBox"/>
             </Button>
             <!-- Delete Record Button -->
-            <Button Command="{Binding DeleteRecordCommand}" Style="{StaticResource MahApps.Styles.Button.Circle}" Width="30" Height="30" Margin="5">
-                <mahappsIcons:PackIconMaterial Kind="DeleteForever" />
+            <Button Click="DeleteRecord_Click" Style="{StaticResource MahApps.Styles.Button.Circle}" Width="30" Height="30" Margin="5">
+                <mahappsIcons:PackIconMaterial Kind="DeleteForever"/>
             </Button>
         </StackPanel>
-
     </Grid>
 </metro:MetroWindow>

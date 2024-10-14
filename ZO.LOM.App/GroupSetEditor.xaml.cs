@@ -1,8 +1,6 @@
 using MahApps.Metro.Controls;
-using System;
 using System.Linq;
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Input;
 
 namespace ZO.LoadOrderManager
@@ -11,135 +9,47 @@ namespace ZO.LoadOrderManager
     {
         private AggLoadInfo _aggLoadInfo;
 
-        public GroupSetEditor(long? groupSetID = null)
-        {
-            InitializeComponent();
-            if (groupSetID.HasValue)
-            {
-                _aggLoadInfo = new AggLoadInfo(groupSetID.Value);
-            }
-            else
-            {
-                var newGroupSet = GroupSet.CreateEmptyGroupSet();
-                newGroupSet.GroupSetName = $"NewGroupSet_{GenerateRandomString(6)}";
-                _aggLoadInfo = new AggLoadInfo(newGroupSet.GroupSetID);
-            }
-
-            DataContext = _aggLoadInfo;
-        }
-
         public GroupSetEditor(GroupSet groupSet)
         {
             InitializeComponent();
             _aggLoadInfo = new AggLoadInfo(groupSet.GroupSetID);
-            DataContext = _aggLoadInfo;
-            InitializeLoadOut();
+
+            // Set DataContext to _aggLoadInfo
+            this.DataContext = _aggLoadInfo;
+
+            // Initialize navigation commands (if needed)
+            UpdateCurrentRecordInfo();
         }
 
-        private void InitializeLoadOut()
-        {
-            if (_aggLoadInfo.LoadOuts.Count == 0)
+            private void UpdateCurrentRecordInfo()
             {
-                var defaultLoadOut = new LoadOut(_aggLoadInfo.ActiveGroupSet)
-                {
-                    Name = "(Default LoadOut)"
-                };
-                _aggLoadInfo.LoadOuts.Add(defaultLoadOut);
-                _aggLoadInfo.ActiveLoadOut = defaultLoadOut;
-            }
+                // Set DataContext to refresh the UI
+                this.DataContext = _aggLoadInfo;
+
+                // Additional logic for updating the current record’s info
+                int currentIndex = AggLoadInfo.GroupSets.IndexOf(_aggLoadInfo.ActiveGroupSet) + 1;
+                // For example: update any label or UI element showing the current record
+                // RecordInfoLabel.Content = $"Record {currentIndex} of {AggLoadInfo.GroupSets.Count}";
+            
+                _aggLoadInfo.ActiveLoadOut = _aggLoadInfo.GetLoadOutForGroupSet(_aggLoadInfo.ActiveGroupSet);
         }
 
-        private void Save_Click(object sender, RoutedEventArgs e)
-        {
-            _aggLoadInfo.ActiveGroupSet.GroupSetName = TBGroupSetName.Text;
-            _aggLoadInfo.ActiveGroupSet.GroupSetFlags = GroupFlags.ReadyToLoad;
-            LoadOut? favoriteLoadOut = _aggLoadInfo.LoadOuts.FirstOrDefault(l => l.IsFavorite);
-            LoadOut? selectedLoadOut = favoriteLoadOut ?? _aggLoadInfo.LoadOuts.FirstOrDefault();
-            _aggLoadInfo.ActiveLoadOut = selectedLoadOut ?? throw new InvalidOperationException("No LoadOuts available.");
-            _aggLoadInfo.ActiveGroupSet.SaveGroupSet();
-            _aggLoadInfo.Save();
-            AggLoadInfo.Instance.RefreshAllData();
-            this.Close();
-        }
+ 
+
+        #region Mod Groups Handlers
 
         private void AddModGroup_Click(object sender, RoutedEventArgs e)
         {
-            var addGroupWindow = new GroupSetAddObjectWindow(_aggLoadInfo, sender);
-            addGroupWindow.ShowDialog();
-            DataContext = null;
-            DataContext = _aggLoadInfo;
-        }
-
-        private void AddPlugin_Click(object sender, RoutedEventArgs e)
-        {
-            var addPluginWindow = new GroupSetAddObjectWindow(_aggLoadInfo, sender);
-            addPluginWindow.ShowDialog();
-            DataContext = null;
-            DataContext = _aggLoadInfo;
-        }
-
-        private void AddLoadOut_Click(object sender, RoutedEventArgs e)
-        {
-            var addLoadOutWindow = new GroupSetAddObjectWindow(_aggLoadInfo, sender);
-            addLoadOutWindow.ShowDialog();
-            DataContext = null;
-            DataContext = _aggLoadInfo;
-        }
-
-        private void ModGroups_MouseRightButtonDown(object sender, MouseButtonEventArgs e)
-        {
-            if (sender is ListBox listBox && listBox.ContextMenu != null)
-            {
-                listBox.ContextMenu.IsOpen = true;
-            }
-        }
-
-        private void Plugins_MouseRightButtonDown(object sender, MouseButtonEventArgs e)
-        {
-            if (sender is ListBox listBox && listBox.ContextMenu != null)
-            {
-                listBox.ContextMenu.IsOpen = true;
-            }
-        }
-
-        private string GenerateRandomString(int length)
-        {
-            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-            var random = new Random();
-            return new string(Enumerable.Repeat(chars, length)
-                .Select(s => s[random.Next(s.Length)]).ToArray());
-        }
-
-        private void ModGroupsListBox_MouseDoubleClick(object sender, MouseButtonEventArgs e)
-        {
-            if (sender is ListBox listBox && listBox.SelectedItem is ModGroup selectedGroup)
-            {
-                EditModGroup_Click(sender, e);
-            }
-        }
-
-        private void PluginsListBox_MouseDoubleClick(object sender, MouseButtonEventArgs e)
-        {
-            if (sender is ListBox listBox && listBox.SelectedItem is Plugin selectedPlugin)
-            {
-                EditPlugin_Click(sender, e);
-            }
-        }
-
-        private void LoadOutsListBox_MouseDoubleClick(object sender, MouseButtonEventArgs e)
-        {
-            if (sender is ListBox listBox && listBox.SelectedItem is LoadOut selectedLoadOut)
-            {
-                EditLoadOut_Click(sender, e);
-            }
+            var newModGroup = new ModGroup { GroupName = "New Group" };
+            _aggLoadInfo.Groups.Add(newModGroup);
         }
 
         private void EditModGroup_Click(object sender, RoutedEventArgs e)
         {
             if (ModGroupsListBox.SelectedItem is ModGroup selectedGroup)
             {
-                var editor = new ModGroupEditorWindow(selectedGroup);
-                editor.ShowDialog();
+                var modGroupEditor = new ModGroupEditorWindow(selectedGroup);
+                modGroupEditor.ShowDialog();
             }
         }
 
@@ -151,12 +61,31 @@ namespace ZO.LoadOrderManager
             }
         }
 
+        private void ModGroupsListBox_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            if (ModGroupsListBox.SelectedItem is ModGroup selectedGroup)
+            {
+                var modGroupEditor = new ModGroupEditorWindow(selectedGroup);
+                modGroupEditor.ShowDialog();
+            }
+        }
+
+        #endregion
+
+        #region Plugins Handlers
+
+        private void AddPlugin_Click(object sender, RoutedEventArgs e)
+        {
+            var newPlugin = new Plugin { PluginName = "New Plugin" };
+            _aggLoadInfo.Plugins.Add(newPlugin);
+        }
+
         private void EditPlugin_Click(object sender, RoutedEventArgs e)
         {
             if (PluginsListBox.SelectedItem is Plugin selectedPlugin)
             {
-                var editor = new PluginEditorWindow(selectedPlugin);
-                editor.ShowDialog();
+                var pluginEditor = new PluginEditorWindow(selectedPlugin);
+                pluginEditor.ShowDialog();
             }
         }
 
@@ -168,12 +97,31 @@ namespace ZO.LoadOrderManager
             }
         }
 
+        private void PluginsListBox_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            if (PluginsListBox.SelectedItem is Plugin selectedPlugin)
+            {
+                var pluginEditor = new PluginEditorWindow(selectedPlugin);
+                pluginEditor.ShowDialog();
+            }
+        }
+
+        #endregion
+
+        #region LoadOuts Handlers
+
+        private void AddLoadOut_Click(object sender, RoutedEventArgs e)
+        {
+            var newLoadOut = new LoadOut { Name = "New LoadOut" };
+            _aggLoadInfo.LoadOuts.Add(newLoadOut);
+        }
+
         private void EditLoadOut_Click(object sender, RoutedEventArgs e)
         {
             if (LoadOutsListBox.SelectedItem is LoadOut selectedLoadOut)
             {
-                var editor = new LoadOutEditor(selectedLoadOut);
-                editor.ShowDialog();
+                var loadOutEditor = new LoadOutEditor(selectedLoadOut);
+                loadOutEditor.ShowDialog();
             }
         }
 
@@ -185,47 +133,94 @@ namespace ZO.LoadOrderManager
             }
         }
 
-        // Navigation Commands for Record Navigation Control
-        private void FirstRecordCommand_Executed(object sender, ExecutedRoutedEventArgs e)
+        private void LoadOutsListBox_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
-            if (AggLoadInfo.Instance.GroupSets.Any())
+            if (LoadOutsListBox.SelectedItem is LoadOut selectedLoadOut)
             {
-                var firstGroupSet = AggLoadInfo.Instance.GroupSets.First();
-                _aggLoadInfo = new AggLoadInfo(firstGroupSet.GroupSetID);
-                DataContext = _aggLoadInfo;
+                var loadOutEditor = new LoadOutEditor(selectedLoadOut);
+                loadOutEditor.ShowDialog();
             }
         }
 
-        private void PreviousRecordCommand_Executed(object sender, ExecutedRoutedEventArgs e)
+        #endregion
+
+        #region Record Navigation Handlers
+
+        private void FirstRecord_Click(object sender, RoutedEventArgs e)
         {
-            var currentIndex = AggLoadInfo.Instance.GroupSets.IndexOf(_aggLoadInfo.ActiveGroupSet);
+            _aggLoadInfo = new AggLoadInfo(AggLoadInfo.GroupSets.FirstOrDefault().GroupSetID);
+            UpdateCurrentRecordInfo();
+        }
+
+        private void PreviousRecord_Click(object sender, RoutedEventArgs e)
+        {
+            int currentIndex = AggLoadInfo.GroupSets.IndexOf(_aggLoadInfo.ActiveGroupSet);
             if (currentIndex > 0)
             {
-                var previousGroupSet = AggLoadInfo.Instance.GroupSets[currentIndex - 1];
-                _aggLoadInfo = new AggLoadInfo(previousGroupSet.GroupSetID);
-                DataContext = _aggLoadInfo;
+                _aggLoadInfo = new AggLoadInfo(AggLoadInfo.GroupSets[currentIndex - 1].GroupSetID);
+                UpdateCurrentRecordInfo();
             }
         }
 
-        private void NextRecordCommand_Executed(object sender, ExecutedRoutedEventArgs e)
+        private void NextRecord_Click(object sender, RoutedEventArgs e)
         {
-            var currentIndex = AggLoadInfo.Instance.GroupSets.IndexOf(_aggLoadInfo.ActiveGroupSet);
-            if (currentIndex < AggLoadInfo.Instance.GroupSets.Count - 1)
+            int currentIndex = AggLoadInfo.GroupSets.IndexOf(_aggLoadInfo.ActiveGroupSet);
+            if (currentIndex < AggLoadInfo.GroupSets.Count - 1)
             {
-                var nextGroupSet = AggLoadInfo.Instance.GroupSets[currentIndex + 1];
-                _aggLoadInfo = new AggLoadInfo(nextGroupSet.GroupSetID);
-                DataContext = _aggLoadInfo;
+                _aggLoadInfo = new AggLoadInfo(AggLoadInfo.GroupSets[currentIndex + 1].GroupSetID);
+                UpdateCurrentRecordInfo();
             }
         }
 
-        private void LastRecordCommand_Executed(object sender, ExecutedRoutedEventArgs e)
+        private void LastRecord_Click(object sender, RoutedEventArgs e)
         {
-            if (AggLoadInfo.Instance.GroupSets.Any())
+            _aggLoadInfo = new AggLoadInfo(AggLoadInfo.GroupSets.LastOrDefault().GroupSetID);
+            UpdateCurrentRecordInfo();
+        }
+
+        private void NewRecord_Click(object sender, RoutedEventArgs e)
+        {
+            var groupSet = GroupSet.CreateEmptyGroupSet();
+            _aggLoadInfo = new AggLoadInfo(groupSet.GroupSetID);
+            UpdateCurrentRecordInfo();
+        }
+
+        private void DeleteRecord_Click(object sender, RoutedEventArgs e)
+        {
+            if (_aggLoadInfo != null)
             {
-                var lastGroupSet = AggLoadInfo.Instance.GroupSets.Last();
-                _aggLoadInfo = new AggLoadInfo(lastGroupSet.GroupSetID);
-                DataContext = _aggLoadInfo;
+                if (_aggLoadInfo.ActiveGroupSet.IsFavorite)
+                {
+                    MessageBox.Show("Please select another GroupSet as favorite before deleting this one.", "Cannot Delete Favorite", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+                if (_aggLoadInfo.ActiveGroupSet.IsDefaultGroup || _aggLoadInfo.ActiveGroupSet.IsReadOnly)
+                {
+                    MessageBox.Show("Cannot delete the Default or ReadOnly Groupsets.", "Cannot Delete Default or ReadOnly", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+                if (AggLoadInfo.Instance.ActiveGroupSet == _aggLoadInfo.ActiveGroupSet)
+                {
+                    MessageBox.Show("This is the primary ActiveGroupSet, please select a different one on the main window before deleting.", "Cannot Delete Active LoadOut", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                AggLoadInfo.GroupSets.Remove(_aggLoadInfo.ActiveGroupSet);
+                GroupSet.DeleteRecord(_aggLoadInfo.ActiveGroupSet.GroupSetID);
+                FirstRecord_Click(null, null); // Navigate to the first record after deletion
             }
+        }
+
+        #endregion
+        private void ImportFiles_Click(object sender, RoutedEventArgs e)
+        {
+            
+            FileManager.ParsePluginsTxt(_aggLoadInfo);
+        }
+        private void SaveButton_Click(object sender, RoutedEventArgs e)
+        {
+            _aggLoadInfo.Save();
+            this.Close();
         }
     }
 }

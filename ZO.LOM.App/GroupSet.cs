@@ -31,13 +31,13 @@ public class GroupSet : INotifyPropertyChanged
             if (_groupSetFlags != value)
             {
                 _groupSetFlags = value;
-                OnPropertyChanged(nameof(GroupSetFlags));
-                OnPropertyChanged(nameof(IsUninitialized));
-                OnPropertyChanged(nameof(IsDefaultGroup));
-                OnPropertyChanged(nameof(IsReadOnly));
-                OnPropertyChanged(nameof(IsFavorite));
-                OnPropertyChanged(nameof(IsReadyToLoad));
-                OnPropertyChanged(nameof(AreFilesLoaded));
+                //OnPropertyChanged(nameof(GroupSetFlags));
+                //OnPropertyChanged(nameof(IsUninitialized));
+                //OnPropertyChanged(nameof(IsDefaultGroup));
+                //OnPropertyChanged(nameof(IsReadOnly));
+                //OnPropertyChanged(nameof(IsFavorite));
+                //OnPropertyChanged(nameof(IsReadyToLoad));
+                //OnPropertyChanged(nameof(AreFilesLoaded));
             }
         }
     }
@@ -132,11 +132,11 @@ public class GroupSet : INotifyPropertyChanged
             };
 
             // Load associated ModGroups
-            var modGroupsList = ModGroup.LoadModGroupsByGroupSet(groupSetID);
+            // var modGroupsList = ModGroup.LoadModGroupsByGroupSet(groupSetID);
             //groupSet.ModGroups = new ObservableCollection<ModGroup>(modGroupsList);
 
             // Load associated LoadOuts
-            var loadOuts = GetAllLoadOuts(groupSetID);
+            //var loadOuts = GetAllLoadOuts(groupSetID);
             //groupSet.LoadOuts = new ObservableCollection<LoadOut>(loadOuts);
 
             return groupSet;
@@ -311,13 +311,7 @@ public class GroupSet : INotifyPropertyChanged
     }
 
 
-    //private static void OnGroupSetChanged(object? sender, NotifyCollectionChangedEventArgs e)
-    //{
-    //    if (!((GroupSet)sender).IsUninitialized && ((GroupSet)sender).AreFilesLoaded)
-    //    {
-    //        GroupSetChanged?.Invoke(sender, e);
-    //    }
-    //}
+
 
 
     // Dummy LoadOut methods - replace these with actual implementations
@@ -398,7 +392,7 @@ public class GroupSet : INotifyPropertyChanged
             // Refresh AggLoadInfo after deletion
             if (AggLoadInfo.Instance.ActiveGroupSet?.GroupSetID == groupSetID)
             {
-                AggLoadInfo.Instance.ActiveGroupSet = AggLoadInfo.Instance.GroupSets.FirstOrDefault(gs => gs.IsFavorite) ?? AggLoadInfo.Instance.GroupSets.FirstOrDefault();
+                AggLoadInfo.Instance.ActiveGroupSet = AggLoadInfo.GroupSets.FirstOrDefault(gs => gs.IsFavorite) ?? AggLoadInfo.GroupSets.FirstOrDefault();
             }
             AggLoadInfo.Instance.RefreshAllData();
         }

@@ -8,6 +8,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Timers;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using ZO.LoadOrderManager;
 using Timer = System.Timers.Timer;
@@ -22,7 +23,79 @@ namespace ZO.LoadOrderManager
         public ICommand MoveDownCommand { get; }
         public ICommand SavePluginsCommand { get; }
         public ICommand SaveLoadOutCommand { get; }
+        public ICommand EditGroupSetCommand { get; }
+        public ICommand EditLoadOutCommand { get; }
 
+
+
+        private void ExecuteEditGroupSetCommand(object parameter)
+        {
+            // Attempt to cast the parameter to a ComboBox
+            var comboBox = parameter as ComboBox;
+
+            // If the parameter is a ComboBox, use its SelectedItem, otherwise fallback to SelectedGroupSet
+            GroupSet targetGroupSet = comboBox?.SelectedItem as GroupSet ?? SelectedGroupSet;
+
+            // Ensure we have a target group set to edit
+            if (targetGroupSet == null)
+            {
+                MessageBox.Show("Please select a GroupSet to edit.", "Edit GroupSet", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            // Create and open the GroupSetEditor window
+            var groupSetEditor = new GroupSetEditor(targetGroupSet);
+            bool? dialogResult = groupSetEditor.ShowDialog();
+
+            // If editing was successful, refresh the data
+            if (dialogResult == true)
+            {
+                AggLoadInfo.Instance.RefreshAllData();
+                OnPropertyChanged(nameof(GroupSets));
+            }
+        }
+
+        private bool CanExecuteEditGroupSetCommand(object parameter)
+        {
+            // Ensure a GroupSet is selected for editing
+            return SelectedGroupSet != null;
+        }
+
+        private void ExecuteEditLoadOutCommand(object parameter)
+        {
+            // Attempt to cast the parameter to a ComboBox
+            var comboBox = parameter as ComboBox;
+
+            // If the parameter is a ComboBox, use its SelectedItem, otherwise fallback to SelectedLoadOut
+            LoadOut targetLoadOut = comboBox?.SelectedItem as LoadOut ?? SelectedLoadOut;
+
+            // Ensure we have a target loadout to edit
+            if (targetLoadOut == null)
+            {
+                MessageBox.Show("Please select a LoadOut to edit.", "Edit LoadOut", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            // Create and open the LoadOutEditor window
+
+            var loadOutEditor = new LoadOutEditor(targetLoadOut);
+            bool? dialogResult = loadOutEditor.ShowDialog();
+
+            // If editing was successful, refresh the data
+            if (dialogResult == true)
+            {
+                SelectedLoadOut = loadOutEditor.GetLoadOut();
+
+                AggLoadInfo.Instance.RefreshMetadataFromDB();
+                OnPropertyChanged(nameof(LoadOuts));
+            }
+        }
+
+        private bool CanExecuteEditLoadOutCommand(object parameter)
+        {
+            // Logic to determine if EditLoadOutCommand can execute
+            return true;
+        }
         private void Save(object? parameter)
         {
             if (SelectedLoadOut != null)
@@ -45,9 +118,11 @@ namespace ZO.LoadOrderManager
 
         public bool CanMoveUp()
         {
-            if (SelectedItems is null || SelectedItems.Count == 0) return false;
+            
+            if (SelectedItems is null || SelectedItems.Count == 0 || !IsUiEnabled) return false;
             if (!(SelectedItem is LoadOrderItemViewModel loadOrderItem) || loadOrderItem.GroupSetID == 1 || loadOrderItem.GroupID < 1 )
                 return false;
+            Debug.WriteLine($"SelectedItem: {loadOrderItem.DisplayName} | ID {loadOrderItem.GroupID} | Parent: {loadOrderItem.ParentID} | Ordinal {loadOrderItem.Ordinal}");
             if (AggLoadInfo.GetNeighbor(loadOrderItem, true) is LoadOrderItemViewModel neighbor)
             {
                 return true;
@@ -57,7 +132,8 @@ namespace ZO.LoadOrderManager
 
         public bool CanMoveDown()
         {
-            if (SelectedItems is null || SelectedItems.Count == 0) return false;
+            
+            if (SelectedItems is null || SelectedItems.Count == 0 || !IsUiEnabled) return false;
             var firstItem = SelectedItems[0] as LoadOrderItemViewModel;
             var lastItem = SelectedItems[SelectedItems.Count - 1] as LoadOrderItemViewModel;
             var selectedItems = SelectedItems.OfType<LoadOrderItemViewModel>().ToList();
@@ -187,7 +263,7 @@ namespace ZO.LoadOrderManager
 
 
 
-        public ICommand AddNewGroupSetCommand => new RelayCommand(_ => AddNewGroupSet());
+        //public ICommand AddNewGroupSetCommand => new RelayCommand(_ => AddNewGroupSet());
         public ICommand AddNewLoadoutCommand => new RelayCommand(_ => AddNewLoadout());
         public ICommand CompareCommand => new RelayCommand(_ => Compare());
 
@@ -235,17 +311,17 @@ namespace ZO.LoadOrderManager
         }
 
 
-        private void AddNewGroupSet()
-        {
-            // Create a new GroupSetEditor window with a new GroupSet (no arguments)
-            var groupSetEditor = new GroupSetEditor();
+        //private void AddNewGroupSet()
+        //{
+        //    // Create a new GroupSetEditor window with a new GroupSet (no arguments)
+        //    var groupSetEditor = new GroupSetEditor();
 
-            // Show the dialog for the new GroupSetEditor
-            groupSetEditor.ShowDialog();
+        //    // Show the dialog for the new GroupSetEditor
+        //    groupSetEditor.ShowDialog();
 
-            // Optionally, refresh the AggLoadInfo instance or the view as needed
-            AggLoadInfo.Instance.RefreshAllData();
-        }
+        //    // Optionally, refresh the AggLoadInfo instance or the view as needed
+        //    AggLoadInfo.Instance.RefreshAllData();
+        //}
 
 
        

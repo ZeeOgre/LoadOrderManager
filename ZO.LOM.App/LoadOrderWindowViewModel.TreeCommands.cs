@@ -125,9 +125,9 @@ namespace ZO.LoadOrderManager
             plugin.WriteMod();
         }
 
-        private IEnumerable<LoadOrderItemViewModel> Flatten(ObservableCollection<LoadOrderItemViewModel> items)
+        private IEnumerable<LoadOrderItemViewModel> Flatten(ObservableCollection<LoadOrderItemViewModel> items, bool refresh=false)
         {
-            if (_cachedFlatList != null)
+            if (_cachedFlatList != null || !refresh)
             {
                 return _cachedFlatList;
             }

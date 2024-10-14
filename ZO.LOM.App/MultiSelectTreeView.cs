@@ -167,6 +167,7 @@ namespace ZO.LoadOrderManager
                                     rangeItem.IsSelected = true;
                                 }
                             }
+                            
                         }
 
                         _firstSelectedItem = null; // Reset after range selection

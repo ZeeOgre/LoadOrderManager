@@ -36,7 +36,7 @@ public class UniversalCollectionDisabler : IDisposable
         _disablers.Add(new CollectionUpdateDisabler<Plugin>(aggLoadInfo.Plugins));
         _disablers.Add(new CollectionUpdateDisabler<ModGroup>(aggLoadInfo.Groups));
         _disablers.Add(new CollectionUpdateDisabler<LoadOut>(aggLoadInfo.LoadOuts));
-        _disablers.Add(new CollectionUpdateDisabler<GroupSet>(aggLoadInfo.GroupSets));
+        _disablers.Add(new CollectionUpdateDisabler<GroupSet>(AggLoadInfo.GroupSets));
         _disablers.Add(new CollectionUpdateDisabler<(long groupID, long groupSetID, long? parentID, long Ordinal)>(aggLoadInfo.GroupSetGroups.Items));
         _disablers.Add(new CollectionUpdateDisabler<(long groupSetID, long groupID, long pluginID, long Ordinal)>(aggLoadInfo.GroupSetPlugins.Items));
 

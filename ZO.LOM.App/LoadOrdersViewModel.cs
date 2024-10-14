@@ -22,30 +22,37 @@ public class LoadOrdersViewModel : ViewModelBase
         Items = new ObservableCollection<LoadOrderItemViewModel>();
         AggLoadInfo.Instance.DataRefreshed += OnDataRefreshed;
     }
-
+     
     public void LoadData(GroupSet groupSet, LoadOut loadOut, bool suppress997 = false, bool isCached = false)
     {
-        Items.Clear();
-        AggLoadInfo.Instance.PopulateLoadOrders(this, groupSet, loadOut, suppress997, isCached);
+        // Ensure the collection updates happen on the UI thread
+        Application.Current.Dispatcher.Invoke(() =>
+        {
+            Items.Clear();
+            AggLoadInfo.Instance.PopulateLoadOrders(this, groupSet, loadOut, suppress997, isCached);
+        });
     }
+
 
     public void RefreshData()
     {
+        if (IsCached) return;
         // Use AggLoadInfo to populate the LoadOrdersViewModel
         var activeGroupSet = AggLoadInfo.Instance.ActiveGroupSet;
         var activeLoadOut = AggLoadInfo.Instance.ActiveLoadOut;
 
-        AggLoadInfo.Instance.PopulateLoadOrders(this, activeGroupSet, activeLoadOut, suppress997: true);
-        OnPropertyChanged(nameof(Items));
+        //LoadData(activeGroupSet, activeLoadOut, suppress997: false, isCached: false);
+        LoadData(activeGroupSet, activeLoadOut, this.Suppress997, this.IsCached);
+        //OnPropertyChanged(nameof(Items));
 
 
         // If there is a cached group, also populate it
-        var cachedGroupSet = AggLoadInfo.GetCachedGroupSet1();
-        if (cachedGroupSet != null)
-        {
-            var cachedViewModel = new LoadOrdersViewModel();
-            AggLoadInfo.Instance.PopulateLoadOrders(cachedViewModel, cachedGroupSet, activeLoadOut, suppress997: true, isCached: true);
-        }
+        //var cachedGroupSet = AggLoadInfo.GetCachedGroupSet1();
+        //if (cachedGroupSet != null)
+        //{
+        //    var cachedViewModel = new LoadOrdersViewModel();
+        //    AggLoadInfo.Instance.PopulateLoadOrders(cachedViewModel, cachedGroupSet, activeLoadOut, suppress997: true, isCached: true);
+        //}
     }
 
     public void OnDataRefreshed(object? sender, EventArgs e)

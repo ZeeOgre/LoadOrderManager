@@ -135,6 +135,7 @@ public class LoadOrderItemViewModel : ViewModelBase
             // Swap locations for plugins
             var currentPlugin = PluginData;
             var otherPlugin = other.PluginData;
+        
 
             // Perform the swap logic for plugins
             currentPlugin.SwapLocations(otherPlugin);
@@ -148,6 +149,11 @@ public class LoadOrderItemViewModel : ViewModelBase
             // Perform the swap logic for groups
             currentGroup.SwapLocations(otherGroup);
         }
+
+        var currentOrdinal = Ordinal;
+        var otherOrdinal = other.Ordinal;
+        Ordinal = otherOrdinal;
+        other.Ordinal = currentOrdinal;
     }
 
     private bool _isHighlighted;

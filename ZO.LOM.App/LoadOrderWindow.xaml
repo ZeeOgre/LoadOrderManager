@@ -346,23 +346,11 @@
                             <TextBlock Text="{Binding GroupSetName}" />
                         </DataTemplate>
                     </ComboBox.ItemTemplate>
-
-                    <!-- Context Menu for GroupSets -->
-                    <ComboBox.ContextMenu>
-                        <ContextMenu>
-                            <MenuItem Header="Edit Group Set" 
-                              Command="{Binding PlacementTarget.DataContext.EditGroupSetCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" 
-                              CommandParameter="{Binding}" />
-                            <MenuItem Header="Remove Group Set" 
-                              Command="{Binding PlacementTarget.DataContext.RemoveGroupSetCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" 
-                              CommandParameter="{Binding}" />
-                            <MenuItem Header="Add New Group Set" 
-                              Command="{Binding PlacementTarget.DataContext.AddNewGroupSetCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
-                        </ContextMenu>
-                    </ComboBox.ContextMenu>
                 </ComboBox>
-                 <Button Content="Add New GroupSet"
-         Command="{Binding AddNewGroupSetCommand}"
+                
+                 <Button Content="Edit GroupSets"
+         Command="{Binding EditGroupSetCommand}" 
+         CommandParameter="{Binding ElementName=cmbGroupSet}"
          Width="200" 
          HorizontalAlignment="Center" 
          Margin="10,5,10,5" VerticalAlignment="Center"/>
@@ -370,31 +358,19 @@
 
             <StackPanel Grid.Column="2" Orientation="Vertical" HorizontalAlignment="Center">
                 <!-- ComboBox for LoadOuts -->
-                <ComboBox x:Name="cmbProfile" Grid.Row="2" 
-                  ItemsSource="{Binding LoadOuts}" 
-                  SelectedItem="{Binding SelectedLoadOut, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                <ComboBox x:Name="cmbLoadOut" Grid.Row="2"
+          ItemsSource="{Binding LoadOuts}"
+          SelectedItem="{Binding SelectedLoadOut, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
                     <ComboBox.ItemTemplate>
                         <DataTemplate>
                             <TextBlock Text="{Binding Name}" />
                         </DataTemplate>
                     </ComboBox.ItemTemplate>
-
-                    <!-- Context Menu for LoadOuts -->
-                    <ComboBox.ContextMenu>
-                        <ContextMenu>
-                            <MenuItem Header="Edit LoadOut" 
-                              Command="{Binding PlacementTarget.DataContext.EditLoadOutCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" 
-                              CommandParameter="{Binding}" />
-                            <MenuItem Header="Remove LoadOut" 
-                              Command="{Binding PlacementTarget.DataContext.RemoveLoadOutCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" 
-                              CommandParameter="{Binding}" />
-                            <MenuItem Header="Add New LoadOut" 
-                              Command="{Binding PlacementTarget.DataContext.AddNewLoadOutCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
-                        </ContextMenu>
-                    </ComboBox.ContextMenu>
                 </ComboBox>
-                <Button Content="Add New LoadOut"
-            Command="{Binding AddNewLoadoutCommand}"
+
+                <Button Content="Edit LoadOuts"
+            Command="{Binding EditLoadOutCommand}"
+            CommandParameter="{Binding ElementName=cmbLoadOut}"
             Width="200"
             HorizontalAlignment="Left" 
             Margin="10,5,10,5" VerticalAlignment="Center"/>

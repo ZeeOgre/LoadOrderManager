@@ -97,7 +97,7 @@ namespace ZO.LoadOrderManager
             InitializationManager.EndInitialization(nameof(LoadOrderWindow));
 
             cmbGroupSet.SelectedItem = viewModel.SelectedGroupSet;
-            cmbProfile.SelectedItem = viewModel.SelectedLoadOut;
+            cmbLoadOut.SelectedItem = viewModel.SelectedLoadOut;
 
             // Ensure window visibility after initialization
             this.Visibility = Visibility.Visible;

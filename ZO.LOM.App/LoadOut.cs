@@ -9,31 +9,11 @@ namespace ZO.LoadOrderManager
         public long ProfileID { get; set; }
         public required string Name { get; set; }
         public ObservableHashSet<long> enabledPlugins { get; set; } = new ObservableHashSet<long>();
-        public bool IsFavorite { get; set; }
+        public bool IsFavorite { get; 
+            set; }
 
         //private GroupSet? _groupSet;
         public long GroupSetID { get; set; }
-
-        //public GroupSet GroupSet
-        //{
-        //    get
-        //    {
-        //        if (_groupSet == null)
-        //        {
-        //            _groupSet = GroupSet.LoadGroupSet(GroupSetID) ?? GroupSet.CreateEmptyGroupSet();
-        //            if (_groupSet.GroupSetID == 0)
-        //            {
-        //                _groupSet.GroupSetName = $"{Name}_GroupSet_{_groupSet.GroupSetID}";
-        //            }
-        //        }
-        //        return _groupSet;
-        //    }
-        //    set
-        //    {
-        //        _groupSet = value;
-        //        GroupSetID = value.GroupSetID;
-        //    }
-        //}
 
         // Default constructor
         public LoadOut()
@@ -143,7 +123,7 @@ namespace ZO.LoadOrderManager
             }
         }
 
-        public long WriteProfile()
+        public LoadOut WriteProfile()
         {
             App.LogDebug("Writing profile to database");
             using var connection = DbManager.Instance.GetConnection();
@@ -159,11 +139,26 @@ namespace ZO.LoadOrderManager
                     command.CommandText = @"
                             INSERT OR REPLACE INTO LoadOutProfiles (ProfileID, ProfileName, GroupSetID, IsFavorite)
                             VALUES (@ProfileID, @ProfileName, @GroupSetID, @IsFavorite)";
-                    command.Parameters.AddWithValue("@ProfileID", this.ProfileID);
+                    if (this.ProfileID == 0)
+                    {
+                        command.Parameters.AddWithValue("@ProfileID", DBNull.Value);
+                    }
+                    else
+                    {
+                        command.Parameters.AddWithValue("@ProfileID", this.ProfileID);
+                    }
                     command.Parameters.AddWithValue("@ProfileName", this.Name);
                     command.Parameters.AddWithValue("@GroupSetID", this.GroupSetID);
                     command.Parameters.AddWithValue("@IsFavorite", this.IsFavorite ? 1 : 0);
-                    command.ExecuteNonQuery();
+                    if (this.ProfileID == 0 || this.ProfileID == null)
+                    {
+                        command.CommandText += " RETURNING ProfileID";
+                        this.ProfileID = (long)command.ExecuteScalar();
+                    }
+                    else
+                    {
+                        command.ExecuteNonQuery();
+                    }
 
                     // Insert or replace ProfilePlugins entries
                     command.CommandText = @"
@@ -192,7 +187,7 @@ namespace ZO.LoadOrderManager
                 // Commit the transaction
                 App.LogDebug("LoadOut Commit Transaction");
                 transaction.Commit();
-                return this.ProfileID;
+                return this;
             }
             catch (Exception ex)
             {
@@ -201,6 +196,53 @@ namespace ZO.LoadOrderManager
                 throw;
             }
         }
+
+
+        public void DeleteProfile()
+        {
+            App.LogDebug("Deleting profile from database");
+            using var connection = DbManager.Instance.GetConnection();
+
+            App.LogDebug("LoadOut Begin Transaction");
+            using var transaction = connection.BeginTransaction();
+            try
+            {
+                using (var command = new SQLiteCommand(connection))
+                {
+                    //App.LogDebug($"Deleting from ProfilePlugins table for {this.Name}");
+                    //// Delete from the ProfilePlugins table first
+                    //command.CommandText = @"
+                    //        DELETE FROM ProfilePlugins
+                    //        WHERE ProfileID = @ProfileID";
+                    //command.Parameters.AddWithValue("@ProfileID", this.ProfileID);
+                    //command.ExecuteNonQuery();
+
+                    App.LogDebug($"Deleting from LoadOutProfiles table for {this.Name}");
+                    // Delete from the LoadOutProfiles table
+                    command.CommandText = @"
+                            DELETE FROM LoadOutProfiles
+                            WHERE ProfileID = @ProfileID";
+                    command.Parameters.Clear();
+                    command.Parameters.AddWithValue("@ProfileID", this.ProfileID);
+                    command.ExecuteNonQuery();
+                }
+
+                // Commit the transaction
+                App.LogDebug("LoadOut Commit Transaction");
+                transaction.Commit();
+            }
+            catch (Exception ex)
+            {
+                App.LogDebug("Error deleting profile from database", ex.ToString());
+                transaction.Rollback();
+                throw;
+            }
+            //AggLoadInfo.Instance.LoadOuts.Remove(this);
+            //AggLoadInfo.Instance.RefreshMetadataFromDB();
+            
+        }
+
+
 
         public static void SetPluginEnabled(long profileID, long pluginID, bool isEnabled, AggLoadInfo? aggLoadInfo = null)
         {

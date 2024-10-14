@@ -86,7 +86,7 @@ namespace ZO.LoadOrderManager
             using var command = new SQLiteCommand(connection);
 
             command.CommandText = @"
-        SELECT GroupID, GroupName, GroupDescription, ParentID, GroupOrdinal, GroupSetID
+        SELECT GroupID, GroupName, GroupDescription, ParentID, Ordinal, GroupSetID
         FROM vwModGroups
         WHERE GroupID = @GroupID AND GroupSetID = @GroupSetID";
 
@@ -116,7 +116,7 @@ namespace ZO.LoadOrderManager
             using var connection = DbManager.Instance.GetConnection();
             using var command = new SQLiteCommand(connection);
             command.CommandText = @"
-                SELECT GroupID, GroupName, GroupDescription, ParentID, GroupOrdinal, GroupSetID
+                SELECT GroupID, GroupName, GroupDescription, ParentID, Ordinal, GroupSetID
                 FROM vwModGroups
                 WHERE GroupSetID = @GroupSetID";
 
@@ -240,9 +240,10 @@ namespace ZO.LoadOrderManager
                 App.LogDebug($"ChangeGroup error: {ex.Message}");
                 throw;
             }
-            AggLoadInfo.Instance.RefreshMetadataFromDB();
+            
             // Save the current group after all changes
-            this.WriteGroup();
+            //this.WriteGroup();
+            AggLoadInfo.Instance.RefreshMetadataFromDB();
         }
 
 

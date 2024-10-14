@@ -10,7 +10,7 @@ namespace ZO.LoadOrderManager
         public GroupSetSelector()
         {
             InitializeComponent();
-            cmbGroupSets.ItemsSource = AggLoadInfo.Instance.GroupSets;
+            cmbGroupSets.ItemsSource = AggLoadInfo.GroupSets;
         }
 
         private void btnOk_Click(object sender, RoutedEventArgs e)
