@@ -287,7 +287,11 @@ namespace ZO.LoadOrderManager
                 var selectedFile = openFileDialog.FileName;
                 try
                 {
-                    _ = Config.LoadFromYaml(selectedFile);
+                    _config = Config.LoadFromYaml(selectedFile);
+                    OnPropertyChanged(nameof(MonitoredFiles));
+                    OnPropertyChanged(nameof(AutoCheckAtStartup));
+                    OnPropertyChanged(nameof(GameFolder));
+                    OnPropertyChanged(nameof(DarkMode));
                     _ = MessageBox.Show("Configuration loaded successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
                 catch (Exception ex)

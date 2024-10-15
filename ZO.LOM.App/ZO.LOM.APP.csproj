@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net8.0-windows7.0</TargetFramework>
+    <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>True</UseWPF>
@@ -27,7 +27,7 @@
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <StartupObject></StartupObject>
     <EnforceCodeStyleInBuild>True</EnforceCodeStyleInBuild>
-    <SupportedOSPlatformVersion>7.0</SupportedOSPlatformVersion>
+    <SupportedOSPlatformVersion>10.0.19041.0</SupportedOSPlatformVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='GitRelease|AnyCPU'">
@@ -70,6 +70,12 @@
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>
+    <None Update="lib\x64\SQLite.Interop.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="lib\x86\SQLite.Interop.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
@@ -91,24 +97,6 @@
   <ItemGroup>
     <Content Include="data\**\*" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="docs\**\*" CopyToOutputDirectory="OverwriteAlways" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Compile Remove="docs\FileManager.ContentCatalogParser.cs" />
-    <Compile Remove="LoadOrderWindow .bak.cs" />
-    <Compile Remove="LoadOrderWindowViewModel - PartialTemplate.cs" />
-    <Compile Remove="LoadOrderWindowViewModel.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Remove="LoadOrderWindow.bak" />
-    <None Remove="ModGroup - Copy.bakcs" />
-    <None Remove="ModGroup.bak" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Page Remove="Themes\DarkTreeViewTheme.xaml" />
-    <Page Remove="Themes\LightTreeViewTheme.xaml" />
   </ItemGroup>
 
   <Target Name="RearrangeOutputFiles" AfterTargets="Build;Publish" BeforeTargets="PostBuildEvent">
