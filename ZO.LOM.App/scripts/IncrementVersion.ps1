@@ -1,9 +1,9 @@
 param (
     [string]$SettingsFile = "..\Properties\Settings.settings",
-    [string]$CsprojFilePath = "..\ZO.LoadOrderManager.csproj",
+    [string]$CsprojFilePath = "..\ZO.LOM.APP.csproj",
     [string]$AppConfigFilePath = "..\App.config",
     [string]$VersionTxtFilePath = "..\Properties\version.txt",
-    [string]$AipFilePath = "..\installer\LOMInstaller.aip",
+    [string]$AipFilePath = "..\installer\ZO.LoadOrderManager.aip",
     [string]$XmlOutputPath = "..\Properties\AutoUpdater.xml",
     [string]$Configuration,
     [string]$AssemblyInfoFilePath = "..\Properties\AssemblyInfo.cs"
