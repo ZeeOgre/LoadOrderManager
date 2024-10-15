@@ -506,8 +506,8 @@ namespace ZO.LoadOrderManager
                     DTStamp = COALESCE(@DTStamp, DTStamp),
                     HASH = COALESCE(@HASH, HASH),
                     Flags = FileInfo.Flags | excluded.Flags,
-                    AbsolutePath = COALESCE(excluded.AbsolutePath, FileInfo.AbsolutePath)"";
-                WHERE FileID = @FileID";
+                    AbsolutePath = COALESCE(excluded.AbsolutePath, FileInfo.AbsolutePath)
+                    WHERE FileID = @FileID";
 
                     command.Parameters.AddWithValue("@FileID", fileInfo.FileID);
                     command.Parameters.AddWithValue("@PluginID", pluginId);
