@@ -15,6 +15,13 @@ namespace ZO.LoadOrderManager
         private string? filePath2;
 
         // Constructor 1: FileInfo handling
+        public DiffViewer()
+        {
+            InitializeComponent();
+            DiffView.IsCommandBarVisible = true;
+        }
+
+        // Constructor 1: FileInfo handling
         public DiffViewer(FileInfo fileInfo)
         {
             InitializeComponent();
@@ -32,6 +39,10 @@ namespace ZO.LoadOrderManager
             // Set texts in DiffView
             DiffView.OldText = oldText;
             DiffView.NewText = newText;
+            DiffView.IsCommandBarVisible = false;
+
+            // Set the window title
+            Title = $"DiffViewer | Comparing {Path.GetFileName(filePath1)}...";
 
             LoadData();
         }
@@ -55,6 +66,10 @@ namespace ZO.LoadOrderManager
             // Set texts in DiffView
             DiffView.OldText = oldText;
             DiffView.NewText = newText;
+            DiffView.IsCommandBarVisible = false;
+
+            // Set the window title
+            Title = $"DiffViewer | Comparing {Path.GetFileName(filePath1)}...";
 
             LoadData();
         }
@@ -76,10 +91,15 @@ namespace ZO.LoadOrderManager
             // Set texts in DiffView
             DiffView.OldText = oldText;
             DiffView.NewText = newText;
+            DiffView.IsCommandBarVisible = false;
+
+            // Set the window title
+            Title = $"DiffViewer | Comparing {Path.GetFileName(filePath1)}...";
 
             LoadData();
         }
-        //constructor 4 byte arrays 
+
+        // Constructor 4: byte arrays
         public DiffViewer(byte[] oldContent, byte[] newContent)
         {
             InitializeComponent();
@@ -91,6 +111,10 @@ namespace ZO.LoadOrderManager
             // Set texts in DiffView
             DiffView.OldText = oldText;
             DiffView.NewText = newText;
+            DiffView.IsCommandBarVisible = false;
+
+            // Set the window title
+            Title = "DiffViewer | Comparing filedata...";
 
             LoadData();
         }
@@ -118,14 +142,14 @@ namespace ZO.LoadOrderManager
         {
             // Adjust appearance based on the time of day (dark/light mode)
             var now = DateTime.Now;
-            var isDark = false; // now.Hour < 6 || now.Hour >= 18;
-            DiffView.Foreground = new SolidColorBrush(isDark ? Color.FromRgb(240, 240, 240) : Color.FromRgb(32, 32, 32));
+            var isDark = Config.Instance.DarkMode; // now.Hour < 6 || now.Hour >= 18;
+                                                   //DiffView.Foreground = new SolidColorBrush(isDark ? Color.FromRgb(240, 240, 240) : Color.FromRgb(32, 32, 32));
 
             // Optionally set headers or adjust appearance
             DiffView.SetHeaderAsOldToNew();
 
             // Set background color
-            Background = new SolidColorBrush(isDark ? Color.FromRgb(32, 32, 32) : Color.FromRgb(251, 251, 251));
+            //Background = new SolidColorBrush(isDark ? Color.FromRgb(32, 32, 32) : Color.FromRgb(251, 251, 251));
         }
 
         // Switch between inline and side-by-side views
@@ -142,7 +166,7 @@ namespace ZO.LoadOrderManager
         }
 
         // Open additional view options (collapse unchanged, etc.)
-        private void FutherActionsButton_Click(object sender, RoutedEventArgs e)
+        private void FurtherActionsButton_Click(object sender, RoutedEventArgs e)
         {
             DiffView.OpenViewModeContextMenu();
         }

@@ -4,7 +4,7 @@
         xmlns:metro="http://metro.mahapps.com/winfx/xaml/controls"
         Style="{StaticResource MaterialDesignWindow}"
         xmlns:diffplex="clr-namespace:DiffPlex.Wpf.Controls;assembly=DiffPlex.Wpf"
-        Title="Text Diff Viewer" Height="450" Width="800">
+        Title="Text Diff Viewer" Height="800" Width="600">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition />
@@ -13,12 +13,12 @@
 
         <!-- DiffViewer Control -->
         <diffplex:DiffViewer x:Name="DiffView" OldTextHeader="Old" NewTextHeader="New" HeaderForeground="#808080"
-                             IgnoreUnchanged="False" LinesContext="2" />
+                             IgnoreUnchanged="False" LinesContext="2" IsCommandBarVisible="True" />
 
         <!-- Controls for switching between modes and other actions -->
         <StackPanel Orientation="Horizontal" Grid.Row="1" Background="#20808080">
             <Button Width="100" Height="20" x:Name="DiffButton" Content="Switch Mode" Click="DiffButton_Click" BorderBrush="{x:Null}" BorderThickness="0" Margin="16,0,1,0" />
-            <Button Width="20" Height="20" x:Name="FutherActionsButton" Content="…" Click="FutherActionsButton_Click" BorderBrush="{x:Null}" BorderThickness="0" Margin="0,0,31,0" />
+            <Button Width="20" Height="20" x:Name="FutherActionsButton" Content="…" Click="FurtherActionsButton_Click" BorderBrush="{x:Null}" BorderThickness="0" Margin="0,0,31,0" />
             <CheckBox Width="120" Height="20" VerticalContentAlignment="Center" IsChecked="{Binding IsSideBySide, ElementName=DiffView}" Content="Is Side By Side" Foreground="{Binding Foreground, ElementName=DiffView}" />
             <CheckBox Height="20" VerticalContentAlignment="Center" x:Name="IgnoreUnchangedCheckBox" IsChecked="{Binding IgnoreUnchanged, ElementName=DiffView}" Content="Ignore Unchanged" Margin="0,0,24,0" Foreground="{Binding Foreground, ElementName=DiffView}" />
             <Label Height="20" VerticalContentAlignment="Center" Padding="0,0,8,0" x:Name="MarginLineCountLabel" Target="{Binding ElementName=MarginLineCount}" Foreground="{Binding Foreground, ElementName=DiffView}">Lines Context</Label>

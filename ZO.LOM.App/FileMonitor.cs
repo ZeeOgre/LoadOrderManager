@@ -11,6 +11,9 @@ namespace ZO.LoadOrderManager
 
     public class FileMonitor
     {
+        private static readonly List<FileMonitor> _monitors = new List<FileMonitor>();
+        private static DiffViewer? _currentDiffViewer;
+
         private FileSystemWatcher _watcher;
         private string _filePath;
         private string _lastHash;
@@ -32,12 +35,25 @@ namespace ZO.LoadOrderManager
             _watcher.Renamed += OnFileChanged;
             _watcher.Deleted += OnFileChanged;
             _watcher.EnableRaisingEvents = true;
+
+            // Add this instance to the static list to prevent garbage collection
+            _monitors.Add(this);
         }
-        
+
         ~FileMonitor()
         {
+            Stop();
             App.LogDebug($"FileMonitor for {_filePath} is being garbage collected.");
             Console.WriteLine($"FileMonitor for {_filePath} is being garbage collected.");
+        }
+
+        public void Stop()
+        {
+            _watcher.EnableRaisingEvents = false;
+            _watcher.Dispose();
+            _monitors.Remove(this);
+            App.LogDebug($"FileMonitor for {_filePath} has been stopped.");
+            Console.WriteLine($"FileMonitor for {_filePath} has been stopped.");
         }
 
         private void OnFileChanged(object sender, FileSystemEventArgs e)
@@ -76,8 +92,17 @@ namespace ZO.LoadOrderManager
         {
             Application.Current.Dispatcher.Invoke(() =>
             {
-                var diffViewer = new DiffViewer(oldContent, newContent);
-                diffViewer.Show();
+                if (_currentDiffViewer == null || !_currentDiffViewer.IsVisible)
+                {
+                    _currentDiffViewer = new DiffViewer(oldContent, newContent);
+                    _currentDiffViewer.Closed += (s, e) => _currentDiffViewer = null;
+                    _currentDiffViewer.Show();
+                }
+                else
+                {
+                    // Optionally, you can bring the existing DiffViewer to the front
+                    _currentDiffViewer.Activate();
+                }
             });
         }
 
@@ -158,7 +183,6 @@ namespace ZO.LoadOrderManager
             }
         }
 
-
         private static string ResolveFilePath(string fullPath)
         {
             if (string.IsNullOrWhiteSpace(fullPath) || !File.Exists(fullPath))
@@ -188,7 +212,5 @@ namespace ZO.LoadOrderManager
 
             return fullPath;
         }
-
-
     }
 }

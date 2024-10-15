@@ -1,7 +1,9 @@
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Windows.Media;
 using System.Timers;
+using System.Collections.Specialized;
 
 namespace ZO.LoadOrderManager
 {
@@ -15,6 +17,19 @@ namespace ZO.LoadOrderManager
         private bool _isSynchronizing = false;
         private List<LoadOrderItemViewModel>? _cachedFlatList;
         private bool _isRefreshing = false;
+
+        private Brush _statusLightColor;
+        public Brush StatusLightColor
+        {
+            get => _statusLightColor;
+            set
+            {
+                _statusLightColor = value;
+                OnPropertyChanged(nameof(StatusLightColor));
+            }
+        }
+
+
         private bool _isUiEnabled = true;
         public bool IsUiEnabled
         {
@@ -37,10 +52,16 @@ namespace ZO.LoadOrderManager
             set
             {
                 _loadOrders = value;
-                RebuildFlatList();
-                OnPropertyChanged(nameof(LoadOrders));
+                
+                if (!_isSynchronizing)
+                {
+                    RebuildFlatList();
+                    OnPropertyChanged(nameof(LoadOrders));
+                }
             }
         }
+
+
 
         private LoadOrdersViewModel _cachedGroupSetLoadOrders;
         public LoadOrdersViewModel CachedGroupSetLoadOrders
@@ -128,7 +149,7 @@ namespace ZO.LoadOrderManager
         // Rebuild flat list based on LoadOrders
         private void RebuildFlatList()
         {
-            if (_isRefreshing || _isSynchronizing || LoadOrders.Items.Count == 0) return;
+            if (_isRefreshing || _isSynchronizing || LoadOrders.Items.Count == 0 || _cachedFlatList is null) return;
             _isRefreshing = true;
 
             // Rebuild the flat list from LoadOrders.Items
@@ -182,24 +203,28 @@ namespace ZO.LoadOrderManager
             StartSync();
             try
             {
-                if (e.PropertyName == nameof(AggLoadInfo.ActiveGroupSet))
+                if (e.PropertyName == nameof(AggLoadInfo.IsDirty))
                 {
-                    if (!ReferenceEquals(_selectedGroupSet, AggLoadInfo.Instance.ActiveGroupSet))
-                    {
-                        _selectedGroupSet = AggLoadInfo.Instance.ActiveGroupSet;
-                        _selectedLoadOut = AggLoadInfo.Instance.ActiveLoadOut;
-                        OnPropertyChanged(nameof(SelectedGroupSet));
-                        OnPropertyChanged(nameof(SelectedLoadOut));
-                    }
+                    UpdateStatusLight();
                 }
-                else if (e.PropertyName == nameof(AggLoadInfo.ActiveLoadOut))
-                {
-                    if (!ReferenceEquals(_selectedLoadOut, AggLoadInfo.Instance.ActiveLoadOut))
-                    {
-                        _selectedLoadOut = AggLoadInfo.Instance.ActiveLoadOut;
-                        OnPropertyChanged(nameof(SelectedLoadOut));
-                    }
-                }
+                //if (e.PropertyName == nameof(AggLoadInfo.ActiveGroupSet))
+                //{
+                //    if (!ReferenceEquals(_selectedGroupSet, AggLoadInfo.Instance.ActiveGroupSet))
+                //    {
+                //        _selectedGroupSet = AggLoadInfo.Instance.ActiveGroupSet;
+                //        _selectedLoadOut = AggLoadInfo.Instance.ActiveLoadOut;
+                //        OnPropertyChanged(nameof(SelectedGroupSet));
+                //        OnPropertyChanged(nameof(SelectedLoadOut));
+                //    }
+                //}
+                //else if (e.PropertyName == nameof(AggLoadInfo.ActiveLoadOut))
+                //{
+                //    if (!ReferenceEquals(_selectedLoadOut, AggLoadInfo.Instance.ActiveLoadOut))
+                //    {
+                //        _selectedLoadOut = AggLoadInfo.Instance.ActiveLoadOut;
+                //        OnPropertyChanged(nameof(SelectedLoadOut));
+                //    }
+                //}
                 else if (e.PropertyName == nameof(LoadOuts)) {
                     UpdateLoadOutsForSelectedGroupSet();
                 }
@@ -224,7 +249,10 @@ namespace ZO.LoadOrderManager
                 LoadOuts.Add(loadOut);
             }
 
-            SelectedLoadOut = AggLoadInfo.Instance.GetLoadOutForGroupSet(AggLoadInfo.Instance.ActiveGroupSet);
+            SelectedLoadOut = AggLoadInfo.Instance.ActiveLoadOut;
+            UpdateStatus($"LoadOuts updated for selected GroupSet. Selected Loadout is now {SelectedLoadOut}");
+            //AggLoadInfo.Instance.GetLoadOutForGroupSet(AggLoadInfo.Instance.ActiveGroupSet);
+
 
             OnPropertyChanged(nameof(LoadOuts)); // Notify that LoadOuts collection has changed
         }
@@ -254,11 +282,14 @@ namespace ZO.LoadOrderManager
                         // Trigger updates related to LoadOuts
                         UpdateLoadOutsForSelectedGroupSet();
 
+                        LoadOrders.SelectedGroupSet = value;
+                        LoadOrders.LoadData(value, SelectedLoadOut, false, false);
                         // Ensure SelectedLoadOut is set to the appropriate value
-                        //SelectedLoadOut = LoadOuts.FirstOrDefault() ?? throw new Exception("No LoadOuts available for the selected GroupSet.");
+                        
 
                         OnPropertyChanged(nameof(SelectedGroupSet)); // Notify only when changed
                     }
+                    UpdateStatus($"Selected GroupSet is now {SelectedGroupSet}");
                 }
                 finally
                 {
@@ -288,7 +319,10 @@ namespace ZO.LoadOrderManager
 
                         // Now reflect the change in the ViewModel
                         _selectedLoadOut = value ?? throw new ArgumentNullException(nameof(value));
+                        LoadOrders.SelectedLoadOut = value;
+                        LoadOrders.RefreshActivePlugins(value);
                         OnPropertyChanged(nameof(SelectedLoadOut));
+                        UpdateStatus($"Selected LoadOut is now {SelectedLoadOut}");
                     }
                     finally
                     {

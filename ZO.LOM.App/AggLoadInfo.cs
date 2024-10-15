@@ -31,7 +31,8 @@ namespace ZO.LoadOrderManager
         }
 
         public GroupSetGroupCollection GroupSetGroups { get; set; } = new GroupSetGroupCollection();
-        public GroupSetPluginCollection GroupSetPlugins { get; set; } = new GroupSetPluginCollection();
+        public GroupSetPluginCollection GroupSetPlugins { get; 
+            set; } = new GroupSetPluginCollection();
         public ProfilePluginCollection ProfilePlugins { get; set; } = new ProfilePluginCollection();
         private bool _isRefreshing = false;
         private bool _refreshPending = false;
@@ -44,6 +45,18 @@ namespace ZO.LoadOrderManager
                 isDirty = value;
             }
         }
+        
+        public bool IsDirty
+        {
+            get
+            {
+                lock (_refreshLock)
+                {
+                    return isDirty;
+                }
+            }
+        }
+
         public ICommand JumpToRecordCommand { get; }
         private bool _initialized = false;
         private static readonly object _initLock = new object();
@@ -64,6 +77,30 @@ namespace ZO.LoadOrderManager
             GroupSetGroups.Items.CollectionChanged += CommonCollectionChangedHandler;
             GroupSetPlugins.Items.CollectionChanged += CommonCollectionChangedHandler;
             ProfilePlugins.Items.CollectionChanged += CommonCollectionChangedHandler;
+        }
+
+        private void CommonCollectionChangedHandler(object? sender, NotifyCollectionChangedEventArgs e)
+        {
+            if (sender == null || InitializationManager.IsAnyInitializing()) return;
+
+            lock (_refreshLock)
+            {
+                if (_isRefreshing) return; // Prevent recursive calls
+                _isRefreshing = true;
+
+                try
+                {
+                    // Set the dirty flag (if needed)
+                    SetDirty(true);
+
+                    // Raise the DataRefreshed event
+                    RaiseDataRefreshed();
+                }
+                finally
+                {
+                    _isRefreshing = false;
+                }
+            }
         }
 
         private LoadOut _activeLoadOut;
@@ -89,10 +126,10 @@ namespace ZO.LoadOrderManager
                 {
                     _activeGroupSet = value ?? throw new ArgumentNullException(nameof(value));
 
-                    if (_activeGroupSet != null && _activeGroupSet != _cachedGroupSet1 && _initialized)
-                    {
-                        LoadGroupSetState(); // Trigger group set state loading only when switching
-                    }
+                    //if (_activeGroupSet != null && _activeGroupSet != _cachedGroupSet1 && _initialized)
+                    //{
+                    //    LoadGroupSetState(); // Trigger group set state loading only when switching
+                    //}
                     HandleActiveGroupSetChange();
                     OnPropertyChanged();
                 }
@@ -139,29 +176,7 @@ namespace ZO.LoadOrderManager
 
 
 
-        private void CommonCollectionChangedHandler(object? sender, NotifyCollectionChangedEventArgs e)
-        {
-            if (sender == null || InitializationManager.IsAnyInitializing()) return;
-
-            lock (_refreshLock)
-            {
-                if (_isRefreshing) return; // Prevent recursive calls
-                _isRefreshing = true;
-
-                try
-                {
-                    // Set the dirty flag (if needed)
-                    SetDirty(true);
-
-                    // Raise the DataRefreshed event
-                    RaiseDataRefreshed();
-                }
-                finally
-                {
-                    _isRefreshing = false;
-                }
-            }
-        }
+        
 
 
 
@@ -389,7 +404,7 @@ namespace ZO.LoadOrderManager
                             {
                                 ProfileID = profileID,
                                 GroupSetID = groupSetID,
-                                IsFavorite = isFavorite,    
+                                  IsFavorite = isFavorite,    
                                 Name = name,
                                 enabledPlugins = LoadEnabledPlugins(profileID)
                             };
@@ -431,18 +446,31 @@ namespace ZO.LoadOrderManager
             using var transaction = conn.BeginTransaction();
 
             var sqlCommandText = @"
-    -- Step 1: Insert all unassigned plugins into GroupSetPlugins for GroupID -997
-    INSERT INTO GroupSetPlugins (GroupSetID, GroupID, PluginID, Ordinal)
-    SELECT @GroupSetIDz, -997, PluginID, ROW_NUMBER() OVER (ORDER BY PluginID)
-    FROM Plugins
-    WHERE PluginID IN (
-        SELECT DISTINCT PluginID
-        FROM vwPluginGrpUnion
-        WHERE GroupSetID != @GroupSetIDz
-        AND GroupID NOT IN (-998, -999, 1)
-    )
-    RETURNING PluginID;
-    ";
+            -- Insert unassigned plugins into GroupSetPlugins for GroupID -997
+            INSERT INTO GroupSetPlugins (GroupSetID, GroupID, PluginID, Ordinal)
+            SELECT @GroupSetIDz, -997, PluginID, ROW_NUMBER() OVER (ORDER BY PluginID)
+            FROM Plugins p
+            WHERE NOT EXISTS (
+                -- Ensure the plugin is not already assigned to any group in the current GroupSet
+                SELECT 1 FROM GroupSetPlugins gsp
+                WHERE gsp.GroupSetID = @GroupSetIDz OR gsp.GroupID IN (1, -998, -999)
+                AND gsp.PluginID = p.PluginID
+            )
+            RETURNING PluginID;
+            ";
+
+    //-- Step 1: Insert all unassigned plugins into GroupSetPlugins for GroupID -997
+    //INSERT INTO GroupSetPlugins (GroupSetID, GroupID, PluginID, Ordinal)
+    //SELECT @GroupSetIDz, -997, PluginID, ROW_NUMBER() OVER (ORDER BY PluginID)
+    //FROM Plugins
+    //WHERE PluginID IN (
+    //    SELECT DISTINCT PluginID
+    //    FROM vwPluginGrpUnion
+    //    WHERE GroupSetID != @GroupSetIDz
+    //    AND GroupID NOT IN (-998, -999, 1)
+    //)
+    //RETURNING PluginID;
+    //";
 
             // Execute the SQL and capture the results (PluginIDs of inserted plugins)
             using var command = new SQLiteCommand(sqlCommandText, conn);
@@ -806,24 +834,26 @@ namespace ZO.LoadOrderManager
                     loadOut.WriteProfile();
                 }
 
-                using var connection = DbManager.Instance.GetConnection();
-                using var transaction = connection.BeginTransaction();
-            try
-            {
 
-                // Reload GroupSetGroups, GroupSetPlugins, and ProfilePlugins
-                GroupSetGroups.LoadGroupSetGroups(ActiveGroupSet.GroupSetID, connection);
-                GroupSetPlugins.LoadGroupSetPlugins(ActiveGroupSet.GroupSetID, connection);
-                ProfilePlugins.LoadProfilePlugins(ActiveGroupSet.GroupSetID, connection);
-                transaction.Commit();
+            //RefreshMetadataFromDB();
+            //    using var connection = DbManager.Instance.GetConnection();
+            //    using var transaction = connection.BeginTransaction();
+            ////try
+            //{
 
-            }
-            catch (Exception)
-            {
-                // Rollback transaction in case of an error
-                transaction.Rollback();
-                throw;
-            }
+            //    // Reload GroupSetGroups, GroupSetPlugins, and ProfilePlugins
+            //    GroupSetGroups.LoadGroupSetGroups(ActiveGroupSet.GroupSetID, connection);
+            //    GroupSetPlugins.LoadGroupSetPlugins(ActiveGroupSet.GroupSetID, connection);
+            //    ProfilePlugins.LoadProfilePlugins(ActiveGroupSet.GroupSetID, connection);
+            //    transaction.Commit();
+
+            //}
+            //catch (Exception)
+            //{
+            //    // Rollback transaction in case of an error
+            //    transaction.Rollback();
+            //    throw;
+            //}
         }
 
         public void RefreshMetadataFromDB(SQLiteConnection? connection = null)

@@ -1,4 +1,4 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Globalization;
 using System.Windows;
@@ -331,7 +331,130 @@ namespace ZO.LoadOrderManager
             return null; // or return Binding.DoNothing; depending on your preference
         }
     }
+    public class PluginStarConverter : IMultiValueConverter
+    {
+        public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (values[0] is LoadOut activeLoadOut && values[1] is long pluginID)
+            {
+                return activeLoadOut.IsPluginEnabled(pluginID) ? "★" : string.Empty;
+            }
+            return string.Empty;
+        }
 
+        public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
+    public class PluginStarMultiConverter : IMultiValueConverter
+    {
+        public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (values[0] is LoadOut activeLoadOut && values[1] is long pluginID)
+            {
+                return activeLoadOut.IsPluginEnabled(pluginID) ? "★" : string.Empty;
+            }
+            return string.Empty;
+        }
+
+        public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    public class PluginBackgroundConverter : IMultiValueConverter
+    {
+        public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (values[0] is LoadOut activeLoadOut && values[1] is long pluginID)
+            {
+                return activeLoadOut.IsPluginEnabled(pluginID) ? Brushes.Goldenrod : Brushes.Transparent;
+            }
+            return Brushes.Transparent;
+        }
+
+        public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    public class PluginBackgroundMultiConverter : IMultiValueConverter
+    {
+        public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (values[0] is LoadOut activeLoadOut && values[1] is long pluginID)
+            {
+                return activeLoadOut.IsPluginEnabled(pluginID) ? Brushes.Goldenrod : Brushes.Transparent;
+            }
+            return Brushes.Transparent;
+        }
+
+        public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    public class LoadOutBackgroundConverter : IMultiValueConverter
+    {
+        public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (values[0] is LoadOut currentLoadOut && values[1] is LoadOut activeLoadOut)
+            {
+                return currentLoadOut.ProfileID == activeLoadOut.ProfileID ? Brushes.Violet : Brushes.Transparent;
+            }
+            return Brushes.Transparent;
+        }
+
+        public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+
+
+
+
+    //return $"<span style=\"background-color: goldenrod; color: black;\"><span style=\"color: red; font-weight: bold;\">&#x2B50;</span><span style=\"font-weight: bold;\">{value}</span></span>";
+
+    public class BooleanToStarConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value is bool isChecked && isChecked)
+            {
+                return "★"; // Unicode star character
+            }
+            return string.Empty;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+
+    public class BooleanToBackgroundConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value is bool isChecked && isChecked)
+            {
+                return Brushes.LightGreen; // Background color when checked
+            }
+            return Brushes.Transparent;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
 
     public class FilesToStringConverter : IValueConverter
     {

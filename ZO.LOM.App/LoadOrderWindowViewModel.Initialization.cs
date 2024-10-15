@@ -25,12 +25,12 @@ namespace ZO.LoadOrderManager
             LoadOrders = new LoadOrdersViewModel();
             CachedGroupSetLoadOrders = new LoadOrdersViewModel();
 
-            // Rebuild Flat List whenever LoadOrders Items are updated
+            ////Rebuild Flat List whenever LoadOrders Items are updated
             //if (LoadOrders?.Items != null)
             //{
             //    LoadOrders.Items.CollectionChanged += (s, e) =>
             //    {
-            //        if (!_isSynchronizing)
+            //        if (!_isSynchronizing && !InitializationManager.IsAnyInitializing())
             //        {
             //            RebuildFlatList();
             //        }
@@ -65,9 +65,12 @@ namespace ZO.LoadOrderManager
 
             EditGroupSetCommand = new RelayCommand(ExecuteEditGroupSetCommand, CanExecuteEditGroupSetCommand); // LoadOrderWindowViewModel.ContextMenuCommands.cs
             EditLoadOutCommand = new RelayCommand(ExecuteEditLoadOutCommand, CanExecuteEditLoadOutCommand); // LoadOrderWindowViewModel.ContextMenuCommands.cs
-          
+
+            RefreshCommand = new RelayCommand(_ => RefreshData()); // LoadOrderWindowViewModel.MenuCommands.cs
+
             // Load initial data
             LoadInitialData();
+            
         }
 
         // Load initial data for the ViewModel
@@ -106,7 +109,7 @@ namespace ZO.LoadOrderManager
                     EndSync();
                     // Rebuild FlatList for the current view
                     RebuildFlatList();
-
+                    UpdateStatusLight();
                     _isInitialDataLoaded = true;
                 }
             }
@@ -159,6 +162,7 @@ namespace ZO.LoadOrderManager
                     {
                         RebuildFlatList(); // Rebuild the flat list to reflect the latest state
                         UpdateStatus(StatusMessage); // Update the status message
+                        UpdateStatusLight();
                     });
                 }
             }

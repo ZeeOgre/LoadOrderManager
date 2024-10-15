@@ -26,7 +26,7 @@ namespace ZO.LoadOrderManager
             if (LoadOrders.Items == null || LoadOrders.Items.Count == 0)
                 return;
 
-            var flatList = Flatten(LoadOrders.Items).ToList();
+            var flatList = Flatten(LoadOrders.Items).ToList() ;
 
             foreach (var item in flatList)
             {
@@ -36,17 +36,16 @@ namespace ZO.LoadOrderManager
             if (string.IsNullOrEmpty(searchText))
             {
                 // If search text is empty, show all items
-                
             }
             else
             {
                 // Filter and highlight Groups and Plugins based on the search text
                 var matchingItems = flatList.Where(item =>
-                (item.DisplayName != null && item.DisplayName.Contains(searchText, StringComparison.OrdinalIgnoreCase)) ||
-                (item.PluginData != null &&
-                (item.PluginData.PluginName?.Contains(searchText, StringComparison.OrdinalIgnoreCase) == true ||
-                item.PluginData.Description?.Contains(searchText, StringComparison.OrdinalIgnoreCase) == true))
-);
+                    (item.DisplayName != null && item.DisplayName.Contains(searchText, StringComparison.OrdinalIgnoreCase)) ||
+                    (item.PluginData != null &&
+                    (item.PluginData.PluginName?.Contains(searchText, StringComparison.OrdinalIgnoreCase) == true ||
+                    item.PluginData.Description?.Contains(searchText, StringComparison.OrdinalIgnoreCase) == true))
+                );
 
                 foreach (var item in matchingItems)
                 {
@@ -125,9 +124,9 @@ namespace ZO.LoadOrderManager
             plugin.WriteMod();
         }
 
-        private IEnumerable<LoadOrderItemViewModel> Flatten(ObservableCollection<LoadOrderItemViewModel> items, bool refresh=false)
+        private IEnumerable<LoadOrderItemViewModel> Flatten(ObservableCollection<LoadOrderItemViewModel> items, bool? refresh = false)
         {
-            if (_cachedFlatList != null || !refresh)
+            if (_cachedFlatList != null  && (_isRefreshing || refresh == false || _cachedFlatList.Count == 0))
             {
                 return _cachedFlatList;
             }

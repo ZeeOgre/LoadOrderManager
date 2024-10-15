@@ -1,232 +1,180 @@
-﻿re# **Dev Mod Manager**
-![Dev Mod Manager](./img/ZeeOgre_256x256.ico)
----
-## Description
+﻿LoadOrderManager 
+by ZeeOgre
 
-This application is designed primarily around Starfield mod development.
+Description
+This application is designed to help you manage your LoadOrders in Starfield.  Right now, the game is sometimes randomly changing load orders, and sometimes you just want a different set of mods depending on what you're doing.
 
-Starfield Creation Kit does not yet have extensions nor or good lifecycle management. This tool is to help overcome that shortfall.
+This app introduces GroupSets and LoadOuts to facilitate loading and running the game the way you want quickly.
 
-We leverage existing mod managers to move the various versions of your mod in and out of the game folder by way of the mod manager.  I will provide samples and explanations based on Vortex.
+This uses a very small, highly normalized Sqlite database to keep track of all your enabled Plugins.
 
-## Installation
+It introduces a new formatting style for the Plugins.txt file to facilitate easy sharing.
 
-## Acquisition 
-The latest release should be acquired from [Github](https://github.com/ZeeOgre/LoadOrderManager/releases/latest/LoadOrderManager.msi)
+Acquisition
+The application is available at https://github.com/ZeeOgre/ZO.LoadOrderManager, autoupdate coming soon.
 
-Currently investigating releasing on WinGet as well, and possibly also on Nexus.
+Prerequisites
+This is a .net 8.0 application running wpf. It's targeted for x64 Windows, although it MAY run on lower (I haven't had a 32 bit machine to test on in a while). In "full debug mode" it'll run a little over 400 MB of RAM, and the "Full Debug" distro is about 113mb (you may need more for libraries)
 
-## Prerequisites
-A Repository Folder must exist with at least one mod installed, and you must identify the Game Folder and the Mod Staging Folder.
+Getting Started
 
-```
-REPOFOLDER/
-├── * SOURCE/
-│   └── PluginName/
-├── TARGET/
-│   └── PluginName/
-├── # BACKUP/
-│   └── PluginName/
-│           ├── * SOURCE/
-│           ├── # DEPLOYED/
-│           ├── # NEXUS/
+Once you've installed the program, it needs to know only one thing, Where's my Starfield at!"
+The installer should ask you along the way, but if you don't set it there, you should be prompted to find it on first launch.
+
+In the starting state, a dummy config.yaml will be copied to %USERAPPDATA%\ZeeOgre\LoadOrderManager this two line file contains the info about the path to Starfield, and the autoupdate flag.
+
+Make sure to fill in the folder where your Starfield is installed. (If your a Steam player it should be under SteamLibrary\steamapps\common\Starfield, and if you're an XBox GamePass player you'll find it at Games\Starfield\Content (or wherever you store your XBox library.
 
 
-MODSTAGINGFOLDER
-
-
-GAMEFOLDER
-```
-This folder marked with a * must be specified as the *SOURCE* folder in your configuration. In our example this is DEV.
-Under it there must be at least one *PluginName* where you have your files that are in development. For Bethesda games this would be your esp, scripts, textures, etc.
-When you compile it with Creation Kit (or whatever tool you use) it will be saved in the *GAMEFOLDER* folder. When you perform a *Gather* operation, the modified files that weren't originally moved will be copied from the *GAMEFOLDER* to the *SOURCE* folder.
-
-	It's worth a little sidebar here to explain how we longeract with Vortex.  Vortex uses junction polongs to move your ModFiles in and out of the game folders.  
-	What we're doing is creating a directory junction INTO the Mod Manager (It SHOULD be agnostic as to which one). 
-	We then leverage the Mod Manager to perform the actual movement in and out of the game folder.
-	So, you've move your mod in, run CK, and created a bunch of scripts and textures 
-	- these won't necessarily come back, as the ModManager doesn't know anything about them.  
-	This is where the Gather operation comes in.
-	The Gather operation scans the GameFolder for files that are newer than the ones in the Source folder, and copies them back.  
-	This is a one-way operation, and is designed to be run after you've compiled your mod in the CK.
-	You'll typically "undeploy" the mod after doing this, and then deploy it back so the ModManager will know about the rest of it.
-
-Folders marked with a # are those that get created automatically by the tool, and should not be modified. Backup is where we put system wide, and mod specific backups.
-Deployed is where we put the mods that are currently in the game folder.  Nexus is where we put the mods that are packaged for deployment to Nexus.
-
-
-The *Target* folder may be an longermediary testing/staging folder, or could be your release folder, you can have as many as you need, but you really need at least one more.
-
-Your ModManager does a great job of helping you find these folders. Vortex will show you the game folder, game settings folder etc... when you've got the game selected:
-
-![Vortex Game Settings](./img/vortex_mod_openmenu.png)
-
-When you're in the overall settings, you can find the mod staging folder:
-![Vortex Mod Staging Folder](./img/vortex_modstagingfolder.png)
-
-
-## Configure the config.yaml
-The `config.yaml` distributed with the application will need to be updated with your actual folder paths. The example is set up to support a **DEV**, **TEST** and **RELEASE** folder structure – you can name them whatever you want, but at a minimum your repository folder must contain a <source> folder, with your mods, each in their own folder.  The Mod Name will be derived from this directory name.
-
-The stage names **BACKUP**, **NEXUS** and **DEPLOYED** are reserved, as they’re used longernally.
-
-
-The file is well documented with comments for each line
-```
-repoFolder: <<Your folder where you’re going to store your mods>> ## This is the folder where you're storing your in-development mods'
-useGit: true ## If you're using GitHub, set this to true, today this only enables the button in the main longerface, future versions may include git longegration to push/pull the repo'
-gitHubRepo: <<GITHUB REPO>> ## If you're using GitHub, this is the URL to your repository if useGit is true then this is required'
-useModManager: true ## If you're using a mod manager, set this to true'
-modStagingFolder:<<MOD STAGING FOLDER>> #if you're using a mod manager, this is the folder where your mod manager is looking for mods, if useModManager is true then this is required'
-gameFolder: <<GAMEFOLDER ROOT>> ## This is the folder where your game is installed if UseModManager is false, this is required. This functionality is not fully implemented yet, however the “Gather Files” function depends on this to find updated files.'
-modManagerExecutable: S:\Games\Vortex\Vortex.exe ## If you're using a mod manager, this is the path to the executable for your mod manager, if useModManager is true then this is required'
-modManagerParameters: --user-data S:\Games\VortexSteamData ## If you're using a mod manager, these are the launch parameters that may be required - for example if you want to use a custom profile in vortex'
-	## Both of these settings can be found from your Vortex shortcut, if you’re not using a custom profile, it should just be the executable
-ideExecutable: <<Preferred IDE Path>> ## This is the path to your IDE, this is requred'
-	## I use VSCode, but you can specify whatever editor you prefer, since it already has GitSupport, and has good support for compiling Bethesda’s Papyrus, I use that.
-modStages: ## These are the stages that your mod will go through, you can add or remove stages as you see fit'
-- "*DEV" ## This is the designated SOURCE stage, where you're actively working on the mod, the star indicates that it is the source folder, and there can only be one'
-	## This folder MUST exist in your Repository Folder – it will be scanned for existing mods
-- TEST
-- RELEASE
-- "#NEXUS" ## these folders are archive folders, when a mod is packaged for deployment or deployed INTO the mod manager, these are primarily here for documentation, and should not be changed, if they are not included that’s OK, they are already present in the database.'
-- "#DEPLOYED"
-limitFiletypes: true ## You may want to include everything, or you may want to limit the filetypes moved and archived'
-promoteIncludeFiletypes: ## These are the filetypes that will be included when promoting a mod from one stage to another'
-- .esm
-- .ba2
-- .ini
-- .txt
-packageExcludeFiletypes: ## These are the filetypes that will be excluded when packaging a mod for deployment, we'll be creating folder backups, but will make sure to exclude these if present'
-- .zip
-- .7z
-- .rar
-archiveFormat: zip ##supported options are zip and 7z
-timestampFormat: yyMMddHHmm ## format for timestamps in filenames - see https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes for options
-myNameSpace: <<Your Script namespace ZO.LoadOrderManagermyResourcePrefix: <<Your resource prefix – I use ZO_>> ## When creating any other kinds of objects, use a consistent naming prefix so you can easily locate those resources, this will also help the tool retreive other "strays"'
-showSaveMessage: false ## This will show a message box when a save is complete, this is useful if you're running the tool in the background and want to know when it's done'
-showOverwriteMessage: false ## This will show a message box when a file is about to be overwritten, '
-nexusAPIKey: <<Your Nexus APIKey – this is not necessary now, but is a placeholder if I build in any direct compatibility in the future.>> ## This is your Nexus API key, at the moment, features using this are not implemented'
-```
----
-# The longerface
----
-## Main Window
-![Main Window](./img/dmm_mainwindow.png)
-## Buttons
----
-### Settings
-This will open the settings window, you should see this when you first launch the program if you didn't fill the config.yaml before first launch.
-
-![Settings Window](./img/dmm_settingswindow.png)
-
-If you close this window without clicking save, it will revert to the previous settings.
-
-### Backup
-This button will create a backup of any mods in the Source folder.  It will create a timestamped zip/7z file in the Backup folder with the contents of the mod at that polong in time.
-
-![Backup Window](./img/dmm_backupresults.png)
-
-I've experimented with backing up only the files that have changed, but it's not reliable, so I'm backing up the whole thing.  This is a good practice to get INTO, as it will allow you to roll back to a previous version if you need to.
-
-### Launch Mod Manager
-Whether you use Vortex, MO2 or whatever mod manager you use, this will launch it as long as you specified it correctly.  For Vortex in particular, if you need to make a custom game profile, you'll need to specify the launch parameters to get that to work.
-
-![Vortex Windows Properties](./img/vortex_windowsproperties.png)
-
-### Launch IDE
-Starfield Creation Kit has a plugin for VSCode so that you can compile papyrus scripts in a much nicer environment than the CK.  This will launch your IDE, so you can work on your scripts. If you prefer Notepad, Notepad++, whatever you've specified, this will launch it for you.
-### Open Github
-Github has free solutions that anyone can use. You can mark your repositories private, and if you're using VSCode, or another modern IDE, it will longegrate with Github, having version controlled backups is always a good idea! If you've specified your Github repository in the config.yaml, this button will open it in your default browser.
-### Open Game Folder
-Does what it says on the tin, opens the game folder in Windows Explorer.
-### Load Order
-Because everyone does it a little different, I've built a Load Order manager of my own. This mixes the information from Plugins.txt and CreationCatalog.txt to provide a more robust view of what you've got installed.
-It's still very much a work in progress, so at this polong the buttons don't even work.  I plan on having categories, and the ability to move entire categories up and down, in addition to actually writing the comments/categories INTO the Plugins.txt (even if it's only there for one go, until the game wipes them out.
-)
-
-![Load Order Window](./img/dmm_loadorder_window.png)
-## Rows
----
-### Mod Name
-This is the name of the mod, as it appears in the Source folder.  This is the name of the folder that contains the mod files, when you click on it, it opens the SOURCE folder for the mod.
-### Current Stage
-If the mod is deployed, this will show you which stage is deployed. When you click on it you have the opportunity to change which (or none at all) stage of that mod is deployed to the Staging folder.
-
-![Deployed Window](./img/dmm_deploywindow.png)
-
-### Staged Folder
-This is the folder where the mod is currently staged.  If you click on it, it will open the folder in Windows Explorer.	
-
-### Gather
-This button will scan the GameFolder for files that are newer than the ones in the Source folder, and copy them back.  This is a one-way operation, and is designed to be run after you've compiled your mod in the CK.  You'll typically "undeploy" the mod after doing this, and then deploy it back so the ModManager will know about the rest of it.
-
-### Backup Folder
-This button opens the backup folder for the mod.  This is where the backups are stored, and you can see the timestamped backups here.	
-
-### Promote
-This will open the promotion longerface for your mod. Choose your source and target stages, and click the Promote button.  This will move the mod from one stage to another, and will also create a backup of the mod in the target stage.
-This will only move the "Allowed Filetypes" as specified in the config.yaml/Configuration screen.  If you have other files that need to be moved, you'll need to update these settings for them to get moved. If you've unchecked "Limit File Types" all the files in the folder will move over.
-
-![Promote Window](./img/dmm_promote_window.png)
-### Package
-This will open the package window. Select the mod you want to package, and click the Package button.  This will create a backup of the mod in the regular backup folder for that stage, as well as place a "clean" un-timestamped zip/7zip here for you to quickly upload to Nexus.
-
-![Package Window](./img/dmm_package_window.png)
-### Bethesda ID
-If you haven't defined, or don't have a Bethesda ID, you can enter it here.  This will allow you to quickly open the mod page on Bethesda.net.  This is not required, but it's a nice feature to have.
-If it says "Bethesda" it means you haven't provided the Creations URL.
-When you look at a creation on Bethesda.net, the URL will look like this:
-![Bethesda Address Zohst](img/bethesda_address_zohst.png)
-
-The GUID between "details" and the Name of the mod is the Bethesda ID. Keep everything up to the GUID, and paste it in to the Bethesda URL field.
-![Dmm Bethesda Url](img/dmm_bethesda_url.png)
-
-### Nexus ID
-Just like the Bethesda ID, if you have a Nexus ID, you can enter it here.  This will allow you to quickly open the mod page on Nexus.  This is not required, but it's a nice feature to have.
-If it says "Nexus" it means you haven't provided the Nexus ID.
-When you look at a mod on Nexus, the URL will look like this:	
-
-![Nexus Address Zohst](img/nexus_address_zohst.png)
-
-The number at the end of the URL is the Nexus ID.  In this case, paste the whole URL INTO the Nexus URL field.
-
-## Load Order Window
----
-![Dmm Loadorder Window](img/dmm_loadorder_window.png)
-
-This is a work in progress, but it will show you the load order of your mods, and allow you to change the order of them.  This is a feature that is not yet fully implemented.
-Plans include:
-LOOT import/export support
-User Defined Categories
-LoadOuts
-Plugins.txt and Starfield.ccc support.
-	I've done initial testing with Plugins.txt, and I can write the comment lines that will reflect your categories.  Unfortunately, Starfield at least strips them out every time you load the game. But, with our database here, you should be able to recreate that for sharing with others easily.
  
-## The Database
-The database is a simple SQLite database that stores the information about your mods.  It's stored in the same folder as the application, and is named `dmm.db`.  It's a simple database, and you can open it with any SQLite viewer, or even with the SQLite command line tool.  
+If the installer worked you shouldn't see this, but we have a tiny 160kb file to get you started.
 
-[Dev Mod Manager Db](img/LoadOrderManager_db.dgml) this is the DGML file for the database, you can open it with Visual Studio, or any other DGML viewer.  It shows the relationships between the tables in the database.
+ 
 
-## The Future
-Enhanced Load Order Management
-	- LOOT Import/Export
-	- User Defined Categories
-	- LoadOuts
-	- Plugins.txt and Starfield.ccc support
-    - NXM link handling
-	- Replicating hardlink deployment/mod staging functionality
-	- Automating Bethesda/Nexus id retrieval
+For now, don't worry about monitored files, they'll come in with the database -- we set up monitors for Plugins.txt, Starfield.ccc (even though we don't do anything with it yet) and ContentCatalog.txt.  You can easily add or remove more if you need.
 
-Smarter backup management
-	- Only backup files that have changed
+For your first start though, click on the folder, find the Starfield gamefolder (If your a Steam player it should be under SteamLibrary\steamapps\common\Starfield, and if you're an XBox GamePass player you'll find it at Games\Starfield\Content (or wherever you store your XBox library).
 
-Direct Github longegration
-	- Push/Pull
-	- Tagging
-	- CI/CD release management
+I've you've deleted and reinstalled, and remember where your "good yaml" is, you can also just load straight from that.
 
-	
+Hit save and it'll restart. (Sorry, it's bugged for a minute, you still have to browse!!)
+
+
+
+The first time you start, by default it's going to start in my "Sample Set" that I've built for you.
+
+It will have also pulled in all your existing mods, and populated more detailed information from your ContentCatalog.txt.
+
+At release, you have to restart the app one more time though to see them.
+
+ 
+
+So after you restart
+ 
+Your plugins will come in with all the data from ContentCatalog in a human readable form.
+Double click on any of them for more details:
+ 
+ 
+
+This only works right for the demo purposes, because I've already built our handy-dandy custom Plugins.txt.
+Oh.. wait.. yeah.. we've got a built-in diff viewer so you can see exactly what's changed... cool huh!
+
+ 
+```
+Here's the skeleton:
+# plugins.txt produced by ZeeOgre's LoadOutManager using Group Set ZeeOgre's Sample and profile ZeeOgre's Default on 2024-10-14 19:12:29
+##------------------------------------------------------------------------------------------------------------------------------------------##
+
+### BethesdaPaid @@ Bethesda paid mods
+
+### Community Patch @@ https://starfieldpatch.dev
+
+### Places @@ New and furnished locations
+
+### New Things @@ Objects, Followers, etc..
+
+#### Followers @@ People, critters and bots that will follow you around
+
+#### Items @@ Added Clothing, Armor, Items
+
+#### New Ships @@ Ships
+
+#### Vehicles @@ The REV-8 Buggy and it's related changes
+
+### Gameplay Modification @@ Mods which change game behavior, but you might want to still override some of the things that happen here.
+
+### High Priority Mods @@ mods which should never be changed except by deliberate choice
+
+#### DarkStar @@ Darkstar by Wykkyd Gaming
+
+#### Shipbuilding @@ Habs, ship related mods, etc
+
+### High Priority Overrides @@ These mods are known to make changes that may override other mods, and should be loaded after everything else.
+
+### ForcedOverrides @@ Deliberate override choices which you never want to be overriden by anything else
+
+### ESP @@ ESP files - these are generally "in development" mods, and should always be loaded last.
+
+### In Development @@ Specific Non-development mods. Generally best to be loaded very late to make sure there are no conflicts.
+
+# End of plugins.txt
+```
+Bethesda uses # to mark comments in the Plugins.txt file, so you can just save this as your plugins.txt file, and the game will happily read it and use it, with the plugins in the order you place them here.
+
+I mark GROUPS with three # marks -- ### Group Name @@ Group Description.
+I indicate the hierarchy (groups can contain plugins and/or other groups) by adding # to indicate depth, and then you reset to the previous level by going one # less
+
+So in our example above Darkstar and Shipbuilding are children of High Priority Mods.
+
+
+As normal, * indicates that it's enabled, no *, not enabled.
+
+Now here's why this app exists... every time you enter a game with a commented up plugins.txt the game strips all the comments out!
+
+As long as you're happy with your order, hey, all good, you don't need to reimport anything.
+
+But that's where our Uncategorized group comes into play.  This is your library of mods that you haven't added to anything, but they were discovered -- usually through the ContentCatalog.txt.
+
+If you deleted the sample out, had a vanilla plugins.txt and loaded fresh, everything on your system would be in "Default Root" and you'd pretty much be looking at it the way it stands in your plugins.txt 
+
+You might have some uncategorized if you have things that you've brought in through your mod manager that didn't update plugins, or if they're in ContentCatalog, but not in your plugins.
+
+
+
+So, say you don't like my groups (hey, it's fine, I'll get over it) and you want to build your own custom hierarchy... 
+
+GREAT go for it!! The easiest way is to set a new favorite 
+ 
+and use the ImportFiles command -- it'll scan your game folder for esm's and esp's, it'll build your groups as you've defined them in your plugins.txt, and it'll have at least the one Default LoadOut.
+
+ 
+ 
+I give you some samples to work with on some of the different ways I play -- as always YMMV
+
+"But Zee... why oh why am I downloading your crap when i can just edit my plugins with notepad and have different things saved"
+
+Fair point, and considering the in-game process as well as most of the ones built in to mod managers, you're right, they suck... but mostly because they can't MULTISELECT.
+
+
+
+New Loadouts can go in from here or direct from the edit window, name it, save it, and mark it as favorite for the groupset, and when you start the program it'll start with your new groupset and new loadout by default.
+
+
+ 
+
+Whaaaat's that... pick and choose multiple items to move at once?? Yes Please!!
+
+You want to swap a whole category at once?
+
+
+ 
+
+ 
+
+You can't remember where you last saw a plugin (this is broken at the moment)
+
+ 
+
+Known Bugs and things that have menus that don't quite play right:
+1) Search should work when you hit enter, or click search -- at the moment it's broken
+2) Can't re-import plugins and have them just add from plugins.txt, but you CAN from file scan and from ContentCatalog
+3) If you want your right-click menu to work right you have to left-click on an item before you start, and then wait just a tick until you see the up/down buttons change
+4) The initial loadup requires you to restart the app to see your plugins.
+5) There's an .ini file in the game folder where you can turn debug output on and off... it can get noisy
+6) If you use shift-click to multiselect, enjoy it while it lasts, it only works ONE time -- as soon as you do a move/change group, it's back to CTRL-clicking for you
+7) Spacebar does not toggle the checkbox
+8) LoadOut switching doesn't always update the UI well, the little green light in the corner tells you if the data is there and should be good -- right click on it and hit refresh and it'll USUALLY update.
+
+
+
+
+I look forward to seeing y'all at https://github.com/ZeeOgre/ZO.LoadOrderManager if you have questions/comments/concerns!
+
+
+
+
+
+
 
 
 

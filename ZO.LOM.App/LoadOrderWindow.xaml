@@ -398,10 +398,33 @@
             </StackPanel>
         </Grid>
 
-        <StatusBar Grid.Row="6">
-            <StatusBarItem>
-                <TextBlock Text="{Binding StatusMessage}" />
+        <StatusBar Grid.Row="6" Grid.ColumnSpan="6">
+            <StatusBarItem HorizontalContentAlignment="Stretch">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                        <!-- Fixed column width for the light -->
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Status Message -->
+                    <TextBlock Text="{Binding StatusMessage}" Grid.Column="0" VerticalAlignment="Center" />
+
+                    <!-- Status Light -->
+                    <Ellipse x:Name="StatusLight" Width="16" Height="16" 
+                     HorizontalAlignment="Right" VerticalAlignment="Center" 
+                     MaxWidth="50" 
+                     Margin="0,0,10,0" Fill="{Binding StatusLightColor}" Grid.Column="1">
+                        <Ellipse.ContextMenu>
+                            <ContextMenu>
+                                <MenuItem Header="Refresh" Command="{Binding RefreshCommand}" />
+                            </ContextMenu>
+                        </Ellipse.ContextMenu>
+                    </Ellipse>
+                </Grid>
             </StatusBarItem>
         </StatusBar>
+
+
     </Grid>
 </metro:MetroWindow>

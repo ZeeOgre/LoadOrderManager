@@ -211,6 +211,35 @@ namespace ZO.LoadOrderManager
             }
         }
 
+        private void SetActiveLoadOut_Click(object sender, RoutedEventArgs e)
+        {
+            if (LoadOutsListBox.SelectedItem is LoadOut selectedLoadOut)
+            {
+                _aggLoadInfo.ActiveLoadOut = selectedLoadOut;
+                // Update UI or perform additional actions as needed
+            }
+        }
+
+        private void SetFavoriteLoadOut_Click(object sender, RoutedEventArgs e)
+        {
+            if (LoadOutsListBox.SelectedItem is LoadOut selectedLoadOut)
+            {
+                selectedLoadOut.IsFavorite = true;
+                // Update UI or perform additional actions as needed
+            }
+        }
+
+        private void ToggleEnable_Click(object sender, RoutedEventArgs e)
+        {
+            if (PluginsListBox.SelectedItem is Plugin selectedPlugin)
+            {
+                bool pluginEnabled = _aggLoadInfo.ActiveLoadOut.IsPluginEnabled(selectedPlugin.PluginID);
+                LoadOut.SetPluginEnabled(_aggLoadInfo.ActiveLoadOut.ProfileID, selectedPlugin.PluginID, !pluginEnabled, _aggLoadInfo);
+                // Update UI or perform additional actions as needed
+            }
+        }
+
+        
         #endregion
         private void ImportFiles_Click(object sender, RoutedEventArgs e)
         {

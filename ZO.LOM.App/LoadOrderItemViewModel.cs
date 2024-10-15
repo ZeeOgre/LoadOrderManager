@@ -75,7 +75,13 @@ public class LoadOrderItemViewModel : ViewModelBase
     public ObservableCollection<LoadOrderItemViewModel> Children
     {
         get => children;
-        set => SetProperty(ref children, value);
+        set
+        {
+            if (SetProperty(ref children, value))
+            {
+                OnPropertyChanged(nameof(Children));
+            }
+        }
     }
 
     // Constructor for group items

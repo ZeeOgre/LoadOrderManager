@@ -10,6 +10,7 @@ using System.Timers;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 using ZO.LoadOrderManager;
 using Timer = System.Timers.Timer;
 
@@ -25,8 +26,23 @@ namespace ZO.LoadOrderManager
         public ICommand SaveLoadOutCommand { get; }
         public ICommand EditGroupSetCommand { get; }
         public ICommand EditLoadOutCommand { get; }
+        public RelayCommand RefreshCommand { get; }
 
 
+
+
+        private void UpdateStatusLight()
+        {
+            // Check if the state is dirty and update the light color
+            if (AggLoadInfo.Instance.IsDirty)
+            {
+                StatusLightColor = new SolidColorBrush(Colors.Red);
+            }
+            else
+            {
+                StatusLightColor = new SolidColorBrush(Colors.Green);
+            }
+        }
 
         private void ExecuteEditGroupSetCommand(object parameter)
         {
@@ -88,6 +104,7 @@ namespace ZO.LoadOrderManager
 
                 AggLoadInfo.Instance.RefreshMetadataFromDB();
                 OnPropertyChanged(nameof(LoadOuts));
+                
             }
         }
 
@@ -270,7 +287,9 @@ namespace ZO.LoadOrderManager
         private void Compare()
         {
             // Launch the Diff Viewer with null parameters to trigger file pickers
-            var diffViewer = new DiffViewer((string?)null, (string?)null);
+            //var diffViewer = new DiffViewer((string?)null, (string?)null);
+            var diffViewer = new DiffViewer();
+
             diffViewer.ShowDialog();
         }
 

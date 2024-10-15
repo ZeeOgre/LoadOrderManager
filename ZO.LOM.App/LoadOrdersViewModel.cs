@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Windows;
+using System.Windows.Controls;
 using ZO.LoadOrderManager;
 
 public class LoadOrdersViewModel : ViewModelBase
@@ -12,15 +13,55 @@ public class LoadOrdersViewModel : ViewModelBase
         set => SetProperty(ref items, value);
     }
 
-    public GroupSet SelectedGroupSet { get; set; }
-    public LoadOut SelectedLoadOut { get; set; }
+    private GroupSet _selectedGroupSet;
+    public GroupSet SelectedGroupSet
+    {
+        get => _selectedGroupSet;
+        set
+        {
+            if (InitializationManager.IsAnyInitializing()) return;
+
+            if (SetProperty(ref _selectedGroupSet, value))
+            {
+                OnSelectedGroupSetChanged();
+            }
+        }
+    }
+
+
+    private void OnSelectedGroupSetChanged()
+    {
+        RefreshData();
+    }
+
+    private LoadOut _selectedLoadOut;
+    public LoadOut SelectedLoadOut
+    {
+        get => _selectedLoadOut;
+        set
+        {
+            if (InitializationManager.IsAnyInitializing()) return;
+            if (SetProperty(ref _selectedLoadOut, value))
+            {
+                OnSelectedLoadOutChanged();
+            }
+        }
+    }
+
+    private void OnSelectedLoadOutChanged()
+    {
+        RefreshActivePlugins(_selectedLoadOut);
+        RefreshData();
+    }
+
     public bool Suppress997 { get; set; }
     public bool IsCached { get; set; }
 
     public LoadOrdersViewModel()
     {
         Items = new ObservableCollection<LoadOrderItemViewModel>();
-        AggLoadInfo.Instance.DataRefreshed += OnDataRefreshed;
+        //AggLoadInfo.Instance.DataRefreshed += OnDataRefreshed;
+       
     }
      
     public void LoadData(GroupSet groupSet, LoadOut loadOut, bool suppress997 = false, bool isCached = false)
@@ -55,18 +96,37 @@ public class LoadOrdersViewModel : ViewModelBase
         //}
     }
 
-    public void OnDataRefreshed(object? sender, EventArgs e)
-    {
-        AggLoadInfo.Instance.PerformLockedAction(() =>
-        {
-            // Reload the underlying data for the main LoadOrders
-            RefreshData();
+    //public void OnDataRefreshed(object? sender, EventArgs e)
+    //{
+    //    AggLoadInfo.Instance.PerformLockedAction(() =>
+    //    {
+    //        // Reload the underlying data for the main LoadOrders
+    //        RefreshData();
 
-            // Unset the dirty flag on the sender after processing
-            if (sender is AggLoadInfo aggLoadInfo)
+    //        // Unset the dirty flag on the sender after processing
+    //        if (sender is AggLoadInfo aggLoadInfo)
+    //        {
+    //            aggLoadInfo.SetDirty(false);
+    //        }
+    //    });
+    //}
+
+
+
+    public void RefreshActivePlugins(LoadOut? loadOut = null)
+    {
+        if (loadOut == null)
+        {
+            loadOut = AggLoadInfo.Instance.ActiveLoadOut;
+        }
+        foreach (LoadOrderItemViewModel item in Items)
+        {
+            if (item.EntityType == EntityType.Plugin)
             {
-                aggLoadInfo.SetDirty(false);
+                long pluginID = item.PluginData.PluginID;
+                item.IsActive = loadOut.IsPluginEnabled(pluginID);
             }
-        });
+        }
+        OnPropertyChanged(nameof(Items)); // Notify the TreeView to refresh
     }
 }

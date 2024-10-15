@@ -9,23 +9,23 @@
     <GenerateDocumentationFile>False</GenerateDocumentationFile>
     <SignAssembly>False</SignAssembly>
     <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
-    <Title>ZeeOgre.DevModManager</Title>
-    <Description>A mod lifecycle manager designed to leverage Vortex or MO2 to efficiently handle release cycles of Bethesda Game mods</Description>
+    <Title>ZeeOgre.LoadOrderManager</Title>
+    <Description>A Load Order Manager for Starfield</Description>
     <Copyright>Copyright 2024 ZeeOgre</Copyright>
     <PackageIcon>docs\img\ZeeOgre_NoBackground.jpg</PackageIcon>
-    <PackageProjectUrl>https://github.com/ZeeOgre/DevModManager</PackageProjectUrl>
+    <PackageProjectUrl>https://github.com/ZeeOgre/ZO.LoadOrderManager</PackageProjectUrl>
     <PackageReadmeFile>docs\README.md</PackageReadmeFile>
-    <RepositoryUrl>https://github.com/ZeeOgre/DevModManager</RepositoryUrl>
+    <RepositoryUrl>https://github.com/ZeeOgre/ZO.LoadOrderManager</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageLicenseExpression>AGPL-3.0-or-later</PackageLicenseExpression>
-    <Version>0.0.4</Version>
+    <Version>0.0.1</Version>
     <Configurations>Debug;Release;GitRelease;GitPublish</Configurations>
     <Authors>ZeeOgre</Authors>
     <ApplicationIcon>docs\img\ZeeOgre.ico</ApplicationIcon>
     <NeutralLanguage>en-US</NeutralLanguage>
     <ProduceReferenceAssembly>False</ProduceReferenceAssembly>
-    <AssemblyName>DevModManager</AssemblyName>
-    <RootNamespace>DevModManager.App</RootNamespace>
+    <AssemblyName>LoadOrderManager</AssemblyName>
+    <RootNamespace>ZO.LoadOrderManager</RootNamespace>
     <WixVersion>$(Version)</WixVersion>
     <WixProductName>$(AssemblyName)</WixProductName>
     <WixManufacturer>$(Authors)</WixManufacturer>
@@ -102,6 +102,7 @@
     <CsprojFilePath>$(MSBuildProjectFullPath)</CsprojFilePath>
     <AppConfigFilePath>$(ProjectDir)App.config</AppConfigFilePath>
     <VersionTxtFilePath>$(ProjectDir)Properties\version.txt</VersionTxtFilePath>
+    <PackageReleaseNotes>preliminary release, mostly working</PackageReleaseNotes>
   </PropertyGroup>
   <Target Name="IncrementVersion" BeforeTargets="BeforeBuild" Condition="'$(Configuration)' == 'GitRelease'">
     <Message Text="Running IncrementVersion target..." Importance="high" />
