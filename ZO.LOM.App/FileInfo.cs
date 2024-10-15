@@ -499,15 +499,16 @@ namespace ZO.LoadOrderManager
                 else
                 {
                     command.CommandText = @"
-                UPDATE FileInfo
-                SET PluginID = @PluginID,
-                    Filename = @Filename,
-                    RelativePath = @RelativePath,
-                    DTStamp = COALESCE(@DTStamp, DTStamp),
-                    HASH = COALESCE(@HASH, HASH),
-                    Flags = FileInfo.Flags | excluded.Flags,
-                    AbsolutePath = COALESCE(excluded.AbsolutePath, FileInfo.AbsolutePath)
-                    WHERE FileID = @FileID";
+                    INSERT INTO FileInfo (PluginID, Filename, RelativePath, DTStamp, HASH, Flags, AbsolutePath)
+                    VALUES (@PluginID, @Filename, @RelativePath, @DTStamp, @HASH, @Flags, @AbsolutePath)
+                    ON CONFLICT(Filename) DO UPDATE 
+                    SET RelativePath = COALESCE(excluded.RelativePath, FileInfo.RelativePath), 
+                        DTStamp = COALESCE(excluded.DTStamp, FileInfo.DTStamp), 
+                        HASH = COALESCE(excluded.HASH, FileInfo.HASH), 
+                        Flags = COALESCE(FileInfo.Flags, 0) | COALESCE(excluded.Flags, 0),
+                        AbsolutePath = COALESCE(excluded.AbsolutePath, FileInfo.AbsolutePath)";
+
+
 
                     command.Parameters.AddWithValue("@FileID", fileInfo.FileID);
                     command.Parameters.AddWithValue("@PluginID", pluginId);
