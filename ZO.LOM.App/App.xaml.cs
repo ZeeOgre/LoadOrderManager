@@ -161,12 +161,18 @@ namespace ZO.LoadOrderManager
             {
                 Config.InitializeNewInstance();
 
-                ApplyCustomTheme(IsSystemInDarkMode());
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    ApplyCustomTheme(IsSystemInDarkMode());
 
-                App.LogDebug("Launching SettingsWindow in settings mode.");
-                var settingsWindow = new SettingsWindow(SettingsLaunchSource.CommandLine);
-                settingsWindow.Closed += (s, e) => RestartApplication();
-                settingsWindow.Show();
+                    App.LogDebug("Launching SettingsWindow in settings mode.");
+                    var settingsWindow = new SettingsWindow(SettingsLaunchSource.CommandLine);
+                    settingsWindow.Closed += (s, e) =>
+                    {
+                        RestartApplication();
+                    };
+                    settingsWindow.Show();
+                });
             }
             catch (Exception ex)
             {
