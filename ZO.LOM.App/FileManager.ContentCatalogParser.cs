@@ -79,7 +79,7 @@ namespace ZO.LoadOrderManager
                         existingPlugin.BethesdaID = bethesdaID;
                         existingPlugin.Files = files;
                         existingPlugin.State |= ModState.Bethesda; // Set the Bethesda flag
-                        existingPlugin.WriteMod();
+                        _ = existingPlugin.WriteMod();
                     }
                     else
                     {
@@ -98,7 +98,7 @@ namespace ZO.LoadOrderManager
                             State = ModState.Bethesda, // Set the Bethesda flag,
                             GroupOrdinal = groupOrdinal
                         };
-                        newPlugin.WriteMod();
+                        _ = newPlugin.WriteMod();
                         AggLoadInfo.Instance.Plugins?.Add(newPlugin); // Add the new plugin to the singleton instance
                     }
                 }

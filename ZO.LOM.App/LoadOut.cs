@@ -1,4 +1,3 @@
-using System.Collections.ObjectModel;
 using System.Data.SQLite;
 using System.Diagnostics;
 
@@ -9,8 +8,11 @@ namespace ZO.LoadOrderManager
         public long ProfileID { get; set; }
         public required string Name { get; set; }
         public ObservableHashSet<long> enabledPlugins { get; set; } = new ObservableHashSet<long>();
-        public bool IsFavorite { get; 
-            set; }
+        public bool IsFavorite
+        {
+            get;
+            set;
+        }
 
         //private GroupSet? _groupSet;
         public long GroupSetID { get; set; }
@@ -26,14 +28,14 @@ namespace ZO.LoadOrderManager
         {
             enabledPlugins = new ObservableHashSet<long>();
             GroupSetID = groupSet.GroupSetID;
-            
+
         }
 
         public void LoadPlugins(IEnumerable<Plugin> plugins)
         {
             foreach (var plugin in plugins)
             {
-                enabledPlugins.Add(plugin.PluginID);
+                _ = enabledPlugins.Add(plugin.PluginID);
             }
         }
 
@@ -54,12 +56,12 @@ namespace ZO.LoadOrderManager
                 command.Transaction = transaction;
             }
             command.CommandText = "SELECT PluginID FROM ProfilePlugins WHERE ProfileID = @ProfileID";
-            command.Parameters.AddWithValue("@ProfileID", this.ProfileID);
+            _ = command.Parameters.AddWithValue("@ProfileID", this.ProfileID);
 
             using var reader = command.ExecuteReader();
             while (reader.Read())
             {
-                _enabledPlugins.Add(reader.GetInt64(reader.GetOrdinal("PluginID")));
+                _ = _enabledPlugins.Add(reader.GetInt64(reader.GetOrdinal("PluginID")));
             }
 
             if (localConnection)
@@ -85,25 +87,23 @@ namespace ZO.LoadOrderManager
                 using (var command = new SQLiteCommand("SELECT * FROM LoadOutProfiles WHERE ProfileID = @ProfileID", connection))
                 {
                     command.Transaction = transaction;
-                    command.Parameters.AddWithValue("@ProfileID", loadOutID);
-                    using (var reader = command.ExecuteReader())
+                    _ = command.Parameters.AddWithValue("@ProfileID", loadOutID);
+                    using var reader = command.ExecuteReader();
+                    if (reader.Read())
                     {
-                        if (reader.Read())
-                        {
-                            var groupSetID = reader.GetInt64(reader.GetOrdinal("GroupSetID"));
+                        var groupSetID = reader.GetInt64(reader.GetOrdinal("GroupSetID"));
 
-                            loadOut = new LoadOut
-                            {
-                                ProfileID = reader.GetInt64(reader.GetOrdinal("ProfileID")),
-                                Name = reader.GetString(reader.GetOrdinal("ProfileName")),
-                                GroupSetID = groupSetID,
-                                IsFavorite = reader.GetInt64(reader.GetOrdinal("IsFavorite")) == 1
-                            };
-                        }
-                        else
+                        loadOut = new LoadOut
                         {
-                            throw new InvalidOperationException($"LoadOut with ID {loadOutID} not found.");
-                        }
+                            ProfileID = reader.GetInt64(reader.GetOrdinal("ProfileID")),
+                            Name = reader.GetString(reader.GetOrdinal("ProfileName")),
+                            GroupSetID = groupSetID,
+                            IsFavorite = reader.GetInt64(reader.GetOrdinal("IsFavorite")) == 1
+                        };
+                    }
+                    else
+                    {
+                        throw new InvalidOperationException($"LoadOut with ID {loadOutID} not found.");
                     }
                 }
 
@@ -141,15 +141,15 @@ namespace ZO.LoadOrderManager
                             VALUES (@ProfileID, @ProfileName, @GroupSetID, @IsFavorite)";
                     if (this.ProfileID == 0)
                     {
-                        command.Parameters.AddWithValue("@ProfileID", DBNull.Value);
+                        _ = command.Parameters.AddWithValue("@ProfileID", DBNull.Value);
                     }
                     else
                     {
-                        command.Parameters.AddWithValue("@ProfileID", this.ProfileID);
+                        _ = command.Parameters.AddWithValue("@ProfileID", this.ProfileID);
                     }
-                    command.Parameters.AddWithValue("@ProfileName", this.Name);
-                    command.Parameters.AddWithValue("@GroupSetID", this.GroupSetID);
-                    command.Parameters.AddWithValue("@IsFavorite", this.IsFavorite ? 1 : 0);
+                    _ = command.Parameters.AddWithValue("@ProfileName", this.Name);
+                    _ = command.Parameters.AddWithValue("@GroupSetID", this.GroupSetID);
+                    _ = command.Parameters.AddWithValue("@IsFavorite", this.IsFavorite ? 1 : 0);
                     if (this.ProfileID == 0 || this.ProfileID == null)
                     {
                         command.CommandText += " RETURNING ProfileID";
@@ -157,7 +157,7 @@ namespace ZO.LoadOrderManager
                     }
                     else
                     {
-                        command.ExecuteNonQuery();
+                        _ = command.ExecuteNonQuery();
                     }
 
                     // Insert or replace ProfilePlugins entries
@@ -168,9 +168,9 @@ namespace ZO.LoadOrderManager
                     {
                         App.LogDebug($"Updating ProfilePlugins table for {pluginID}");
                         command.Parameters.Clear();
-                        command.Parameters.AddWithValue("@ProfileID", this.ProfileID);
-                        command.Parameters.AddWithValue("@PluginID", pluginID);
-                        command.ExecuteNonQuery();
+                        _ = command.Parameters.AddWithValue("@ProfileID", this.ProfileID);
+                        _ = command.Parameters.AddWithValue("@PluginID", pluginID);
+                        _ = command.ExecuteNonQuery();
                     }
 
                     // Remove any ProfilePlugins entries not in ActivePlugins
@@ -180,8 +180,8 @@ namespace ZO.LoadOrderManager
                             DELETE FROM ProfilePlugins
                             WHERE ProfileID = @ProfileID AND PluginID NOT IN ({activePluginsList})";
                     command.Parameters.Clear();
-                    command.Parameters.AddWithValue("@ProfileID", this.ProfileID);
-                    command.ExecuteNonQuery();
+                    _ = command.Parameters.AddWithValue("@ProfileID", this.ProfileID);
+                    _ = command.ExecuteNonQuery();
                 }
 
                 // Commit the transaction
@@ -223,8 +223,8 @@ namespace ZO.LoadOrderManager
                             DELETE FROM LoadOutProfiles
                             WHERE ProfileID = @ProfileID";
                     command.Parameters.Clear();
-                    command.Parameters.AddWithValue("@ProfileID", this.ProfileID);
-                    command.ExecuteNonQuery();
+                    _ = command.Parameters.AddWithValue("@ProfileID", this.ProfileID);
+                    _ = command.ExecuteNonQuery();
                 }
 
                 // Commit the transaction
@@ -239,7 +239,7 @@ namespace ZO.LoadOrderManager
             }
             //AggLoadInfo.Instance.LoadOuts.Remove(this);
             //AggLoadInfo.Instance.RefreshMetadataFromDB();
-            
+
         }
 
 
@@ -266,9 +266,9 @@ namespace ZO.LoadOrderManager
                 DELETE FROM ProfilePlugins
                 WHERE ProfileID = @ProfileID AND PluginID = @PluginID";
             }
-            command.Parameters.AddWithValue("@ProfileID", profileID);
-            command.Parameters.AddWithValue("@PluginID", pluginID);
-            command.ExecuteNonQuery();
+            _ = command.Parameters.AddWithValue("@ProfileID", profileID);
+            _ = command.Parameters.AddWithValue("@PluginID", pluginID);
+            _ = command.ExecuteNonQuery();
             Debug.WriteLine($"Insert/Update {pluginID} on profile {profileID}");
 
             // Now update the in-memory LoadOut object in AggLoadInfo
@@ -278,12 +278,12 @@ namespace ZO.LoadOrderManager
                 if (isEnabled)
                 {
                     // Add the plugin if it's being enabled
-                    loadOut.enabledPlugins.Add(pluginID);
+                    _ = loadOut.enabledPlugins.Add(pluginID);
                 }
                 else
                 {
                     // Remove the plugin if it's being disabled
-                    loadOut.enabledPlugins.Remove(pluginID);
+                    _ = loadOut.enabledPlugins.Remove(pluginID);
                 }
             }
 
@@ -295,7 +295,7 @@ namespace ZO.LoadOrderManager
                 // Add the plugin to ProfilePlugins
                 if (!profilePlugins.Contains((profileID, pluginID)))
                 {
-                    profilePlugins.Add((profileID, pluginID));
+                    _ = profilePlugins.Add((profileID, pluginID));
                     Debug.WriteLine($"Added PluginID {pluginID} to ProfilePlugins (ProfileID = {profileID})");
                 }
             }
@@ -305,7 +305,7 @@ namespace ZO.LoadOrderManager
                 var existingPlugin = profilePlugins.FirstOrDefault(pp => pp.ProfileID == profileID && pp.PluginID == pluginID);
                 if (existingPlugin != default)
                 {
-                    profilePlugins.Remove(existingPlugin);
+                    _ = profilePlugins.Remove(existingPlugin);
                     Debug.WriteLine($"Removed PluginID {pluginID} from ProfilePlugins (ProfileID = {profileID})");
                 }
             }
@@ -329,9 +329,9 @@ namespace ZO.LoadOrderManager
             enabledPlugins.Clear();
             foreach (var pluginID in pluginIDs)
             {
-                enabledPlugins.Add(pluginID);
+                _ = enabledPlugins.Add(pluginID);
             }
-            WriteProfile();
+            _ = WriteProfile();
         }
 
         public bool IsPluginEnabled(long pluginID)

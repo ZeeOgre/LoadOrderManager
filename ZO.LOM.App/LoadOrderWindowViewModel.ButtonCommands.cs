@@ -1,18 +1,12 @@
 using Microsoft.Win32;
-using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Timers;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
-using ZO.LoadOrderManager;
-using Timer = System.Timers.Timer;
 
 namespace ZO.LoadOrderManager
 {
@@ -55,7 +49,7 @@ namespace ZO.LoadOrderManager
             // Ensure we have a target group set to edit
             if (targetGroupSet == null)
             {
-                MessageBox.Show("Please select a GroupSet to edit.", "Edit GroupSet", MessageBoxButton.OK, MessageBoxImage.Warning);
+                _ = MessageBox.Show("Please select a GroupSet to edit.", "Edit GroupSet", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
@@ -88,7 +82,7 @@ namespace ZO.LoadOrderManager
             // Ensure we have a target loadout to edit
             if (targetLoadOut == null)
             {
-                MessageBox.Show("Please select a LoadOut to edit.", "Edit LoadOut", MessageBoxButton.OK, MessageBoxImage.Warning);
+                _ = MessageBox.Show("Please select a LoadOut to edit.", "Edit LoadOut", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
@@ -104,7 +98,7 @@ namespace ZO.LoadOrderManager
 
                 AggLoadInfo.Instance.RefreshMetadataFromDB();
                 OnPropertyChanged(nameof(LoadOuts));
-                
+
             }
         }
 
@@ -117,7 +111,7 @@ namespace ZO.LoadOrderManager
         {
             if (SelectedLoadOut != null)
             {
-                SelectedLoadOut.WriteProfile();
+                _ = SelectedLoadOut.WriteProfile();
                 UpdateStatus("Profile saved successfully.");
             }
             else
@@ -135,12 +129,12 @@ namespace ZO.LoadOrderManager
 
         public bool CanMoveUp()
         {
-            
+
             if (SelectedItems is null || SelectedItems.Count == 0 || !IsUiEnabled) return false;
-            if (!(SelectedItem is LoadOrderItemViewModel loadOrderItem) || loadOrderItem.GroupSetID == 1 || loadOrderItem.GroupID < 1 )
+            if (!(SelectedItem is LoadOrderItemViewModel loadOrderItem) || loadOrderItem.GroupSetID == 1 || loadOrderItem.GroupID < 1)
                 return false;
             Debug.WriteLine($"SelectedItem: {loadOrderItem.DisplayName} | ID {loadOrderItem.GroupID} | Parent: {loadOrderItem.ParentID} | Ordinal {loadOrderItem.Ordinal}");
-            if (AggLoadInfo.GetNeighbor(loadOrderItem, true) is LoadOrderItemViewModel neighbor)
+            if (AggLoadInfo.GetNeighbor(loadOrderItem, true) is LoadOrderItemViewModel)
             {
                 return true;
             }
@@ -149,14 +143,14 @@ namespace ZO.LoadOrderManager
 
         public bool CanMoveDown()
         {
-            
+
             if (SelectedItems is null || SelectedItems.Count == 0 || !IsUiEnabled) return false;
             var firstItem = SelectedItems[0] as LoadOrderItemViewModel;
             var lastItem = SelectedItems[SelectedItems.Count - 1] as LoadOrderItemViewModel;
             var selectedItems = SelectedItems.OfType<LoadOrderItemViewModel>().ToList();
 
 
-            if ( firstItem.GroupSetID == 1 || lastItem.GroupSetID == 1 || firstItem.GroupID < 1 || lastItem.GroupID < 1 || selectedItems.Any(item => item.ParentID != firstItem.ParentID))
+            if (firstItem.GroupSetID == 1 || lastItem.GroupSetID == 1 || firstItem.GroupID < 1 || lastItem.GroupID < 1 || selectedItems.Any(item => item.ParentID != firstItem.ParentID))
                 return false;
 
 
@@ -204,7 +198,7 @@ namespace ZO.LoadOrderManager
                         RefreshData();
                     }
                 }
-                
+
             }
         }
 
@@ -290,7 +284,7 @@ namespace ZO.LoadOrderManager
             //var diffViewer = new DiffViewer((string?)null, (string?)null);
             var diffViewer = new DiffViewer();
 
-            diffViewer.ShowDialog();
+            _ = diffViewer.ShowDialog();
         }
 
 
@@ -321,11 +315,11 @@ namespace ZO.LoadOrderManager
             }
 
             // Save the new LoadOut to the database
-            newLoadOut.WriteProfile();
+            _ = newLoadOut.WriteProfile();
 
             // Optionally refresh the UI or data context
             //OnPropertyChanged(nameof(AggLoadInfo.Instance.LoadOuts));
-            
+
             return newLoadOut;
         }
 
@@ -343,7 +337,7 @@ namespace ZO.LoadOrderManager
         //}
 
 
-       
+
 
         private void SavePlugins()
         {
@@ -357,7 +351,7 @@ namespace ZO.LoadOrderManager
             if (result == MessageBoxResult.Yes)
             {
                 var defaultFileName = $"Plugins_{groupSetName}_{profileName}.txt";
-                defaultFilePath = Path.Combine(FileManager.GameLocalAppDataFolder, defaultFileName);
+                _ = Path.Combine(FileManager.GameLocalAppDataFolder, defaultFileName);
 
 
                 var saveFileDialog = new SaveFileDialog

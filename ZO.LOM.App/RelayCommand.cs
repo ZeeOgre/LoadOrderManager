@@ -1,4 +1,3 @@
-using System;
 using System.Windows.Input;
 
 namespace ZO.LoadOrderManager
@@ -27,7 +26,7 @@ namespace ZO.LoadOrderManager
             {
                 _execute(parameter);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 // Log or handle exceptions as needed
                 // Example: Logger.LogError(ex);
@@ -66,7 +65,7 @@ namespace ZO.LoadOrderManager
             {
                 _execute(parameter ?? new object());
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 // Log or handle exceptions as needed
                 // Example: Logger.LogError(ex);
@@ -121,7 +120,7 @@ namespace ZO.LoadOrderManager
                 {
                     _execute(param);
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     // Log or handle exceptions as needed
                     throw;

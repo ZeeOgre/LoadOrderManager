@@ -1,13 +1,10 @@
-using Microsoft.Win32;
-using System.Collections.ObjectModel;
+using MahApps.Metro.Controls;
 using System.Diagnostics;
-using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using System.Windows.Navigation;
 using System.Windows.Media;
-using MahApps.Metro.Controls;
+using System.Windows.Navigation;
 
 namespace ZO.LoadOrderManager
 {
@@ -44,20 +41,20 @@ namespace ZO.LoadOrderManager
                     }
                     else
                     {
-                        MessageBox.Show("MainWindow is not of type LoadingWindow.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                        _ = MessageBox.Show("MainWindow is not of type LoadingWindow.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                         Close();
                     }
                 }
                 else
                 {
-                    MessageBox.Show("Singleton is not initialized. Please initialize the singleton before opening the window.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    _ = MessageBox.Show("Singleton is not initialized. Please initialize the singleton before opening the window.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     Close();
                 }
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"LoadOrderWindow: Exception occurred - {ex.Message}");
-                MessageBox.Show($"An error occurred while initializing the window: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                _ = MessageBox.Show($"An error occurred while initializing the window: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 Close();
             }
         }
@@ -101,7 +98,7 @@ namespace ZO.LoadOrderManager
 
             // Ensure window visibility after initialization
             this.Visibility = Visibility.Visible;
-            this.Activate();
+            _ = this.Activate();
             InitializationManager.ReportProgress(100, "LoadOrderWindow fully visible");
         }
 
@@ -113,11 +110,11 @@ namespace ZO.LoadOrderManager
         private void Hyperlink_RequestNavigate(object sender, RequestNavigateEventArgs e)
         {
             Uri uri = e.Uri;
-            string newUri = uri.IsAbsoluteUri ? uri.AbsoluteUri : string.Empty;
+            _ = uri.IsAbsoluteUri ? uri.AbsoluteUri : string.Empty;
 
             if (!uri.IsAbsoluteUri || string.IsNullOrEmpty(uri.OriginalString))
             {
-                newUri = "https://google.com";
+                string newUri = "https://google.com";
                 if (uri.OriginalString.Contains("Nexus") || string.IsNullOrEmpty(uri.OriginalString))
                 {
                     newUri = "https://www.nexusmods.com/starfield";
@@ -218,7 +215,7 @@ namespace ZO.LoadOrderManager
         {
             foreach (var item in items)
             {
-                if (item is LoadOrderItemViewModel viewModel)
+                if (item is LoadOrderItemViewModel)
                 {
                     var treeViewItem = LoadOrderTreeView.ItemContainerGenerator.ContainerFromItem(item) as TreeViewItem;
 
@@ -243,12 +240,12 @@ namespace ZO.LoadOrderManager
             var treeViewItem = VisualUpwardSearch(e.OriginalSource as DependencyObject);
             if (treeViewItem != null)
             {
-                treeViewItem.Focus();
+                _ = treeViewItem.Focus();
                 e.Handled = true;
             }
         }
 
-        private static TreeViewItem VisualUpwardSearch(DependencyObject source)
+        private static TreeViewItem? VisualUpwardSearch(DependencyObject source)
         {
             while (source != null && !(source is TreeViewItem))
             {

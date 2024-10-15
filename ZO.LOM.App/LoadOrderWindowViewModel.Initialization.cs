@@ -1,7 +1,4 @@
-using System;
 using System.Collections.ObjectModel;
-using System.Linq;
-using System.Threading.Tasks;
 using System.Windows;
 
 namespace ZO.LoadOrderManager
@@ -61,7 +58,7 @@ namespace ZO.LoadOrderManager
             SettingsWindowCommand = new RelayCommand<object?>(param => SettingsWindow(), _ => true); // LoadOrderWindowViewModel.MenuCommands.cs
             ImportFromYamlCommand = new RelayCommand<object?>(param => ImportFromYaml()); // LoadOrderWindowViewModel.MenuCommands.cs
             OpenGameSettingsCommand = new RelayCommand<object?>(param => OpenGameSettings(), _ => true); // LoadOrderWindowViewModel.MenuCommands.cs
-            
+
 
             EditGroupSetCommand = new RelayCommand(ExecuteEditGroupSetCommand, CanExecuteEditGroupSetCommand); // LoadOrderWindowViewModel.ContextMenuCommands.cs
             EditLoadOutCommand = new RelayCommand(ExecuteEditLoadOutCommand, CanExecuteEditLoadOutCommand); // LoadOrderWindowViewModel.ContextMenuCommands.cs
@@ -70,7 +67,7 @@ namespace ZO.LoadOrderManager
 
             // Load initial data
             LoadInitialData();
-            
+
         }
 
         // Load initial data for the ViewModel

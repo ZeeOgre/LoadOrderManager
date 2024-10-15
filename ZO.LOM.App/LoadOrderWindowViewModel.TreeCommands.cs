@@ -1,15 +1,7 @@
-using Microsoft.Win32;
-using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Timers;
 using System.Windows;
 using System.Windows.Input;
-using ZO.LoadOrderManager;
-using Timer = System.Timers.Timer;
 
 namespace ZO.LoadOrderManager
 {
@@ -26,7 +18,7 @@ namespace ZO.LoadOrderManager
             if (LoadOrders.Items == null || LoadOrders.Items.Count == 0)
                 return;
 
-            var flatList = Flatten(LoadOrders.Items).ToList() ;
+            var flatList = Flatten(LoadOrders.Items).ToList();
 
             foreach (var item in flatList)
             {
@@ -121,12 +113,12 @@ namespace ZO.LoadOrderManager
             plugin.GroupID = unassignedGroup.GroupID;
             plugin.GroupOrdinal = unassignedGroup.Plugins?.Count ?? 0;
             unassignedGroup.Plugins?.Add(plugin);
-            plugin.WriteMod();
+            _ = plugin.WriteMod();
         }
 
         private IEnumerable<LoadOrderItemViewModel> Flatten(ObservableCollection<LoadOrderItemViewModel> items, bool? refresh = false)
         {
-            if (_cachedFlatList != null  && (_isRefreshing || refresh == false || _cachedFlatList.Count == 0))
+            if (_cachedFlatList != null && (_isRefreshing || refresh == false || _cachedFlatList.Count == 0))
             {
                 return _cachedFlatList;
             }
@@ -176,7 +168,7 @@ namespace ZO.LoadOrderManager
                     }
                     else
                     {
-                        MessageBox.Show("ModGroup not found. Please create a new group using the group editor.", "Group Not Found", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        _ = MessageBox.Show("ModGroup not found. Please create a new group using the group editor.", "Group Not Found", MessageBoxButton.OK, MessageBoxImage.Warning);
                     }
                     break;
 
@@ -193,11 +185,11 @@ namespace ZO.LoadOrderManager
                     break;
 
                 default:
-                    MessageBox.Show("Please select a valid item to edit.", "Invalid Selection", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    _ = MessageBox.Show("Please select a valid item to edit.", "Invalid Selection", MessageBoxButton.OK, MessageBoxImage.Warning);
                     break;
             }
 
-           
+
         }
 
 

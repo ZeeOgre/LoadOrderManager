@@ -1,10 +1,5 @@
-using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Data.SQLite;
-using System.Linq;
-using System.Windows.Controls;
 using System.Windows;
+using System.Windows.Controls;
 
 namespace ZO.LoadOrderManager
 {
@@ -20,9 +15,9 @@ namespace ZO.LoadOrderManager
 
     public class EntityTypeTemplateSelector : DataTemplateSelector
     {
-        public DataTemplate GroupTemplate { get; set; }
-        public DataTemplate PluginTemplate { get; set; }
-        public DataTemplate LoadOutTemplate { get; set; }
+        public required DataTemplate GroupTemplate { get; set; }
+        public required DataTemplate PluginTemplate { get; set; }
+        public required DataTemplate LoadOutTemplate { get; set; }
 
         public override DataTemplate SelectTemplate(object item, DependencyObject container)
         {

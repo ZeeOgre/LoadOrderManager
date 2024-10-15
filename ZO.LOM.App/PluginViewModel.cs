@@ -1,6 +1,5 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Linq;
 using System.Windows.Input;
 using ZO.LoadOrderManager;
 
@@ -261,7 +260,7 @@ public class PluginViewModel : INotifyPropertyChanged
 
         _aggLoadInfo.UpdatePlugin(_plugin);
         // Write the plugin to the database, ensuring all changes are persisted
-        _plugin.WriteMod();
+        _ = _plugin.WriteMod();
     }
 
 

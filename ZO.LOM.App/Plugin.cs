@@ -2,10 +2,6 @@ using Newtonsoft.Json.Linq;
 using System.Data.SQLite;
 using System.IO;
 using YamlDotNet.Serialization;
-using System.ComponentModel;
-using System.Collections.ObjectModel;
-using System.Linq;
-using System.Security.Cryptography.X509Certificates;
 
 namespace ZO.LoadOrderManager
 {
@@ -98,7 +94,7 @@ namespace ZO.LoadOrderManager
             }
 
             // Remove any empty or invalid FileInfo entries
-            Files.RemoveAll(f => string.IsNullOrWhiteSpace(f.Filename));
+            _ = Files.RemoveAll(f => string.IsNullOrWhiteSpace(f.Filename));
 
             // Remove duplicate FileInfo entries based on Filename while malongaining order
             var seenFilenames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -128,7 +124,7 @@ namespace ZO.LoadOrderManager
             WHERE (PluginID = @modID OR PluginName = @modName) 
             AND (GroupSetID = @groupSetID OR GroupID < 0)
             LIMIT 1";
-                command.Parameters.AddWithValue("@groupSetID", groupSetID.Value);
+                _ = command.Parameters.AddWithValue("@groupSetID", groupSetID.Value);
             }
             else
             {
@@ -139,8 +135,8 @@ namespace ZO.LoadOrderManager
             LIMIT 1";
             }
 
-            command.Parameters.AddWithValue("@modID", (object?)modID ?? DBNull.Value);
-            command.Parameters.AddWithValue("@modName", (object?)modName ?? DBNull.Value);
+            _ = command.Parameters.AddWithValue("@modID", (object?)modID ?? DBNull.Value);
+            _ = command.Parameters.AddWithValue("@modName", (object?)modName ?? DBNull.Value);
 
             using var reader = command.ExecuteReader();
             if (reader.Read())
@@ -163,9 +159,9 @@ namespace ZO.LoadOrderManager
                 // If groupSetID is provided, populate group-related fields
                 if (groupSetID.HasValue)
                 {
-                    plugin.GroupID = reader.IsDBNull(reader.GetOrdinal("GroupID")) ? (long?)null : reader.GetInt64(reader.GetOrdinal("GroupID"));
-                    plugin.GroupOrdinal = reader.IsDBNull(reader.GetOrdinal("GroupOrdinal")) ? (long?)null : reader.GetInt64(reader.GetOrdinal("GroupOrdinal"));
-                    plugin.GroupSetID = reader.IsDBNull(reader.GetOrdinal("GroupSetID")) ? (long?)null : reader.GetInt64(reader.GetOrdinal("GroupSetID"));
+                    plugin.GroupID = reader.IsDBNull(reader.GetOrdinal("GroupID")) ? null : reader.GetInt64(reader.GetOrdinal("GroupID"));
+                    plugin.GroupOrdinal = reader.IsDBNull(reader.GetOrdinal("GroupOrdinal")) ? null : reader.GetInt64(reader.GetOrdinal("GroupOrdinal"));
+                    plugin.GroupSetID = reader.IsDBNull(reader.GetOrdinal("GroupSetID")) ? null : reader.GetInt64(reader.GetOrdinal("GroupSetID"));
                 }
 
                 // EnsureFilesList will populate the Files property with relevant file details.
@@ -232,7 +228,7 @@ namespace ZO.LoadOrderManager
             if (fullScan == true) newHash = FileInfo.ComputeHash(file.FullName);
             Files = new List<FileInfo>
             {
-                
+
                 new FileInfo
                 {
                     Filename = file.Name,
@@ -308,71 +304,70 @@ namespace ZO.LoadOrderManager
                     this.GroupSetID = 1;
                 }
 
-                using (var command = new SQLiteCommand(connection))
-                {
-                    // Check if the plugin already exists in vwPlugins
-                    command.CommandText = @"
+                using var command = new SQLiteCommand(connection);
+                // Check if the plugin already exists in vwPlugins
+                command.CommandText = @"
                         SELECT DISTINCT PluginID, BethesdaID, NexusID, State
                         FROM vwPlugins
                         WHERE LOWER(PluginName) = @PluginName";
-                    command.Parameters.AddWithValue("@PluginName", this.PluginName);
+                _ = command.Parameters.AddWithValue("@PluginName", this.PluginName);
 
-                    using (var reader = command.ExecuteReader())
+                using (var reader = command.ExecuteReader())
+                {
+                    if (reader.Read())
                     {
-                        if (reader.Read())
+                        this.PluginID = reader.GetInt64(0);
+
+                        // Use fetched values only if the class properties are null or default
+                        this.BethesdaID = !string.IsNullOrEmpty(this.BethesdaID) ? this.BethesdaID : (reader.IsDBNull(1) ? string.Empty : reader.GetString(1));
+                        this.NexusID = !string.IsNullOrEmpty(this.NexusID) ? this.NexusID : (reader.IsDBNull(2) ? string.Empty : reader.GetString(2));
+
+                        if (!reader.IsDBNull(3))
                         {
-                            this.PluginID = reader.GetInt64(0);
+                            ModState existingState = (ModState)reader.GetInt64(3);
+                            ModState newState = this.State | existingState; // Merge the current state with the new state using bitwise OR
 
-                            // Use fetched values only if the class properties are null or default
-                            this.BethesdaID = !string.IsNullOrEmpty(this.BethesdaID) ? this.BethesdaID : (reader.IsDBNull(1) ? string.Empty : reader.GetString(1));
-                            this.NexusID = !string.IsNullOrEmpty(this.NexusID) ? this.NexusID : (reader.IsDBNull(2) ? string.Empty : reader.GetString(2));
-
-                            if (!reader.IsDBNull(3))
+                            // Validate the new state to ensure no conflicting conditions
+                            if (newState.HasFlag(ModState.None) && newState != ModState.None)
                             {
-                                ModState existingState = (ModState)reader.GetInt64(3);
-                                ModState newState = this.State | existingState; // Merge the current state with the new state using bitwise OR
-
-                                // Validate the new state to ensure no conflicting conditions
-                                if (newState.HasFlag(ModState.None) && newState != ModState.None)
-                                {
-                                    newState = ModState.None; // If None is set, ensure no other flags are set
-                                }
-
-                                this.State = newState;
-                            }
-                            // Retrieve the existing State value from the database and merge with the new value
-                            if (!reader.IsDBNull(3))
-                            {
-                                ModState existingState = (ModState)reader.GetInt64(3);
-                                this.State |= existingState; // Merge the current state with the new state using bitwise OR
+                                newState = ModState.None; // If None is set, ensure no other flags are set
                             }
 
-                            App.LogDebug($"Plugin already exists: {this.PluginName} (ID: {this.PluginID})");
+                            this.State = newState;
                         }
-                    }
+                        // Retrieve the existing State value from the database and merge with the new value
+                        if (!reader.IsDBNull(3))
+                        {
+                            ModState existingState = (ModState)reader.GetInt64(3);
+                            this.State |= existingState; // Merge the current state with the new state using bitwise OR
+                        }
 
-                    // Insert or update the Plugin based on existence
-                    if (this.PluginID == 0)
-                    {
-                        // Insert new plugin into Plugins table
-                        command.CommandText = @"
+                        App.LogDebug($"Plugin already exists: {this.PluginName} (ID: {this.PluginID})");
+                    }
+                }
+
+                // Insert or update the Plugin based on existence
+                if (this.PluginID == 0)
+                {
+                    // Insert new plugin into Plugins table
+                    command.CommandText = @"
                             INSERT INTO Plugins (PluginName, Description, Achievements, DTStamp, Version, State)
                             VALUES (LOWER(@PluginName), @Description, @Achievements, @DTStamp, @Version, @State)
                             RETURNING PluginID;";
-                        command.Parameters.Clear();
+                    command.Parameters.Clear();
 
-                        command.Parameters.AddWithValue("@PluginName", this.PluginName);
-                        command.Parameters.AddWithValue("@Description", string.IsNullOrEmpty(this.Description) ? (object)DBNull.Value : this.Description);
-                        command.Parameters.AddWithValue("@Achievements", this.Achievements);
-                        command.Parameters.AddWithValue("@DTStamp", string.IsNullOrEmpty(this.DTStamp) ? (object)DBNull.Value : this.DTStamp);
-                        command.Parameters.AddWithValue("@Version", string.IsNullOrEmpty(this.Version) ? (object)DBNull.Value : this.Version);
-                        command.Parameters.AddWithValue("@State", (long)this.State);
-                        this.PluginID = Convert.ToInt64(command.ExecuteScalar());
-                    }
-                    else
-                    {
-                        // Update existing plugin in Plugins table
-                        command.CommandText = @"
+                    _ = command.Parameters.AddWithValue("@PluginName", this.PluginName);
+                    _ = command.Parameters.AddWithValue("@Description", string.IsNullOrEmpty(this.Description) ? DBNull.Value : this.Description);
+                    _ = command.Parameters.AddWithValue("@Achievements", this.Achievements);
+                    _ = command.Parameters.AddWithValue("@DTStamp", string.IsNullOrEmpty(this.DTStamp) ? DBNull.Value : this.DTStamp);
+                    _ = command.Parameters.AddWithValue("@Version", string.IsNullOrEmpty(this.Version) ? DBNull.Value : this.Version);
+                    _ = command.Parameters.AddWithValue("@State", (long)this.State);
+                    this.PluginID = Convert.ToInt64(command.ExecuteScalar());
+                }
+                else
+                {
+                    // Update existing plugin in Plugins table
+                    command.CommandText = @"
                             UPDATE Plugins
                             SET Description = COALESCE(@Description, Description), 
                                 Achievements = @Achievements, 
@@ -380,66 +375,66 @@ namespace ZO.LoadOrderManager
                                 Version = COALESCE(@Version, Version), 
                                 State = @State
                             WHERE PluginID = @PluginID;";
-                        command.Parameters.Clear();
-                        command.Parameters.AddWithValue("@Description", string.IsNullOrEmpty(this.Description) ? (object)DBNull.Value : this.Description);
-                        command.Parameters.AddWithValue("@Achievements", this.Achievements);
-                        command.Parameters.AddWithValue("@DTStamp", string.IsNullOrEmpty(this.DTStamp) ? (object)DBNull.Value : this.DTStamp);
-                        command.Parameters.AddWithValue("@Version", string.IsNullOrEmpty(this.Version) ? (object)DBNull.Value : this.Version);
-                        command.Parameters.AddWithValue("@State", (long)this.State);
-                        command.Parameters.AddWithValue("@PluginID", this.PluginID);
+                    command.Parameters.Clear();
+                    _ = command.Parameters.AddWithValue("@Description", string.IsNullOrEmpty(this.Description) ? DBNull.Value : this.Description);
+                    _ = command.Parameters.AddWithValue("@Achievements", this.Achievements);
+                    _ = command.Parameters.AddWithValue("@DTStamp", string.IsNullOrEmpty(this.DTStamp) ? DBNull.Value : this.DTStamp);
+                    _ = command.Parameters.AddWithValue("@Version", string.IsNullOrEmpty(this.Version) ? DBNull.Value : this.Version);
+                    _ = command.Parameters.AddWithValue("@State", (long)this.State);
+                    _ = command.Parameters.AddWithValue("@PluginID", this.PluginID);
 
-                        command.ExecuteNonQuery();
-                    }
+                    _ = command.ExecuteNonQuery();
+                }
 
-                    // Calculate GroupOrdinal if not set
-                    long effectiveGroupSetID = (this.GroupSetID == 0 || this.GroupSetID == null) ? 1 : (long)this.GroupSetID;
-                    if (!this.GroupOrdinal.HasValue)
-                    {
-                        command.CommandText = @"
+                // Calculate GroupOrdinal if not set
+                long effectiveGroupSetID = (this.GroupSetID == 0 || this.GroupSetID == null) ? 1 : (long)this.GroupSetID;
+                if (!this.GroupOrdinal.HasValue)
+                {
+                    command.CommandText = @"
                             SELECT COALESCE(MAX(Ordinal), 0) + 1
                             FROM GroupSetPlugins
                             WHERE GroupSetID = @GroupSetID AND GroupID = @GroupID";
-                        command.Parameters.Clear();
-                        command.Parameters.AddWithValue("@GroupSetID", effectiveGroupSetID);
-                        command.Parameters.AddWithValue("@GroupID", this.GroupID ?? (object)DBNull.Value);
+                    command.Parameters.Clear();
+                    _ = command.Parameters.AddWithValue("@GroupSetID", effectiveGroupSetID);
+                    _ = command.Parameters.AddWithValue("@GroupID", this.GroupID ?? (object)DBNull.Value);
 
-                        this.GroupOrdinal = Convert.ToInt64(command.ExecuteScalar());
-                    }
+                    this.GroupOrdinal = Convert.ToInt64(command.ExecuteScalar());
+                }
 
-                    command.CommandText = @"
+                command.CommandText = @"
                         INSERT INTO GroupSetPlugins (GroupSetID, GroupID, PluginID, Ordinal)
                         VALUES (@GroupSetID, @GroupID, @PluginID, @Ordinal)
                         ON CONFLICT(GroupSetID, PluginID) DO UPDATE 
                         SET GroupID = EXCLUDED.GroupID, 
                             Ordinal = COALESCE(EXCLUDED.Ordinal, Ordinal);";
 
-                    command.Parameters.Clear();
-                    command.Parameters.AddWithValue("@GroupSetID", effectiveGroupSetID);
-                    command.Parameters.AddWithValue("@GroupID", this.GroupID ?? (object)DBNull.Value);
-                    command.Parameters.AddWithValue("@PluginID", this.PluginID);
-                    command.Parameters.AddWithValue("@Ordinal", this.GroupOrdinal);
+                command.Parameters.Clear();
+                _ = command.Parameters.AddWithValue("@GroupSetID", effectiveGroupSetID);
+                _ = command.Parameters.AddWithValue("@GroupID", this.GroupID ?? (object)DBNull.Value);
+                _ = command.Parameters.AddWithValue("@PluginID", this.PluginID);
+                _ = command.Parameters.AddWithValue("@Ordinal", this.GroupOrdinal);
 
-                    command.ExecuteNonQuery();
+                _ = command.ExecuteNonQuery();
 
-                    // Insert or update ExternalIDs table
-                    command.CommandText = @"
+                // Insert or update ExternalIDs table
+                command.CommandText = @"
                         INSERT INTO ExternalIDs (PluginID, BethesdaID, NexusID)
                         VALUES (@PluginID, @BethesdaID, @NexusID)
                         ON CONFLICT(PluginID) DO UPDATE 
                         SET BethesdaID = CASE WHEN @BethesdaID IS NOT NULL THEN @BethesdaID ELSE BethesdaID END, 
                             NexusID = CASE WHEN @NexusID IS NOT NULL THEN @NexusID ELSE NexusID END";
 
-                    command.Parameters.Clear();
-                    command.Parameters.AddWithValue("@PluginID", this.PluginID);
-                    command.Parameters.AddWithValue("@BethesdaID", string.IsNullOrEmpty(this.BethesdaID) ? (object)DBNull.Value : this.BethesdaID);
-                    command.Parameters.AddWithValue("@NexusID", string.IsNullOrEmpty(this.NexusID) ? (object)DBNull.Value : this.NexusID);
+                command.Parameters.Clear();
+                _ = command.Parameters.AddWithValue("@PluginID", this.PluginID);
+                _ = command.Parameters.AddWithValue("@BethesdaID", string.IsNullOrEmpty(this.BethesdaID) ? DBNull.Value : this.BethesdaID);
+                _ = command.Parameters.AddWithValue("@NexusID", string.IsNullOrEmpty(this.NexusID) ? DBNull.Value : this.NexusID);
 
-                    command.ExecuteNonQuery();
+                _ = command.ExecuteNonQuery();
 
-                    // Insert or update FileInfo table
-                    foreach (var file in this.Files)
-                    {
-                        command.CommandText = @"
+                // Insert or update FileInfo table
+                foreach (var file in this.Files)
+                {
+                    command.CommandText = @"
                             INSERT INTO FileInfo (PluginID, Filename, RelativePath, DTStamp, HASH, Flags)
                             VALUES (@PluginID, @Filename, @RelativePath, @DTStamp, @HASH, @Flags)
                             ON CONFLICT(Filename) DO UPDATE 
@@ -447,19 +442,18 @@ namespace ZO.LoadOrderManager
                                 DTStamp = COALESCE(excluded.DTStamp, FileInfo.DTStamp), 
                                 HASH = COALESCE(excluded.HASH, FileInfo.HASH), 
                                 Flags = excluded.Flags;";
-                        command.Parameters.Clear();
-                        command.Parameters.AddWithValue("@PluginID", this.PluginID);
-                        command.Parameters.AddWithValue("@Filename", string.IsNullOrEmpty(file.Filename) ? (object)DBNull.Value : file.Filename);
-                        command.Parameters.AddWithValue("@RelativePath", string.IsNullOrEmpty(file.RelativePath) ? (object)DBNull.Value : file.RelativePath);
-                        command.Parameters.AddWithValue("@DTStamp", string.IsNullOrEmpty(file.DTStamp) ? (object)DBNull.Value : file.DTStamp);
-                        command.Parameters.AddWithValue("@HASH", string.IsNullOrEmpty(file.HASH) ? (object)DBNull.Value : file.HASH);
-                        command.Parameters.AddWithValue("@Flags", file.Flags);
+                    command.Parameters.Clear();
+                    _ = command.Parameters.AddWithValue("@PluginID", this.PluginID);
+                    _ = command.Parameters.AddWithValue("@Filename", string.IsNullOrEmpty(file.Filename) ? DBNull.Value : file.Filename);
+                    _ = command.Parameters.AddWithValue("@RelativePath", string.IsNullOrEmpty(file.RelativePath) ? DBNull.Value : file.RelativePath);
+                    _ = command.Parameters.AddWithValue("@DTStamp", string.IsNullOrEmpty(file.DTStamp) ? DBNull.Value : file.DTStamp);
+                    _ = command.Parameters.AddWithValue("@HASH", string.IsNullOrEmpty(file.HASH) ? DBNull.Value : file.HASH);
+                    _ = command.Parameters.AddWithValue("@Flags", file.Flags);
 
-                        command.ExecuteNonQuery();
-                    }
-
-                    transaction.Commit(); // Commit the transaction after all operations
+                    _ = command.ExecuteNonQuery();
                 }
+
+                transaction.Commit(); // Commit the transaction after all operations
 
             }
             catch (Exception ex)
@@ -565,7 +559,7 @@ namespace ZO.LoadOrderManager
                 // Insert the plugin into the new group with the ordinal set to max + 1
                 using var insertCommand = new SQLiteCommand(connection)
                 {
-              CommandText = @"
+                    CommandText = @"
                 INSERT INTO GroupSetPlugins (GroupID, GroupSetID, PluginID, Ordinal)
                 VALUES (@NewGroupID, @NewGroupSetID, @PluginID, (
                     SELECT COALESCE(MAX(Ordinal), 0) + 1
@@ -591,15 +585,15 @@ namespace ZO.LoadOrderManager
                 throw;
             }
             AggLoadInfo.Instance.RefreshMetadataFromDB();
-            
+
 
             // Update the in-memory object
             this.GroupID = newGroup.GroupID;
             this.GroupSetID = aggLoadInfo.ActiveGroupSet.GroupSetID;
-            
+
             aggLoadInfo.Groups.FirstOrDefault(g => g.GroupID == newGroup.GroupID)?.Plugins.Add(this);
             newGroup.Plugins.Add(this);
-            
+
         }
 
         public void RemoveModFromGroup(ModGroup oldGroup, AggLoadInfo? aggLoadInfo = null)
@@ -663,8 +657,8 @@ namespace ZO.LoadOrderManager
             }
 
             // Capture the current tuples before swapping
-            var thisTuple = ((long)this.GroupSetID, (long)this.GroupID, this.PluginID, (long)this.GroupOrdinal);
-            var otherTuple = ((long)other.GroupSetID, (long)other.GroupID, other.PluginID, (long)other.GroupOrdinal);
+            _ = ((long)this.GroupSetID, (long)this.GroupID, this.PluginID, (long)this.GroupOrdinal);
+            _ = ((long)other.GroupSetID, (long)other.GroupID, other.PluginID, (long)other.GroupOrdinal);
 
             // Swap the locations
             var tempGroupID = this.GroupID;
@@ -681,8 +675,8 @@ namespace ZO.LoadOrderManager
 
 
             // Write the changes to the database
-            this.WriteMod();
-            other.WriteMod();
+            _ = this.WriteMod();
+            _ = other.WriteMod();
             AggLoadInfo.Instance.RefreshMetadataFromDB();
         }
 
@@ -699,7 +693,7 @@ namespace ZO.LoadOrderManager
             }
             return false;
         }
-        
+
 
         public override int GetHashCode()
         {

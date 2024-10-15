@@ -1,9 +1,6 @@
-using MaterialDesignThemes.Wpf;
-using MaterialDesignColors;
 using MahApps.Metro.Controls;
-
+using MaterialDesignThemes.Wpf;
 using System.Windows;
-using System.Windows.Controls;
 
 namespace ZO.LoadOrderManager
 {

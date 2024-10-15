@@ -1,16 +1,9 @@
 using Microsoft.Win32;
-using System;
-using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Timers;
 using System.Windows;
 using System.Windows.Input;
-using ZO.LoadOrderManager;
-using Timer = System.Timers.Timer;
 
 namespace ZO.LoadOrderManager
 {
@@ -18,13 +11,13 @@ namespace ZO.LoadOrderManager
     {
         public ICommand ImportPluginsCommand { get; }
         public ICommand SaveAsNewLoadoutCommand { get; }
-        
+
         public ICommand OpenGameFolderCommand { get; }
         public ICommand OpenGameSaveFolderCommand { get; }
         public ICommand OpenAppDataFolderCommand { get; }
         public ICommand OpenGameSettingsCommand { get; }
         public ICommand OpenGameLocalAppDataCommand { get; }
-        
+
         public ICommand SettingsWindowCommand { get; }
         public ICommand ImportFromYamlCommand { get; }
         public ICommand EditPluginsCommand { get; }
@@ -62,7 +55,7 @@ namespace ZO.LoadOrderManager
                 // Exclude groups where any selected item is already assigned
                 return allGroups.Where(g => !parentIDs.Contains(g.GroupID))
                     .Distinct(); //Only get one
-                     // Put them in order by group
+                                 // Put them in order by group
             }
         }
 
@@ -72,7 +65,7 @@ namespace ZO.LoadOrderManager
         {
             if (SelectedLoadOut == null)
             {
-                MessageBox.Show("No loadout selected.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                _ = MessageBox.Show("No loadout selected.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
 
@@ -80,7 +73,7 @@ namespace ZO.LoadOrderManager
             var dialog = new InputDialog("Enter a new name for the loadout:", SelectedLoadOut.Name + "_new");
             if (dialog.ShowDialog() != true || string.IsNullOrWhiteSpace(dialog.ResponseText))
             {
-                MessageBox.Show("Loadout name cannot be empty.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                _ = MessageBox.Show("Loadout name cannot be empty.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
 
@@ -97,11 +90,11 @@ namespace ZO.LoadOrderManager
             // Copy the enabled plugins from the selected loadout
             foreach (var plugin in SelectedLoadOut.enabledPlugins)
             {
-                newLoadout.enabledPlugins.Add(plugin);
+                _ = newLoadout.enabledPlugins.Add(plugin);
             }
 
             // Save the new loadout to the database
-            newLoadout.WriteProfile();
+            _ = newLoadout.WriteProfile();
 
             // Add the new loadout to AggLoadInfo.Instance
             AggLoadInfo.Instance.LoadOuts.Add(newLoadout);
@@ -187,12 +180,11 @@ namespace ZO.LoadOrderManager
 
         private void ImportPlugins(AggLoadInfo? aggLoadInfo = null, string? pluginsFile = null)
         {
-            bool isNewGroupSet = false;
 
             // If no AggLoadInfo is provided, ask the user if they want to set up a new GroupSet
             if (aggLoadInfo == null)
             {
-                isNewGroupSet = AskUserForConfirmation("Do you want to import into a new GroupSet?");
+                bool isNewGroupSet = AskUserForConfirmation("Do you want to import into a new GroupSet?");
                 if (isNewGroupSet)
                 {
                     // Create a new GroupSet
@@ -214,7 +206,7 @@ namespace ZO.LoadOrderManager
                 var dialog = new InputDialog("Enter the name for your new LoadOut", "NewLoadOut");
                 if (dialog.ShowDialog() != true || string.IsNullOrWhiteSpace(dialog.ResponseText))
                 {
-                    MessageBox.Show("Loadout name cannot be empty.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    _ = MessageBox.Show("Loadout name cannot be empty.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     return;
                 }
 
@@ -224,9 +216,9 @@ namespace ZO.LoadOrderManager
                 LoadOut newLoadOut = new LoadOut(aggLoadInfo.ActiveGroupSet) { Name = newLoadoutName };
                 aggLoadInfo.ActiveLoadOut = newLoadOut;
             }
-            
+
             // Perform the import
-            FileManager.ParsePluginsTxt(aggLoadInfo, pluginsFile);
+            _ = FileManager.ParsePluginsTxt(aggLoadInfo, pluginsFile);
 
             // Update the UI or any other necessary components
             RefreshData();
@@ -254,9 +246,9 @@ namespace ZO.LoadOrderManager
             //    RefreshData();
             //}
         }
-        
 
-void ScanGameFolder()
+
+        void ScanGameFolder()
         {
             // Prompt the user to choose between a full scan and a quick scan
             var result = MessageBox.Show("Do you want to perform a full scan?", "Scan Type", MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
@@ -265,17 +257,17 @@ void ScanGameFolder()
             if (result == MessageBoxResult.Yes)
             {
                 // Perform a full scan
-                FileManager.ScanGameDirectoryForStraysAsync(fullScan: true);
+                _ = FileManager.ScanGameDirectoryForStraysAsync(fullScan: true);
             }
             else if (result == MessageBoxResult.No)
             {
                 // Perform a quick scan
-                FileManager.ScanGameDirectoryForStraysAsync(fullScan: false);
+                _ = FileManager.ScanGameDirectoryForStraysAsync(fullScan: false);
             }
             else
             {
                 // User canceled the operation
-                MessageBox.Show("Scan operation canceled.", "Canceled", MessageBoxButton.OK, MessageBoxImage.Information);
+                _ = MessageBox.Show("Scan operation canceled.", "Canceled", MessageBoxButton.OK, MessageBoxImage.Information);
             }
         }
 
@@ -384,7 +376,7 @@ void ScanGameFolder()
                     // Block deleting groups that hold other groups
                     if (selectedItem.Children.Any(child => child.EntityType == EntityType.Group))
                     {
-                        MessageBox.Show("Cannot delete a group that contains other groups.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                        _ = MessageBox.Show("Cannot delete a group that contains other groups.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                         return;
                     }
 
@@ -407,7 +399,7 @@ void ScanGameFolder()
                 foreach (var sibling in siblingGroups)
                 {
                     sibling.Ordinal--;
-                    sibling.WriteGroup();
+                    _ = sibling.WriteGroup();
                 }
             }
 
@@ -419,7 +411,7 @@ void ScanGameFolder()
                 }
             }
 
-            parentGroup.Plugins?.Remove(selectedItem.PluginData);
+            _ = (parentGroup.Plugins?.Remove(selectedItem.PluginData));
         }
 
 
@@ -436,7 +428,7 @@ void ScanGameFolder()
                 else if (underlyingObject is Plugin plugin)
                 {
                     plugin.ChangeGroup(newGroupId);
-                    
+
                 }
                 item.ParentID = newGroupId;
 

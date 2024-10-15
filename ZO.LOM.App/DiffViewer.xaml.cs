@@ -1,11 +1,8 @@
 using MahApps.Metro.Controls;
-using System;
+using Microsoft.Win32;
 using System.IO;
 using System.Text;
 using System.Windows;
-using Microsoft.Win32;
-using DiffPlex.Wpf.Controls;
-using System.Windows.Media;
 
 namespace ZO.LoadOrderManager
 {
@@ -141,9 +138,9 @@ namespace ZO.LoadOrderManager
         private void LoadData()
         {
             // Adjust appearance based on the time of day (dark/light mode)
-            var now = DateTime.Now;
-            var isDark = Config.Instance.DarkMode; // now.Hour < 6 || now.Hour >= 18;
-                                                   //DiffView.Foreground = new SolidColorBrush(isDark ? Color.FromRgb(240, 240, 240) : Color.FromRgb(32, 32, 32));
+            _ = DateTime.Now;
+            _ = Config.Instance.DarkMode; // now.Hour < 6 || now.Hour >= 18;
+                                          //DiffView.Foreground = new SolidColorBrush(isDark ? Color.FromRgb(240, 240, 240) : Color.FromRgb(32, 32, 32));
 
             // Optionally set headers or adjust appearance
             DiffView.SetHeaderAsOldToNew();

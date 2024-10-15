@@ -15,7 +15,7 @@ namespace ZO.LoadOrderManager
             {
                 if (!InitializingComponents.Contains(componentName))
                 {
-                    InitializingComponents.Add(componentName);
+                    _ = InitializingComponents.Add(componentName);
                 }
             }
         }
@@ -26,7 +26,7 @@ namespace ZO.LoadOrderManager
             {
                 if (InitializingComponents.Contains(componentName))
                 {
-                    InitializingComponents.Remove(componentName);
+                    _ = InitializingComponents.Remove(componentName);
                 }
             }
         }

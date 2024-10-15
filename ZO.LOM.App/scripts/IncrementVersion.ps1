@@ -3,7 +3,7 @@ param (
     [string]$CsprojFilePath = "..\ZO.LoadOrderManager.csproj",
     [string]$AppConfigFilePath = "..\App.config",
     [string]$VersionTxtFilePath = "..\Properties\version.txt",
-    [string]$AipFilePath = "..\installer\DMMInstaller.aip",
+    [string]$AipFilePath = "..\installer\LOMInstaller.aip",
     [string]$XmlOutputPath = "..\Properties\AutoUpdater.xml",
     [string]$Configuration,
     [string]$AssemblyInfoFilePath = "..\Properties\AssemblyInfo.cs"

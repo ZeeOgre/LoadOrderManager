@@ -1,7 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Data.SQLite;
 using System.IO;
-using System.Windows;
 
 namespace ZO.LoadOrderManager
 {
@@ -62,7 +61,7 @@ namespace ZO.LoadOrderManager
                     AggLoadInfo.Instance.ActiveGroupSet.GroupSetFlags |= GroupFlags.ReadyToLoad;
                     AggLoadInfo.Instance.ActiveGroupSet.SaveGroupSet();
 
-                    FileManager.ParsePluginsTxt(AggLoadInfo.Instance, PluginsFile);
+                    _ = FileManager.ParsePluginsTxt(AggLoadInfo.Instance, PluginsFile);
                     InitializationManager.ReportProgress(83, "Plugins parsed");
 
                     FileManager.ParseContentCatalogTxt();
@@ -76,7 +75,7 @@ namespace ZO.LoadOrderManager
                     InitializationManager.ReportProgress(85, "LoadOut marked complete");
 
 
-                    
+
 
                     _initialized = true;
                     App.LogDebug("FileManager: Initialization completed successfully.");
@@ -121,7 +120,7 @@ namespace ZO.LoadOrderManager
 
             AggLoadInfo.Instance.ActiveGroupSet = favoriteGroupSet;
             AggLoadInfo.Instance.ActiveLoadOut = favoriteLoadOut;
-            
+
         }
 
         public static void MarkLoadOutComplete(AggLoadInfo aggLoadInfo)

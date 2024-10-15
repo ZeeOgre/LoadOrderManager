@@ -1,7 +1,4 @@
-using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -12,7 +9,7 @@ namespace ZO.LoadOrderManager
     public class MultiSelectTreeView : TreeView
     {
         private bool _isUpdatingSelection = false; // Flag to suppress notifications
-        private TreeViewItem _firstSelectedItem = null; // Store the first selected item for Shift-click
+        private TreeViewItem? _firstSelectedItem = null; // Store the first selected item for Shift-click
 
         public static readonly DependencyProperty SelectedItemsProperty =
             DependencyProperty.Register(nameof(SelectedItems), typeof(ObservableCollection<object>), typeof(MultiSelectTreeView), new PropertyMetadata(new ObservableCollection<object>(), OnSelectedItemsChanged));
@@ -63,7 +60,7 @@ namespace ZO.LoadOrderManager
                         }
 
                         // Set focus to the TreeViewItem to ensure context menu behaves as expected
-                        item.Focus();
+                        _ = item.Focus();
                         return; // Allow right-click to pass through for context menu
                     }
 
@@ -100,17 +97,17 @@ namespace ZO.LoadOrderManager
             {
                 // Launch the editor for ModGroup
                 var modGroupEditor = new ModGroupEditorWindow(item.GetModGroup());
-                modGroupEditor.ShowDialog();
+                _ = modGroupEditor.ShowDialog();
             }
             else if (item.EntityType == EntityType.Plugin)
             {
                 // Launch the editor for Plugin
                 var pluginEditor = new PluginEditorWindow(item.PluginData);
-                pluginEditor.ShowDialog();
+                _ = pluginEditor.ShowDialog();
             }
         }
 
-        private TreeViewItem GetTreeViewItemFromElement(FrameworkElement element)
+        private TreeViewItem? GetTreeViewItemFromElement(FrameworkElement? element)
         {
             while (element != null && !(element is TreeViewItem))
             {
@@ -135,7 +132,7 @@ namespace ZO.LoadOrderManager
                     }
                     else
                     {
-                        SelectedItems.Remove(dataContext);
+                        _ = SelectedItems.Remove(dataContext);
                         dataContext.IsSelected = false;
                     }
                 }
@@ -167,7 +164,7 @@ namespace ZO.LoadOrderManager
                                     rangeItem.IsSelected = true;
                                 }
                             }
-                            
+
                         }
 
                         _firstSelectedItem = null; // Reset after range selection

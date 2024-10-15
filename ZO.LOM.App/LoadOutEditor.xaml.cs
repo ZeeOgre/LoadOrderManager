@@ -1,7 +1,6 @@
 ﻿using MahApps.Metro.Controls;
-using System.Windows.Input;
 using System.Windows;
-using System.Collections.ObjectModel;
+using System.Windows.Input;
 
 namespace ZO.LoadOrderManager
 {
@@ -116,7 +115,7 @@ namespace ZO.LoadOrderManager
                 }
                 else
                 {
-                    MessageBox.Show("ProfileID not found.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    _ = MessageBox.Show("ProfileID not found.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
                 }
             }
         }
@@ -141,17 +140,17 @@ namespace ZO.LoadOrderManager
             {
                 if (_loadOut.IsFavorite)
                 {
-                    MessageBox.Show("Please select another LoadOut as favorite before deleting this one.", "Cannot Delete Favorite", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    _ = MessageBox.Show("Please select another LoadOut as favorite before deleting this one.", "Cannot Delete Favorite", MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
                 }
 
                 if (_aggLoadInfo.ActiveLoadOut == _loadOut)
                 {
-                    MessageBox.Show("Please select another LoadOut as active before deleting this one.", "Cannot Delete Active LoadOut", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    _ = MessageBox.Show("Please select another LoadOut as active before deleting this one.", "Cannot Delete Active LoadOut", MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
                 }
 
-                _aggLoadInfo.LoadOuts.Remove(_loadOut);
+                _ = _aggLoadInfo.LoadOuts.Remove(_loadOut);
                 _loadOut.DeleteProfile();
                 NavigateFirstRecord(); // Navigate to the first record after deletion
             }
@@ -182,7 +181,7 @@ namespace ZO.LoadOrderManager
         {
             _loadOut = _loadOut.WriteProfile(); // Save to the database
             _aggLoadInfo.LoadOuts.Add(_loadOut); // Add to the ObservableCollection
-            var loadOutsList = GroupSet.GetAllLoadOuts(_aggLoadInfo.ActiveGroupSet.GroupSetID);
+            _ = GroupSet.GetAllLoadOuts(_aggLoadInfo.ActiveGroupSet.GroupSetID);
             this.DialogResult = true; // Indicate that we are closing the dialog with a successful result
             this.Close();
         }

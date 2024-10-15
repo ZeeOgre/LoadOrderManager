@@ -1,12 +1,8 @@
-using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Data.SQLite;
-using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 
@@ -31,8 +27,11 @@ namespace ZO.LoadOrderManager
         }
 
         public GroupSetGroupCollection GroupSetGroups { get; set; } = new GroupSetGroupCollection();
-        public GroupSetPluginCollection GroupSetPlugins { get; 
-            set; } = new GroupSetPluginCollection();
+        public GroupSetPluginCollection GroupSetPlugins
+        {
+            get;
+            set;
+        } = new GroupSetPluginCollection();
         public ProfilePluginCollection ProfilePlugins { get; set; } = new ProfilePluginCollection();
         private bool _isRefreshing = false;
         private bool _refreshPending = false;
@@ -45,7 +44,7 @@ namespace ZO.LoadOrderManager
                 isDirty = value;
             }
         }
-        
+
         public bool IsDirty
         {
             get
@@ -163,7 +162,7 @@ namespace ZO.LoadOrderManager
                 _refreshPending = true;
 
                 // Schedule the actual refresh in a short delay
-                Task.Delay(100).ContinueWith(_ =>
+                _ = Task.Delay(100).ContinueWith(_ =>
                 {
                     lock (_eventLock)
                     {
@@ -176,7 +175,7 @@ namespace ZO.LoadOrderManager
 
 
 
-        
+
 
 
 
@@ -231,7 +230,7 @@ namespace ZO.LoadOrderManager
 
         private AggLoadInfo()
         {
-            
+
             InitializeEventHandlers();
         }
 
@@ -272,11 +271,10 @@ namespace ZO.LoadOrderManager
             }
         }
 
-        
+
 
         public void InitFromDatabase()
         {
-            
             if (ActiveGroupSet.GroupSetID == 0) return;
 
             lock (_initLock)
@@ -315,6 +313,15 @@ namespace ZO.LoadOrderManager
                 }
                 InitializationManager.ReportProgress(35, "GroupSet 1 cached");
 
+                // Check if the incoming GroupSetID is 1
+                if (ActiveGroupSet.GroupSetID == 1)
+                {
+                    // Return the cached GroupSet1 and skip the rest of the initialization
+                    ActiveGroupSet = _cachedGroupSet1;
+                    _initialized = true;
+                    InitializationManager.ReportProgress(75, "GroupSet state fully loaded");
+                    return;
+                }
 
                 LoadGroupSetState();
                 RefreshMetadataFromDB();
@@ -326,6 +333,13 @@ namespace ZO.LoadOrderManager
 
         private void LoadGroupSetState()
         {
+            if (ActiveGroupSet.GroupSetID == 1 && _cachedGroupSet1 != null)
+            {
+                ActiveGroupSet = _cachedGroupSet1;
+                _initialized = true;
+                InitializationManager.ReportProgress(75, "GroupSet state fully loaded from cache");
+                return;
+            }
             lock (_initLock)
             {
                 lock (_refreshLock)
@@ -345,7 +359,7 @@ namespace ZO.LoadOrderManager
                         SELECT *
                         FROM vwPluginGrpUnion
                         WHERE GroupSetID = @GroupSetID OR GroupSetID = 1);", connection);
-                        command1.Parameters.AddWithValue("@GroupSetID", ActiveGroupSet.GroupSetID);
+                        _ = command1.Parameters.AddWithValue("@GroupSetID", ActiveGroupSet.GroupSetID);
 
                         Console.WriteLine($"GroupSetID: {ActiveGroupSet.GroupSetID}");
                         Console.WriteLine($"Executing query: {command1.CommandText} with GroupSetID = {ActiveGroupSet.GroupSetID}");
@@ -388,7 +402,7 @@ namespace ZO.LoadOrderManager
                     SELECT DISTINCT ProfileID, ProfileName, GroupSetID, isFavorite
                     FROM vwLoadOuts
                     WHERE GroupSetID = @GroupSetID;", connection);
-                        command2.Parameters.AddWithValue("@GroupSetID", ActiveGroupSet.GroupSetID);
+                        _ = command2.Parameters.AddWithValue("@GroupSetID", ActiveGroupSet.GroupSetID);
 
                         using var reader2 = command2.ExecuteReader();
                         var loadOuts = new ObservableCollection<LoadOut>();
@@ -404,7 +418,7 @@ namespace ZO.LoadOrderManager
                             {
                                 ProfileID = profileID,
                                 GroupSetID = groupSetID,
-                                  IsFavorite = isFavorite,    
+                                IsFavorite = isFavorite,
                                 Name = name,
                                 enabledPlugins = LoadEnabledPlugins(profileID)
                             };
@@ -459,22 +473,22 @@ namespace ZO.LoadOrderManager
             RETURNING PluginID;
             ";
 
-    //-- Step 1: Insert all unassigned plugins into GroupSetPlugins for GroupID -997
-    //INSERT INTO GroupSetPlugins (GroupSetID, GroupID, PluginID, Ordinal)
-    //SELECT @GroupSetIDz, -997, PluginID, ROW_NUMBER() OVER (ORDER BY PluginID)
-    //FROM Plugins
-    //WHERE PluginID IN (
-    //    SELECT DISTINCT PluginID
-    //    FROM vwPluginGrpUnion
-    //    WHERE GroupSetID != @GroupSetIDz
-    //    AND GroupID NOT IN (-998, -999, 1)
-    //)
-    //RETURNING PluginID;
-    //";
+            //-- Step 1: Insert all unassigned plugins into GroupSetPlugins for GroupID -997
+            //INSERT INTO GroupSetPlugins (GroupSetID, GroupID, PluginID, Ordinal)
+            //SELECT @GroupSetIDz, -997, PluginID, ROW_NUMBER() OVER (ORDER BY PluginID)
+            //FROM Plugins
+            //WHERE PluginID IN (
+            //    SELECT DISTINCT PluginID
+            //    FROM vwPluginGrpUnion
+            //    WHERE GroupSetID != @GroupSetIDz
+            //    AND GroupID NOT IN (-998, -999, 1)
+            //)
+            //RETURNING PluginID;
+            //";
 
             // Execute the SQL and capture the results (PluginIDs of inserted plugins)
             using var command = new SQLiteCommand(sqlCommandText, conn);
-            command.Parameters.AddWithValue("@GroupSetIDz", ActiveGroupSet.GroupSetID);
+            _ = command.Parameters.AddWithValue("@GroupSetIDz", ActiveGroupSet.GroupSetID);
 
             using var reader = command.ExecuteReader();
 
@@ -516,14 +530,14 @@ namespace ZO.LoadOrderManager
                 SELECT PluginID
                 FROM ProfilePlugins
                 WHERE ProfileID = @ProfileID;", conn);
-            command.Parameters.AddWithValue("@ProfileID", profileID);
+            _ = command.Parameters.AddWithValue("@ProfileID", profileID);
 
             using var reader = command.ExecuteReader();
             var enabledPlugins = new ObservableHashSet<long>();
 
             while (reader.Read())
             {
-                enabledPlugins.Add(reader.GetInt64(0));
+                _ = enabledPlugins.Add(reader.GetInt64(0));
             }
 
             return enabledPlugins;
@@ -574,9 +588,9 @@ namespace ZO.LoadOrderManager
                     State = reader.IsDBNull(reader.GetOrdinal("State")) ? ModState.None : (ModState)reader.GetInt64(reader.GetOrdinal("State")),
                     BethesdaID = reader.IsDBNull(reader.GetOrdinal("BethesdaID")) ? string.Empty : reader.GetString(reader.GetOrdinal("BethesdaID")),
                     NexusID = reader.IsDBNull(reader.GetOrdinal("NexusID")) ? string.Empty : reader.GetString(reader.GetOrdinal("NexusID")),
-                    GroupID = reader.IsDBNull(reader.GetOrdinal("GroupID")) ? (long?)null : reader.GetInt64(reader.GetOrdinal("GroupID")),
-                    GroupOrdinal = reader.IsDBNull(reader.GetOrdinal("GroupOrdinal")) ? (long?)null : reader.GetInt64(reader.GetOrdinal("GroupOrdinal")),
-                    GroupSetID = reader.IsDBNull(reader.GetOrdinal("GroupSetID")) ? (long?)null : reader.GetInt64(reader.GetOrdinal("GroupSetID"))
+                    GroupID = reader.IsDBNull(reader.GetOrdinal("GroupID")) ? null : reader.GetInt64(reader.GetOrdinal("GroupID")),
+                    GroupOrdinal = reader.IsDBNull(reader.GetOrdinal("GroupOrdinal")) ? null : reader.GetInt64(reader.GetOrdinal("GroupOrdinal")),
+                    GroupSetID = reader.IsDBNull(reader.GetOrdinal("GroupSetID")) ? null : reader.GetInt64(reader.GetOrdinal("GroupSetID"))
                 };
 
                 Plugins.Add(plugin);
@@ -595,7 +609,7 @@ namespace ZO.LoadOrderManager
                     GroupID = groupID,
                     GroupName = reader.GetString(reader.GetOrdinal("GroupName")),
                     Description = reader.IsDBNull(reader.GetOrdinal("GroupDescription")) ? string.Empty : reader.GetString(reader.GetOrdinal("GroupDescription")),
-                    ParentID = reader.IsDBNull(reader.GetOrdinal("ParentID")) ? (long?)null : reader.GetInt64(reader.GetOrdinal("ParentID")),
+                    ParentID = reader.IsDBNull(reader.GetOrdinal("ParentID")) ? null : reader.GetInt64(reader.GetOrdinal("ParentID")),
                     Ordinal = reader.IsDBNull(reader.GetOrdinal("Ordinal")) ? 0 : reader.GetInt64(reader.GetOrdinal("Ordinal")),
                     GroupSetID = ActiveGroupSet.GroupSetID,
                     Plugins = new ObservableCollection<Plugin>()
@@ -683,7 +697,7 @@ namespace ZO.LoadOrderManager
                     // If the GroupID changes, we remove the old entry and add a new one
                     if (existingGroupSetPlugin.groupID != plugin.GroupID)
                     {
-                        GroupSetPlugins.Items.Remove(existingGroupSetPlugin);
+                        _ = GroupSetPlugins.Items.Remove(existingGroupSetPlugin);
 
                         // Add the new entry with updated GroupID and Ordinal
                         GroupSetPlugins.Items.Add((ActiveGroupSet.GroupSetID, plugin.GroupID ?? -1, plugin.PluginID, plugin.GroupOrdinal ?? 1));
@@ -701,7 +715,7 @@ namespace ZO.LoadOrderManager
                 }
 
                 // Finally, save the plugin changes
-                plugin.WriteMod();
+                _ = plugin.WriteMod();
             }
         }
 
@@ -718,10 +732,10 @@ namespace ZO.LoadOrderManager
                     // If the ParentID changes, we remove the old entry and add a new one
                     if (existingGroupSetGroup.parentID != group.ParentID)
                     {
-                        GroupSetGroups.Items.Remove(existingGroupSetGroup);
+                        _ = GroupSetGroups.Items.Remove(existingGroupSetGroup);
 
                         // Add the new entry with updated ParentID and Ordinal
-                        GroupSetGroups.Items.Add(((long)group.GroupID, (long)ActiveGroupSet.GroupSetID, (long?)group.ParentID, (long)group.Ordinal));
+                        GroupSetGroups.Items.Add(((long)group.GroupID, ActiveGroupSet.GroupSetID, group.ParentID, (long)group.Ordinal));
                     }
                     else if (existingGroupSetGroup.Ordinal != group.Ordinal)
                     {
@@ -733,11 +747,11 @@ namespace ZO.LoadOrderManager
                 else
                 {
                     // If no entry exists, insert new entry
-                    GroupSetGroups.Items.Add(((long)group.GroupID, (long)ActiveGroupSet.GroupSetID, (long?)group.ParentID, (long)group.Ordinal));
+                    GroupSetGroups.Items.Add(((long)group.GroupID, ActiveGroupSet.GroupSetID, group.ParentID, (long)group.Ordinal));
                 }
 
                 // Finally, save the group changes
-                group.WriteGroup();
+                _ = group.WriteGroup();
             }
         }
 
@@ -746,7 +760,7 @@ namespace ZO.LoadOrderManager
             lock (_refreshLock)
             {
                 // Check for existing entry in LoadOuts for this loadOut
-                var existingLoadOut = LoadOuts.FirstOrDefault(lo => lo.GroupSetID == (long)loadOut.GroupSetID);
+                var existingLoadOut = LoadOuts.FirstOrDefault(lo => lo.GroupSetID == loadOut.GroupSetID);
 
                 // Handle the update based on existing LoadOut
                 if (existingLoadOut != default)
@@ -754,7 +768,7 @@ namespace ZO.LoadOrderManager
                     // If the GroupSetID changes, we remove the old entry and add a new one
                     if (existingLoadOut.GroupSetID != loadOut.GroupSetID)
                     {
-                        LoadOuts.Remove(existingLoadOut);
+                        _ = LoadOuts.Remove(existingLoadOut);
 
                         // Add the new entry with updated GroupSetID
                         LoadOuts.Add(loadOut);
@@ -767,7 +781,7 @@ namespace ZO.LoadOrderManager
                 }
 
                 // Finally, save the loadOut changes
-                loadOut.WriteProfile();
+                _ = loadOut.WriteProfile();
             }
         }
 
@@ -813,26 +827,26 @@ namespace ZO.LoadOrderManager
             }
 
 
-                // Save GroupSet
-                ActiveGroupSet.SaveGroupSet();
+            // Save GroupSet
+            ActiveGroupSet.SaveGroupSet();
 
-                // Save Groups
-                foreach (var group in Groups.Where(g => g.GroupSetID == ActiveGroupSet.GroupSetID))
-                {
-                    group.WriteGroup();
-                }
+            // Save Groups
+            foreach (var group in Groups.Where(g => g.GroupSetID == ActiveGroupSet.GroupSetID))
+            {
+                _ = group.WriteGroup();
+            }
 
-                // Save Plugins
-                foreach (var plugin in Plugins.Where(p => p.GroupSetID == ActiveGroupSet.GroupSetID))
-                {
-                    plugin.WriteMod();
-                }
+            // Save Plugins
+            foreach (var plugin in Plugins.Where(p => p.GroupSetID == ActiveGroupSet.GroupSetID))
+            {
+                _ = plugin.WriteMod();
+            }
 
-                // Save LoadOuts
-                foreach (var loadOut in LoadOuts.Where(l => l.GroupSetID == ActiveGroupSet.GroupSetID))
-                {
-                    loadOut.WriteProfile();
-                }
+            // Save LoadOuts
+            foreach (var loadOut in LoadOuts.Where(l => l.GroupSetID == ActiveGroupSet.GroupSetID))
+            {
+                _ = loadOut.WriteProfile();
+            }
 
 
             //RefreshMetadataFromDB();
@@ -896,7 +910,7 @@ namespace ZO.LoadOrderManager
                     .Select(pp => pp.PluginID)
                     .ToList();
 
-                
+
             }
         }
 
@@ -922,7 +936,7 @@ namespace ZO.LoadOrderManager
             RaiseDataRefreshed();
         }
 
-        
+
         public static long GetNextPluginOrdinal(long groupID, long? groupSetID = null)
         {
             // Use Instance.GroupSetID if groupSetID is null
@@ -977,7 +991,7 @@ namespace ZO.LoadOrderManager
                 .Where(plugin => plugin != null) // Exclude null plugins
                 .ToList();
         }
-        
+
         public static Plugin? GetPluginNeighbor(long groupID, long ordinal, bool up)
         {
             // Determine the target ordinal based on the direction
@@ -1028,13 +1042,13 @@ namespace ZO.LoadOrderManager
                 else
                 {
                     // Handle case where GroupSet is not found
-                    MessageBox.Show("GroupSet not found.");
+                    _ = MessageBox.Show("GroupSet not found.");
                 }
             }
             else
             {
                 // Handle invalid input
-                MessageBox.Show("Invalid GroupSet ID.");
+                _ = MessageBox.Show("Invalid GroupSet ID.");
             }
         }
 
@@ -1257,5 +1271,5 @@ namespace ZO.LoadOrderManager
 
     }
 }
-   
+
 

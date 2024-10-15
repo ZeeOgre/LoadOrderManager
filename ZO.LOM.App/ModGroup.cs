@@ -1,7 +1,6 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Data.SQLite;
-using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using YamlDotNet.Serialization;
 
@@ -90,8 +89,8 @@ namespace ZO.LoadOrderManager
         FROM vwModGroups
         WHERE GroupID = @GroupID AND GroupSetID = @GroupSetID";
 
-            command.Parameters.AddWithValue("@GroupID", groupID);
-            command.Parameters.AddWithValue("@GroupSetID", groupSetID);
+            _ = command.Parameters.AddWithValue("@GroupID", groupID);
+            _ = command.Parameters.AddWithValue("@GroupSetID", groupSetID);
 
             using var reader = command.ExecuteReader();
             if (reader.Read())
@@ -101,8 +100,8 @@ namespace ZO.LoadOrderManager
                     GroupID = reader.GetInt64(0),
                     GroupName = reader.GetString(1),
                     Description = reader.IsDBNull(2) ? null : reader.GetString(2), // Handle nullable Description
-                    ParentID = reader.IsDBNull(3) ? (long?)null : reader.GetInt64(3), // Handle nullable ParentID
-                    Ordinal = reader.IsDBNull(4) ? (long?)null : reader.GetInt64(4), // Handle nullable Ordinal
+                    ParentID = reader.IsDBNull(3) ? null : reader.GetInt64(3), // Handle nullable ParentID
+                    Ordinal = reader.IsDBNull(4) ? null : reader.GetInt64(4), // Handle nullable Ordinal
                     GroupSetID = reader.GetInt64(5)
                 };
             }
@@ -120,7 +119,7 @@ namespace ZO.LoadOrderManager
                 FROM vwModGroups
                 WHERE GroupSetID = @GroupSetID";
 
-            command.Parameters.AddWithValue("@GroupSetID", groupSetID);
+            _ = command.Parameters.AddWithValue("@GroupSetID", groupSetID);
 
             if (groupSetID == 1)
             {
@@ -135,8 +134,8 @@ namespace ZO.LoadOrderManager
                     GroupID = reader.GetInt64(0),
                     GroupName = reader.GetString(1),
                     Description = reader.IsDBNull(2) ? null : reader.GetString(2), // Handle nullable Description
-                    ParentID = reader.IsDBNull(3) ? (long?)null : reader.GetInt64(3), // Handle nullable ParentID
-                    Ordinal = reader.IsDBNull(4) ? (long?)null : reader.GetInt64(4), // Handle nullable Ordinal
+                    ParentID = reader.IsDBNull(3) ? null : reader.GetInt64(3), // Handle nullable ParentID
+                    Ordinal = reader.IsDBNull(4) ? null : reader.GetInt64(4), // Handle nullable Ordinal
                     GroupSetID = reader.GetInt64(5)
                 };
                 modGroups.Add(modGroup);
@@ -194,7 +193,7 @@ namespace ZO.LoadOrderManager
             }
 
             // Retrieve the AggLoadInfo singleton instance
-            var aggLoadInfoInstance = AggLoadInfo.Instance;
+            _ = AggLoadInfo.Instance;
 
             using var connection = DbManager.Instance.GetConnection();
             using var transaction = connection.BeginTransaction();
@@ -221,14 +220,14 @@ namespace ZO.LoadOrderManager
                 };
 
                 // Add the shared parameters for both queries
-                updateCommand.Parameters.AddWithValue("@NewParentID", newParentId);
-                updateCommand.Parameters.AddWithValue("@GroupSetID", this.GroupSetID ?? 1);
-                updateCommand.Parameters.AddWithValue("@GroupID", this.GroupID ?? 1);
-                updateCommand.Parameters.AddWithValue("@ParentID", this.ParentID ?? (object)DBNull.Value);
-                updateCommand.Parameters.AddWithValue("@OldOrdinal", this.Ordinal ?? 1);
+                _ = updateCommand.Parameters.AddWithValue("@NewParentID", newParentId);
+                _ = updateCommand.Parameters.AddWithValue("@GroupSetID", this.GroupSetID ?? 1);
+                _ = updateCommand.Parameters.AddWithValue("@GroupID", this.GroupID ?? 1);
+                _ = updateCommand.Parameters.AddWithValue("@ParentID", this.ParentID ?? (object)DBNull.Value);
+                _ = updateCommand.Parameters.AddWithValue("@OldOrdinal", this.Ordinal ?? 1);
 
                 // Execute the combined queries
-                updateCommand.ExecuteNonQuery();
+                _ = updateCommand.ExecuteNonQuery();
                 // Step 2: Commit the transaction
                 transaction.Commit();
 
@@ -240,7 +239,7 @@ namespace ZO.LoadOrderManager
                 App.LogDebug($"ChangeGroup error: {ex.Message}");
                 throw;
             }
-            
+
             // Save the current group after all changes
             //this.WriteGroup();
             AggLoadInfo.Instance.RefreshMetadataFromDB();
@@ -352,8 +351,8 @@ namespace ZO.LoadOrderManager
                     INSERT INTO ModGroups (GroupName, Description)
                     VALUES (@GroupName, @Description)
                     RETURNING GroupID;";
-                command.Parameters.AddWithValue("@GroupName", this.GroupName ?? (object)DBNull.Value);
-                command.Parameters.AddWithValue("@Description", this.Description ?? (object)DBNull.Value);
+                _ = command.Parameters.AddWithValue("@GroupName", this.GroupName ?? (object)DBNull.Value);
+                _ = command.Parameters.AddWithValue("@Description", this.Description ?? (object)DBNull.Value);
 
                 try
                 {
@@ -374,10 +373,10 @@ namespace ZO.LoadOrderManager
                     SET GroupName = COALESCE(@GroupName, GroupName),
                         Description = COALESCE(@Description, Description)
                     WHERE GroupID = @GroupID;";
-                command.Parameters.AddWithValue("@GroupID", this.GroupID);
-                command.Parameters.AddWithValue("@GroupName", this.GroupName ?? (object)DBNull.Value);
-                command.Parameters.AddWithValue("@Description", this.Description ?? (object)DBNull.Value);
-                command.ExecuteNonQuery();
+                _ = command.Parameters.AddWithValue("@GroupID", this.GroupID);
+                _ = command.Parameters.AddWithValue("@GroupName", this.GroupName ?? (object)DBNull.Value);
+                _ = command.Parameters.AddWithValue("@Description", this.Description ?? (object)DBNull.Value);
+                _ = command.ExecuteNonQuery();
                 App.LogDebug($"ModGroup updated in database: {this.ToString()}");
             }
 
@@ -389,11 +388,11 @@ namespace ZO.LoadOrderManager
                     ParentID = COALESCE(@ParentID, ParentID),
                     Ordinal = COALESCE(@Ordinal, Ordinal);";
             command.Parameters.Clear();
-            command.Parameters.AddWithValue("@GroupID", this.GroupID);
-            command.Parameters.AddWithValue("@GroupSetID", this.GroupSetID ?? (object)DBNull.Value);
-            command.Parameters.AddWithValue("@ParentID", this.ParentID ?? (object)DBNull.Value);
-            command.Parameters.AddWithValue("@Ordinal", this.Ordinal);
-            command.ExecuteNonQuery();
+            _ = command.Parameters.AddWithValue("@GroupID", this.GroupID);
+            _ = command.Parameters.AddWithValue("@GroupSetID", this.GroupSetID ?? (object)DBNull.Value);
+            _ = command.Parameters.AddWithValue("@ParentID", this.ParentID ?? (object)DBNull.Value);
+            _ = command.Parameters.AddWithValue("@Ordinal", this.Ordinal);
+            _ = command.ExecuteNonQuery();
 
             transaction.Commit();
             App.LogDebug($"Transaction committed successfully.");
@@ -417,7 +416,7 @@ namespace ZO.LoadOrderManager
             if (string.IsNullOrEmpty(input)) return string.Empty;
             return Regex.Replace(input, @"[^a-zA-Z0-9]", "").Trim().ToLowerInvariant();
         }
-        
+
         public static ModGroup GetModGroupById(long groupId)
         {
             return AggLoadInfo.Instance.Groups
@@ -461,9 +460,8 @@ namespace ZO.LoadOrderManager
         public void SwapLocations(ModGroup other)
         {
             if (other == null) throw new ArgumentNullException(nameof(other));
-
-            var thisTuple = ((long)this.GroupID!, (long)this.GroupSetID!, this.ParentID, (long)this.Ordinal!);
-            var otherTuple = ((long)other.GroupID!, (long)other.GroupSetID!, other.ParentID, (long)other.Ordinal!);
+            _ = ((long)this.GroupID!, (long)this.GroupSetID!, this.ParentID, (long)this.Ordinal!);
+            _ = ((long)other.GroupID!, (long)other.GroupSetID!, other.ParentID, (long)other.Ordinal!);
 
             var tempGroupSetID = this.GroupSetID;
             var tempParentID = this.ParentID;
@@ -478,8 +476,8 @@ namespace ZO.LoadOrderManager
             other.Ordinal = tempOrdinal;
 
 
-            this.WriteGroup();
-            other.WriteGroup();
+            _ = this.WriteGroup();
+            _ = other.WriteGroup();
             AggLoadInfo.Instance.RefreshMetadataFromDB();
         }
     }

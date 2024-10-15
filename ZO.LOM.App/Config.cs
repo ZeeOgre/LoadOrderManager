@@ -1,6 +1,5 @@
 using System.Data.SQLite;
 using System.IO;
-using System.Runtime.CompilerServices;
 using System.Windows;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;

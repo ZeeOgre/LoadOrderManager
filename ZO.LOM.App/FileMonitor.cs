@@ -1,9 +1,8 @@
-using System;
+using Microsoft.Win32;
 using System.IO;
 using System.IO.Compression;
 using System.Security.Cryptography;
 using System.Windows;
-using Microsoft.Win32;
 
 
 namespace ZO.LoadOrderManager
@@ -51,7 +50,7 @@ namespace ZO.LoadOrderManager
         {
             _watcher.EnableRaisingEvents = false;
             _watcher.Dispose();
-            _monitors.Remove(this);
+            _ = _monitors.Remove(this);
             App.LogDebug($"FileMonitor for {_filePath} has been stopped.");
             Console.WriteLine($"FileMonitor for {_filePath} has been stopped.");
         }
@@ -78,14 +77,10 @@ namespace ZO.LoadOrderManager
 
         private string ComputeFileHash(string filePath)
         {
-            using (var sha256 = SHA256.Create())
-            {
-                using (var stream = File.OpenRead(filePath))
-                {
-                    var hashBytes = sha256.ComputeHash(stream);
-                    return BitConverter.ToString(hashBytes).Replace("-", "").ToLowerInvariant();
-                }
-            }
+            using var sha256 = SHA256.Create();
+            using var stream = File.OpenRead(filePath);
+            var hashBytes = sha256.ComputeHash(stream);
+            return BitConverter.ToString(hashBytes).Replace("-", "").ToLowerInvariant();
         }
 
         private void LaunchDiffViewer(byte[] oldContent, byte[] newContent)
@@ -101,7 +96,7 @@ namespace ZO.LoadOrderManager
                 else
                 {
                     // Optionally, you can bring the existing DiffViewer to the front
-                    _currentDiffViewer.Activate();
+                    _ = _currentDiffViewer.Activate();
                 }
             });
         }
@@ -127,10 +122,10 @@ namespace ZO.LoadOrderManager
                                 file.FileContent = File.ReadAllBytes(resolvedPath);
                                 file.CompressedContent = CompressFile(file.FileContent);
                                 file.DTStamp = File.GetLastWriteTime(resolvedPath).ToString("yyyy-MM-dd HH:mm:ss");
-                                FileInfo.InsertFileInfo(file);
+                                _ = FileInfo.InsertFileInfo(file);
                             }
 
-                            new FileMonitor(resolvedPath, file.FileContent);
+                            _ = new FileMonitor(resolvedPath, file.FileContent);
                         }
                         else
                         {
@@ -150,10 +145,10 @@ namespace ZO.LoadOrderManager
                             };
 
                             // Update the database with the new FileInfo
-                            FileInfo.InsertFileInfo(newFileInfo);
+                            _ = FileInfo.InsertFileInfo(newFileInfo);
 
                             // Initialize the FileMonitor with the new FileInfo
-                            new FileMonitor(newFileInfo.AbsolutePath, newFileInfo.FileContent);
+                            _ = new FileMonitor(newFileInfo.AbsolutePath, newFileInfo.FileContent);
                             App.LogDebug($"New FileMonitor for {newFileInfo.AbsolutePath} established");
                         }
                     }
@@ -173,14 +168,12 @@ namespace ZO.LoadOrderManager
 
         private static byte[] CompressFile(byte[] fileContent)
         {
-            using (var outputStream = new MemoryStream())
+            using var outputStream = new MemoryStream();
+            using (var compressionStream = new GZipStream(outputStream, CompressionMode.Compress))
             {
-                using (var compressionStream = new GZipStream(outputStream, CompressionMode.Compress))
-                {
-                    compressionStream.Write(fileContent, 0, fileContent.Length);
-                }
-                return outputStream.ToArray();
+                compressionStream.Write(fileContent, 0, fileContent.Length);
             }
+            return outputStream.ToArray();
         }
 
         private static string ResolveFilePath(string fullPath)

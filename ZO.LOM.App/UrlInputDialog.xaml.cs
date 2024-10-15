@@ -49,7 +49,7 @@ namespace ZO.LoadOrderManager
             {
                 _modItem.BethesdaID = Url; // Update BethesdaUrl in ModItem
             }
-            _modItem.WriteMod(); // Write the updated ModItem to the database 
+            _ = _modItem.WriteMod(); // Write the updated ModItem to the database 
             DialogResult = true;
             Close();
         }

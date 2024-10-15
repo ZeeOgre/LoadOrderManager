@@ -137,7 +137,7 @@ namespace ZO.LoadOrderManager
         {
             using var connection = GetConnection();
             using var command = new SQLiteCommand("SELECT COUNT(*) FROM Config", connection);
-            return Convert.ToInt64(command.ExecuteScalar()) == 0;   
+            return Convert.ToInt64(command.ExecuteScalar()) == 0;
         }
 
         public bool IsDatabaseInitialized()
@@ -169,7 +169,6 @@ namespace ZO.LoadOrderManager
 
         public static long GetNextID(string tableName)
         {
-            long maxId = 1; // Default if no records are found
             string idField;
 
             if (tableName == "ModGroups")
@@ -193,7 +192,7 @@ namespace ZO.LoadOrderManager
                     SELECT 
                         (SELECT MAX({idField}) +1 FROM {tableName}) AS MaxId
                 ", connection);
-            command.Parameters.AddWithValue("@tableName", tableName);
+            _ = command.Parameters.AddWithValue("@tableName", tableName);
             return Convert.ToInt64(command.ExecuteScalar());
         }
 
@@ -213,21 +212,21 @@ namespace ZO.LoadOrderManager
 
             string query;
 
-            
-                // Regular case with GroupSetID
-                query = type switch
-                {
-                    EntityType.Plugin => "SELECT MAX(GroupOrdinal) + 1 FROM vwPlugins WHERE GroupID = @GroupID AND GroupSetID = @GroupSetID AND GroupID != -999",
-                    EntityType.Group => "SELECT MAX(Ordinal) + 1 FROM vwModGroups WHERE ParentID = @GroupID AND GroupSetID = @GroupSetID AND GroupID != -999",
-                    _ => throw new ArgumentException("Invalid type specified.")
-                };
+
+            // Regular case with GroupSetID
+            query = type switch
+            {
+                EntityType.Plugin => "SELECT MAX(GroupOrdinal) + 1 FROM vwPlugins WHERE GroupID = @GroupID AND GroupSetID = @GroupSetID AND GroupID != -999",
+                EntityType.Group => "SELECT MAX(Ordinal) + 1 FROM vwModGroups WHERE ParentID = @GroupID AND GroupSetID = @GroupSetID AND GroupID != -999",
+                _ => throw new ArgumentException("Invalid type specified.")
+            };
 
             using var connection = Instance.GetConnection();
             using var command = new SQLiteCommand(query, connection);
-            command.Parameters.AddWithValue("@GroupID", groupId);
+            _ = command.Parameters.AddWithValue("@GroupID", groupId);
             if (groupId != -999)
             {
-                command.Parameters.AddWithValue("@GroupSetID", groupSetId);
+                _ = command.Parameters.AddWithValue("@GroupSetID", groupSetId);
             }
             var result = command.ExecuteScalar();
 
@@ -246,9 +245,9 @@ namespace ZO.LoadOrderManager
         {
             using var connection = GetConnection();
             using var command = new SQLiteCommand("INSERT OR REPLACE INTO InitializationStatus (Id, IsInitialized, InitializationTime) VALUES (1, @IsInitialized, @InitializationTime)", connection);
-            command.Parameters.AddWithValue("@IsInitialized", status ? 1 : 0);
-            command.Parameters.AddWithValue("@InitializationTime", DateTime.UtcNow);
-            command.ExecuteNonQuery();
+            _ = command.Parameters.AddWithValue("@IsInitialized", status ? 1 : 0);
+            _ = command.Parameters.AddWithValue("@InitializationTime", DateTime.UtcNow);
+            _ = command.ExecuteNonQuery();
             App.LogDebug($"Database marked as initialized: {status}");
         }
 

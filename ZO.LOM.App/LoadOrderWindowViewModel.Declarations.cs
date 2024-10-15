@@ -1,9 +1,6 @@
-using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Windows.Media;
-using System.Timers;
-using System.Collections.Specialized;
 
 namespace ZO.LoadOrderManager
 {
@@ -52,7 +49,7 @@ namespace ZO.LoadOrderManager
             set
             {
                 _loadOrders = value;
-                
+
                 if (!_isSynchronizing)
                 {
                     RebuildFlatList();
@@ -153,7 +150,7 @@ namespace ZO.LoadOrderManager
             _isRefreshing = true;
 
             // Rebuild the flat list from LoadOrders.Items
-            _cachedFlatList = Flatten(LoadOrders.Items,true).ToList();
+            _cachedFlatList = Flatten(LoadOrders.Items, true).ToList();
 
             _isRefreshing = false;
         }
@@ -180,7 +177,7 @@ namespace ZO.LoadOrderManager
                     {
                         if (SelectedItems != null)
                         {
-                            SelectedItems.Remove(_selectedItem);
+                            _ = SelectedItems.Remove(_selectedItem);
                             SelectedItems.Insert(0, _selectedItem);
                         }
                         OnPropertyChanged(nameof(SelectedItem));
@@ -225,7 +222,8 @@ namespace ZO.LoadOrderManager
                 //        OnPropertyChanged(nameof(SelectedLoadOut));
                 //    }
                 //}
-                else if (e.PropertyName == nameof(LoadOuts)) {
+                else if (e.PropertyName == nameof(LoadOuts))
+                {
                     UpdateLoadOutsForSelectedGroupSet();
                 }
                 else if (e.PropertyName == nameof(GroupSets))
@@ -285,7 +283,7 @@ namespace ZO.LoadOrderManager
                         LoadOrders.SelectedGroupSet = value;
                         LoadOrders.LoadData(value, SelectedLoadOut, false, false);
                         // Ensure SelectedLoadOut is set to the appropriate value
-                        
+
 
                         OnPropertyChanged(nameof(SelectedGroupSet)); // Notify only when changed
                     }

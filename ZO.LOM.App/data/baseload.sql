@@ -1,5 +1,5 @@
 --
--- File generated with SQLiteStudio v3.4.4 on Sat Sep 21 20:40:30 2024
+-- File generated with SQLiteStudio v3.4.4 on Mon Oct 14 21:01:01 2024
 --
 -- Text encoding used: System
 --
@@ -11,7 +11,8 @@ DROP TABLE IF EXISTS Config;
 
 CREATE TABLE IF NOT EXISTS Config (
     GameFolder          TEXT    NOT NULL,
-    AutoCheckForUpdates longEGER
+    AutoCheckForUpdates INTEGER DEFAULT (1),
+    DarkMode            INTEGER DEFAULT (1) 
 );
 
 
@@ -19,100 +20,141 @@ CREATE TABLE IF NOT EXISTS Config (
 DROP TABLE IF EXISTS ExternalIDs;
 
 CREATE TABLE IF NOT EXISTS ExternalIDs (
-    ExternalID longEGER PRIMARY KEY AUTOINCREMENT
+    ExternalID INTEGER PRIMARY KEY AUTOINCREMENT
                        NOT NULL,
-    PluginID   longEGER,
+    PluginID   INTEGER UNIQUE,
     BethesdaID TEXT,
     NexusID    TEXT,
-    CONSTRAlong FK_ExternalIDs_PluginID FOREIGN KEY (
+    CONSTRAINT FK_ExternalIDs_PluginID FOREIGN KEY (
         PluginID
     )
     REFERENCES Plugins (PluginID) ON DELETE NO ACTION
                                   ON UPDATE NO ACTION
 );
 
-INSERT INTO ExternalIDs (ExternalID, PluginID, BethesdaID, NexusID) VALUES (1, 10, NULL, '10189');
+INSERT INTO ExternalIDs (ExternalID, PluginID, BethesdaID, NexusID) VALUES (1, 11, NULL, '10189');
+INSERT INTO ExternalIDs (ExternalID, PluginID, BethesdaID, NexusID) VALUES (2, 10, 'b6b52ca2-3f1f-4316-bef8-dcb0bb2dcc32', NULL);
 
 -- Table: FileInfo
 DROP TABLE IF EXISTS FileInfo;
 
 CREATE TABLE IF NOT EXISTS FileInfo (
-    FileID       longEGER PRIMARY KEY AUTOINCREMENT
+    FileID       INTEGER PRIMARY KEY AUTOINCREMENT
                          NOT NULL,
-    PluginID     longEGER,
-    Filename     TEXT    NOT NULL,
+    PluginID     INTEGER,
+    Filename     TEXT    NOT NULL
+                         UNIQUE,
     RelativePath TEXT,
+    AbsolutePath TEXT,
     DTStamp      TEXT    NOT NULL,
     HASH         TEXT,
-    Flags    longEGER NOT NULL,
-    CONSTRAlong FK_FileInfo_PluginID FOREIGN KEY (
+    Flags        INTEGER,
+    FileContent  BLOB,
+    CONSTRAINT FK_FileInfo_PluginID FOREIGN KEY (
         PluginID
     )
     REFERENCES Plugins (PluginID) ON DELETE NO ACTION
                                   ON UPDATE NO ACTION
 );
 
+INSERT INTO FileInfo (FileID, PluginID, Filename, RelativePath, AbsolutePath, DTStamp, HASH, Flags, FileContent) VALUES (1, NULL, 'Plugins.txt', '', '', '2024-10-01 09:59:10', '', 3, NULL);
+INSERT INTO FileInfo (FileID, PluginID, Filename, RelativePath, AbsolutePath, DTStamp, HASH, Flags, FileContent) VALUES (2, NULL, 'ContentCatalog.txt', '', '', '2024-10-01 09:59:10', '', 3, NULL);
+INSERT INTO FileInfo (FileID, PluginID, Filename, RelativePath, AbsolutePath, DTStamp, HASH, Flags, FileContent) VALUES (3, NULL, 'Starfield.ccc', '', '', '2024-10-01 09:59:10', '', 5, NULL);
+INSERT INTO FileInfo (FileID, PluginID, Filename, RelativePath, AbsolutePath, DTStamp, HASH, Flags, FileContent) VALUES (4, NULL, 'Starfield.ini', '', '', '2024-10-01 09:59:10', '', 4, NULL);
+INSERT INTO FileInfo (FileID, PluginID, Filename, RelativePath, AbsolutePath, DTStamp, HASH, Flags, FileContent) VALUES (5, NULL, 'StarfieldCustom.ini', '', '', '2024-10-01 09:59:10', '', 4, NULL);
+INSERT INTO FileInfo (FileID, PluginID, Filename, RelativePath, AbsolutePath, DTStamp, HASH, Flags, FileContent) VALUES (6, NULL, 'StarfieldPrefs.ini', '', '', '2024-10-01 09:59:10', '', 4, NULL);
+INSERT INTO FileInfo (FileID, PluginID, Filename, RelativePath, AbsolutePath, DTStamp, HASH, Flags, FileContent) VALUES (7, 1, 'blueprintships-starfield.esm', '', '', '2024-09-21 09:59:10', '5f824d072aa7b369ac0bf37670b9daa0ebb6a1761089fdaa372e95c9f198c432', 24, NULL);
+INSERT INTO FileInfo (FileID, PluginID, Filename, RelativePath, AbsolutePath, DTStamp, HASH, Flags, FileContent) VALUES (8, 2, 'constellation.esm', '', '', '2024-06-28 00:43:13', 'a314299ba8394a682b5bfca5ac29d5ee33fea9ca4e1ff70931e9d6022c81b0bc', 24, NULL);
+INSERT INTO FileInfo (FileID, PluginID, Filename, RelativePath, AbsolutePath, DTStamp, HASH, Flags, FileContent) VALUES (9, 3, 'oldmars.esm', '', '', '2024-06-28 00:43:13', 'a314299ba8394a682b5bfca5ac29d5ee33fea9ca4e1ff70931e9d6022c81b0bc', 24, NULL);
+INSERT INTO FileInfo (FileID, PluginID, Filename, RelativePath, AbsolutePath, DTStamp, HASH, Flags, FileContent) VALUES (10, 4, 'sfbgs003.esm', '', '', '2024-09-21 09:59:10', '54ca59edd7591960da35e38b64d9c9dcd23bca323467cd6e81f1f2a658995545', 24, NULL);
+INSERT INTO FileInfo (FileID, PluginID, Filename, RelativePath, AbsolutePath, DTStamp, HASH, Flags, FileContent) VALUES (11, 5, 'sfbgs004.esm', '', '', '2024-09-21 09:59:57', '79b20fdf748f462352f980dc7d48d0a9871efee723dd5fe4b7d068dde32d3163', 24, NULL);
+INSERT INTO FileInfo (FileID, PluginID, Filename, RelativePath, AbsolutePath, DTStamp, HASH, Flags, FileContent) VALUES (12, 6, 'sfbgs006.esm', '', '', '2024-06-28 00:22:40', 'e817f933aa397ff6609bf3783981332fd437e0fb1ba25e202c5e47c3fa9190d0', 24, NULL);
+INSERT INTO FileInfo (FileID, PluginID, Filename, RelativePath, AbsolutePath, DTStamp, HASH, Flags, FileContent) VALUES (13, 7, 'sfbgs007.esm', '', '', '2024-08-20 18:19:16', '2516fb2832e4da41608e909b1278b8bfd2081cd6941a3b5e0e9dd7a005605735', 24, NULL);
+INSERT INTO FileInfo (FileID, PluginID, Filename, RelativePath, AbsolutePath, DTStamp, HASH, Flags, FileContent) VALUES (14, 8, 'sfbgs008.esm', '', '', '2024-09-21 09:59:10', 'e4426499386fcfcf74ed3047be298a426cb2faae2b710904093a028a04b8b462', 24, NULL);
+INSERT INTO FileInfo (FileID, PluginID, Filename, RelativePath, AbsolutePath, DTStamp, HASH, Flags, FileContent) VALUES (15, 9, 'starfield.esm', '', '', '2024-09-21 09:59:10', '2f650d6c589d38d39dc316fd15e406d38eeede3edd02492b666e0e082f5cf6f4', 24, NULL);
+INSERT INTO FileInfo (FileID, PluginID, Filename, RelativePath, AbsolutePath, DTStamp, HASH, Flags, FileContent) VALUES (16, 11, 'a1_empty_stub_xxxxxxxxxx.esm', '', '', '2024-06-26 19:53:36', '6cb84c0274ce6f48df4ec5ff943396ab51038ae72c5cd3238125fc793a15d27d', 16, NULL);
+INSERT INTO FileInfo (FileID, PluginID, Filename, RelativePath, AbsolutePath, DTStamp, HASH, Flags, FileContent) VALUES (17, 10, 'shatteredspace.esm', NULL, NULL, '2024-09-30', 'F54067E7AF3621B7F2DEC0838112046D81A35705BB624B500A3EEB07766B28B8', 24, NULL);
 
 -- Table: GroupSetGroups
 DROP TABLE IF EXISTS GroupSetGroups;
 
 CREATE TABLE IF NOT EXISTS GroupSetGroups (
-    GroupSetGroupID longEGER PRIMARY KEY AUTOINCREMENT,
-    GroupID         longEGER,
-    GroupSetID      longEGER,
-    ParentID        longEGER,
-    Ordinal         longEGER,
+    GroupID    INTEGER NOT NULL,
+    GroupSetID INTEGER NOT NULL,
+    ParentID   INTEGER,
+    Ordinal    INTEGER,
     FOREIGN KEY (
         GroupID
-    )
-    REFERENCES ModGroups (GroupID),
-    FOREIGN KEY (
-        ParentID
     )
     REFERENCES ModGroups (GroupID),
     UNIQUE (
         GroupID,
         GroupSetID
     )
+    ON CONFLICT REPLACE,
+    PRIMARY KEY (
+        GroupID ASC,
+        GroupSetID ASC
+    )
 );
 
-INSERT INTO GroupSetGroups (GroupSetGroupID, GroupID, GroupSetID, ParentID, Ordinal) VALUES (1, -999, 1, 1, 9999);
-INSERT INTO GroupSetGroups (GroupSetGroupID, GroupID, GroupSetID, ParentID, Ordinal) VALUES (2, -999, 2, 1, 9999);
-INSERT INTO GroupSetGroups (GroupSetGroupID, GroupID, GroupSetID, ParentID, Ordinal) VALUES (3, -998, 1, 1, 9998);
-INSERT INTO GroupSetGroups (GroupSetGroupID, GroupID, GroupSetID, ParentID, Ordinal) VALUES (4, -998, 2, 1, 9998);
-INSERT INTO GroupSetGroups (GroupSetGroupID, GroupID, GroupSetID, ParentID, Ordinal) VALUES (5, -997, 1, 1, 9997);
-INSERT INTO GroupSetGroups (GroupSetGroupID, GroupID, GroupSetID, ParentID, Ordinal) VALUES (6, -997, 2, 1, 9997);
-INSERT INTO GroupSetGroups (GroupSetGroupID, GroupID, GroupSetID, ParentID, Ordinal) VALUES (7, 1, 1, 0, 0);
-INSERT INTO GroupSetGroups (GroupSetGroupID, GroupID, GroupSetID, ParentID, Ordinal) VALUES (8, 1, 2, 0, 0);
+INSERT INTO GroupSetGroups (GroupID, GroupSetID, ParentID, Ordinal) VALUES (-999, 1, 1, 9999);
+INSERT INTO GroupSetGroups (GroupID, GroupSetID, ParentID, Ordinal) VALUES (-998, 1, 1, 9998);
+INSERT INTO GroupSetGroups (GroupID, GroupSetID, ParentID, Ordinal) VALUES (-997, 1, 1, 9997);
+INSERT INTO GroupSetGroups (GroupID, GroupSetID, ParentID, Ordinal) VALUES (1, 1, 0, 0);
+INSERT INTO GroupSetGroups (GroupID, GroupSetID, ParentID, Ordinal) VALUES (1, 2, 0, 0);
+INSERT INTO GroupSetGroups (GroupID, GroupSetID, ParentID, Ordinal) VALUES (-997, 2, 1, 9997);
+INSERT INTO GroupSetGroups (GroupID, GroupSetID, ParentID, Ordinal) VALUES (1, 3, 0, 0);
+INSERT INTO GroupSetGroups (GroupID, GroupSetID, ParentID, Ordinal) VALUES (-997, 3, 1, 9997);
+INSERT INTO GroupSetGroups (GroupID, GroupSetID, ParentID, Ordinal) VALUES (2, 3, 1, 1);
+INSERT INTO GroupSetGroups (GroupID, GroupSetID, ParentID, Ordinal) VALUES (3, 3, 1, 2);
+INSERT INTO GroupSetGroups (GroupID, GroupSetID, ParentID, Ordinal) VALUES (4, 3, 1, 3);
+INSERT INTO GroupSetGroups (GroupID, GroupSetID, ParentID, Ordinal) VALUES (5, 3, 1, 4);
+INSERT INTO GroupSetGroups (GroupID, GroupSetID, ParentID, Ordinal) VALUES (6, 3, 5, 1);
+INSERT INTO GroupSetGroups (GroupID, GroupSetID, ParentID, Ordinal) VALUES (7, 3, 5, 2);
+INSERT INTO GroupSetGroups (GroupID, GroupSetID, ParentID, Ordinal) VALUES (8, 3, 5, 3);
+INSERT INTO GroupSetGroups (GroupID, GroupSetID, ParentID, Ordinal) VALUES (9, 3, 1, 5);
+INSERT INTO GroupSetGroups (GroupID, GroupSetID, ParentID, Ordinal) VALUES (10, 3, 1, 6);
+INSERT INTO GroupSetGroups (GroupID, GroupSetID, ParentID, Ordinal) VALUES (11, 3, 10, 1);
+INSERT INTO GroupSetGroups (GroupID, GroupSetID, ParentID, Ordinal) VALUES (12, 3, 10, 2);
+INSERT INTO GroupSetGroups (GroupID, GroupSetID, ParentID, Ordinal) VALUES (13, 3, 1, 7);
+INSERT INTO GroupSetGroups (GroupID, GroupSetID, ParentID, Ordinal) VALUES (14, 3, 1, 8);
+INSERT INTO GroupSetGroups (GroupID, GroupSetID, ParentID, Ordinal) VALUES (15, 3, 1, 9);
+INSERT INTO GroupSetGroups (GroupID, GroupSetID, ParentID, Ordinal) VALUES (16, 3, 1, 10);
+INSERT INTO GroupSetGroups (GroupID, GroupSetID, ParentID, Ordinal) VALUES (17, 3, 5, 4);
 
 -- Table: GroupSetPlugins
 DROP TABLE IF EXISTS GroupSetPlugins;
 
 CREATE TABLE IF NOT EXISTS GroupSetPlugins (
-    GroupSetID longEGER NOT NULL,
-    GroupID    longEGER NOT NULL,
-    PluginID   longEGER NOT NULL,
-    Ordinal    longEGER NOT NULL,
-    CONSTRAlong PK_GroupSetPlugins PRIMARY KEY (
+    GroupSetID INTEGER NOT NULL,
+    GroupID    INTEGER NOT NULL,
+    PluginID   INTEGER NOT NULL,
+    Ordinal    INTEGER NOT NULL,
+    CONSTRAINT PK_GroupSetPlugins PRIMARY KEY (
         GroupSetID,
-        GroupID,
         PluginID
     ),
-    CONSTRAlong FK_GroupSetPlugins_GroupSetID FOREIGN KEY (
+    CONSTRAINT FK_GroupSetPlugins_GroupSetID FOREIGN KEY (
         GroupSetID
     )
     REFERENCES GroupSets (GroupSetID) ON DELETE NO ACTION
                                       ON UPDATE NO ACTION,
-    CONSTRAlong FK_GroupSetPlugins_GroupID FOREIGN KEY (
+    CONSTRAINT FK_GroupSetPlugins_GroupID FOREIGN KEY (
         GroupID
     )
     REFERENCES ModGroups (GroupID) ON DELETE NO ACTION
                                    ON UPDATE NO ACTION,
-    CONSTRAlong FK_GroupSetPlugins_PluginID FOREIGN KEY (
+    CONSTRAINT FK_GroupSetPlugins_PluginID FOREIGN KEY (
         PluginID
     )
     REFERENCES Plugins (PluginID) ON DELETE NO ACTION
-                                  ON UPDATE NO ACTION
+                                  ON UPDATE NO ACTION,
+    UNIQUE (
+        GroupSetID,
+        PluginID
+    )
+    ON CONFLICT REPLACE
 );
 
 INSERT INTO GroupSetPlugins (GroupSetID, GroupID, PluginID, Ordinal) VALUES (1, -999, 1, 1);
@@ -124,37 +166,30 @@ INSERT INTO GroupSetPlugins (GroupSetID, GroupID, PluginID, Ordinal) VALUES (1, 
 INSERT INTO GroupSetPlugins (GroupSetID, GroupID, PluginID, Ordinal) VALUES (1, -999, 7, 7);
 INSERT INTO GroupSetPlugins (GroupSetID, GroupID, PluginID, Ordinal) VALUES (1, -999, 8, 8);
 INSERT INTO GroupSetPlugins (GroupSetID, GroupID, PluginID, Ordinal) VALUES (1, -999, 9, 9);
-INSERT INTO GroupSetPlugins (GroupSetID, GroupID, PluginID, Ordinal) VALUES (1, -998, 10, 1);
-INSERT INTO GroupSetPlugins (GroupSetID, GroupID, PluginID, Ordinal) VALUES (2, -999, 1, 1);
-INSERT INTO GroupSetPlugins (GroupSetID, GroupID, PluginID, Ordinal) VALUES (2, -999, 2, 2);
-INSERT INTO GroupSetPlugins (GroupSetID, GroupID, PluginID, Ordinal) VALUES (2, -999, 3, 3);
-INSERT INTO GroupSetPlugins (GroupSetID, GroupID, PluginID, Ordinal) VALUES (2, -999, 4, 4);
-INSERT INTO GroupSetPlugins (GroupSetID, GroupID, PluginID, Ordinal) VALUES (2, -999, 5, 5);
-INSERT INTO GroupSetPlugins (GroupSetID, GroupID, PluginID, Ordinal) VALUES (2, -999, 6, 6);
-INSERT INTO GroupSetPlugins (GroupSetID, GroupID, PluginID, Ordinal) VALUES (2, -999, 7, 7);
-INSERT INTO GroupSetPlugins (GroupSetID, GroupID, PluginID, Ordinal) VALUES (2, -999, 8, 8);
-INSERT INTO GroupSetPlugins (GroupSetID, GroupID, PluginID, Ordinal) VALUES (2, -999, 9, 9);
-INSERT INTO GroupSetPlugins (GroupSetID, GroupID, PluginID, Ordinal) VALUES (2, -998, 10, 1);
+INSERT INTO GroupSetPlugins (GroupSetID, GroupID, PluginID, Ordinal) VALUES (1, -999, 10, 10);
+INSERT INTO GroupSetPlugins (GroupSetID, GroupID, PluginID, Ordinal) VALUES (1, -998, 11, 1);
 
 -- Table: GroupSets
 DROP TABLE IF EXISTS GroupSets;
 
 CREATE TABLE IF NOT EXISTS GroupSets (
-    GroupSetID    longEGER PRIMARY KEY AUTOINCREMENT,
+    GroupSetID    INTEGER    PRIMARY KEY AUTOINCREMENT,
     GroupSetName  TEXT,
-    GroupSetFlags longEGER
+    GroupSetFlags INTEGER,
+    IsFavorite    [INTEGER ] GENERATED ALWAYS AS (GroupSetFlags & 4) VIRTUAL
 );
 
-INSERT INTO GroupSets (GroupSetID, GroupSetName, GroupSetFlags) VALUES (1, 'BASELINE_GS', 9);
-INSERT INTO GroupSets (GroupSetID, GroupSetName, GroupSetFlags) VALUES (2, 'SINGLETON_GS', 12);
+INSERT INTO GroupSets (GroupSetID, GroupSetName, GroupSetFlags) VALUES (1, 'BASELINE', 9);
+INSERT INTO GroupSets (GroupSetID, GroupSetName, GroupSetFlags) VALUES (2, '(Default)', 8);
+INSERT INTO GroupSets (GroupSetID, GroupSetName, GroupSetFlags) VALUES (3, 'ZeeOgre''s Sample', 12);
 
 -- Table: InitializationStatus
 DROP TABLE IF EXISTS InitializationStatus;
 
 CREATE TABLE IF NOT EXISTS InitializationStatus (
-    Id                 longEGER PRIMARY KEY AUTOINCREMENT
+    Id                 INTEGER PRIMARY KEY AUTOINCREMENT
                                NOT NULL,
-    IsInitialized      longEGER NOT NULL,
+    IsInitialized      INTEGER NOT NULL,
     InitializationTime TEXT    NOT NULL
 );
 
@@ -163,44 +198,66 @@ CREATE TABLE IF NOT EXISTS InitializationStatus (
 DROP TABLE IF EXISTS LoadOutProfiles;
 
 CREATE TABLE IF NOT EXISTS LoadOutProfiles (
-    ProfileID   longEGER PRIMARY KEY AUTOINCREMENT
+    ProfileID   INTEGER PRIMARY KEY AUTOINCREMENT
                         NOT NULL,
     ProfileName TEXT    NOT NULL,
-    GroupSetID  longEGER
+    GroupSetID  INTEGER,
+    isFavorite  INTEGER DEFAULT (0) 
 );
 
-INSERT INTO LoadOutProfiles (ProfileID, ProfileName, GroupSetID) VALUES (1, 'Baseline', 1);
-INSERT INTO LoadOutProfiles (ProfileID, ProfileName, GroupSetID) VALUES (2, '(Default)', 1);
+INSERT INTO LoadOutProfiles (ProfileID, ProfileName, GroupSetID, isFavorite) VALUES (1, 'Baseline', 1, 1);
+INSERT INTO LoadOutProfiles (ProfileID, ProfileName, GroupSetID, isFavorite) VALUES (2, '(Default)', 2, 1);
+INSERT INTO LoadOutProfiles (ProfileID, ProfileName, GroupSetID, isFavorite) VALUES (3, 'ZeeOgre''s Default', 3, 1);
+INSERT INTO LoadOutProfiles (ProfileID, ProfileName, GroupSetID, isFavorite) VALUES (4, 'ZeeOgre''s NG+ Speedrun ', 3, 0);
+INSERT INTO LoadOutProfiles (ProfileID, ProfileName, GroupSetID, isFavorite) VALUES (5, 'ZeeOgre''s Completionist', 3, 0);
+INSERT INTO LoadOutProfiles (ProfileID, ProfileName, GroupSetID, isFavorite) VALUES (6, 'ZeeOgre''s Shattered Space', 3, 0);
+INSERT INTO LoadOutProfiles (ProfileID, ProfileName, GroupSetID, isFavorite) VALUES (7, 'ZeeOgre''s Minimal Development', 3, 0);
 
 -- Table: ModGroups
 DROP TABLE IF EXISTS ModGroups;
 
 CREATE TABLE IF NOT EXISTS ModGroups (
-    GroupID     longEGER PRIMARY KEY AUTOINCREMENT,
+    GroupID     INTEGER PRIMARY KEY AUTOINCREMENT,
     GroupName   TEXT,
     Description TEXT
 );
 
-INSERT INTO ModGroups (GroupID, GroupName, Description) VALUES (-999, 'CoreGameFiles', 'This is a reserved group for mods that are an longegral part of the game and can''t be controlled by the player');
+INSERT INTO ModGroups (GroupID, GroupName, Description) VALUES (-999, 'CoreGameFiles', 'This is a reserved group for mods that are an integral part of the game and can''t be controlled by the player');
 INSERT INTO ModGroups (GroupID, GroupName, Description) VALUES (-998, 'NeverLoad', 'This is a reserved group for mods which should never be loaded');
 INSERT INTO ModGroups (GroupID, GroupName, Description) VALUES (-997, 'Uncategorized', 'This is a reserved group to temporarily hold uncategorized mods');
 INSERT INTO ModGroups (GroupID, GroupName, Description) VALUES (1, '(Default Root)', 'This is the Default Root group which holds all the other groups');
+INSERT INTO ModGroups (GroupID, GroupName, Description) VALUES (2, 'BethesdaPaid', 'Bethesda paid mods');
+INSERT INTO ModGroups (GroupID, GroupName, Description) VALUES (3, 'Community Patch', 'https://starfieldpatch.dev');
+INSERT INTO ModGroups (GroupID, GroupName, Description) VALUES (4, 'Places', 'New and furnished locations');
+INSERT INTO ModGroups (GroupID, GroupName, Description) VALUES (5, 'New Things', 'Objects, Followers, etc..');
+INSERT INTO ModGroups (GroupID, GroupName, Description) VALUES (6, 'Followers', 'People, critters and bots that will follow you around');
+INSERT INTO ModGroups (GroupID, GroupName, Description) VALUES (7, 'Items', 'Added Clothing, Armor, Items');
+INSERT INTO ModGroups (GroupID, GroupName, Description) VALUES (8, 'New Ships', 'Ships');
+INSERT INTO ModGroups (GroupID, GroupName, Description) VALUES (9, 'Gameplay Modification', 'Mods which change game behavior, but you might want to still override some of the things that happen here.');
+INSERT INTO ModGroups (GroupID, GroupName, Description) VALUES (10, 'High Priority Mods', 'mods which should never be changed except by deliberate choice');
+INSERT INTO ModGroups (GroupID, GroupName, Description) VALUES (11, 'DarkStar', 'Darkstar by Wykkyd Gaming');
+INSERT INTO ModGroups (GroupID, GroupName, Description) VALUES (12, 'Shipbuilding', 'Habs, ship related mods, etc');
+INSERT INTO ModGroups (GroupID, GroupName, Description) VALUES (13, 'High Priority Overrides', 'These mods are known to make changes that may override other mods, and should be loaded after everything else.');
+INSERT INTO ModGroups (GroupID, GroupName, Description) VALUES (14, 'ForcedOverrides', 'Deliberate override choices which you never want to be overriden by anything else');
+INSERT INTO ModGroups (GroupID, GroupName, Description) VALUES (15, 'ESP', 'ESP files - these are generally "in development" mods, and should always be loaded last.');
+INSERT INTO ModGroups (GroupID, GroupName, Description) VALUES (16, 'In Development', 'Specific Non-development mods. Generally best to be loaded very late to make sure there are no conflicts.');
+INSERT INTO ModGroups (GroupID, GroupName, Description) VALUES (17, 'Vehicles', 'The REV-8 Buggy and it''s related changes');
 
 -- Table: Plugins
 DROP TABLE IF EXISTS Plugins;
 
 CREATE TABLE IF NOT EXISTS Plugins (
-    PluginID     longEGER PRIMARY KEY AUTOINCREMENT
+    PluginID     INTEGER PRIMARY KEY AUTOINCREMENT
                          NOT NULL,
     PluginName   TEXT    NOT NULL,
     Description  TEXT,
-    Achievements longEGER NOT NULL,
-    DTStamp      TEXT    NOT NULL,
+    Achievements INTEGER DEFAULT (0),
+    DTStamp      TEXT    DEFAULT (CURRENT_TIMESTAMP),
     Version      TEXT,
-    State        longEGER
+    State        INTEGER
 );
 
-INSERT INTO Plugins (PluginID, PluginName, Description, Achievements, DTStamp, Version, State) VALUES (1, 'blueprlongships-starfield.esm', 'Core game file containing all the ship models (We think!)', 1, '2024-08-20 18:18:57', NULL, 1);
+INSERT INTO Plugins (PluginID, PluginName, Description, Achievements, DTStamp, Version, State) VALUES (1, 'blueprintships-starfield.esm', 'Core game file containing all the ship models (We think!)', 1, '2024-08-20 18:18:57', NULL, 1);
 INSERT INTO Plugins (PluginID, PluginName, Description, Achievements, DTStamp, Version, State) VALUES (2, 'constellation.esm', 'Premium Edition Content', 1, '2024-06-28 00:43:13', NULL, 1);
 INSERT INTO Plugins (PluginID, PluginName, Description, Achievements, DTStamp, Version, State) VALUES (3, 'oldmars.esm', 'Premium Edition - Old Mars Skins', 1, '2024-09-19', NULL, 1);
 INSERT INTO Plugins (PluginID, PluginName, Description, Achievements, DTStamp, Version, State) VALUES (4, 'sfbgs003.esm', 'Tracker''s Alliance update', 1, '2024-08-20 18:18:57', NULL, 1);
@@ -209,28 +266,33 @@ INSERT INTO Plugins (PluginID, PluginName, Description, Achievements, DTStamp, V
 INSERT INTO Plugins (PluginID, PluginName, Description, Achievements, DTStamp, Version, State) VALUES (7, 'sfbgs007.esm', 'Add "GamePlay Options" Menu', 1, '2024-08-20 18:19:16', NULL, 1);
 INSERT INTO Plugins (PluginID, PluginName, Description, Achievements, DTStamp, Version, State) VALUES (8, 'sfbgs008.esm', 'New Map design (3d maps)', 1, '2024-08-20 18:18:57', NULL, 1);
 INSERT INTO Plugins (PluginID, PluginName, Description, Achievements, DTStamp, Version, State) VALUES (9, 'starfield.esm', 'The core Starfield game', 1, '2024-08-20 18:18:57', NULL, 1);
-INSERT INTO Plugins (PluginID, PluginName, Description, Achievements, DTStamp, Version, State) VALUES (10, 'A1_EMPTY_STUB_XXXXXXXXXX.esm', 'JMPz11''s stub for converting mods between xEdit and Creation Kit, WILL crash your game if you try to load it.', 0, '2024-06-24 19:53:00', NULL, 4);
+INSERT INTO Plugins (PluginID, PluginName, Description, Achievements, DTStamp, Version, State) VALUES (10, 'shatteredspace.esm', 'Shattered Space Expansion', 1, '2024-09-30 10:00', NULL, 1);
+INSERT INTO Plugins (PluginID, PluginName, Description, Achievements, DTStamp, Version, State) VALUES (11, 'A1_EMPTY_STUB_XXXXXXXXXX.esm', 'JMPz11''s stub for converting mods between xEdit and Creation Kit, WILL crash your game if you try to load it.', 0, '2024-06-24 19:53:00', NULL, 4);
 
 -- Table: ProfilePlugins
 DROP TABLE IF EXISTS ProfilePlugins;
 
 CREATE TABLE IF NOT EXISTS ProfilePlugins (
-    ProfileID longEGER NOT NULL,
-    PluginID  longEGER NOT NULL,
-    CONSTRAlong PK_ProfilePlugins PRIMARY KEY (
+    ProfileID INTEGER NOT NULL,
+    PluginID  INTEGER NOT NULL,
+    CONSTRAINT PK_ProfilePlugins PRIMARY KEY (
         ProfileID,
         PluginID
     ),
-    CONSTRAlong FK_ProfilePlugins_PluginID FOREIGN KEY (
+    CONSTRAINT FK_ProfilePlugins_PluginID FOREIGN KEY (
         PluginID
     )
     REFERENCES Plugins (PluginID) ON DELETE CASCADE
                                   ON UPDATE NO ACTION,
-    CONSTRAlong FK_ProfilePlugins_ProfileID FOREIGN KEY (
+    CONSTRAINT FK_ProfilePlugins_ProfileID FOREIGN KEY (
         ProfileID
     )
     REFERENCES LoadOutProfiles (ProfileID) ON DELETE CASCADE
-                                           ON UPDATE NO ACTION
+                                           ON UPDATE NO ACTION,
+    UNIQUE (
+        ProfileID,
+        PluginID
+    )
 );
 
 INSERT INTO ProfilePlugins (ProfileID, PluginID) VALUES (1, 1);
@@ -251,6 +313,58 @@ INSERT INTO ProfilePlugins (ProfileID, PluginID) VALUES (1, 8);
 INSERT INTO ProfilePlugins (ProfileID, PluginID) VALUES (2, 8);
 INSERT INTO ProfilePlugins (ProfileID, PluginID) VALUES (1, 9);
 INSERT INTO ProfilePlugins (ProfileID, PluginID) VALUES (2, 9);
+INSERT INTO ProfilePlugins (ProfileID, PluginID) VALUES (3, 10);
+INSERT INTO ProfilePlugins (ProfileID, PluginID) VALUES (1, 10);
+INSERT INTO ProfilePlugins (ProfileID, PluginID) VALUES (2, 10);
+INSERT INTO ProfilePlugins (ProfileID, PluginID) VALUES (3, 1);
+INSERT INTO ProfilePlugins (ProfileID, PluginID) VALUES (3, 2);
+INSERT INTO ProfilePlugins (ProfileID, PluginID) VALUES (3, 3);
+INSERT INTO ProfilePlugins (ProfileID, PluginID) VALUES (3, 4);
+INSERT INTO ProfilePlugins (ProfileID, PluginID) VALUES (3, 5);
+INSERT INTO ProfilePlugins (ProfileID, PluginID) VALUES (3, 6);
+INSERT INTO ProfilePlugins (ProfileID, PluginID) VALUES (3, 7);
+INSERT INTO ProfilePlugins (ProfileID, PluginID) VALUES (3, 8);
+INSERT INTO ProfilePlugins (ProfileID, PluginID) VALUES (3, 9);
+INSERT INTO ProfilePlugins (ProfileID, PluginID) VALUES (4, 1);
+INSERT INTO ProfilePlugins (ProfileID, PluginID) VALUES (4, 2);
+INSERT INTO ProfilePlugins (ProfileID, PluginID) VALUES (4, 3);
+INSERT INTO ProfilePlugins (ProfileID, PluginID) VALUES (4, 4);
+INSERT INTO ProfilePlugins (ProfileID, PluginID) VALUES (4, 5);
+INSERT INTO ProfilePlugins (ProfileID, PluginID) VALUES (4, 6);
+INSERT INTO ProfilePlugins (ProfileID, PluginID) VALUES (4, 7);
+INSERT INTO ProfilePlugins (ProfileID, PluginID) VALUES (4, 8);
+INSERT INTO ProfilePlugins (ProfileID, PluginID) VALUES (4, 9);
+INSERT INTO ProfilePlugins (ProfileID, PluginID) VALUES (4, 10);
+INSERT INTO ProfilePlugins (ProfileID, PluginID) VALUES (5, 1);
+INSERT INTO ProfilePlugins (ProfileID, PluginID) VALUES (5, 2);
+INSERT INTO ProfilePlugins (ProfileID, PluginID) VALUES (5, 3);
+INSERT INTO ProfilePlugins (ProfileID, PluginID) VALUES (5, 4);
+INSERT INTO ProfilePlugins (ProfileID, PluginID) VALUES (5, 5);
+INSERT INTO ProfilePlugins (ProfileID, PluginID) VALUES (5, 6);
+INSERT INTO ProfilePlugins (ProfileID, PluginID) VALUES (5, 7);
+INSERT INTO ProfilePlugins (ProfileID, PluginID) VALUES (5, 8);
+INSERT INTO ProfilePlugins (ProfileID, PluginID) VALUES (5, 9);
+INSERT INTO ProfilePlugins (ProfileID, PluginID) VALUES (5, 10);
+INSERT INTO ProfilePlugins (ProfileID, PluginID) VALUES (6, 1);
+INSERT INTO ProfilePlugins (ProfileID, PluginID) VALUES (6, 2);
+INSERT INTO ProfilePlugins (ProfileID, PluginID) VALUES (6, 3);
+INSERT INTO ProfilePlugins (ProfileID, PluginID) VALUES (6, 4);
+INSERT INTO ProfilePlugins (ProfileID, PluginID) VALUES (6, 5);
+INSERT INTO ProfilePlugins (ProfileID, PluginID) VALUES (6, 6);
+INSERT INTO ProfilePlugins (ProfileID, PluginID) VALUES (6, 7);
+INSERT INTO ProfilePlugins (ProfileID, PluginID) VALUES (6, 8);
+INSERT INTO ProfilePlugins (ProfileID, PluginID) VALUES (6, 9);
+INSERT INTO ProfilePlugins (ProfileID, PluginID) VALUES (6, 10);
+INSERT INTO ProfilePlugins (ProfileID, PluginID) VALUES (7, 1);
+INSERT INTO ProfilePlugins (ProfileID, PluginID) VALUES (7, 2);
+INSERT INTO ProfilePlugins (ProfileID, PluginID) VALUES (7, 3);
+INSERT INTO ProfilePlugins (ProfileID, PluginID) VALUES (7, 4);
+INSERT INTO ProfilePlugins (ProfileID, PluginID) VALUES (7, 5);
+INSERT INTO ProfilePlugins (ProfileID, PluginID) VALUES (7, 6);
+INSERT INTO ProfilePlugins (ProfileID, PluginID) VALUES (7, 7);
+INSERT INTO ProfilePlugins (ProfileID, PluginID) VALUES (7, 8);
+INSERT INTO ProfilePlugins (ProfileID, PluginID) VALUES (7, 9);
+INSERT INTO ProfilePlugins (ProfileID, PluginID) VALUES (7, 10);
 
 -- Index: Plugins_Plugins_idx_Plugins_PluginName
 DROP INDEX IF EXISTS Plugins_Plugins_idx_Plugins_PluginName;
@@ -260,6 +374,83 @@ CREATE UNIQUE INDEX IF NOT EXISTS Plugins_Plugins_idx_Plugins_PluginName ON Plug
 );
 
 
+-- Trigger: enforce_ordinal_fk
+DROP TRIGGER IF EXISTS enforce_ordinal_fk;
+CREATE TRIGGER IF NOT EXISTS enforce_ordinal_fk
+                      BEFORE INSERT
+                          ON GroupSetGroups
+                    FOR EACH ROW
+                        WHEN NEW.GroupID != 1 AND 
+                             (
+                                 SELECT COUNT( * ) 
+                                   FROM ModGroups
+                                  WHERE GroupID = NEW.ParentID
+                             )
+=                            0
+BEGIN
+    SELECT RAISE(FAIL, "Foreign Key Violation: ParentID must exist in ModGroups table.");
+END;
+
+
+-- Trigger: enforce_unique_favorite_insert
+DROP TRIGGER IF EXISTS enforce_unique_favorite_insert;
+CREATE TRIGGER IF NOT EXISTS enforce_unique_favorite_insert
+                      BEFORE INSERT
+                          ON GroupSets
+                    FOR EACH ROW
+                        WHEN (NEW.GroupSetFlags & 4) != 0
+BEGIN
+    UPDATE GroupSets
+       SET GroupSetFlags = GroupSetFlags & ~4
+     WHERE (GroupSetFlags & 4) != 0;
+END;
+
+
+-- Trigger: enforce_unique_favorite_update
+DROP TRIGGER IF EXISTS enforce_unique_favorite_update;
+CREATE TRIGGER IF NOT EXISTS enforce_unique_favorite_update
+                      BEFORE UPDATE
+                          ON GroupSets
+                    FOR EACH ROW
+                        WHEN (NEW.GroupSetFlags & 4) != 0 AND 
+                             (OLD.GroupSetFlags & 4) = 0
+BEGIN-- Clear the Favorite flag on all other GroupSets
+    UPDATE GroupSets
+       SET GroupSetFlags = GroupSetFlags & ~4
+     WHERE (GroupSetFlags & 4) != 0;-- Allow the update to proceed
+END;
+
+
+-- Trigger: EnsureSingleFavorite
+DROP TRIGGER IF EXISTS EnsureSingleFavorite;
+CREATE TRIGGER IF NOT EXISTS EnsureSingleFavorite
+                      BEFORE INSERT
+                          ON LoadOutProfiles
+                    FOR EACH ROW
+                        WHEN NEW.isFavorite = 1
+BEGIN
+    UPDATE LoadOutProfiles
+       SET isFavorite = 0
+     WHERE GroupSetID = NEW.GroupSetID AND 
+           ProfileID != NEW.ProfileID;
+END;
+
+
+-- Trigger: EnsureSingleFavoriteUpdate
+DROP TRIGGER IF EXISTS EnsureSingleFavoriteUpdate;
+CREATE TRIGGER IF NOT EXISTS EnsureSingleFavoriteUpdate
+                      BEFORE UPDATE OF isFavorite
+                          ON LoadOutProfiles
+                    FOR EACH ROW
+                        WHEN NEW.isFavorite = 1
+BEGIN
+    UPDATE LoadOutProfiles
+       SET isFavorite = 0
+     WHERE GroupSetID = NEW.GroupSetID AND 
+           ProfileID != NEW.ProfileID;
+END;
+
+
 -- Trigger: fki_ExternalIDs_PluginID_Plugins_PluginID
 DROP TRIGGER IF EXISTS fki_ExternalIDs_PluginID_Plugins_PluginID;
 CREATE TRIGGER IF NOT EXISTS fki_ExternalIDs_PluginID_Plugins_PluginID
@@ -267,7 +458,7 @@ CREATE TRIGGER IF NOT EXISTS fki_ExternalIDs_PluginID_Plugins_PluginID
                           ON ExternalIDs
                     FOR EACH ROW
 BEGIN
-    SELECT RAISE(ROLLBACK, "Insert on table ExternalIDs violates foreign key constralong FK_ExternalIDs_0_0") 
+    SELECT RAISE(ROLLBACK, "Insert on table ExternalIDs violates foreign key constraint FK_ExternalIDs_0_0") 
      WHERE NEW.PluginID IS NOT NULL AND 
            (
                SELECT PluginID
@@ -285,7 +476,7 @@ CREATE TRIGGER IF NOT EXISTS fki_FileInfo_PluginID_Plugins_PluginID
                           ON FileInfo
                     FOR EACH ROW
 BEGIN
-    SELECT RAISE(ROLLBACK, "Insert on table FileInfo violates foreign key constralong FK_FileInfo_0_0") 
+    SELECT RAISE(ROLLBACK, "Insert on table FileInfo violates foreign key constraint FK_FileInfo_0_0") 
      WHERE NEW.PluginID IS NOT NULL AND 
            (
                SELECT PluginID
@@ -303,7 +494,7 @@ CREATE TRIGGER IF NOT EXISTS fki_ProfilePlugins_PluginID_Plugins_PluginID
                           ON ProfilePlugins
                     FOR EACH ROW
 BEGIN
-    SELECT RAISE(ROLLBACK, "Insert on table ProfilePlugins violates foreign key constralong FK_ProfilePlugins_0_0") 
+    SELECT RAISE(ROLLBACK, "Insert on table ProfilePlugins violates foreign key constraint FK_ProfilePlugins_0_0") 
      WHERE (
                SELECT PluginID
                  FROM Plugins
@@ -320,7 +511,7 @@ CREATE TRIGGER IF NOT EXISTS fki_ProfilePlugins_ProfileID_LoadOutProfiles_Profil
                           ON ProfilePlugins
                     FOR EACH ROW
 BEGIN
-    SELECT RAISE(ROLLBACK, "Insert on table ProfilePlugins violates foreign key constralong FK_ProfilePlugins_1_0") 
+    SELECT RAISE(ROLLBACK, "Insert on table ProfilePlugins violates foreign key constraint FK_ProfilePlugins_1_0") 
      WHERE (
                SELECT ProfileID
                  FROM LoadOutProfiles
@@ -337,7 +528,7 @@ CREATE TRIGGER IF NOT EXISTS fku_ExternalIDs_PluginID_Plugins_PluginID
                           ON ExternalIDs
                     FOR EACH ROW
 BEGIN
-    SELECT RAISE(ROLLBACK, "Update on table ExternalIDs violates foreign key constralong FK_ExternalIDs_0_0") 
+    SELECT RAISE(ROLLBACK, "Update on table ExternalIDs violates foreign key constraint FK_ExternalIDs_0_0") 
      WHERE NEW.PluginID IS NOT NULL AND 
            (
                SELECT PluginID
@@ -355,7 +546,7 @@ CREATE TRIGGER IF NOT EXISTS fku_FileInfo_PluginID_Plugins_PluginID
                           ON FileInfo
                     FOR EACH ROW
 BEGIN
-    SELECT RAISE(ROLLBACK, "Update on table FileInfo violates foreign key constralong FK_FileInfo_0_0") 
+    SELECT RAISE(ROLLBACK, "Update on table FileInfo violates foreign key constraint FK_FileInfo_0_0") 
      WHERE NEW.PluginID IS NOT NULL AND 
            (
                SELECT PluginID
@@ -373,7 +564,7 @@ CREATE TRIGGER IF NOT EXISTS fku_ProfilePlugins_PluginID_Plugins_PluginID
                           ON ProfilePlugins
                     FOR EACH ROW
 BEGIN
-    SELECT RAISE(ROLLBACK, "Update on table ProfilePlugins violates foreign key constralong FK_ProfilePlugins_0_0") 
+    SELECT RAISE(ROLLBACK, "Update on table ProfilePlugins violates foreign key constraint FK_ProfilePlugins_0_0") 
      WHERE (
                SELECT PluginID
                  FROM Plugins
@@ -390,7 +581,7 @@ CREATE TRIGGER IF NOT EXISTS fku_ProfilePlugins_ProfileID_LoadOutProfiles_Profil
                           ON ProfilePlugins
                     FOR EACH ROW
 BEGIN
-    SELECT RAISE(ROLLBACK, "Update on table ProfilePlugins violates foreign key constralong FK_ProfilePlugins_1_0") 
+    SELECT RAISE(ROLLBACK, "Update on table ProfilePlugins violates foreign key constraint FK_ProfilePlugins_1_0") 
      WHERE (
                SELECT ProfileID
                  FROM LoadOutProfiles
@@ -406,7 +597,7 @@ CREATE TRIGGER IF NOT EXISTS trgInsteadOfInsert_vwLoadOuts
                   INSTEAD OF INSERT
                           ON vwLoadOuts
                     FOR EACH ROW
-BEGIN-- Insert INTO LoadOutProfiles table
+BEGIN-- Insert into LoadOutProfiles table
     INSERT INTO LoadOutProfiles (
                                     ProfileID,
                                     ProfileName,
@@ -421,7 +612,7 @@ BEGIN-- Insert INTO LoadOutProfiles table
                                     ProfileID
                                 )
                                 DO UPDATE SET ProfileName = excluded.ProfileName,
-                                GroupSetID = excluded.GroupSetID;-- Insert INTO Plugins table
+                                GroupSetID = excluded.GroupSetID;-- Insert into Plugins table
     INSERT INTO Plugins (
                             PluginID,
                             PluginName,
@@ -448,7 +639,7 @@ BEGIN-- Insert INTO LoadOutProfiles table
                         Achievements = excluded.Achievements,
                         DTStamp = excluded.DTStamp,
                         Version = excluded.Version,
-                        State = excluded.State;-- Insert INTO ProfilePlugins table
+                        State = excluded.State;-- Insert into ProfilePlugins table
     INSERT INTO ProfilePlugins (
                                    ProfileID,
                                    PluginID
@@ -461,7 +652,7 @@ BEGIN-- Insert INTO LoadOutProfiles table
                                    ProfileID,
                                    PluginID
                                )
-                               DO NOTHING;-- Insert INTO GroupSetPlugins table
+                               DO NOTHING;-- Insert into GroupSetPlugins table
     INSERT INTO GroupSetPlugins (
                                     GroupSetID,
                                     GroupID,
@@ -479,7 +670,7 @@ BEGIN-- Insert INTO LoadOutProfiles table
                                     GroupID,
                                     PluginID
                                 )
-                                DO UPDATE SET Ordinal = excluded.Ordinal;-- Insert INTO ExternalIDs table
+                                DO UPDATE SET Ordinal = excluded.Ordinal;-- Insert into ExternalIDs table
     INSERT INTO ExternalIDs (
                                 PluginID,
                                 BethesdaID,
@@ -504,7 +695,7 @@ CREATE TRIGGER IF NOT EXISTS trgInsteadOfInsert_vwModGroups
                   INSTEAD OF INSERT
                           ON vwModGroups
                     FOR EACH ROW
-BEGIN-- Insert INTO ModGroups table
+BEGIN-- Insert into ModGroups table
     INSERT INTO ModGroups (
                               GroupID,
                               Ordinal,
@@ -525,7 +716,7 @@ BEGIN-- Insert INTO ModGroups table
                           DO UPDATE SET Ordinal = COALESCE(excluded.Ordinal, ModGroups.Ordinal),
                           GroupName = COALESCE(excluded.GroupName, ModGroups.GroupName),
                           Description = COALESCE(excluded.Description, ModGroups.Description),
-                          ParentID = COALESCE(excluded.ParentID, ModGroups.ParentID);-- Insert INTO GroupSetPlugins table
+                          ParentID = COALESCE(excluded.ParentID, ModGroups.ParentID);-- Insert into GroupSetPlugins table
     INSERT INTO GroupSetPlugins (
                                     GroupSetID,
                                     GroupID,
@@ -543,7 +734,7 @@ BEGIN-- Insert INTO ModGroups table
                                     PluginID
                                 )
                                 DO UPDATE SET GroupSetID = COALESCE(excluded.GroupSetID, GroupSetPlugins.GroupSetID),
-                                Ordinal = COALESCE(excluded.Ordinal, GroupSetPlugins.Ordinal);-- Insert INTO Plugins table
+                                Ordinal = COALESCE(excluded.Ordinal, GroupSetPlugins.Ordinal);-- Insert into Plugins table
     INSERT INTO Plugins (
                             PluginID,
                             PluginName,
@@ -570,7 +761,7 @@ BEGIN-- Insert INTO ModGroups table
                         Achievements = COALESCE(excluded.Achievements, Plugins.Achievements),
                         DTStamp = COALESCE(excluded.DTStamp, Plugins.DTStamp),
                         Version = COALESCE(excluded.Version, Plugins.Version),
-                        State = COALESCE(excluded.State, Plugins.State);-- Insert INTO ExternalIDs table
+                        State = COALESCE(excluded.State, Plugins.State);-- Insert into ExternalIDs table
     INSERT INTO ExternalIDs (
                                 PluginID,
                                 BethesdaID,
@@ -595,7 +786,7 @@ CREATE TRIGGER IF NOT EXISTS trgInsteadOfInsert_vwPluginFiles
                   INSTEAD OF INSERT
                           ON vwPluginFiles
                     FOR EACH ROW
-BEGIN-- Insert INTO Plugins table
+BEGIN-- Insert into Plugins table
     INSERT INTO Plugins (
                             PluginID,
                             PluginName
@@ -607,7 +798,7 @@ BEGIN-- Insert INTO Plugins table
                         ON CONFLICT (
                             PluginID
                         )
-                        DO UPDATE SET PluginName = COALESCE(excluded.PluginName, Plugins.PluginName);-- Insert INTO FileInfo table
+                        DO UPDATE SET PluginName = COALESCE(excluded.PluginName, Plugins.PluginName);-- Insert into FileInfo table
     INSERT INTO FileInfo (
                              FileID,
                              PluginID,
@@ -615,7 +806,7 @@ BEGIN-- Insert INTO Plugins table
                              RelativePath,
                              DTStamp,
                              HASH,
-                             Flags
+                             IsArchive
                          )
                          VALUES (
                              NEW.FileID,
@@ -624,7 +815,7 @@ BEGIN-- Insert INTO Plugins table
                              NEW.RelativePath,
                              NEW.DTStamp,
                              NEW.HASH,
-                             NEW.Flags
+                             NEW.IsArchive
                          )
                          ON CONFLICT (
                              FileID
@@ -634,7 +825,7 @@ BEGIN-- Insert INTO Plugins table
                          RelativePath = COALESCE(excluded.RelativePath, FileInfo.RelativePath),
                          DTStamp = COALESCE(excluded.DTStamp, FileInfo.DTStamp),
                          HASH = COALESCE(excluded.HASH, FileInfo.HASH),
-                         Flags = COALESCE(excluded.Flags, FileInfo.Flags);
+                         IsArchive = COALESCE(excluded.IsArchive, FileInfo.IsArchive);
 END;
 
 
@@ -644,7 +835,7 @@ CREATE TRIGGER IF NOT EXISTS trgInsteadOfInsert_vwPlugins
                   INSTEAD OF INSERT
                           ON vwPlugins
                     FOR EACH ROW
-BEGIN-- Insert INTO Plugins table
+BEGIN-- Insert into Plugins table
     INSERT INTO Plugins (
                             PluginID,
                             PluginName,
@@ -755,11 +946,56 @@ BEGIN-- Update ModGroups table
 END;
 
 
+-- View: vwGroupSetGroups
+DROP VIEW IF EXISTS vwGroupSetGroups;
+CREATE VIEW IF NOT EXISTS vwGroupSetGroups AS
+    SELECT gs.GroupSetID,
+           gs.GroupSetName,
+           mg.GroupID,
+           mg.GroupName,
+           mg.Description,
+           gsg.ParentID,
+           gsg.Ordinal
+      FROM ModGroups mg
+           INNER JOIN
+           GroupSetGroups gsg ON mg.GroupID = gsg.GroupID
+           INNER JOIN
+           GroupSets gs ON gsg.GroupSetID = gs.GroupSetID;
+
+
+-- View: vwGroupSetIntegrated
+DROP VIEW IF EXISTS vwGroupSetIntegrated;
+CREATE VIEW IF NOT EXISTS vwGroupSetIntegrated AS
+    SELECT gs.GroupSetID,
+           gs.GroupSetName,
+           gs.GroupSetFlags,
+           mg.GroupID,
+           mg.GroupName,
+           mg.Description AS GroupDescription,
+           lop.ProfileID,
+           lop.ProfileName,
+           p.PluginID,
+           p.PluginName,
+           p.Description AS PluginDescription
+      FROM GroupSets gs
+           LEFT JOIN
+           GroupSetGroups gsg ON gs.GroupSetID = gsg.GroupSetID
+           LEFT JOIN
+           ModGroups mg ON gsg.GroupID = mg.GroupID
+           LEFT JOIN
+           LoadOutProfiles lop ON gs.GroupSetID = lop.GroupSetID
+           LEFT JOIN
+           GroupSetPlugins gsp ON gs.GroupSetID = gsp.GroupSetID
+           LEFT JOIN
+           Plugins p ON gsp.PluginID = p.PluginID;
+
+
 -- View: vwLoadOuts
 DROP VIEW IF EXISTS vwLoadOuts;
 CREATE VIEW IF NOT EXISTS vwLoadOuts AS
     SELECT l.ProfileID,
            l.ProfileName,
+           l.isFavorite,
            p.PluginID,
            p.PluginName,
            p.Description,
@@ -841,7 +1077,8 @@ CREATE VIEW IF NOT EXISTS vwPluginFiles AS
            fi.RelativePath,
            fi.DTStamp,
            fi.HASH,
-           fi.Flags
+           fi.Flags,
+           fi.AbsolutePath
       FROM Plugins p
            JOIN
            FileInfo fi ON p.PluginID = fi.PluginID;
@@ -850,46 +1087,50 @@ CREATE VIEW IF NOT EXISTS vwPluginFiles AS
 -- View: vwPluginGrpUnion
 DROP VIEW IF EXISTS vwPluginGrpUnion;
 CREATE VIEW IF NOT EXISTS vwPluginGrpUnion AS
-    SELECT COALESCE(p.PluginID, NULL) AS PluginID,
-           COALESCE(p.PluginName, NULL) AS PluginName,
-           COALESCE(p.Description, NULL) AS Description,
-           COALESCE(p.Achievements, NULL) AS Achievements,
-           COALESCE(p.DTStamp, NULL) AS DTStamp,
-           COALESCE(p.Version, NULL) AS Version,
-           COALESCE(p.State, NULL) AS State,
-           gsg.GroupID AS GroupID,
-           g.GroupName AS GroupName,
+    SELECT/* Plugin Details */ p.PluginID,
+           p.PluginName,
+           p.Description AS PluginDescription,
+           p.Achievements,
+           p.DTStamp,
+           p.Version,
+           p.State,
+           gsp.Ordinal AS GroupOrdinal,-- Group Details
+           g.GroupID,
+           g.GroupName,
            g.Description AS GroupDescription,
            gsg.ParentID,
-           gsg.Ordinal AS GroupOrdinal,
-           COALESCE(pp.ProfileID, NULL) AS ProfileID,
-           COALESCE(e.BethesdaID, NULL) AS BethesdaID,
-           COALESCE(e.NexusID, NULL) AS NexusID,
+           gsg.Ordinal AS Ordinal,-- Corrected: gsg.Ordinal represents the order of groups within the groupset
+           /* LoadOutProfile Details */l.ProfileID AS LoadOutID,
+           l.ProfileName AS LoadOutName,
+           CASE WHEN pp.PluginID IS NOT NULL THEN 1 ELSE 0 END AS IsEnabled,-- GroupSet Details
            gsg.GroupSetID,
-           gs.GroupSetName,
-           CASE WHEN pp.ProfileID IS NOT NULL THEN 1 ELSE 0 END AS IsEnabled-- Check if Plugin is enabled for the profile
-      FROM GroupSets gs
+           gs.GroupSetName,-- External Identifiers
+           e.BethesdaID,
+           e.NexusID-- Plugin Ordinal Details
+      /* Corrected: gsp.Ordinal represents the order of plugins within the group */FROM/* Groupset and Groups are the base tables for the view to ensure all groups and groupsets are included */ GroupSetGroups gsg-- Join ModGroups for Group Information
            LEFT JOIN
-           GroupSetGroups gsg ON gs.GroupSetID = gsg.GroupSetID
-           LEFT JOIN
-           ModGroups g ON gsg.GroupID = g.GroupID
+           ModGroups g ON gsg.GroupID = g.GroupID-- Join Plugins via GroupSetPlugins (Show all plugins in the group or unassigned)
            LEFT JOIN
            GroupSetPlugins gsp ON gsg.GroupID = gsp.GroupID AND 
                                   gsg.GroupSetID = gsp.GroupSetID
            LEFT JOIN
-           Plugins p ON gsp.PluginID = p.PluginID
+           Plugins p ON gsp.PluginID = p.PluginID-- ExternalIDs for Bethesda and Nexus mappings
            LEFT JOIN
-           ProfilePlugins pp ON p.PluginID = pp.PluginID AND 
-                                pp.ProfileID = 1-- Example ProfileID filter
+           ExternalIDs e ON p.PluginID = e.PluginID-- LoadOutProfiles to identify LoadOuts and their mappings
            LEFT JOIN
-           LoadOutProfiles l ON gsg.GroupSetID = l.GroupSetID
+           LoadOutProfiles l ON l.GroupSetID = gsg.GroupSetID-- ProfilePlugins links LoadOutProfiles with Plugins (For enabling state)
            LEFT JOIN
-           ExternalIDs e ON p.PluginID = e.PluginID
-     ORDER BY gs.GroupSetID,-- Group by GroupSetID
-              l.ProfileID,
-              gsg.ParentID,
-              gsg.Ordinal,-- Order by Group Ordinal
-              p.PluginID/* Order by Plugin ID */;
+           ProfilePlugins pp ON pp.ProfileID = l.ProfileID AND 
+                                pp.PluginID = p.PluginID-- GroupSet Information
+           LEFT JOIN
+           GroupSets gs ON gsg.GroupSetID = gs.GroupSetID
+     WHERE/* Ensure that entries are associated with either a GroupSet or a LoadOut */ gsg.GroupSetID IS NOT NULL OR 
+           l.ProfileID IS NOT NULL
+     ORDER BY gsg.GroupSetID,-- Group by GroupSetID
+              l.ProfileID,-- Sort by LoadOuts within the GroupSet
+              gsg.ParentID,-- Sort by ParentID
+              gsg.Ordinal,-- Sort by groups within the group set (group order)
+              gsp.Ordinal;
 
 
 -- View: vwPlugins

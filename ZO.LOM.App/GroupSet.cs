@@ -1,4 +1,3 @@
-using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Data.SQLite;
@@ -19,7 +18,7 @@ public class GroupSet : INotifyPropertyChanged
 {
     public event PropertyChangedEventHandler PropertyChanged;
 
-    
+
     public long GroupSetID { get; set; }
     public string GroupSetName { get; set; } = string.Empty;
     private GroupFlags _groupSetFlags;
@@ -81,8 +80,8 @@ public class GroupSet : INotifyPropertyChanged
                     VALUES (@GroupSetName, @GroupSetFlags)
                     RETURNING GroupSetID;
                 ";
-                command.Parameters.AddWithValue("@GroupSetName", this.GroupSetName);
-                command.Parameters.AddWithValue("@GroupSetFlags", (long)this.GroupSetFlags);
+                _ = command.Parameters.AddWithValue("@GroupSetName", this.GroupSetName);
+                _ = command.Parameters.AddWithValue("@GroupSetFlags", (long)this.GroupSetFlags);
                 this.GroupSetID = (long)command.ExecuteScalar();
             }
             else // Update existing GroupSet
@@ -92,10 +91,10 @@ public class GroupSet : INotifyPropertyChanged
                     SET GroupSetName = @GroupSetName, GroupSetFlags = @GroupSetFlags
                     WHERE GroupSetID = @GroupSetID;
                 ";
-                command.Parameters.AddWithValue("@GroupSetName", this.GroupSetName);
-                command.Parameters.AddWithValue("@GroupSetFlags", (long)this.GroupSetFlags);
-                command.Parameters.AddWithValue("@GroupSetID", this.GroupSetID);
-                command.ExecuteNonQuery();
+                _ = command.Parameters.AddWithValue("@GroupSetName", this.GroupSetName);
+                _ = command.Parameters.AddWithValue("@GroupSetFlags", (long)this.GroupSetFlags);
+                _ = command.Parameters.AddWithValue("@GroupSetID", this.GroupSetID);
+                _ = command.ExecuteNonQuery();
             }
 
             transaction.Commit();
@@ -119,7 +118,7 @@ public class GroupSet : INotifyPropertyChanged
             FROM GroupSets
             WHERE GroupSetID = @GroupSetID;
         ";
-        command.Parameters.AddWithValue("@GroupSetID", groupSetID);
+        _ = command.Parameters.AddWithValue("@GroupSetID", groupSetID);
 
         using var reader = command.ExecuteReader();
         if (reader.Read())
@@ -159,8 +158,8 @@ public class GroupSet : INotifyPropertyChanged
                 VALUES (@GroupSetName, @GroupSetFlags)
                 RETURNING GroupSetID;
             ";
-            command.Parameters.AddWithValue("@GroupSetName", "EmptyGroupSet");
-            command.Parameters.AddWithValue("@GroupSetFlags", (long)(GroupFlags.Uninitialized | GroupFlags.ReadyToLoad));
+            _ = command.Parameters.AddWithValue("@GroupSetName", "EmptyGroupSet");
+            _ = command.Parameters.AddWithValue("@GroupSetFlags", (long)(GroupFlags.Uninitialized | GroupFlags.ReadyToLoad));
 
             long groupSetID = (long)command.ExecuteScalar();
 
@@ -169,15 +168,15 @@ public class GroupSet : INotifyPropertyChanged
                 INSERT OR IGNORE INTO GroupSetGroups (GroupID, GroupSetID, ParentID, Ordinal)
                 VALUES (1, @GroupSetID, 0, 0);
             ";
-            command.Parameters.AddWithValue("@GroupSetID", groupSetID);
-            command.ExecuteNonQuery();
+            _ = command.Parameters.AddWithValue("@GroupSetID", groupSetID);
+            _ = command.ExecuteNonQuery();
 
             // Insert or ignore GroupID = -997 (Uncategorized Group)
             command.CommandText = @"
                 INSERT OR IGNORE INTO GroupSetGroups (GroupID, GroupSetID, ParentID, Ordinal)
                 VALUES (-997, @GroupSetID, 1, 9997);
             ";
-            command.ExecuteNonQuery();
+            _ = command.ExecuteNonQuery();
 
             transaction.Commit();
 
@@ -290,7 +289,7 @@ public class GroupSet : INotifyPropertyChanged
     // Equality comparison
     public override bool Equals(object obj)
     {
-    if (obj is GroupSet otherGroupSet)
+        if (obj is GroupSet otherGroupSet)
         {
             return this.GroupSetID == otherGroupSet.GroupSetID ||
                    this.GroupSetName == otherGroupSet.GroupSetName;
@@ -320,7 +319,7 @@ public class GroupSet : INotifyPropertyChanged
         using var connection = DbManager.Instance.GetConnection();
         using var command = new SQLiteCommand(connection);
         command.CommandText = "SELECT * FROM LoadOutProfiles WHERE GroupSetID = @GroupSetID";
-        command.Parameters.AddWithValue("@GroupSetID", groupSetID);
+        _ = command.Parameters.AddWithValue("@GroupSetID", groupSetID);
 
         using var reader = command.ExecuteReader();
         var loadOuts = new List<LoadOut>();
@@ -333,7 +332,7 @@ public class GroupSet : INotifyPropertyChanged
                 GroupSetID = reader.GetInt64(reader.GetOrdinal("GroupSetID")),
                 IsFavorite = reader.GetBoolean(reader.GetOrdinal("IsFavorite")),
             };
-            loadOut.LoadEnabledPlugins();
+            _ = loadOut.LoadEnabledPlugins();
             loadOuts.Add(loadOut);
         }
         return loadOuts;
@@ -372,20 +371,20 @@ public class GroupSet : INotifyPropertyChanged
 
             // Delete from GroupSetGroups
             command.CommandText = "DELETE FROM GroupSetGroups WHERE GroupSetID = @GroupSetID;";
-            command.Parameters.AddWithValue("@GroupSetID", groupSetID);
-            command.ExecuteNonQuery();
+            _ = command.Parameters.AddWithValue("@GroupSetID", groupSetID);
+            _ = command.ExecuteNonQuery();
 
             // Delete from GroupSetPlugins
             command.CommandText = "DELETE FROM GroupSetPlugins WHERE GroupSetID = @GroupSetID;";
-            command.ExecuteNonQuery();
+            _ = command.ExecuteNonQuery();
 
             // Delete from LoadOutProfiles
             command.CommandText = "DELETE FROM LoadOutProfiles WHERE GroupSetID = @GroupSetID;";
-            command.ExecuteNonQuery();
+            _ = command.ExecuteNonQuery();
 
             // Delete from GroupSets
             command.CommandText = "DELETE FROM GroupSets WHERE GroupSetID = @GroupSetID;";
-            command.ExecuteNonQuery();
+            _ = command.ExecuteNonQuery();
 
             transaction.Commit();
 

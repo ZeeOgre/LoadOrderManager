@@ -1,7 +1,4 @@
-using Newtonsoft.Json.Linq;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text;
 
 namespace ZO.LoadOrderManager
@@ -165,7 +162,7 @@ namespace ZO.LoadOrderManager
                             loadOut.LoadPlugins(new List<Plugin> { completePlugin });
                             if (isEnabled)
                             {
-                                enabledPlugins.Add(completePlugin.PluginID);
+                                _ = enabledPlugins.Add(completePlugin.PluginID);
                             }
                             aggLoadInfo.Plugins.Add(completePlugin);
                         }
@@ -177,13 +174,13 @@ namespace ZO.LoadOrderManager
                 //aggLoadInfo.ProfilePlugins.Items.Clear();
                 foreach (var pluginID in enabledPlugins)
                 {
-                    aggLoadInfo.ProfilePlugins.Items.Add((loadOut.ProfileID, pluginID));
+                    _ = aggLoadInfo.ProfilePlugins.Items.Add((loadOut.ProfileID, pluginID));
                 }
 
                 // Refresh GroupSetPlugins, GroupSetGroups, and ProfilePlugins
                 //aggLoadInfo.RefreshMetadataFromDB();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 // Handle exception
             }
@@ -251,8 +248,8 @@ namespace ZO.LoadOrderManager
             }
 
             // Custom header with the actual filename
-            sb.AppendLine($"# {defaultFileName} produced by ZeeOgre's LoadOutManager using Group Set {groupSetName} and profile {loadOutName} on {dateTimeNow}");
-            sb.AppendLine("##--------------------------------------------------------------------------------------------------------------------------------------------------------##");
+            _ = sb.AppendLine($"# {defaultFileName} produced by ZeeOgre's LoadOutManager using Group Set {groupSetName} and profile {loadOutName} on {dateTimeNow}");
+            _ = sb.AppendLine("##--------------------------------------------------------------------------------------------------------------------------------------------------------##");
 
             // Process each item in the viewModel
             foreach (var item in viewModel.Items)
@@ -261,8 +258,8 @@ namespace ZO.LoadOrderManager
             }
 
             // Custom footer
-            sb.AppendLine();
-            sb.AppendLine($"# End of {defaultFileName}");
+            _ = sb.AppendLine();
+            _ = sb.AppendLine($"# End of {defaultFileName}");
 
             // Write to file
             File.WriteAllText(pluginsFilePath, sb.ToString());
@@ -273,7 +270,7 @@ namespace ZO.LoadOrderManager
             // Print active plugins with a prefix '*'
             if (item.EntityType == EntityType.Plugin)
             {
-                sb.AppendLine(item.IsActive ? $"*{item.DisplayName}" : item.DisplayName);
+                _ = sb.AppendLine(item.IsActive ? $"*{item.DisplayName}" : item.DisplayName);
             }
 
             // Process children if any
@@ -298,8 +295,8 @@ namespace ZO.LoadOrderManager
                         // Skip appending the root group itself but process its children
                         if (groupObject.GroupID != 1)
                         {
-                            sb.AppendLine();
-                            sb.AppendLine(groupObject.ToPluginsString());
+                            _ = sb.AppendLine();
+                            _ = sb.AppendLine(groupObject.ToPluginsString());
                         }
                         AppendItemToStringBuilder(group, sb);
                     }

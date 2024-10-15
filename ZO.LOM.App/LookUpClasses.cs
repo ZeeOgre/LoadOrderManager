@@ -1,9 +1,6 @@
-using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Data.SQLite;
-using System.Collections.ObjectModel;
 
 namespace ZO.LoadOrderManager
 {
@@ -11,47 +8,47 @@ namespace ZO.LoadOrderManager
 
 
 
-    
 
-public class GroupSetGroupCollection : IEnumerable<(long groupID, long groupSetID, long? parentID, long Ordinal)>
-{
-    public ObservableCollection<(long groupID, long groupSetID, long? parentID, long Ordinal)> Items { get; set; }
 
-    public GroupSetGroupCollection()
+    public class GroupSetGroupCollection : IEnumerable<(long groupID, long groupSetID, long? parentID, long Ordinal)>
     {
-        Items = new ObservableCollection<(long, long, long?, long)>();
-    }
+        public ObservableCollection<(long groupID, long groupSetID, long? parentID, long Ordinal)> Items { get; set; }
 
-    // Load data from the database for a specific GroupSetID
-    public void LoadGroupSetGroups(long groupSetID, SQLiteConnection connection)
-    {
-        try
+        public GroupSetGroupCollection()
         {
-            Items.Clear();
+            Items = new ObservableCollection<(long, long, long?, long)>();
+        }
 
-            using var command = new SQLiteCommand(connection);
-            command.CommandText = @"
+        // Load data from the database for a specific GroupSetID
+        public void LoadGroupSetGroups(long groupSetID, SQLiteConnection connection)
+        {
+            try
+            {
+                Items.Clear();
+
+                using var command = new SQLiteCommand(connection);
+                command.CommandText = @"
                     SELECT GroupID, GroupSetID, ParentID, Ordinal
                     FROM GroupSetGroups
                     WHERE GroupSetID = @GroupSetID OR GroupSetID = 1";
-            command.Parameters.AddWithValue("@GroupSetID", groupSetID);
+                _ = command.Parameters.AddWithValue("@GroupSetID", groupSetID);
 
-            using var reader = command.ExecuteReader();
-            while (reader.Read())
+                using var reader = command.ExecuteReader();
+                while (reader.Read())
+                {
+                    var groupID = reader.GetInt64(0);
+                    var grpSetID = reader.GetInt64(1);
+                    var parentID = reader.IsDBNull(2) ? (long?)null : reader.GetInt64(2);
+                    var ordinal = reader.GetInt64(3);
+
+                    Items.Add((groupID, grpSetID, parentID, ordinal));
+                }
+            }
+            catch (Exception ex)
             {
-                var groupID = reader.GetInt64(0);
-                var grpSetID = reader.GetInt64(1);
-                var parentID = reader.IsDBNull(2) ? (long?)null : reader.GetInt64(2);
-                var ordinal = reader.GetInt64(3);
-
-                Items.Add((groupID, grpSetID, parentID, ordinal));
+                Console.WriteLine($"Error loading GroupSetGroups: {ex.Message}");
             }
         }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error loading GroupSetGroups: {ex.Message}");
-        }
-    }
 
         public void WriteGroupSetGroup(long groupID, long groupSetID, long? parentID, long ordinal, SQLiteConnection connection)
         {
@@ -65,12 +62,12 @@ public class GroupSetGroupCollection : IEnumerable<(long groupID, long groupSetI
                             SET ParentID = COALESCE(@ParentID, ParentID),
                                 Ordinal = COALESCE(@Ordinal, Ordinal);";
 
-                command.Parameters.AddWithValue("@GroupID", groupID);
-                command.Parameters.AddWithValue("@GroupSetID", groupSetID);
-                command.Parameters.AddWithValue("@ParentID", (object?)parentID ?? DBNull.Value);
-                command.Parameters.AddWithValue("@Ordinal", ordinal);
+                _ = command.Parameters.AddWithValue("@GroupID", groupID);
+                _ = command.Parameters.AddWithValue("@GroupSetID", groupSetID);
+                _ = command.Parameters.AddWithValue("@ParentID", (object?)parentID ?? DBNull.Value);
+                _ = command.Parameters.AddWithValue("@Ordinal", ordinal);
 
-                command.ExecuteNonQuery();
+                _ = command.ExecuteNonQuery();
                 Console.WriteLine($"GroupSetGroup written to database: GroupID = {groupID}, GroupSetID = {groupSetID}");
             }
             catch (Exception ex)
@@ -80,17 +77,17 @@ public class GroupSetGroupCollection : IEnumerable<(long groupID, long groupSetI
         }
 
 
-            // Implement IEnumerable interface to enable LINQ queries
+        // Implement IEnumerable interface to enable LINQ queries
         public IEnumerator<(long groupID, long groupSetID, long? parentID, long Ordinal)> GetEnumerator()
-    {
-        return Items.GetEnumerator();
-    }
+        {
+            return Items.GetEnumerator();
+        }
 
-    IEnumerator IEnumerable.GetEnumerator()
-    {
-        return GetEnumerator();
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
+        }
     }
-}
 
 
 
@@ -190,7 +187,7 @@ public class GroupSetGroupCollection : IEnumerable<(long groupID, long groupSetI
                     SELECT GroupSetID, GroupID, PluginID, Ordinal
                     FROM GroupSetPlugins
                     WHERE GroupSetID = @GroupSetID OR GroupSetID = 1";
-                command.Parameters.AddWithValue("@GroupSetID", groupSetID);
+                _ = command.Parameters.AddWithValue("@GroupSetID", groupSetID);
 
                 using var reader = command.ExecuteReader();
                 while (reader.Read())
@@ -219,12 +216,12 @@ public class GroupSetGroupCollection : IEnumerable<(long groupID, long groupSetI
                         ON CONFLICT(GroupSetID, GroupID, PluginID) DO UPDATE 
                         SET Ordinal = COALESCE(@Ordinal, Ordinal);";
 
-                command.Parameters.AddWithValue("@GroupSetID", groupSetID);
-                command.Parameters.AddWithValue("@GroupID", groupID);
-                command.Parameters.AddWithValue("@PluginID", pluginID);
-                command.Parameters.AddWithValue("@Ordinal", ordinal);
+                _ = command.Parameters.AddWithValue("@GroupSetID", groupSetID);
+                _ = command.Parameters.AddWithValue("@GroupID", groupID);
+                _ = command.Parameters.AddWithValue("@PluginID", pluginID);
+                _ = command.Parameters.AddWithValue("@Ordinal", ordinal);
 
-                command.ExecuteNonQuery();
+                _ = command.ExecuteNonQuery();
                 Console.WriteLine($"GroupSetPlugin written to database: GroupSetID = {groupSetID}, GroupID = {groupID}, PluginID = {pluginID}");
             }
             catch (Exception ex)
@@ -232,10 +229,10 @@ public class GroupSetGroupCollection : IEnumerable<(long groupID, long groupSetI
                 Console.WriteLine($"Error writing GroupSetPlugin: {ex.Message}");
             }
         }
-    
 
-    // Implement IEnumerable interface to enable LINQ queries
-    public IEnumerator<(long groupSetID, long groupID, long pluginID, long Ordinal)> GetEnumerator()
+
+        // Implement IEnumerable interface to enable LINQ queries
+        public IEnumerator<(long groupSetID, long groupID, long pluginID, long Ordinal)> GetEnumerator()
         {
             return Items.GetEnumerator();
         }
@@ -334,7 +331,7 @@ public class GroupSetGroupCollection : IEnumerable<(long groupID, long groupSetI
                         FROM ProfilePlugins pp
                         INNER JOIN LoadOutProfiles lp ON pp.ProfileID = lp.ProfileID
                         WHERE lp.GroupSetID = @GroupSetID OR GroupSetID = 1";
-                command.Parameters.AddWithValue("@GroupSetID", groupSetID);
+                _ = command.Parameters.AddWithValue("@GroupSetID", groupSetID);
 
                 using var reader = command.ExecuteReader();
                 while (reader.Read())
@@ -342,7 +339,7 @@ public class GroupSetGroupCollection : IEnumerable<(long groupID, long groupSetI
                     var profileID = reader.GetInt64(0);
                     var pluginID = reader.GetInt64(1);
 
-                    Items.Add((profileID, pluginID));
+                    _ = Items.Add((profileID, pluginID));
                 }
             }
             catch (Exception ex)
@@ -362,10 +359,10 @@ public class GroupSetGroupCollection : IEnumerable<(long groupID, long groupSetI
                         VALUES (@ProfileID, @PluginID)
                         ON CONFLICT(ProfileID, PluginID) DO NOTHING;"; // No updates on conflict
 
-                command.Parameters.AddWithValue("@ProfileID", profileID);
-                command.Parameters.AddWithValue("@PluginID", pluginID);
+                _ = command.Parameters.AddWithValue("@ProfileID", profileID);
+                _ = command.Parameters.AddWithValue("@PluginID", pluginID);
 
-                command.ExecuteNonQuery();
+                _ = command.ExecuteNonQuery();
                 Console.WriteLine($"ProfilePlugin written to database: ProfileID = {profileID}, PluginID = {pluginID}");
             }
             catch (Exception ex)

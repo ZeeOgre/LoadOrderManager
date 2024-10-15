@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 
@@ -28,7 +26,7 @@ public class ObservableHashSet<T> : ISet<T>, INotifyCollectionChanged
     {
         if (_hashSet.Remove(item))
         {
-            _observableCollection.Remove(item);
+            _ = _observableCollection.Remove(item);
             return true;
         }
         return false;

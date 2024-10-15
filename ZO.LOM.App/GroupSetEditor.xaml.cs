@@ -1,5 +1,4 @@
 using MahApps.Metro.Controls;
-using System.Linq;
 using System.Windows;
 using System.Windows.Input;
 
@@ -21,20 +20,20 @@ namespace ZO.LoadOrderManager
             UpdateCurrentRecordInfo();
         }
 
-            private void UpdateCurrentRecordInfo()
-            {
-                // Set DataContext to refresh the UI
-                this.DataContext = _aggLoadInfo;
+        private void UpdateCurrentRecordInfo()
+        {
+            // Set DataContext to refresh the UI
+            this.DataContext = _aggLoadInfo;
 
-                // Additional logic for updating the current record’s info
-                int currentIndex = AggLoadInfo.GroupSets.IndexOf(_aggLoadInfo.ActiveGroupSet) + 1;
-                // For example: update any label or UI element showing the current record
-                // RecordInfoLabel.Content = $"Record {currentIndex} of {AggLoadInfo.GroupSets.Count}";
-            
-                _aggLoadInfo.ActiveLoadOut = _aggLoadInfo.GetLoadOutForGroupSet(_aggLoadInfo.ActiveGroupSet);
+            // Additional logic for updating the current record’s info
+            _ = AggLoadInfo.GroupSets.IndexOf(_aggLoadInfo.ActiveGroupSet) + 1;
+            // For example: update any label or UI element showing the current record
+            // RecordInfoLabel.Content = $"Record {currentIndex} of {AggLoadInfo.GroupSets.Count}";
+
+            _aggLoadInfo.ActiveLoadOut = _aggLoadInfo.GetLoadOutForGroupSet(_aggLoadInfo.ActiveGroupSet);
         }
 
- 
+
 
         #region Mod Groups Handlers
 
@@ -49,7 +48,7 @@ namespace ZO.LoadOrderManager
             if (ModGroupsListBox.SelectedItem is ModGroup selectedGroup)
             {
                 var modGroupEditor = new ModGroupEditorWindow(selectedGroup);
-                modGroupEditor.ShowDialog();
+                _ = modGroupEditor.ShowDialog();
             }
         }
 
@@ -57,7 +56,7 @@ namespace ZO.LoadOrderManager
         {
             if (ModGroupsListBox.SelectedItem is ModGroup selectedGroup)
             {
-                _aggLoadInfo.Groups.Remove(selectedGroup);
+                _ = _aggLoadInfo.Groups.Remove(selectedGroup);
             }
         }
 
@@ -66,7 +65,7 @@ namespace ZO.LoadOrderManager
             if (ModGroupsListBox.SelectedItem is ModGroup selectedGroup)
             {
                 var modGroupEditor = new ModGroupEditorWindow(selectedGroup);
-                modGroupEditor.ShowDialog();
+                _ = modGroupEditor.ShowDialog();
             }
         }
 
@@ -85,7 +84,7 @@ namespace ZO.LoadOrderManager
             if (PluginsListBox.SelectedItem is Plugin selectedPlugin)
             {
                 var pluginEditor = new PluginEditorWindow(selectedPlugin);
-                pluginEditor.ShowDialog();
+                _ = pluginEditor.ShowDialog();
             }
         }
 
@@ -93,7 +92,7 @@ namespace ZO.LoadOrderManager
         {
             if (PluginsListBox.SelectedItem is Plugin selectedPlugin)
             {
-                _aggLoadInfo.Plugins.Remove(selectedPlugin);
+                _ = _aggLoadInfo.Plugins.Remove(selectedPlugin);
             }
         }
 
@@ -102,7 +101,7 @@ namespace ZO.LoadOrderManager
             if (PluginsListBox.SelectedItem is Plugin selectedPlugin)
             {
                 var pluginEditor = new PluginEditorWindow(selectedPlugin);
-                pluginEditor.ShowDialog();
+                _ = pluginEditor.ShowDialog();
             }
         }
 
@@ -121,7 +120,7 @@ namespace ZO.LoadOrderManager
             if (LoadOutsListBox.SelectedItem is LoadOut selectedLoadOut)
             {
                 var loadOutEditor = new LoadOutEditor(selectedLoadOut);
-                loadOutEditor.ShowDialog();
+                _ = loadOutEditor.ShowDialog();
             }
         }
 
@@ -129,7 +128,7 @@ namespace ZO.LoadOrderManager
         {
             if (LoadOutsListBox.SelectedItem is LoadOut selectedLoadOut)
             {
-                _aggLoadInfo.LoadOuts.Remove(selectedLoadOut);
+                _ = _aggLoadInfo.LoadOuts.Remove(selectedLoadOut);
             }
         }
 
@@ -138,7 +137,7 @@ namespace ZO.LoadOrderManager
             if (LoadOutsListBox.SelectedItem is LoadOut selectedLoadOut)
             {
                 var loadOutEditor = new LoadOutEditor(selectedLoadOut);
-                loadOutEditor.ShowDialog();
+                _ = loadOutEditor.ShowDialog();
             }
         }
 
@@ -146,7 +145,7 @@ namespace ZO.LoadOrderManager
 
         #region Record Navigation Handlers
 
-        private void FirstRecord_Click(object sender, RoutedEventArgs e)
+        private void FirstRecord_Click(object? sender, RoutedEventArgs? e)
         {
             _aggLoadInfo = new AggLoadInfo(AggLoadInfo.GroupSets.FirstOrDefault().GroupSetID);
             UpdateCurrentRecordInfo();
@@ -191,21 +190,21 @@ namespace ZO.LoadOrderManager
             {
                 if (_aggLoadInfo.ActiveGroupSet.IsFavorite)
                 {
-                    MessageBox.Show("Please select another GroupSet as favorite before deleting this one.", "Cannot Delete Favorite", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    _ = MessageBox.Show("Please select another GroupSet as favorite before deleting this one.", "Cannot Delete Favorite", MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
                 }
                 if (_aggLoadInfo.ActiveGroupSet.IsDefaultGroup || _aggLoadInfo.ActiveGroupSet.IsReadOnly)
                 {
-                    MessageBox.Show("Cannot delete the Default or ReadOnly Groupsets.", "Cannot Delete Default or ReadOnly", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    _ = MessageBox.Show("Cannot delete the Default or ReadOnly Groupsets.", "Cannot Delete Default or ReadOnly", MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
                 }
                 if (AggLoadInfo.Instance.ActiveGroupSet == _aggLoadInfo.ActiveGroupSet)
                 {
-                    MessageBox.Show("This is the primary ActiveGroupSet, please select a different one on the main window before deleting.", "Cannot Delete Active LoadOut", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    _ = MessageBox.Show("This is the primary ActiveGroupSet, please select a different one on the main window before deleting.", "Cannot Delete Active LoadOut", MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
                 }
 
-                AggLoadInfo.GroupSets.Remove(_aggLoadInfo.ActiveGroupSet);
+                _ = AggLoadInfo.GroupSets.Remove(_aggLoadInfo.ActiveGroupSet);
                 GroupSet.DeleteRecord(_aggLoadInfo.ActiveGroupSet.GroupSetID);
                 FirstRecord_Click(null, null); // Navigate to the first record after deletion
             }
@@ -239,12 +238,12 @@ namespace ZO.LoadOrderManager
             }
         }
 
-        
+
         #endregion
         private void ImportFiles_Click(object sender, RoutedEventArgs e)
         {
-            
-            FileManager.ParsePluginsTxt(_aggLoadInfo);
+
+            _ = FileManager.ParsePluginsTxt(_aggLoadInfo);
         }
         private void SaveButton_Click(object sender, RoutedEventArgs e)
         {

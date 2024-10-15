@@ -1,7 +1,4 @@
-using MahApps.Metro.Controls;
-using System.Formats.Tar;
 using System.IO;
-using System.Reflection;
 using System.Windows;
 
 namespace ZO.LoadOrderManager
@@ -11,7 +8,7 @@ namespace ZO.LoadOrderManager
 
         public static void ScanGameDirectoryForStrays(bool fullScan = true)
         {
-            Application.Current.Dispatcher.InvokeAsync(async () =>
+            _ = Application.Current.Dispatcher.InvokeAsync(async () =>
             {
                 await FileManager.ScanGameDirectoryForStraysAsync(true);
             });
@@ -32,7 +29,7 @@ namespace ZO.LoadOrderManager
                 Owner = Application.Current.MainWindow // Set the owner to the main window
             };
             loadingWindow.ShowInForeground();
-            loadingWindow.Activate(); // Ensure the window is brought to the foreground
+            _ = loadingWindow.Activate(); // Ensure the window is brought to the foreground
             if (fullScan)
             {
                 loadingWindow.UpdateProgress(1, "Full Scan Selected, this may take several minutes as the game folder has VERY large files...");
@@ -76,7 +73,7 @@ namespace ZO.LoadOrderManager
                 }
 
                 var dtStamp = fileInfo.LastWriteTime.ToString("yyyy-MM-dd HH:mm:ss");
-                string newHash = null;
+                string? newHash = null;
                 if (fullScan) newHash = ZO.LoadOrderManager.FileInfo.ComputeHash(fileInfo.FullName);
 
                 if (knownGameFolderFiles.TryGetValue(pluginName, out var existingFileInfo))
@@ -89,12 +86,12 @@ namespace ZO.LoadOrderManager
                         {
                             existingPlugin.DTStamp = dtStamp;
                             existingPlugin.State |= ModState.GameFolder;
-                            existingPlugin.WriteMod();
+                            _ = existingPlugin.WriteMod();
 
                             if (fullScan) existingFileInfo.HASH = newHash;
                             existingFileInfo.Flags = FileFlags.GameFolder;
                             existingFileInfo.AbsolutePath = fileInfo.FullName;
-                            ZO.LoadOrderManager.FileInfo.InsertFileInfo(existingFileInfo, existingPlugin.PluginID);
+                            _ = ZO.LoadOrderManager.FileInfo.InsertFileInfo(existingFileInfo, existingPlugin.PluginID);
 
 
                         }
@@ -103,13 +100,13 @@ namespace ZO.LoadOrderManager
                             // DTStamp does not match, perform full update
                             existingPlugin.DTStamp = dtStamp;
                             existingPlugin.State |= ModState.GameFolder;
-                            existingPlugin.WriteMod();
+                            _ = existingPlugin.WriteMod();
 
                             existingFileInfo.DTStamp = dtStamp;
                             if (fullScan) existingFileInfo.HASH = newHash;
                             existingFileInfo.Flags = FileFlags.GameFolder;
                             existingFileInfo.AbsolutePath = fileInfo.FullName;
-                            ZO.LoadOrderManager.FileInfo.InsertFileInfo(existingFileInfo, existingPlugin.PluginID);
+                            _ = ZO.LoadOrderManager.FileInfo.InsertFileInfo(existingFileInfo, existingPlugin.PluginID);
                         }
 
                         // Check for affiliated archives
@@ -128,7 +125,7 @@ namespace ZO.LoadOrderManager
                         GroupOrdinal = groupOrdinalTracker[groupID], // Assign the next ordinal
                         State = ModState.GameFolder // Set the installed flag
                     };
-                    newPlugin.WriteMod();
+                    _ = newPlugin.WriteMod();
                     AggLoadInfo.Instance.Plugins.Add(newPlugin);
 
                     // Increment the ordinal for the group
@@ -143,7 +140,7 @@ namespace ZO.LoadOrderManager
                         Flags = FileFlags.GameFolder,
                         AbsolutePath = fileInfo.FullName
                     };
-                    ZO.LoadOrderManager.FileInfo.InsertFileInfo(newFileInfo, newPlugin.PluginID);
+                    _ = ZO.LoadOrderManager.FileInfo.InsertFileInfo(newFileInfo, newPlugin.PluginID);
 
                     // Check for affiliated archives
                     AddAffiliatedFiles(fileInfo, newPlugin.PluginID, fullScan);
@@ -169,7 +166,7 @@ namespace ZO.LoadOrderManager
             foreach (var ba2File in ba2Files)
             {
 
-                string newHash = null;
+                string? newHash = null;
                 if (fullScan) newHash = ZO.LoadOrderManager.FileInfo.ComputeHash(ba2File);
 
                 var ba2FileInfo = new ZO.LoadOrderManager.FileInfo
@@ -180,12 +177,12 @@ namespace ZO.LoadOrderManager
                     Flags = FileFlags.IsArchive | FileFlags.GameFolder,
                     AbsolutePath = ba2File
                 };
-                ZO.LoadOrderManager.FileInfo.InsertFileInfo(ba2FileInfo, pluginId);
+                _ = ZO.LoadOrderManager.FileInfo.InsertFileInfo(ba2FileInfo, pluginId);
             }
 
             foreach (var iniFile in iniFiles)
             {
-                string newHash = null;
+                string? newHash = null;
                 if (fullScan) newHash = ZO.LoadOrderManager.FileInfo.ComputeHash(iniFile);
                 var iniFileInfo = new ZO.LoadOrderManager.FileInfo
                 {
@@ -195,7 +192,7 @@ namespace ZO.LoadOrderManager
                     Flags = FileFlags.GameFolder,
                     AbsolutePath = iniFile
                 };
-                ZO.LoadOrderManager.FileInfo.InsertFileInfo(iniFileInfo, pluginId);
+                _ = ZO.LoadOrderManager.FileInfo.InsertFileInfo(iniFileInfo, pluginId);
             }
         }
     }

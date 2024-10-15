@@ -18,7 +18,7 @@ namespace ZO.LoadOrderManager
         {
             TaskCompletionSource<bool?> tcs = new TaskCompletionSource<bool?>();
             this.Closed += (s, e) => tcs.SetResult(this.DialogResult);
-            this.ShowDialog(); // Change this line to ShowDialog
+            _ = this.ShowDialog(); // Change this line to ShowDialog
             return tcs.Task;
         }
 
@@ -51,20 +51,16 @@ namespace ZO.LoadOrderManager
 
             using (var connection = DbManager.Instance.GetConnection())
             {
-                using (var command = new SQLiteCommand(connection))
-                {
-                    command.CommandText = "SELECT PluginID, PluginName FROM vwPlugins WHERE GroupID = @GroupID and GroupSetID = @GroupSetID ORDER BY GroupOrdinal";
-                    command.Parameters.AddWithValue("@GroupID", _tempModGroup.GroupID);
-                    command.Parameters.AddWithValue("@GroupSetID", _tempModGroup.GroupSetID);
+                using var command = new SQLiteCommand(connection);
+                command.CommandText = "SELECT PluginID, PluginName FROM vwPlugins WHERE GroupID = @GroupID and GroupSetID = @GroupSetID ORDER BY GroupOrdinal";
+                _ = command.Parameters.AddWithValue("@GroupID", _tempModGroup.GroupID);
+                _ = command.Parameters.AddWithValue("@GroupSetID", _tempModGroup.GroupSetID);
 
-                    using (var reader = command.ExecuteReader())
-                    {
-                        while (reader.Read())
-                        {
-                            pluginIDs.Add(reader.GetInt64(0));
-                            pluginNames.Add(reader.GetString(1));
-                        }
-                    }
+                using var reader = command.ExecuteReader();
+                while (reader.Read())
+                {
+                    pluginIDs.Add(reader.GetInt64(0));
+                    pluginNames.Add(reader.GetString(1));
                 }
             }
 
@@ -76,7 +72,7 @@ namespace ZO.LoadOrderManager
                     Text = pluginName,
                     Margin = new Thickness(5)
                 };
-                PluginsGrid.Children.Add(textBlock);
+                _ = PluginsGrid.Children.Add(textBlock);
             }
 
             // Display plugin IDs in a non-editable TextBox
@@ -91,23 +87,19 @@ namespace ZO.LoadOrderManager
 
             using (var connection = DbManager.Instance.GetConnection())
             {
-                using (var command = new SQLiteCommand(connection))
-                {
-                    command.CommandText = "SELECT GroupSetID, GroupSetName FROM vwGroupSetGroups WHERE GroupID = @GroupID";
-                    command.Parameters.AddWithValue("@GroupID", _tempModGroup.GroupID);
+                using var command = new SQLiteCommand(connection);
+                command.CommandText = "SELECT GroupSetID, GroupSetName FROM vwGroupSetGroups WHERE GroupID = @GroupID";
+                _ = command.Parameters.AddWithValue("@GroupID", _tempModGroup.GroupID);
 
-                    using (var reader = command.ExecuteReader())
+                using var reader = command.ExecuteReader();
+                while (reader.Read())
+                {
+                    var groupSet = new GroupSet
                     {
-                        while (reader.Read())
-                        {
-                            var groupSet = new GroupSet
-                            {
-                                GroupSetID = reader.GetInt64(0),
-                                GroupSetName = reader.GetString(1)
-                            };
-                            _filteredGroupSets.Add(groupSet);
-                        }
-                    }
+                        GroupSetID = reader.GetInt64(0),
+                        GroupSetName = reader.GetString(1)
+                    };
+                    _filteredGroupSets.Add(groupSet);
                 }
             }
 
@@ -125,7 +117,7 @@ namespace ZO.LoadOrderManager
             _originalModGroup.ParentID = _tempModGroup.ParentID;
 
             // Persist changes
-            _originalModGroup.WriteGroup();
+            _ = _originalModGroup.WriteGroup();
 
             this.DialogResult = true;
             this.Close();
@@ -153,7 +145,7 @@ namespace ZO.LoadOrderManager
             {
                 // Open the plugin editor with the selected plugin
                 var pluginEditor = new PluginEditorWindow(selectedPlugin);
-                pluginEditor.ShowDialog();
+                _ = pluginEditor.ShowDialog();
 
                 // Optionally, refresh the plugins list after editing
                 LoadPlugins();
@@ -165,8 +157,8 @@ namespace ZO.LoadOrderManager
             if (sender is MenuItem menuItem && menuItem.DataContext is Plugin selectedPlugin)
             {
                 // Remove the plugin from the ModGroup's collection
-                _tempModGroup.Plugins.Remove(selectedPlugin);
-                
+                _ = _tempModGroup.Plugins.Remove(selectedPlugin);
+
                 // Update the UI accordingly
                 LoadPlugins(); // Refresh the displayed plugins
             }

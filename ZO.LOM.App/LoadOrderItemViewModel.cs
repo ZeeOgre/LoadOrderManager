@@ -141,7 +141,7 @@ public class LoadOrderItemViewModel : ViewModelBase
             // Swap locations for plugins
             var currentPlugin = PluginData;
             var otherPlugin = other.PluginData;
-        
+
 
             // Perform the swap logic for plugins
             currentPlugin.SwapLocations(otherPlugin);
@@ -177,7 +177,7 @@ public class LoadOrderItemViewModel : ViewModelBase
         }
     }
 
-    public override string ToString()
+    public override string? ToString()
     {
         if (PluginData != null)
         {

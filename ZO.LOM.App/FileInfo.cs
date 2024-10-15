@@ -1,12 +1,9 @@
 using System.Data.SQLite;
 using System.IO;
 using System.IO.Compression;
-using System.Net.NetworkInformation;
-using System.Runtime.InteropServices;
 using System.IO.Hashing;
-using System.Security.Cryptography;
+using System.Runtime.InteropServices;
 using System.Text;
-using System.Windows;
 using YamlDotNet.Serialization;
 
 
@@ -109,7 +106,7 @@ namespace ZO.LoadOrderManager
                 FileContent = System.IO.File.ReadAllBytes(filename); // Store raw file content
                 CompressedContent = CompressFile(FileContent); // Store compressed content
             }
-            
+
             AbsolutePath = filename;
 
             if (monitor)
@@ -278,7 +275,7 @@ namespace ZO.LoadOrderManager
             }
             finally
             {
-                CloseHandle(handle);
+                _ = CloseHandle(handle);
             }
         }
         public bool FileCheck()
@@ -298,7 +295,7 @@ namespace ZO.LoadOrderManager
             using var connection = DbManager.Instance.GetConnection();
             using var command = new SQLiteCommand(connection);
             command.CommandText = "SELECT * FROM FileInfo WHERE Filename = @Filename";
-            command.Parameters.AddWithValue("@Filename", filename.ToLowerInvariant());
+            _ = command.Parameters.AddWithValue("@Filename", filename.ToLowerInvariant());
 
             using var reader = command.ExecuteReader();
             if (reader.Read())
@@ -342,7 +339,7 @@ namespace ZO.LoadOrderManager
                         fileInfo.FileContent = System.IO.File.ReadAllBytes(fileInfo.AbsolutePath);
                         fileInfo.CompressedContent = fileInfo.CompressFile(fileInfo.FileContent);
                         fileInfo.SetFlagsBasedOnPath(); // Set flags based on path
-                        InsertFileInfo(fileInfo);
+                        _ = InsertFileInfo(fileInfo);
                     }
                 }
 
@@ -352,7 +349,7 @@ namespace ZO.LoadOrderManager
             {
                 var newFileInfo = new FileInfo(filename, true, true);
                 newFileInfo.SetFlagsBasedOnPath(); // Set flags based on path
-                InsertFileInfo(newFileInfo);
+                _ = InsertFileInfo(newFileInfo);
                 return newFileInfo;
             }
         }
@@ -366,7 +363,7 @@ namespace ZO.LoadOrderManager
 
             using (var pragmaCommand = new SQLiteCommand("PRAGMA read_uncommitted = true;", connection))
             {
-                pragmaCommand.ExecuteNonQuery();
+                _ = pragmaCommand.ExecuteNonQuery();
             }
 
             using var command = new SQLiteCommand(
@@ -436,7 +433,7 @@ namespace ZO.LoadOrderManager
 
             using (var pragmaCommand = new SQLiteCommand("PRAGMA read_uncommitted = true;", connection))
             {
-                pragmaCommand.ExecuteNonQuery();
+                _ = pragmaCommand.ExecuteNonQuery();
             }
 
             using var command = new SQLiteCommand(
@@ -634,10 +631,10 @@ namespace ZO.LoadOrderManager
         SET Flags = @Flags
         WHERE FileID = @FileID";
 
-            command.Parameters.AddWithValue("@FileID", this.FileID);
-            command.Parameters.AddWithValue("@Flags", (long)this.Flags);
+            _ = command.Parameters.AddWithValue("@FileID", this.FileID);
+            _ = command.Parameters.AddWithValue("@Flags", (long)this.Flags);
 
-            command.ExecuteNonQuery();
+            _ = command.ExecuteNonQuery();
         }
 
 
@@ -646,10 +643,10 @@ namespace ZO.LoadOrderManager
             var monitoredFiles = new List<FileInfo>();
 
             using var connection = DbManager.Instance.GetConnection();
-      
+
             using (var pragmaCommand = new SQLiteCommand("PRAGMA read_uncommitted = true;", connection))
             {
-                pragmaCommand.ExecuteNonQuery();
+                _ = pragmaCommand.ExecuteNonQuery();
             }
 
             using var command = new SQLiteCommand(

@@ -1,21 +1,14 @@
-using MahApps.Metro.Controls;
 using AutoUpdaterDotNET;
 using ControlzEx.Theming;
 using Microsoft.Win32;
 using System.Configuration;
-using System.Data.SQLite;
 using System.Diagnostics;
-using System.Drawing;
 using System.IO;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.Versioning;
-using System.Text;
-using ZO.LoadOrderManager.Properties;
 using System.Windows;
-using MaterialDesignColors;
-using MaterialDesignThemes.Wpf;
-using System.Windows.Media;
+using ZO.LoadOrderManager.Properties;
 
 
 
@@ -111,7 +104,7 @@ namespace ZO.LoadOrderManager
                          dictionary.Source.OriginalString.Contains("Themes/ColorsLight.xaml") ||
                          dictionary.Source.OriginalString.Contains("Themes/ColorsDark.xaml")))
                     {
-                        Application.Current.Resources.MergedDictionaries.Remove(dictionary);
+                        _ = Application.Current.Resources.MergedDictionaries.Remove(dictionary);
                     }
                 }
 
@@ -133,8 +126,8 @@ namespace ZO.LoadOrderManager
                 Application.Current.Resources.MergedDictionaries.Add(new ResourceDictionary() { Source = new Uri(customColorResourcePath) });
 
                 // Apply MahApps theme
-                ThemeManager.Current.ChangeThemeBaseColor(Application.Current, theme);
-                ThemeManager.Current.ChangeThemeColorScheme(Application.Current, "Blue");
+                _ = ThemeManager.Current.ChangeThemeBaseColor(Application.Current, theme);
+                _ = ThemeManager.Current.ChangeThemeColorScheme(Application.Current, "Blue");
 
                 // Restart the application to apply the new theme
                 //RestartApplication();
@@ -167,7 +160,7 @@ namespace ZO.LoadOrderManager
             try
             {
                 Config.InitializeNewInstance();
-                
+
                 ApplyCustomTheme(IsSystemInDarkMode());
 
                 App.LogDebug("Launching SettingsWindow in settings mode.");
@@ -221,7 +214,7 @@ namespace ZO.LoadOrderManager
                 });
 
                 // Run initialization tasks in a background thread
-                Task.Run(() =>
+                _ = Task.Run(() =>
                 {
                     try
                     {
@@ -288,7 +281,7 @@ namespace ZO.LoadOrderManager
                     finally
                     {
                         // Close the loading window on the UI thread
-                        Dispatcher.InvokeAsync(() =>
+                        _ = Dispatcher.InvokeAsync(() =>
                         {
                             loadingWindow?.Close();
                         });
@@ -306,7 +299,7 @@ namespace ZO.LoadOrderManager
         public static void RestartApplication()
         {
             var exeName = Process.GetCurrentProcess().MainModule.FileName;
-            Process.Start(exeName);
+            _ = Process.Start(exeName);
             Application.Current.Shutdown();
         }
 
@@ -343,11 +336,9 @@ namespace ZO.LoadOrderManager
             if (textLoggingEnabled)
             {
                 string logFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "app.log");
-                using (var stream = new FileStream(logFilePath, FileMode.Append, FileAccess.Write, FileShare.ReadWrite))
-                using (var writer = new StreamWriter(stream))
-                {
-                    writer.WriteLine(logMessage + Environment.NewLine);
-                }
+                using var stream = new FileStream(logFilePath, FileMode.Append, FileAccess.Write, FileShare.ReadWrite);
+                using var writer = new StreamWriter(stream);
+                writer.WriteLine(logMessage + Environment.NewLine);
             }
         }
 
@@ -410,7 +401,7 @@ namespace ZO.LoadOrderManager
         {
             var theme = isDarkMode ? "BaseDark" : "BaseLight";
             var accent = "Blue";
-            ThemeManager.Current.ChangeTheme(Application.Current, $"{theme}.{accent}");
+            _ = ThemeManager.Current.ChangeTheme(Application.Current, $"{theme}.{accent}");
         }
     }
 }

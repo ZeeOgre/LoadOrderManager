@@ -1,6 +1,5 @@
 using System.Collections.ObjectModel;
 using System.Windows;
-using System.Windows.Controls;
 using ZO.LoadOrderManager;
 
 public class LoadOrdersViewModel : ViewModelBase
@@ -61,9 +60,9 @@ public class LoadOrdersViewModel : ViewModelBase
     {
         Items = new ObservableCollection<LoadOrderItemViewModel>();
         //AggLoadInfo.Instance.DataRefreshed += OnDataRefreshed;
-       
+
     }
-     
+
     public void LoadData(GroupSet groupSet, LoadOut loadOut, bool suppress997 = false, bool isCached = false)
     {
         // Ensure the collection updates happen on the UI thread

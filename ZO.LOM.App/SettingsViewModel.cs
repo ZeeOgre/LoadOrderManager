@@ -1,5 +1,4 @@
 using Microsoft.Win32; // For OpenFileDialog
-using System;
 using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Input;
@@ -148,11 +147,11 @@ namespace ZO.LoadOrderManager
             {
                 DbManager.FlushDB();
                 _dbManager.Initialize();
-                MessageBox.Show("Database vacuum and reindex completed successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                _ = MessageBox.Show("Database vacuum and reindex completed successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error during vacuum and reindex: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                _ = MessageBox.Show($"Error during vacuum and reindex: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -164,9 +163,8 @@ namespace ZO.LoadOrderManager
 
                 using (var connection = DbManager.Instance.GetConnection())
                 {
-                    using (var transaction = connection.BeginTransaction())
-                    {
-                        const string cleanOrdinalsQuery = @"
+                    using var transaction = connection.BeginTransaction();
+                    const string cleanOrdinalsQuery = @"
                     WITH OrderedGSP AS (
                         SELECT GroupSetID, GroupID, PluginID,
                                ROW_NUMBER() OVER (PARTITION BY GroupSetID, GroupID ORDER BY Ordinal) AS NewOrdinal
@@ -194,36 +192,35 @@ namespace ZO.LoadOrderManager
                       AND GroupSetGroups.GroupID = OrderedGSG.GroupID;
                 ";
 
-                        using (var command = connection.CreateCommand())
-                        {
-                            command.CommandText = cleanOrdinalsQuery;
-                            command.Transaction = transaction;
-                            command.ExecuteNonQuery();
-                        }
-
-                        transaction.Commit();
+                    using (var command = connection.CreateCommand())
+                    {
+                        command.CommandText = cleanOrdinalsQuery;
+                        command.Transaction = transaction;
+                        _ = command.ExecuteNonQuery();
                     }
+
+                    transaction.Commit();
                 }
 
                 // Refresh metadata from the database after the transaction
                 AggLoadInfo.Instance.RefreshMetadataFromDB();
-            
+
                 // Inform the user of success
-                MessageBox.Show("Ordinals cleaned successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
-        }
+                _ = MessageBox.Show("Ordinals cleaned successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
             catch (Exception ex)
             {
                 // Handle and inform the user of any errors
-                MessageBox.Show($"Error during cleaning ordinals: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                _ = MessageBox.Show($"Error during cleaning ordinals: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
-}
+        }
 
 
         private void CompareFile(FileInfo file)
         {
             if (file.FileContent != null && System.IO.File.Exists(file.AbsolutePath))
             {
-                var currentFileContent = System.IO.File.ReadAllBytes(file.AbsolutePath);
+                _ = System.IO.File.ReadAllBytes(file.AbsolutePath);
                 var diffViewer = new DiffViewer(file);
                 diffViewer.Show();
             }
@@ -233,7 +230,7 @@ namespace ZO.LoadOrderManager
                 if (openFileDialog.ShowDialog() == true)
                 {
                     file.AbsolutePath = openFileDialog.FileName;
-                    var currentFileContent = System.IO.File.ReadAllBytes(file.AbsolutePath);
+                    _ = System.IO.File.ReadAllBytes(file.AbsolutePath);
                     var diffViewer = new DiffViewer(file);
                     diffViewer.Show();
                 }
@@ -244,7 +241,7 @@ namespace ZO.LoadOrderManager
         {
             if (!string.IsNullOrEmpty(file.AbsolutePath))
             {
-                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                _ = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
                 {
                     FileName = file.AbsolutePath,
                     UseShellExecute = true
