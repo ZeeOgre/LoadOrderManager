@@ -50,36 +50,50 @@ namespace ZO.LoadOrderManager
 
         protected override void OnStartup(StartupEventArgs e)
         {
-            App.LogDebug("OnStartup called");
 
             try
             {
-                base.OnStartup(e);
-                SetProbingPaths();
 
-                App.LogDebug("Checking command line arguments...");
-                foreach (var arg in e.Args)
+
+
+                App.LogDebug("OnStartup called");
+
+                try
                 {
-                    App.LogDebug($"Argument: {arg}");
+                    base.OnStartup(e);
+                    SetProbingPaths();
+
+                    App.LogDebug("Checking command line arguments...");
+                    foreach (var arg in e.Args)
+                    {
+                        App.LogDebug($"Argument: {arg}");
+                    }
+
+                    if (Array.Exists(e.Args, arg => arg.Equals("--settings", StringComparison.OrdinalIgnoreCase)))
+                    {
+                        App.LogDebug("--settings argument detected. Entering settings mode.");
+                        IsSettingsMode = true;
+                        HandleSettingsMode();
+                    }
+                    else
+                    {
+                        App.LogDebug("No --settings argument detected. Entering normal mode.");
+                        HandleNormalMode();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    App.LogDebug($"Exception during startup: {ex.Message}");
+                    _ = MessageBox.Show($"An error occurred during startup: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    Shutdown();
                 }
 
-                if (Array.Exists(e.Args, arg => arg.Equals("--settings", StringComparison.OrdinalIgnoreCase)))
-                {
-                    App.LogDebug("--settings argument detected. Entering settings mode.");
-                    IsSettingsMode = true;
-                    HandleSettingsMode();
-                }
-                else
-                {
-                    App.LogDebug("No --settings argument detected. Entering normal mode.");
-                    HandleNormalMode();
-                }
             }
-            catch (Exception ex)
+            catch (FileNotFoundException ex)
             {
-                App.LogDebug($"Exception during startup: {ex.Message}");
-                _ = MessageBox.Show($"An error occurred during startup: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                Shutdown();
+                Console.WriteLine($"File not found: {ex.FileName}");
+                Console.WriteLine($"Message: {ex.Message}");
+                Console.WriteLine($"Stack Trace: {ex.StackTrace}");
             }
         }
 

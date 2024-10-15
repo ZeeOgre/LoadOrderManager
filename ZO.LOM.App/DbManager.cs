@@ -77,7 +77,11 @@ namespace ZO.LoadOrderManager
                                 else
                                 {
                                     App.LogDebug("User chose not to retry. Shutting down application.");
-                                    Application.Current.Shutdown();
+                                    Application.Current.Dispatcher.Invoke(() =>
+                                    {
+                                        Application.Current.Shutdown();
+                                    });
+
                                     return;
                                 }
                             });
@@ -86,7 +90,12 @@ namespace ZO.LoadOrderManager
                         if (!settingsSaved)
                         {
                             App.LogDebug("Settings were not saved. Shutting down application.");
-                            Application.Current.Shutdown();
+
+                            Application.Current.Dispatcher.Invoke(() =>
+                            {
+                                Application.Current.Shutdown();
+                            });
+
                             return;
                         }
                     }
