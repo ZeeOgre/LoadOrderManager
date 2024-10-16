@@ -83,11 +83,13 @@ if ($currentBranch -eq 'master') {
     Execute-Command "git checkout dev"
     Execute-Command "git merge -X theirs master"
     Write-Output "Merged master INTO dev with conflicts resolved in favor of master."
+    $currentBranch = 'dev'
 } elseif ($currentBranch -eq 'dev') {
     # Friendly merge up to master
     Execute-Command "git checkout master"
     Execute-Command "git merge dev"
     Write-Output "Merged dev INTO master."
+    $currentBranch = 'master'
 }
 
 # Check if there are any changes before committing
