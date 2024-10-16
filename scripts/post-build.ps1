@@ -1,10 +1,3 @@
-param (
-    [string]$configuration,
-    [string]$msiFile = "..\Installer\ZO.LoadOrderManager.msi",
-    [string]$versionFile = "..\Properties\version.txt",
-    [bool]$manual = $false
-)
-
 # Function to execute a command and handle errors
 function Execute-Command {
     param (
@@ -13,15 +6,31 @@ function Execute-Command {
     Write-Output "Executing: $command"
     $result = Invoke-Expression $command 2>&1
     if ($LASTEXITCODE -ne 0) {
-        if ($result -match "nothing to commit, working tree clean") {
-            Write-Output "Nothing to commit, working tree clean."
-        } else {
-            Write-Error "Command failed: $command"
-            Write-Error ($result -join "`n")
-            exit 1
-        }
+        Write-Error "Command failed: $command"
+        Write-Error ($result -join "`n")
+        exit 1
     }
     Write-Output $result
+}
+
+# Function to get the newest tag
+function Get-NewestTag {
+    $tags = git tag --sort=-v:refname
+    Write-Output "Tags: $tags"
+    return $tags[0]
+}
+
+# Function to increment a tag
+function Increment-Tag {
+    param (
+        [string]$tag
+    )
+    if ($tag -match "-m(\d+)$") {
+        $number = [long]$matches[1] + 1
+        return $tag -replace "-m\d+$", "-m$number"
+    } else {
+        return "$tag-m1"
+    }
 }
 
 # Ensure all changes are staged
@@ -33,23 +42,6 @@ try {
 } catch {
     Write-Error "Failed to commit changes."
     exit 1
-}
-
-function Get-NewestTag {
-    $tags = git tag --sort=-v:refname
-    return $tags[0]
-}
-
-function Increment-Tag {
-    param (
-        [string]$tag
-    )
-    if ($tag -match "-m(\d+)$") {
-        $number = [long]$matches[1] + 1
-        return $tag -replace "-m\d+$", "-m$number"
-    } else {
-        return "$tag-m1"
-    }
 }
 
 # Ensure correct directory
@@ -69,7 +61,9 @@ if (-not $manual) {
     $tagName = "v$version"
 } else {
     $newestTag = Get-NewestTag
+    Write-Output "Newest Tag: $newestTag"
     $tagName = Increment-Tag -tag $newestTag
+    Write-Output "Incremented Tag: $tagName"
 }
 
 Write-Output "Tag Name: $tagName"
@@ -99,8 +93,14 @@ if (-not [string]::IsNullOrWhiteSpace($gitStatus)) {
     Execute-Command "git commit -m 'Automated commit for $configuration configuration'"
     Write-Output "Committed changes."
 
-    Execute-Command "git push origin $currentBranch"
-    Write-Output "Pushed changes to $currentBranch."
+    try {
+        Execute-Command "git push origin $currentBranch"
+        Write-Output "Pushed changes to $currentBranch."
+    } catch {
+        Write-Error "Failed to push changes to $currentBranch."
+        Write-Error ($_.Exception.Message)
+        exit 1
+    }
 } else {
     Write-Output "Nothing to commit, working tree clean."
 }
