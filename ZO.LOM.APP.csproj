@@ -36,14 +36,6 @@
 
   <ItemGroup>
     <Content Include="FileManager.ContentCatalogParser.cs" />
-    <Content Include="ZeeOgre.ico" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Include="..\..\ZO.SharedResources\img\ZeeOgre_NoBackground.jpg">
-      <Pack>True</Pack>
-      <PackagePath>\</PackagePath>
-    </None>
   </ItemGroup>
 
   <ItemGroup>
