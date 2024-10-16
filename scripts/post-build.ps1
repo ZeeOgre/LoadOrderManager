@@ -1,3 +1,10 @@
+param (
+    [string]$configuration,
+    [string]$msiFile = "..\Installer\ZO.LoadOrderManager.msi",
+    [string]$versionFile = "..\Properties\version.txt",
+    [bool]$manual = $false
+)
+
 function Execute-Command {
     param (
         [string]$command
