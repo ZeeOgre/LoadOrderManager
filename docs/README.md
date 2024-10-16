@@ -1,7 +1,7 @@
 ﻿# **LoadOrderManager**  
 *by ZeeOgre*
 
-![ZeeOgre](\img\ZeeOgre_NoBackground.jpg)
+![ZeeOgre](/docs/img/ZeeOgre_NoBackground.jpg)
 
 ## Description
 
