@@ -104,12 +104,16 @@ if (-not [string]::IsNullOrWhiteSpace($gitStatus)) {
 
 # Handle release
 if ($configuration -eq 'GitRelease') {
+    Write-Output "Handling GitRelease configuration"
+    
     # Delete existing local tag if it exists
     $existingTag = git tag -l $tagName
     if ($existingTag) {
+        Write-Output "Deleting existing tag: $tagName"
         Execute-Command "git tag -d $tagName"
     }
 
+    Write-Output "Creating new tag: $tagName"
     Execute-Command "git tag $tagName"
     Execute-Command "git push origin $tagName"
     Write-Output "Tagged and pushed release: $tagName"
@@ -118,6 +122,7 @@ if ($configuration -eq 'GitRelease') {
     if (Get-Command gh -ErrorAction SilentlyContinue) {
         $autoUpdaterFile = "$(git rev-parse --show-toplevel)/Properties/AutoUpdater.xml"
         if (Test-Path -Path $autoUpdaterFile) {
+            Write-Output "Creating GitHub release: $tagName"
             Execute-Command "gh release create $tagName $msiFile $autoUpdaterFile -t $tagName -n 'Release $tagName'"
             Write-Output "Created GitHub release: $tagName with AutoUpdater.xml"
         } else {
@@ -132,6 +137,7 @@ if ($configuration -eq 'GitRelease') {
     # Check if there is a stash to pop
     $stashList = git stash list
     if (-not [string]::IsNullOrWhiteSpace($stashList)) {
+        Write-Output "Popping stash"
         Execute-Command "git stash pop"
     } else {
         Write-Output "No stash to pop."
@@ -143,6 +149,7 @@ $autoUpdaterFile = "$(git rev-parse --show-toplevel)/Properties/AutoUpdater.xml"
 if (Test-Path -Path $autoUpdaterFile) {
     $autoUpdaterChanges = git status --porcelain $autoUpdaterFile
     if ($autoUpdaterChanges) {
+        Write-Output "Committing changes to AutoUpdater.xml"
         Execute-Command "git add $autoUpdaterFile"
         Execute-Command "git commit -m 'Update AutoUpdater.xml for $tagName'"
         Execute-Command "git push origin $currentBranch"
