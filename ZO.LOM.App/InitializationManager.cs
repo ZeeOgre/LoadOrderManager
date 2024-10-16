@@ -39,6 +39,24 @@ namespace ZO.LoadOrderManager
             }
         }
 
+        public static void PrintInitializingComponents()
+        {
+            lock (Lock)
+            {
+                if (InitializingComponents.Count == 0)
+                {
+                    System.Diagnostics.Debug.WriteLine("No Components Initializing");
+                }
+                else
+                {
+                    foreach (var component in InitializingComponents)
+                    {
+                        System.Diagnostics.Debug.WriteLine(component);
+                    }
+                }
+            }
+        }
+
         public static void SetProgressCallback(Action<long, string> progressCallback)
         {
             _progressCallback = progressCallback;
