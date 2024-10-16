@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
@@ -24,11 +24,9 @@
     <AssemblyName>LoadOrderManager</AssemblyName>
     <Configurations>Debug;Release;GitRelease</Configurations>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-    <StartupObject>
-    </StartupObject>
     <EnforceCodeStyleInBuild>True</EnforceCodeStyleInBuild>
     <SupportedOSPlatformVersion>7.0</SupportedOSPlatformVersion>
-    <Version>0.0.2.0</Version>
+    <Version>0.0.3.0</Version>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='GitRelease|AnyCPU'">
     <Optimize>True</Optimize>
@@ -101,33 +99,28 @@
         ]]></Code>
     </Task>
   </UsingTask>
-
-
-
-	<!--<Target Name="PreBuild" BeforeTargets="PreBuildEvent" Condition="'$(Configuration)' == 'GitRelease'">
-		<Exec Command="powershell -ExecutionPolicy Bypass -File $(ProjectDir)scripts\IncrementVersion.ps1 -SettingsFile $(ProjectDir)Properties\Settings.settings -CsprojFilePath $(ProjectDir)ZO.DMM.AppNF.csproj -AppConfigFilePath $(ProjectDir)App.config -VersionTxtFilePath $(ProjectDir)Properties\version.txt -AipFilePath $(ProjectDir)Installer\DMMInstaller.aip -XmlOutputPath $(ProjectDir)Properties\AutoUpdater.xml -Configuration $(Configuration) -AssemblyInfoFilePath $(ProjectDir)Properties\AssemblyInfo.cs" />
-	</Target>-->
-
-
-	<Target Name="PostBuildMoveCheck" BeforeTargets="RunAdvancedInstaller" AfterTargets="PostBuildEvent">
-		<Message Text="Executing PostBuildMoveCheck target..." Importance="high" />
-		<Exec Command="powershell -ExecutionPolicy Bypass -File &quot;$(ProjectDir)scripts\WaitForFileMove.ps1&quot; -filePath &quot;$(TargetDir)lib\*.dll&quot; -timeoutInSeconds 60" />
-		<Message Text="PostBuildMoveCheck target execution completed." Importance="high" />
-	</Target>
-
-	<PropertyGroup>
-		<MsiFileName Condition="'$(Configuration)' == 'GitRelease'">ZO.LoadOrderManager.msi</MsiFileName>
-		<MsiFileName Condition="'$(Configuration)' == 'Release'">ZO.LoadOrderManager.release.msi</MsiFileName>
-		<MsiFileName Condition="'$(Configuration)' == 'Debug'">ZO.LoadOrderManager.debug.msi</MsiFileName>
-	</PropertyGroup>
-	<Target Name="RunAdvancedInstaller" AfterTargets="PostBuildMoveCheck" Condition="'$(Configuration)' == 'GitRelease' Or '$(Configuration)' == 'Release'">
-		<Message Text="Executing RunAdvancedInstaller target..." Importance="high" />
-		<Exec Command="%25ADVINST_COM%25 /build &quot;$(ProjectDir)installer\ZO.LoadOrderManager.aip&quot; -buildslist &quot;AnyCPU_$(Configuration)&quot;" />
-		<Message Text="RunAdvancedInstaller target execution completed." Importance="high" />
-	</Target>
-	<Target Name="PostBuild" AfterTargets="RunAdvancedInstaller" Condition="'$(Configuration)' == 'GitRelease'">
-		<Message Text="Executing PostBuild target..." Importance="high" />
-		<Exec Command="powershell -ExecutionPolicy Bypass -File &quot;$(ProjectDir)scripts\post-build.ps1&quot; -configuration $(ConfigurationName) -msiFile &quot;$(ProjectDir)installer\output\$(MsiFileName)&quot; -versionFile &quot;$(ProjectDir)Properties\version.txt&quot;" />
-		<Message Text="PostBuild target execution completed." Importance="high" />
-	</Target>
+  <Target Name="PreBuild" BeforeTargets="PreBuildEvent" Condition="'$(Configuration)' == 'GitRelease'">
+    <Exec Command="powershell -ExecutionPolicy Bypass -File $(ProjectDir)scripts\IncrementVersion.ps1 -SettingsFile $(ProjectDir)Properties\Settings.settings -CsprojFilePath $(ProjectDir)ZO.LOM.APP.csproj -AppConfigFilePath $(ProjectDir)App.config -VersionTxtFilePath $(ProjectDir)Properties\version.txt -AipFilePath $(ProjectDir)Installer\ZO.LoadOrderManager.aip -XmlOutputPath $(ProjectDir)Properties\AutoUpdater.xml -Configuration $(Configuration) -AssemblyInfoFilePath $(ProjectDir)Properties\AssemblyInfo.cs" />
+  </Target>
+  <Target Name="PostBuildMoveCheck" BeforeTargets="RunAdvancedInstaller" AfterTargets="PostBuildEvent">
+    <Message Text="Executing PostBuildMoveCheck target..." Importance="high" />
+    <Exec Command="powershell -ExecutionPolicy Bypass -File &quot;$(ProjectDir)scripts\WaitForFileMove.ps1&quot; -filePath &quot;$(TargetDir)lib\*.dll&quot; -timeoutInSeconds 60" />
+    <Message Text="PostBuildMoveCheck target execution completed." Importance="high" />
+  </Target>
+  <PropertyGroup>
+    <MsiFileName Condition="'$(Configuration)' == 'GitRelease'">ZO.LoadOrderManager.msi</MsiFileName>
+    <MsiFileName Condition="'$(Configuration)' == 'Release'">ZO.LoadOrderManager.release.msi</MsiFileName>
+    <MsiFileName Condition="'$(Configuration)' == 'Debug'">ZO.LoadOrderManager.debug.msi</MsiFileName>
+    <PackageReleaseNotes>Hopefully last "empty" update, testing our final autoincrement scripts.</PackageReleaseNotes>
+  </PropertyGroup>
+  <Target Name="RunAdvancedInstaller" AfterTargets="PostBuildMoveCheck" Condition="'$(Configuration)' == 'GitRelease' Or '$(Configuration)' == 'Release'">
+    <Message Text="Executing RunAdvancedInstaller target..." Importance="high" />
+    <Exec Command="%25ADVINST_COM%25 /build &quot;$(ProjectDir)installer\ZO.LoadOrderManager.aip&quot; -buildslist &quot;AnyCPU_$(Configuration)&quot;" />
+    <Message Text="RunAdvancedInstaller target execution completed." Importance="high" />
+  </Target>
+  <Target Name="PostBuild" AfterTargets="RunAdvancedInstaller" Condition="'$(Configuration)' == 'GitRelease'">
+    <Message Text="Executing PostBuild target..." Importance="high" />
+    <Exec Command="powershell -ExecutionPolicy Bypass -File &quot;$(ProjectDir)scripts\post-build.ps1&quot; -configuration $(ConfigurationName) -msiFile &quot;$(ProjectDir)installer\output\$(MsiFileName)&quot; -versionFile &quot;$(ProjectDir)Properties\version.txt&quot;" />
+    <Message Text="PostBuild target execution completed." Importance="high" />
+  </Target>
 </Project>
