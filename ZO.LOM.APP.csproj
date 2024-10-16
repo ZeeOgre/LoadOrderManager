@@ -6,7 +6,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>True</UseWPF>
-    <ApplicationIcon>ZeeOgre.ico</ApplicationIcon>
+    <ApplicationIcon>docs\img\ZeeOgre.ico</ApplicationIcon>
     <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
     <PackageId>ZeeOgre.LoadOrderManager</PackageId>
     <Title>ZeeOgre's Load Order Manager</Title>
@@ -14,7 +14,7 @@
     <Product>LoadOrderManager</Product>
     <Copyright>2024 ZeeOgre</Copyright>
     <PackageProjectUrl>https://github.com/ZeeOgre/ZO.LoadOrderManager</PackageProjectUrl>
-    <PackageIcon>ZeeOgre_NoBackground.jpg</PackageIcon>
+    <PackageIcon>docs\img\ZeeOgre_NoBackground.jpg</PackageIcon>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <RepositoryUrl>https://github.com/ZeeOgre/ZO.LoadOrderManager</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
@@ -35,7 +35,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Include="FileManager.ContentCatalogParser.cs" />
+    <Content Include="src\FileManager\FileManager.ContentCatalogParser.cs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -55,21 +55,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Page Include="App.xaml" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Update="docs\README.md">
-      <Pack>True</Pack>
-      <PackagePath>\</PackagePath>
-    </None>
-    <None Update="Properties\Settings.settings">
-      <Generator>SettingsSingleFileGenerator</Generator>
-      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
-    </None>
-  </ItemGroup>
-
-  <ItemGroup>
     <Compile Update="Properties\Settings.Designer.cs">
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
       <AutoGen>True</AutoGen>
@@ -81,6 +66,7 @@
     <Content Include="data\**\*" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="docs\**\*" CopyToOutputDirectory="OverwriteAlways" />
   </ItemGroup>
+
 
   <Target Name="RearrangeOutputFiles" AfterTargets="Build;Publish" BeforeTargets="PostBuildEvent">
     <ItemGroup>
