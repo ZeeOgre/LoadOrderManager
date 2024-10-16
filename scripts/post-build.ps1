@@ -89,7 +89,11 @@ if (-not [string]::IsNullOrWhiteSpace($gitStatus)) {
     Execute-Command "git add ."
     Execute-Command "git commit -m 'Automated commit for $configuration configuration'"
     Write-Output "Committed changes."
+}
 
+# Check if the branch is ahead of the remote and push if necessary
+$branchStatus = git status -uno
+if ($branchStatus -match "Your branch is ahead of 'origin/$currentBranch'") {
     try {
         Execute-Command "git push origin $currentBranch"
         Write-Output "Pushed changes to $currentBranch."
