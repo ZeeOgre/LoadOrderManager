@@ -1,0 +1,506 @@
+{
+  "ContentCatalog" : 
+  {
+    "Description" : "This file holds a database of any Creations downloaded or installed, in JSON format",
+    "Version" : "1.1"
+  },
+  "TM_0326e696-40d4-4fe5-981a-2e0050c6e548" : 
+  {
+    "AchievementSafe" : false,
+    "Files" : [ "shades_immersive_looting.esm" ],
+    "FilesSize" : 24078,
+    "Timestamp" : 1722452620,
+    "Title" : "Shade's Immersive Looting",
+    "Version" : "0.\u0002"
+  },
+  "TM_03b218f4-2b8d-4947-8c61-df531410be71" : 
+  {
+    "AchievementSafe" : true,
+    "Files" : [ "royalhylaii.esm" ],
+    "FilesSize" : 8209,
+    "Timestamp" : 1722013771,
+    "Title" : "Hyla II - Purified Water (Quick Bugfix)",
+    "Version" : "1721781750.1.00"
+  },
+  "TM_070ee912-292c-49b4-aa8a-68d33be8f5db" : 
+  {
+    "AchievementSafe" : false,
+    "Files" : [ "qso safehouse.esm" ],
+    "FilesSize" : 8136055,
+    "Timestamp" : 1722452620,
+    "Title" : "Quantum Stealth Operations (QSO) Safehouse",
+    "Version" : "0.\u0002"
+  },
+  "TM_08a840f5-2458-4523-8ff2-090822804e96" : 
+  {
+    "AchievementSafe" : true,
+    "Files" : [ "dsm patch - kz operative by zeeogre.esm" ],
+    "FilesSize" : 0,
+    "Timestamp" : 1722452620,
+    "Title" : "DSM Patch - KZ Operative by ZeeOgre",
+    "Version" : "0.\u0002"
+  },
+  "TM_0d820a3c-758d-4ac0-bf62-200c4b931ddf" : 
+  {
+    "AchievementSafe" : true,
+    "Files" : [ "tankgirlsmodelhomepoi.esm" ],
+    "FilesSize" : 128898487,
+    "Timestamp" : 1722452620,
+    "Title" : "TGs Hyla II Mansion Retreat Player Home",
+    "Version" : "18446744073709551615.0"
+  },
+  "TM_13a6c63e-fa98-4b66-8b93-aa443d56c787" : 
+  {
+    "AchievementSafe" : true,
+    "Files" : [ "zeeogresaiogameplaytweaks.esm" ],
+    "FilesSize" : 384407,
+    "Timestamp" : 1722452620,
+    "Title" : "ZeeOgres AIO Gameplay Tweaks",
+    "Version" : "18446744073709551615.0"
+  },
+  "TM_20ff76f3-5174-4268-aa9b-740e2e79c986" : 
+  {
+    "AchievementSafe" : true,
+    "Files" : [ "zeeogresshiptweaks.esm" ],
+    "FilesSize" : 678,
+    "Timestamp" : 1722452620,
+    "Title" : "ZeeOgre's Ship Tweaks",
+    "Version" : "18446744073709551615.0"
+  },
+  "TM_24294bea-8084-416b-94ed-2e07f8a594f7" : 
+  {
+    "AchievementSafe" : true,
+    "Files" : [ "skkplayerhomesanywhere.esm" ],
+    "FilesSize" : 0,
+    "Timestamp" : 1722452620,
+    "Title" : "Player homes anywhere",
+    "Version" : "0.'uG\u0002"
+  },
+  "TM_27e5918c-3890-4614-b22e-e363ca2c1ae1" : 
+  {
+    "AchievementSafe" : true,
+    "Files" : [ "more buildable mission boards.esm" ],
+    "FilesSize" : 3673,
+    "Timestamp" : 1722452620,
+    "Title" : "More Buildable Mission Boards",
+    "Version" : "0.g��\u0001"
+  },
+  "TM_2880d357-3084-447d-a712-c9317eac56d1" : 
+  {
+    "AchievementSafe" : true,
+    "Files" : [ "sfbgs00a_d.esm" ],
+    "FilesSize" : 13158584,
+    "Timestamp" : 1722452620,
+    "Title" : "Blackout Shotty Skin",
+    "Version" : "0.\u0002"
+  },
+  "TM_2c5d9068-8459-4441-b1c1-1044e8d54352" : 
+  {
+    "AchievementSafe" : true,
+    "Files" : [ "myprice.esm" ],
+    "FilesSize" : 419537,
+    "Timestamp" : 1722452620,
+    "Title" : "My Price - No One Dies",
+    "Version" : "0.\u0002"
+  },
+  "TM_2c7db3ad-19a3-416e-8cd8-854dccb2500d" : 
+  {
+    "AchievementSafe" : true,
+    "Files" : [ "grogufollower.esm" ],
+    "FilesSize" : 39404780,
+    "Timestamp" : 1722452620,
+    "Title" : "The Child - A Star Wars Companion",
+    "Version" : "18446744073709551615.0"
+  },
+  "TM_31ccf130-4852-417b-842a-9d82672028e4" : 
+  {
+    "AchievementSafe" : true,
+    "Files" : [ "sfbgs00a_a.esm" ],
+    "FilesSize" : 19325183,
+    "Timestamp" : 1722452620,
+    "Title" : "Blackout Drumbeat Skin",
+    "Version" : "0.\u0002"
+  },
+  "TM_32210e1c-5649-4bb0-b1e4-0f99115aca27" : 
+  {
+    "AchievementSafe" : true,
+    "Files" : [ "zeeogreswellstockedmerchants.esm" ],
+    "FilesSize" : 12287,
+    "Timestamp" : 1722452620,
+    "Title" : "ZeeOgre's Well Stocked Merchants",
+    "Version" : "18446744073709551615.0"
+  },
+  "TM_3232667a-c443-48a1-8719-1d3978bc4cd9" : 
+  {
+    "AchievementSafe" : false,
+    "Files" : [ "tankgirlsmodelhome.esm" ],
+    "FilesSize" : 24217855,
+    "Timestamp" : 1722452620,
+    "Title" : "TGs Luxury Homes Volume I",
+    "Version" : "0.\u0002"
+  },
+  "TM_33b11ffd-d8b9-46e6-86f6-ef459fa463d9" : 
+  {
+    "AchievementSafe" : true,
+    "Files" : [ "zeeogresnukeitfromorbitbutton.esm" ],
+    "FilesSize" : 7122,
+    "Timestamp" : 1722452620,
+    "Title" : "ZeeOgre's NUKE IT FROM ORBIT Button",
+    "Version" : "18446744073709551615.0"
+  },
+  "TM_33b688f5-5664-43c1-b4c7-6b844b8fc8d0" : 
+  {
+    "AchievementSafe" : true,
+    "Files" : [ "dwn_paradisoplayerhome_furnished.esm" ],
+    "FilesSize" : 0,
+    "Timestamp" : 1722452620,
+    "Title" : "Paradiso Cabin - A Player Home - Furnished",
+    "Version" : "0.\u0002"
+  },
+  "TM_3eb50671-c553-4332-a30a-0e95d27b3955" : 
+  {
+    "AchievementSafe" : false,
+    "Files" : [ "venworks-pawnshop.esm" ],
+    "FilesSize" : 161800,
+    "Timestamp" : 1722452620,
+    "Title" : "Galactic Pawn Shop",
+    "Version" : "0.\u0002"
+  },
+  "TM_4bf1a31f-46d5-47bf-a5e6-d0f9e2496d0c" : 
+  {
+    "AchievementSafe" : true,
+    "Files" : [ "sfta01.esm" ],
+    "FilesSize" : 332018935,
+    "Timestamp" : 1722452620,
+    "Title" : "Trackers Alliance: The Vulture",
+    "Version" : "0.\u0002"
+  },
+  "TM_5a5a81ea-7247-4bcc-ac98-d963a63a42f4" : 
+  {
+    "AchievementSafe" : true,
+    "Files" : [ "zeeogresdomesticateallflora.esm" ],
+    "FilesSize" : 83094,
+    "Timestamp" : 1722452620,
+    "Title" : "ZeeOgre's Domesticate All Flora",
+    "Version" : "18446744073709551615.0"
+  },
+  "TM_5bff49dc-37eb-4cfd-b070-3afa78814964" : 
+  {
+    "AchievementSafe" : true,
+    "Files" : [ "groundpounders mission fix.esm" ],
+    "FilesSize" : 6741,
+    "Timestamp" : 1721330790,
+    "Title" : "Groundpounder Mission NPC Outfit Fix",
+    "Version" : "1718149323.1.00"
+  },
+  "TM_606984f7-b255-420a-b586-f0d09fc457d2" : 
+  {
+    "AchievementSafe" : true,
+    "Files" : [ "mantislairhome.esm" ],
+    "FilesSize" : 804993,
+    "Timestamp" : 1722452620,
+    "Title" : "Mantis Lair Home",
+    "Version" : "0.\u0002"
+  },
+  "TM_62df35dd-1ee6-4ea7-a04a-20b303230140" : 
+  {
+    "AchievementSafe" : false,
+    "Files" : [ "particlestealth.esm" ],
+    "FilesSize" : 7183,
+    "Timestamp" : 1722452620,
+    "Title" : "Particle Stealth Lens",
+    "Version" : "0.\u0002"
+  },
+  "TM_656235e5-3081-4cb3-8ac5-00f7fdd71922" : 
+  {
+    "AchievementSafe" : false,
+    "Files" : [ "ultimate_starter_kit.esm" ],
+    "FilesSize" : 0,
+    "Timestamp" : 1722452620,
+    "Title" : "Ultimate Starter Kit",
+    "Version" : "18446744073709551615.0"
+  },
+  "TM_6c3c002d-a6ed-4b7a-999d6-34e1d2c629c7" : 
+  {
+    "AchievementSafe" : false,
+    "Files" : [ "vanilla flashlight improved.esm" ],
+    "FilesSize" : 630901,
+    "Timestamp" : 1722452620,
+    "Title" : "Vanilla Flashlight Improved (VFI)",
+    "Version" : "0.\u0002"
+  },
+  "TM_7a18ced1-0f88-4cd0-962c-d13a274c8691" : 
+  {
+    "AchievementSafe" : true,
+    "Files" : 
+    [
+      "dwn_unlockdreamhomenotrait.esm",
+      "dwn_unlockdreamhomenotrait - main_xbox.ba2"
+    ],
+    "FilesSize" : 1231,
+    "Timestamp" : 1721330789,
+    "Title" : "Dream Home Unlocked",
+    "Version" : "1719239723.1.1"
+  },
+  "TM_7b5cfaa7-72a0-4561-8a3d-10f4c0b9e8e9" : 
+  {
+    "AchievementSafe" : true,
+    "Files" : [ "skillfixes.esm" ],
+    "FilesSize" : 0,
+    "Timestamp" : 1722452620,
+    "Title" : "Skill Fixes",
+    "Version" : "0.'uG\u0002"
+  },
+  "TM_7c38f325-247c-4a7d-a71d-4d1af964c408" : 
+  {
+    "AchievementSafe" : true,
+    "Files" : [ "outpostresourcebot.esm" ],
+    "FilesSize" : 459456,
+    "Timestamp" : 1722452620,
+    "Title" : "O.R.B - Outpost Resource Bot",
+    "Version" : "0.\u0002"
+  },
+  "TM_842a8d0c-6aee-4c65-affb-bdb6183ee2b3" : 
+  {
+    "AchievementSafe" : true,
+    "Files" : [ "workingstoves.esm" ],
+    "FilesSize" : 945326,
+    "Timestamp" : 1722452620,
+    "Title" : "Working Stoves",
+    "Version" : "0.�\u0001"
+  },
+  "TM_8e736b8c-0cae-4c5c-902b-813c8736dc10" : 
+  {
+    "AchievementSafe" : true,
+    "Files" : [ "zeeogreshandscannertweaks.esm" ],
+    "FilesSize" : 515,
+    "Timestamp" : 1722452620,
+    "Title" : "ZeeOgre's Hand Scanner Tweaks",
+    "Version" : "18446744073709551615.0"
+  },
+  "TM_9680db45-c3b6-4be1-91dc-0679251298a8" : 
+  {
+    "AchievementSafe" : true,
+    "Files" : [ "zeeogresdenseroutposts.esm" ],
+    "FilesSize" : 128656,
+    "Timestamp" : 1722452620,
+    "Title" : "ZeeOgre's Denser Outposts",
+    "Version" : "18446744073709551615.0"
+  },
+  "TM_9bbabf03-3765-4781-bdfc-2bcd19150213" : 
+  {
+    "AchievementSafe" : true,
+    "Files" : [ "dwn_thewellapartmentfurnished.esm" ],
+    "FilesSize" : 0,
+    "Timestamp" : 1722452620,
+    "Title" : "The Well Apartment - Furnished",
+    "Version" : "0.'uG\u0002"
+  },
+  "TM_9d76cc3c-1878-45a5-b3f1-907ff3b07f35" : 
+  {
+    "AchievementSafe" : true,
+    "Files" : [ "polyamory.esm", "polyamory - Main.ba2" ],
+    "FilesSize" : 36932,
+    "Timestamp" : 1721330792,
+    "Title" : "Polyamory - Remove single romance limit",
+    "Version" : "1720979379.1.00"
+  },
+  "TM_a0d39aa0-4f31-44b4-8549-3eccb3c89040" : 
+  {
+    "AchievementSafe" : true,
+    "Files" : [ "pilotassistantbot.esm" ],
+    "FilesSize" : 403191,
+    "Timestamp" : 1722452620,
+    "Title" : "P.A.B - Pilot Assist Bot",
+    "Version" : "0.\u0002"
+  },
+  "TM_a11a0cdf-5abb-4a59-9e12-e261e5aae8d5" : 
+  {
+    "AchievementSafe" : false,
+    "Files" : [ "starfieldcommunitypatch.esm" ],
+    "FilesSize" : 7833062,
+    "Timestamp" : 1722452620,
+    "Title" : "Starfield Community Patch",
+    "Version" : "0.\u0002"
+  },
+  "TM_a58ec00c-d403-41c5-be91-52baf95682e5" : 
+  {
+    "AchievementSafe" : false,
+    "Files" : [ "skkuniversalstash.esm" ],
+    "FilesSize" : 92799,
+    "Timestamp" : 1722452620,
+    "Title" : "SKK Universal Stash (unlimited storage)",
+    "Version" : "0.g��\u0001"
+  },
+  "TM_aa98cf0c-85be-4024-bc49-574e79f59d97" : 
+  {
+    "AchievementSafe" : false,
+    "Files" : [ "shades_stealth_takedowns.esm" ],
+    "FilesSize" : 11393,
+    "Timestamp" : 1722452620,
+    "Title" : "Shade's Stealth Takedowns (Knock-out or Lethal)",
+    "Version" : "0.\u0002"
+  },
+  "TM_af4539c5-d244-420a-8512-6e70ef038a99" : 
+  {
+    "AchievementSafe" : false,
+    "Files" : [ "improvedfollowerbehavior.esm" ],
+    "FilesSize" : 18976,
+    "Timestamp" : 1722452620,
+    "Title" : "Improved Follower Behavior",
+    "Version" : "0.\u0002"
+  },
+  "TM_b37c937e-f350-4c01-a7e2-d7cd63db4ffa" : 
+  {
+    "AchievementSafe" : true,
+    "Files" : [ "skkshiptools.esm" ],
+    "FilesSize" : 0,
+    "Timestamp" : 1722452620,
+    "Title" : "Ship Management Tools",
+    "Version" : "0.\u0002"
+  },
+  "TM_bba53dbf-ab91-47c7-9dec-c4010dc3158e" : 
+  {
+    "AchievementSafe" : false,
+    "Files" : [ "cydoniahome.esm" ],
+    "FilesSize" : 2337035,
+    "Timestamp" : 1722452620,
+    "Title" : "Cydonia Executive Suite",
+    "Version" : "0.\u0002"
+  },
+  "TM_beefc7ae-59f4-4934-b2a5-d04e5264f029" : 
+  {
+    "AchievementSafe" : true,
+    "Files" : [ "sfbgs023.esm" ],
+    "FilesSize" : 125002054,
+    "Timestamp" : 1722452620,
+    "Title" : "Starborn Gravis Suit",
+    "Version" : "0.\u0002"
+  },
+  "TM_c5bbdd20-29a6-4508-9dea-24e864dc255b" : 
+  {
+    "AchievementSafe" : true,
+    "Files" : [ "sfbgs00a_f.esm" ],
+    "FilesSize" : 18810970,
+    "Timestamp" : 1722452620,
+    "Title" : "Blackout Equinox Skin",
+    "Version" : "18446744073709551615.0"
+  },
+  "TM_c800c93b-8527-44b2-b78a-0f8709c75023" : 
+  {
+    "AchievementSafe" : true,
+    "Files" : [ "dsm_vulture_patch.esm" ],
+    "FilesSize" : 12029,
+    "Timestamp" : 1722452620,
+    "Title" : "DSM: Vulture Patch",
+    "Version" : "0.\u0002"
+  },
+  "TM_c984c226-a625-40ac-aa4c-7c5c8ee08787" : 
+  {
+    "AchievementSafe" : true,
+    "Files" : [ "eli_renamedsnowglobes.esm" ],
+    "FilesSize" : 6780,
+    "Timestamp" : 1721330789,
+    "Title" : "Better Sorting: Renamed Snow Globes",
+    "Version" : "1718653135.1.00"
+  },
+  "TM_ce2d6bef-5fca-46a5-a91a-0eefd95f2e1a" : 
+  {
+    "AchievementSafe" : false,
+    "Files" : [ "darkstar_astrodynamics.esm" ],
+    "FilesSize" : 0,
+    "Timestamp" : 1722452620,
+    "Title" : "DarkStar Astrodynamics [PC]",
+    "Version" : "0.\u0002"
+  },
+  "TM_d90cf132-6c41-4827-b491-bce0fceb9f5f" : 
+  {
+    "AchievementSafe" : true,
+    "Files" : [ "zeeogreseasyrepairbutton.esm" ],
+    "FilesSize" : 11978,
+    "Timestamp" : 1722452620,
+    "Title" : "ZeeOgre's Easy Repair Button",
+    "Version" : "18446744073709551615.0"
+  },
+  "TM_db27740a-fcae-4a7a-9b9d-a33177cc29c9" : 
+  {
+    "AchievementSafe" : true,
+    "Files" : [ "darkstar_manufacturing.esm" ],
+    "FilesSize" : 0,
+    "Timestamp" : 1722452620,
+    "Title" : "DarkStar Manufacturing",
+    "Version" : "0.'uG\u0002"
+  },
+  "TM_e347c20a-0f6e-4af7-ae47-e36af296863f" : 
+  {
+    "AchievementSafe" : true,
+    "Files" : [ "easier companion affinity.esm" ],
+    "FilesSize" : 1352,
+    "Timestamp" : 1722452620,
+    "Title" : "Easier Companion Affinity",
+    "Version" : "0.\u0002"
+  },
+  "TM_e822188d-240e-45c5-ba86-d39efce98f1b" : 
+  {
+    "AchievementSafe" : true,
+    "Files" : [ "onek_noemptyshiphabs.esm" ],
+    "FilesSize" : 4337,
+    "Timestamp" : 1722452620,
+    "Title" : "Hide Empty Ship Habs",
+    "Version" : "0.g��\u0001"
+  },
+  "TM_e8358f25-0105-4761-9711-41ab7e11e5a9" : 
+  {
+    "AchievementSafe" : true,
+    "Files" : [ "minimum enemy level.esm" ],
+    "FilesSize" : 0,
+    "Timestamp" : 1722452620,
+    "Title" : "Minimum Enemy Level",
+    "Version" : "0.'uG\u0002"
+  },
+  "TM_ea3f5b74-cb21-4f8a-9b67-87cf581fd7bf" : 
+  {
+    "AchievementSafe" : true,
+    "Files" : [ "eli_surveyslates.esm" ],
+    "FilesSize" : 719,
+    "Timestamp" : 1721330789,
+    "Title" : "Better Sorting: Renamed Survey Data Slates",
+    "Version" : "1718027179.1.00"
+  },
+  "TM_ec06bd07-079c-4e09-ae5d-ca6b574d7b7e" : 
+  {
+    "AchievementSafe" : true,
+    "Files" : [ "ryujinapartment.esm" ],
+    "FilesSize" : 377726,
+    "Timestamp" : 1722452620,
+    "Title" : "Ryujin Apartment 306 - Empty",
+    "Version" : "0.g��\u0001"
+  },
+  "TM_f31b4a58-31be-49be-8025-80586ac39518" : 
+  {
+    "AchievementSafe" : true,
+    "Files" : [ "zeeogresoutposttweaks.esm" ],
+    "FilesSize" : 33458,
+    "Timestamp" : 1722452620,
+    "Title" : "ZeeOgre's Outpost Tweaks",
+    "Version" : "18446744073709551615.0"
+  },
+  "TM_f4c658c4-77f0-4362-af7e-4aa07072598e" : 
+  {
+    "AchievementSafe" : true,
+    "Files" : [ "shipbuildercategories.esm" ],
+    "FilesSize" : 16100,
+    "Timestamp" : 1722452620,
+    "Title" : "Ship Builder Categories",
+    "Version" : "0.\u0002"
+  },
+  "TM_f7dc7ac6-48dd-46b4-a65a-b87cb7d928fd" : 
+  {
+    "AchievementSafe" : false,
+    "Files" : [ "cheatroom.esm" ],
+    "FilesSize" : 446614,
+    "Timestamp" : 1722452620,
+    "Title" : "Cheat Room",
+    "Version" : "0.\u0002"
+  }
+}
