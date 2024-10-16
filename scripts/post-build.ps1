@@ -119,7 +119,7 @@ if ($configuration -eq 'GitRelease') {
 
     # Create GitHub release
     if (Get-Command gh -ErrorAction SilentlyContinue) {
-        $autoUpdaterFile = "$(git rev-parse --show-toplevel)/ZO.LOM.App/Properties/AutoUpdater.xml"
+        $autoUpdaterFile = "$(git rev-parse --show-toplevel)/Properties/AutoUpdater.xml"
         if (Test-Path -Path $autoUpdaterFile) {
             Execute-Command "gh release create $tagName $msiFile $autoUpdaterFile -t $tagName -n 'Release $tagName'"
             Write-Output "Created GitHub release: $tagName with AutoUpdater.xml"
@@ -142,7 +142,7 @@ if ($configuration -eq 'GitRelease') {
 }
 
 # Push AutoUpdater.xml
-$autoUpdaterFile = "$(git rev-parse --show-toplevel)/ZO.LOM.App/Properties/AutoUpdater.xml"
+$autoUpdaterFile = "$(git rev-parse --show-toplevel)/Properties/AutoUpdater.xml"
 if (Test-Path -Path $autoUpdaterFile) {
     Execute-Command "git add $autoUpdaterFile"
     Execute-Command "git commit -m 'Update AutoUpdater.xml for $tagName'"
