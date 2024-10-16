@@ -1,5 +1,4 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
@@ -25,19 +24,15 @@
     <AssemblyName>LoadOrderManager</AssemblyName>
     <Configurations>Debug;Release;GitRelease</Configurations>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-    <StartupObject></StartupObject>
+    <StartupObject>
+    </StartupObject>
     <EnforceCodeStyleInBuild>True</EnforceCodeStyleInBuild>
     <SupportedOSPlatformVersion>7.0</SupportedOSPlatformVersion>
+    <Version>0.0.2.0</Version>
   </PropertyGroup>
-
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='GitRelease|AnyCPU'">
     <Optimize>True</Optimize>
   </PropertyGroup>
-
-  <ItemGroup>
-    <Content Include="src\FileManager\FileManager.ContentCatalogParser.cs" />
-  </ItemGroup>
-
   <ItemGroup>
     <PackageReference Include="Autoupdater.NET.Official" Version="1.9.2" />
     <PackageReference Include="DiffPlex" Version="1.7.2" />
@@ -53,7 +48,6 @@
     <PackageReference Include="System.IO.Hashing" Version="8.0.0" />
     <PackageReference Include="YamlDotNet" Version="16.1.3" />
   </ItemGroup>
-
   <ItemGroup>
     <Compile Update="Properties\Settings.Designer.cs">
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
@@ -61,13 +55,10 @@
       <DependentUpon>Settings.settings</DependentUpon>
     </Compile>
   </ItemGroup>
-
   <ItemGroup>
     <Content Include="data\**\*" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="docs\**\*" CopyToOutputDirectory="OverwriteAlways" />
   </ItemGroup>
-
-
   <Target Name="RearrangeOutputFiles" AfterTargets="Build;Publish" BeforeTargets="PostBuildEvent">
     <ItemGroup>
       <DllFiles Include="$(OutputPath)*.dll" Exclude="$(OutputPath)LoadOrderManager.dll;$(OutputPath)lib\**\*.*" />
@@ -83,7 +74,6 @@
     <Move SourceFiles="@(RuntimeFiles)" DestinationFolder="$(OutputPath)lib\runtimes\%(RecursiveDir)" />
     <RemoveEmptyDirectories RootDirectory="$(OutputPath)" />
   </Target>
-
   <Target Name="CopyConfigFile" AfterTargets="Build;Publish" BeforeTargets="PostBuildEvent">
     <ItemGroup>
       <ConfigFile Include="config\config.yaml" Condition="'$(Configuration)' == 'Debug'" />
@@ -91,15 +81,13 @@
     </ItemGroup>
     <Copy SourceFiles="@(ConfigFile)" DestinationFiles="$(OutputPath)config\config.yaml" />
   </Target>
-
   <UsingTask TaskName="RemoveEmptyDirectories" TaskFactory="CodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
     <ParameterGroup>
       <RootDirectory ParameterType="System.String" Required="true" />
     </ParameterGroup>
     <Task>
       <Using Namespace="System.IO" />
-      <Code Type="Fragment" Language="cs">
-        <![CDATA[
+      <Code Type="Fragment" Language="cs"><![CDATA[
           var directories = Directory.GetDirectories(RootDirectory, "*", SearchOption.AllDirectories)
                                      .OrderByDescending(d => d.Count(c => c == Path.DirectorySeparatorChar));
 
@@ -110,9 +98,36 @@
               Directory.Delete(dir, false);
             }
           }
-        ]]>
-      </Code>
+        ]]></Code>
     </Task>
   </UsingTask>
 
+
+
+	<!--<Target Name="PreBuild" BeforeTargets="PreBuildEvent" Condition="'$(Configuration)' == 'GitRelease'">
+		<Exec Command="powershell -ExecutionPolicy Bypass -File $(ProjectDir)scripts\IncrementVersion.ps1 -SettingsFile $(ProjectDir)Properties\Settings.settings -CsprojFilePath $(ProjectDir)ZO.DMM.AppNF.csproj -AppConfigFilePath $(ProjectDir)App.config -VersionTxtFilePath $(ProjectDir)Properties\version.txt -AipFilePath $(ProjectDir)Installer\DMMInstaller.aip -XmlOutputPath $(ProjectDir)Properties\AutoUpdater.xml -Configuration $(Configuration) -AssemblyInfoFilePath $(ProjectDir)Properties\AssemblyInfo.cs" />
+	</Target>-->
+
+
+	<Target Name="PostBuildMoveCheck" BeforeTargets="RunAdvancedInstaller" AfterTargets="PostBuildEvent">
+		<Message Text="Executing PostBuildMoveCheck target..." Importance="high" />
+		<Exec Command="powershell -ExecutionPolicy Bypass -File &quot;$(ProjectDir)scripts\WaitForFileMove.ps1&quot; -filePath &quot;$(TargetDir)lib\*.dll&quot; -timeoutInSeconds 60" />
+		<Message Text="PostBuildMoveCheck target execution completed." Importance="high" />
+	</Target>
+
+	<PropertyGroup>
+		<MsiFileName Condition="'$(Configuration)' == 'GitRelease'">ZO.LoadOrderManager.msi</MsiFileName>
+		<MsiFileName Condition="'$(Configuration)' == 'Release'">ZO.LoadOrderManager.release.msi</MsiFileName>
+		<MsiFileName Condition="'$(Configuration)' == 'Debug'">ZO.LoadOrderManager.debug.msi</MsiFileName>
+	</PropertyGroup>
+	<Target Name="RunAdvancedInstaller" AfterTargets="PostBuildMoveCheck" Condition="'$(Configuration)' == 'GitRelease' Or '$(Configuration)' == 'Release'">
+		<Message Text="Executing RunAdvancedInstaller target..." Importance="high" />
+		<Exec Command="%25ADVINST_COM%25 /build &quot;$(ProjectDir)installer\ZO.LoadOrderManager.aip&quot; -buildslist &quot;AnyCPU_$(Configuration)&quot;" />
+		<Message Text="RunAdvancedInstaller target execution completed." Importance="high" />
+	</Target>
+	<Target Name="PostBuild" AfterTargets="RunAdvancedInstaller" Condition="'$(Configuration)' == 'GitRelease'">
+		<Message Text="Executing PostBuild target..." Importance="high" />
+		<Exec Command="powershell -ExecutionPolicy Bypass -File &quot;$(ProjectDir)scripts\post-build.ps1&quot; -configuration $(ConfigurationName) -msiFile &quot;$(ProjectDir)installer\output\$(MsiFileName)&quot; -versionFile &quot;$(ProjectDir)Properties\version.txt&quot;" />
+		<Message Text="PostBuild target execution completed." Importance="high" />
+	</Target>
 </Project>

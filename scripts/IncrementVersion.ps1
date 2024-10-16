@@ -6,7 +6,8 @@ param (
     [string]$AipFilePath = "..\installer\ZO.LoadOrderManager.aip",
     [string]$XmlOutputPath = "..\Properties\AutoUpdater.xml",
     [string]$Configuration,
-    [string]$AssemblyInfoFilePath = "..\Properties\AssemblyInfo.cs"
+    [string]$AssemblyInfoFilePath = "..\Properties\AssemblyInfo.cs",
+    [switch]$WhatIf
 )
 
 function Increment-Version {
@@ -84,7 +85,8 @@ function Get-CurrentVersion {
 function Update-SettingsFile {
     param (
         [string]$newVersion,
-        [string]$settingsFilePath
+        [string]$settingsFilePath,
+        [switch]$WhatIf
     )
     if ([string]::IsNullOrEmpty($settingsFilePath)) {
         throw "Settings file path is empty or null."
@@ -92,25 +94,36 @@ function Update-SettingsFile {
 
     $currentVersionData = Get-CurrentVersion -filePath $settingsFilePath
     $currentVersionData.Node.InnerText = $newVersion
-    $currentVersionData.Xml.Save($settingsFilePath)
+
+    if ($WhatIf) {
+        Write-Output "WhatIf: $settingsFilePath would be updated with new version $newVersion"
+    } else {
+        $currentVersionData.Xml.Save($settingsFilePath)
+    }
 }
 
 function Update-VersionTxtFile {
     param (
         [string]$newVersion,
-        [string]$versionTxtFilePath
+        [string]$versionTxtFilePath,
+        [switch]$WhatIf
     )
     if ([string]::IsNullOrEmpty($versionTxtFilePath)) {
         throw "Version.txt file path is empty or null."
     }
 
-    Set-Content -Path $versionTxtFilePath -Value $newVersion -Encoding UTF8
+    if ($WhatIf) {
+        Write-Output "WhatIf: $versionTxtFilePath would be updated with new version $newVersion"
+    } else {
+        Set-Content -Path $versionTxtFilePath -Value $newVersion -Encoding UTF8
+    }
 }
 
 function Update-AppConfig {
     param (
         [string]$newVersion,
-        [string]$appConfigFilePath
+        [string]$appConfigFilePath,
+        [switch]$WhatIf
     )
     if ([string]::IsNullOrEmpty($appConfigFilePath)) {
         throw "App.config file path is empty or null."
@@ -121,18 +134,22 @@ function Update-AppConfig {
     $versionNode = $appConfigXml.SelectSingleNode("//applicationSettings/ZO.LoadOrderManager.Properties.Settings/setting[@name='version']/value")
     if ($versionNode -ne $null) {
         $versionNode.InnerText = $newVersion
-        Write-Output "Updated Version in App.config: $newVersion"
+        if ($WhatIf) {
+            Write-Output "WhatIf: $appConfigFilePath would be updated with new version $newVersion"
+        } else {
+            Write-Output "Updated Version in App.config: $newVersion"
+            $appConfigXml.Save($appConfigFilePath)
+        }
     } else {
         throw "Error: Version node not found in App.config."
     }
-
-    $appConfigXml.Save($appConfigFilePath)
 }
 
 function Update-AutoUpdaterXml {
     param (
         [string]$newVersion,
-        [string]$xmlOutputPath
+        [string]$xmlOutputPath,
+        [switch]$WhatIf
     )
     if ([string]::IsNullOrEmpty($xmlOutputPath)) {
         throw "AutoUpdater.xml file path is empty or null."
@@ -143,18 +160,22 @@ function Update-AutoUpdaterXml {
     $versionNode = $xmlOutput.SelectSingleNode("//item/version")
     if ($versionNode -ne $null) {
         $versionNode.InnerText = $newVersion
-        Write-Output "Updated Version in AutoUpdater.xml: $newVersion"
+        if ($WhatIf) {
+            Write-Output "WhatIf: $xmlOutputPath would be updated with new version $newVersion"
+        } else {
+            Write-Output "Updated Version in AutoUpdater.xml: $newVersion"
+            $xmlOutput.Save($xmlOutputPath)
+        }
     } else {
         throw "Error: Version node not found in AutoUpdater.xml."
     }
-
-    $xmlOutput.Save($xmlOutputPath)
 }
 
 function Update-AipFile {
     param (
         [string]$newVersion,
-        [string]$aipFilePath
+        [string]$aipFilePath,
+        [switch]$WhatIf
     )
     if ([string]::IsNullOrEmpty($aipFilePath)) {
         throw "Installer.aip file path is empty or null."
@@ -180,13 +201,18 @@ function Update-AipFile {
         throw "Error: ProductCode node not found in Installer.aip."
     }
 
-    $aipXml.Save($aipFilePath)
+    if ($WhatIf) {
+        Write-Output "WhatIf: $aipFilePath would be updated with new version $newVersion and new ProductCode $newGuid"
+    } else {
+        $aipXml.Save($aipFilePath)
+    }
 }
 
 function Update-AssemblyInfoFile {
     param (
         [string]$newVersion,
-        [string]$assemblyInfoFilePath
+        [string]$assemblyInfoFilePath,
+        [switch]$WhatIf
     )
 
     if ([string]::IsNullOrEmpty($assemblyInfoFilePath)) {
@@ -206,12 +232,14 @@ function Update-AssemblyInfoFile {
         }
     }
 
-    # Output the updated AssemblyInfo content to verify
-    Write-Output "Updated AssemblyInfo content:"
-    $assemblyInfoLines | ForEach-Object { Write-Output $_ }
-
-    # Write the modified content back to the file
-    Set-Content -Path $assemblyInfoFilePath -Value $assemblyInfoLines -Encoding UTF8
+    if ($WhatIf) {
+        Write-Output "WhatIf: $assemblyInfoFilePath would be updated with new version $newVersion"
+        Write-Output "Updated AssemblyInfo content:"
+        $assemblyInfoLines | ForEach-Object { Write-Output $_ }
+    } else {
+        # Write the modified content back to the file
+        Set-Content -Path $assemblyInfoFilePath -Value $assemblyInfoLines -Encoding UTF8
+    }
 }
 
 $currentVersionData = Get-CurrentVersion -filePath $SettingsFile
@@ -219,12 +247,14 @@ $currentVersion = $currentVersionData.Version
 
 $newVersion = Increment-Version -version $currentVersion
 
-Update-CsprojVersion -newVersion $newVersion -csprojFilePath $CsprojFilePath
-Update-SettingsFile -newVersion $newVersion -settingsFilePath $SettingsFile
-Update-VersionTxtFile -newVersion $newVersion -versionTxtFilePath $VersionTxtFilePath
-Update-AppConfig -newVersion $newVersion -appConfigFilePath $AppConfigFilePath
-Update-AutoUpdaterXml -newVersion $newVersion -xmlOutputPath $XmlOutputPath
-Update-AssemblyInfoFile -newVersion $newVersion -assemblyInfoFilePath $AssemblyInfoFilePath
-Update-AipFile -newVersion $newVersion -aipFilePath $AipFilePath
+Update-CsprojVersion -newVersion $newVersion -csprojFilePath $CsprojFilePath -WhatIf:$WhatIf
+Update-SettingsFile -newVersion $newVersion -settingsFilePath $SettingsFile -WhatIf:$WhatIf
+Update-VersionTxtFile -newVersion $newVersion -versionTxtFilePath $VersionTxtFilePath -WhatIf:$WhatIf
+Update-AppConfig -newVersion $newVersion -appConfigFilePath $AppConfigFilePath -WhatIf:$WhatIf
+Update-AutoUpdaterXml -newVersion $newVersion -xmlOutputPath $XmlOutputPath -WhatIf:$WhatIf
+Update-AssemblyInfoFile -newVersion $newVersion -assemblyInfoFilePath $AssemblyInfoFilePath -WhatIf:$WhatIf
+Update-AipFile -newVersion $newVersion -aipFilePath $AipFilePath -WhatIf:$WhatIf
 
-Write-Output "Version incremented to $newVersion"
+if (-not $WhatIf) {
+    Write-Output "Version incremented to $newVersion"
+}
