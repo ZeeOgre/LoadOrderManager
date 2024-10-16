@@ -5,6 +5,7 @@ param (
     [bool]$manual = $false
 )
 
+# Function to execute a command and handle errors
 function Execute-Command {
     param (
         [string]$command
@@ -12,21 +13,33 @@ function Execute-Command {
     Write-Output "Executing: $command"
     $result = Invoke-Expression $command 2>&1
     if ($LASTEXITCODE -ne 0) {
-        Write-Error "Command failed: $command"
-        Write-Error ($result -join "`n")
-        exit 1
+        if ($result -match "nothing to commit, working tree clean") {
+            Write-Output "Nothing to commit, working tree clean."
+        } else {
+            Write-Error "Command failed: $command"
+            Write-Error ($result -join "`n")
+            exit 1
+        }
     }
     Write-Output $result
 }
 
-# Function to get the newest tag
+# Ensure all changes are staged
+Execute-Command "git add -A"
+
+# Commit the changes
+try {
+    Execute-Command "git commit -m 'Post-build commit for configuration $configuration'"
+} catch {
+    Write-Error "Failed to commit changes."
+    exit 1
+}
+
 function Get-NewestTag {
     $tags = git tag --sort=-v:refname
-    Write-Output "Tags: $tags"
     return $tags[0]
 }
 
-# Function to increment a tag
 function Increment-Tag {
     param (
         [string]$tag
@@ -37,15 +50,6 @@ function Increment-Tag {
     } else {
         return "$tag-m1"
     }
-}
-
-# Check for changes before committing
-$changes = git status --porcelain
-if ($changes) {
-    Execute-Command "git add -A"
-    Execute-Command "git commit -m 'Post-build commit for configuration $configuration'"
-} else {
-    Write-Output "No changes to commit."
 }
 
 # Ensure correct directory
@@ -65,9 +69,7 @@ if (-not $manual) {
     $tagName = "v$version"
 } else {
     $newestTag = Get-NewestTag
-    Write-Output "Newest Tag: $newestTag"
     $tagName = Increment-Tag -tag $newestTag
-    Write-Output "Incremented Tag: $tagName"
 }
 
 Write-Output "Tag Name: $tagName"
@@ -96,35 +98,21 @@ if (-not [string]::IsNullOrWhiteSpace($gitStatus)) {
     Execute-Command "git add ."
     Execute-Command "git commit -m 'Automated commit for $configuration configuration'"
     Write-Output "Committed changes."
-}
 
-# Check if the branch is ahead of the remote and push if necessary
-$branchStatus = git status -uno
-if ($branchStatus -match "Your branch is ahead of 'origin/$currentBranch'") {
-    try {
-        Execute-Command "git push origin $currentBranch"
-        Write-Output "Pushed changes to $currentBranch."
-    } catch {
-        Write-Error "Failed to push changes to $currentBranch."
-        Write-Error ($_.Exception.Message)
-        exit 1
-    }
+    Execute-Command "git push origin $currentBranch"
+    Write-Output "Pushed changes to $currentBranch."
 } else {
     Write-Output "Nothing to commit, working tree clean."
 }
 
 # Handle release
 if ($configuration -eq 'GitRelease') {
-    Write-Output "Handling GitRelease configuration"
-    
     # Delete existing local tag if it exists
     $existingTag = git tag -l $tagName
     if ($existingTag) {
-        Write-Output "Deleting existing tag: $tagName"
         Execute-Command "git tag -d $tagName"
     }
 
-    Write-Output "Creating new tag: $tagName"
     Execute-Command "git tag $tagName"
     Execute-Command "git push origin $tagName"
     Write-Output "Tagged and pushed release: $tagName"
@@ -133,7 +121,6 @@ if ($configuration -eq 'GitRelease') {
     if (Get-Command gh -ErrorAction SilentlyContinue) {
         $autoUpdaterFile = "$(git rev-parse --show-toplevel)/Properties/AutoUpdater.xml"
         if (Test-Path -Path $autoUpdaterFile) {
-            Write-Output "Creating GitHub release: $tagName"
             Execute-Command "gh release create $tagName $msiFile $autoUpdaterFile -t $tagName -n 'Release $tagName'"
             Write-Output "Created GitHub release: $tagName with AutoUpdater.xml"
         } else {
@@ -148,7 +135,6 @@ if ($configuration -eq 'GitRelease') {
     # Check if there is a stash to pop
     $stashList = git stash list
     if (-not [string]::IsNullOrWhiteSpace($stashList)) {
-        Write-Output "Popping stash"
         Execute-Command "git stash pop"
     } else {
         Write-Output "No stash to pop."
@@ -158,16 +144,10 @@ if ($configuration -eq 'GitRelease') {
 # Push AutoUpdater.xml
 $autoUpdaterFile = "$(git rev-parse --show-toplevel)/Properties/AutoUpdater.xml"
 if (Test-Path -Path $autoUpdaterFile) {
-    $autoUpdaterChanges = git status --porcelain $autoUpdaterFile
-    if ($autoUpdaterChanges) {
-        Write-Output "Committing changes to AutoUpdater.xml"
-        Execute-Command "git add $autoUpdaterFile"
-        Execute-Command "git commit -m 'Update AutoUpdater.xml for $tagName'"
-        Execute-Command "git push origin $currentBranch"
-        Write-Output "Pushed AutoUpdater.xml changes."
-    } else {
-        Write-Output "No changes to AutoUpdater.xml to commit."
-    }
+    Execute-Command "git add $autoUpdaterFile"
+    Execute-Command "git commit -m 'Update AutoUpdater.xml for $tagName'"
+    Execute-Command "git push origin $currentBranch"
+    Write-Output "Pushed AutoUpdater.xml changes."
 } else {
     Write-Error "AutoUpdater.xml file not found at path: $autoUpdaterFile"
     exit 1
@@ -183,8 +163,4 @@ if (-not (Get-Command gh -ErrorAction SilentlyContinue)) {
 if ($currentBranch -eq 'dev') {
     Execute-Command "git checkout dev"
     Write-Output "Switched back to dev branch."
-} else {
-    # Ensure master is pushed
-    Execute-Command "git push origin master"
-    Write-Output "Pushed master branch."
 }

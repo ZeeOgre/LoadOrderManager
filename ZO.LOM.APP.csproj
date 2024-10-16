@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
@@ -111,7 +111,7 @@
     <MsiFileName Condition="'$(Configuration)' == 'GitRelease'">ZO.LoadOrderManager.msi</MsiFileName>
     <MsiFileName Condition="'$(Configuration)' == 'Release'">ZO.LoadOrderManager.release.msi</MsiFileName>
     <MsiFileName Condition="'$(Configuration)' == 'Debug'">ZO.LoadOrderManager.debug.msi</MsiFileName>
-    <PackageReleaseNotes>Hopefully last "empty" update, testing our final autoincrement scripts.</PackageReleaseNotes>
+    <PackageReleaseNotes>ful automation test.</PackageReleaseNotes>
   </PropertyGroup>
   <Target Name="RunAdvancedInstaller" AfterTargets="PostBuildMoveCheck" Condition="'$(Configuration)' == 'GitRelease' Or '$(Configuration)' == 'Release'">
     <Message Text="Executing RunAdvancedInstaller target..." Importance="high" />
