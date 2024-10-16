@@ -404,17 +404,28 @@
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
-                        <!-- Fixed column width for the light -->
+                        <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
 
                     <!-- Status Message -->
                     <TextBlock Text="{Binding StatusMessage}" Grid.Column="0" VerticalAlignment="Center" />
 
+                    <!-- Warning Message -->
+                    <TextBox x:Name="WarningTextBox" 
+                     Width="400" 
+                     IsReadOnly="True" 
+                     Visibility="{Binding IsWarningActive, Converter={StaticResource BooleanToVisibilityConverter}}" 
+                     Text="{Binding WarningMessage}" 
+                     Margin="5,0,0,0" 
+                     BorderThickness="0" 
+                     Grid.Column="1" 
+                     VerticalAlignment="Center" />
+
                     <!-- Status Light -->
                     <Ellipse x:Name="StatusLight" Width="16" Height="16" 
                      HorizontalAlignment="Right" VerticalAlignment="Center" 
                      MaxWidth="50" 
-                     Margin="0,0,10,0" Fill="{Binding StatusLightColor}" Grid.Column="1">
+                     Margin="0,0,10,0" Fill="{Binding StatusLightColor}" Grid.Column="2">
                         <Ellipse.ContextMenu>
                             <ContextMenu>
                                 <MenuItem Header="Refresh" Command="{Binding RefreshCommand}" />
@@ -424,6 +435,7 @@
                 </Grid>
             </StatusBarItem>
         </StatusBar>
+
 
 
     </Grid>

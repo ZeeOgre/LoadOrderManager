@@ -241,7 +241,7 @@ namespace ZO.LoadOrderManager
                         App.LogDebug("Initializing configuration...");
                         InitializationManager.StartInitialization(nameof(Config));
                         Config.Initialize();
-                        InitializationManager.ReportProgress(20, "Configuration initialized");
+                        InitializationManager.ReportProgress(10, "Configuration initialized");
                         InitializationManager.EndInitialization(nameof(Config));
 
                         ApplyCustomTheme(Config.Instance.DarkMode);
@@ -249,14 +249,16 @@ namespace ZO.LoadOrderManager
                         App.LogDebug("Initializing database manager...");
                         InitializationManager.StartInitialization(nameof(DbManager));
                         DbManager.Instance.Initialize();
-                        InitializationManager.ReportProgress(40, "Database manager initialized");
+                        InitializationManager.ReportProgress(20, "Database manager initialized");
                         InitializationManager.EndInitialization(nameof(DbManager));
 
                         App.LogDebug("Initializing file manager...");
                         InitializationManager.StartInitialization(nameof(FileManager));
                         FileManager.Initialize();
-                        InitializationManager.ReportProgress(80, "File manager initialized");
+                        InitializationManager.ReportProgress(90, "File manager initialized");
                         InitializationManager.EndInitialization(nameof(FileManager));
+                        
+                        InitializationManager.PrintInitializingComponents();
 
                         // Show the main window on the UI thread
                         Dispatcher.Invoke(() =>
@@ -266,7 +268,7 @@ namespace ZO.LoadOrderManager
                                 if (_mainWindow == null)
                                 {
                                     App.LogDebug("Creating a new instance of LoadOrderWindow...");
-                                    _mainWindow = new LoadOrderWindow();
+                                    _mainWindow = LoadOrderWindow.Instance;
                                 }
 
                                 _mainWindow.WindowStartupLocation = WindowStartupLocation.CenterScreen;
@@ -318,9 +320,12 @@ namespace ZO.LoadOrderManager
 
         public static void RestartApplication()
         {
-            var exeName = Process.GetCurrentProcess().MainModule.FileName;
-            _ = Process.Start(exeName);
-            Application.Current.Shutdown();
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                var exeName = Process.GetCurrentProcess().MainModule.FileName;
+                _ = Process.Start(exeName);
+                Application.Current.Shutdown();
+            });
         }
 
         private static Assembly? OnAssemblyResolve(object? sender, ResolveEventArgs args)

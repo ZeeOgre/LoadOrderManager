@@ -78,11 +78,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="installer\" />
-    <Folder Include="lib\" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Compile Update="Properties\Settings.Designer.cs">
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
       <AutoGen>True</AutoGen>
@@ -95,15 +90,19 @@
     <Content Include="docs\**\*" CopyToOutputDirectory="OverwriteAlways" />
   </ItemGroup>
 
-
   <Target Name="RearrangeOutputFiles" AfterTargets="Build;Publish" BeforeTargets="PostBuildEvent">
     <ItemGroup>
-      <DllFiles Include="$(OutputPath)*.dll" Exclude="$(OutputPath)LoadOrderManager.dll;$(OutputPath)**\*.resources.dll;$(OutputPath)lib\**\*.*;$(OutputPath)runtimes\**\*.*" />
-      <ResourceDllFiles Include="$(OutputPath)**\*.resources.dll" Exclude="$(OutputPath)locale\**\*.*;$(OutputPath)runtimes\**\*.*" />
+      <DllFiles Include="$(OutputPath)*.dll" Exclude="$(OutputPath)LoadOrderManager.dll;$(OutputPath)lib\**\*.*" />
+      <ResourceDllFiles Include="$(OutputPath)**\*.resources.dll" Exclude="$(OutputPath)lib\locale\**\*.*" />
+      <LocaleFiles Include="$(OutputPath)locale\**\*" />
+      <RuntimeFiles Include="$(OutputPath)runtimes\**\*" />
     </ItemGroup>
     <Move SourceFiles="@(DllFiles)" DestinationFolder="$(OutputPath)lib\%(RecursiveDir)" />
-    <MakeDir Directories="$(OutputPath)locale" />
-    <Move SourceFiles="@(ResourceDllFiles)" DestinationFolder="$(OutputPath)locale\%(RecursiveDir)" />
+    <MakeDir Directories="$(OutputPath)lib\locale" />
+    <Move SourceFiles="@(ResourceDllFiles)" DestinationFolder="$(OutputPath)lib\locale\%(RecursiveDir)" />
+    <Move SourceFiles="@(LocaleFiles)" DestinationFolder="$(OutputPath)lib\locale\%(RecursiveDir)" />
+    <MakeDir Directories="$(OutputPath)lib\runtimes" />
+    <Move SourceFiles="@(RuntimeFiles)" DestinationFolder="$(OutputPath)lib\runtimes\%(RecursiveDir)" />
     <RemoveEmptyDirectories RootDirectory="$(OutputPath)" />
   </Target>
 
@@ -123,7 +122,10 @@
       <Using Namespace="System.IO" />
       <Code Type="Fragment" Language="cs">
         <![CDATA[
-          foreach (var dir in Directory.GetDirectories(RootDirectory, "*", SearchOption.AllDirectories))
+          var directories = Directory.GetDirectories(RootDirectory, "*", SearchOption.AllDirectories)
+                                     .OrderByDescending(d => d.Count(c => c == Path.DirectorySeparatorChar));
+
+          foreach (var dir in directories)
           {
             if (Directory.GetFiles(dir).Length == 0 && Directory.GetDirectories(dir).Length == 0)
             {

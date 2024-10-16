@@ -12,15 +12,23 @@ namespace ZO.LoadOrderManager
     {
         private bool isSaved;
         private long SelectedLoadOutID;
-        private System.Timers.Timer cooldownTimer;
+       
         private bool _isLoadOrderTreeViewInitialized = false;
         private bool _isCachedGroupSetTreeViewInitialized = false;
 
-        public LoadOrderWindow()
+        private static LoadOrderWindow _instance;
+
+        public LoadOrderWindowViewModel LOWVM
+        {
+            get => this.DataContext as LoadOrderWindowViewModel;
+        }
+
+
+        private LoadOrderWindow()
         {
             InitializationManager.StartInitialization(nameof(LoadOrderWindow));
             InitializeComponent();
-            cooldownTimer = new System.Timers.Timer();
+            
 
             try
             {
@@ -56,6 +64,27 @@ namespace ZO.LoadOrderManager
                 Debug.WriteLine($"LoadOrderWindow: Exception occurred - {ex.Message}");
                 _ = MessageBox.Show($"An error occurred while initializing the window: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 Close();
+            }
+        }
+
+        public static LoadOrderWindow Instance
+        {
+            get
+            {
+                if (_instance == null)
+                {
+                    _instance = new LoadOrderWindow();
+                }
+                return _instance;
+            }
+        }
+
+        public static void DisposeInstance()
+        {
+            if (_instance != null)
+            {
+                _instance.Close();
+                _instance = null;
             }
         }
 
@@ -185,6 +214,19 @@ namespace ZO.LoadOrderManager
                     if (viewModel.SelectedItems.Count > 0)
                     {
                         viewModel.MoveDownCommand.Execute(viewModel.SelectedItems[0]);
+                    }
+                }
+                else if (e.Key == Key.Space)
+                {
+                    // Toggle IsActive state when the spacebar is pressed
+                    if (viewModel.SelectedItems.Count > 0)
+                    {
+                        var selectedItem = viewModel.SelectedItems[0] as LoadOrderItemViewModel;
+                        if (selectedItem != null)
+                        {
+                            selectedItem.IsActive = !selectedItem.IsActive;
+                            viewModel.OnPropertyChanged(nameof(selectedItem.IsActive));
+                        }
                     }
                 }
             }

@@ -52,6 +52,8 @@ namespace ZO.LoadOrderManager
                     // Check if files have already been loaded
                     if (AggLoadInfo.Instance.ActiveGroupSet.AreFilesLoaded)
                     {
+                        InitializationManager.ReportProgress(75, "Files already loaded...");
+                        InitializationManager.EndInitialization(nameof(FileManager));
                         App.LogDebug("FileManager: Files have already been loaded. Skipping file initialization.");
                         _initialized = true;
                         return;
@@ -62,23 +64,29 @@ namespace ZO.LoadOrderManager
                     AggLoadInfo.Instance.ActiveGroupSet.SaveGroupSet();
 
                     _ = FileManager.ParsePluginsTxt(AggLoadInfo.Instance, PluginsFile);
-                    InitializationManager.ReportProgress(83, "Plugins parsed");
+                    InitializationManager.ReportProgress(21, "Plugins parsed");
 
                     FileManager.ParseContentCatalogTxt();
-                    InitializationManager.ReportProgress(84, "Content catalog parsed");
+                    InitializationManager.ReportProgress(22, "Content catalog parsed");
 
 
+                    InitializationManager.ReportProgress(21, "Starting GameFolder Scan");
                     //FileManager.ScanGameDirectoryForStraysAsync();
                     FileManager.ScanGameDirectoryForStrays(true);
 
                     FileManager.MarkLoadOutComplete(AggLoadInfo.Instance);
-                    InitializationManager.ReportProgress(85, "LoadOut marked complete");
+                    InitializationManager.ReportProgress(89, "LoadOut marked complete");
 
-
+                    InitializationManager.PrintInitializingComponents();
 
 
                     _initialized = true;
                     App.LogDebug("FileManager: Initialization completed successfully.");
+
+
+                        //App.RestartApplication();
+                
+
                 }
                 catch (Exception ex)
                 {
@@ -88,6 +96,8 @@ namespace ZO.LoadOrderManager
                 finally
                 {
                     InitializationManager.EndInitialization(nameof(FileManager));
+                    // Restart the application if initialization was successful
+
                 }
             }
         }

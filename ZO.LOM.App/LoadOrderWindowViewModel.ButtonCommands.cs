@@ -24,13 +24,16 @@ namespace ZO.LoadOrderManager
 
 
 
-
         private void UpdateStatusLight()
         {
             // Check if the state is dirty and update the light color
             if (AggLoadInfo.Instance.IsDirty)
             {
                 StatusLightColor = new SolidColorBrush(Colors.Red);
+            }
+            else if (IsWarningActive)
+            {
+                StatusLightColor = new SolidColorBrush(Colors.Yellow);
             }
             else
             {

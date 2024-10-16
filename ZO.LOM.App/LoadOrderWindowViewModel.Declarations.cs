@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Windows;
 using System.Windows.Media;
 
 namespace ZO.LoadOrderManager
@@ -14,6 +15,30 @@ namespace ZO.LoadOrderManager
         private bool _isSynchronizing = false;
         private List<LoadOrderItemViewModel>? _cachedFlatList;
         private bool _isRefreshing = false;
+        private string _warningMessage;
+        private bool _isWarningActive;
+
+
+
+        public string WarningMessage
+        {
+            get => _warningMessage;
+            set
+            {
+                _warningMessage = value;
+                OnPropertyChanged(nameof(WarningMessage));
+            }
+        }
+
+        public bool IsWarningActive
+        {
+            get => _isWarningActive;
+            set
+            {
+                _isWarningActive = value;
+                OnPropertyChanged(nameof(IsWarningActive));
+            }
+        }
 
         private Brush _statusLightColor;
         public Brush StatusLightColor
@@ -119,7 +144,7 @@ namespace ZO.LoadOrderManager
         public void EndSync() => _isSynchronizing = false;
 
         // OnPropertyChanged helper
-        protected void OnPropertyChanged(string propertyName)
+        public void OnPropertyChanged(string propertyName)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
@@ -143,15 +168,53 @@ namespace ZO.LoadOrderManager
             }
         }
 
+        public void SetWarning(string message)
+        {
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                WarningMessage = message;
+                IsWarningActive = true;
+                UpdateStatusLight();
+
+                // Use a short timer to force a UI refresh
+                var refreshTimer = new System.Windows.Threading.DispatcherTimer
+                {
+                    Interval = TimeSpan.FromMilliseconds(100)
+                };
+
+                refreshTimer.Tick += (s, e) =>
+                {
+                    refreshTimer.Stop();
+                    OnPropertyChanged(nameof(WarningMessage));
+                };
+
+                refreshTimer.Start();
+            });
+        }
+
+        public void ClearWarning()
+        {
+            // Ensure the action runs on the UI thread
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                WarningMessage = string.Empty;
+                IsWarningActive = false;
+                UpdateStatusLight();
+            });
+        }
+
+
         // Rebuild flat list based on LoadOrders
         private void RebuildFlatList()
         {
             if (_isRefreshing || _isSynchronizing || LoadOrders.Items.Count == 0 || _cachedFlatList is null) return;
             _isRefreshing = true;
+            SetWarning("Rebuilding flat list. Please wait...");
 
             // Rebuild the flat list from LoadOrders.Items
             _cachedFlatList = Flatten(LoadOrders.Items, true).ToList();
-
+            
+            ClearWarning();
             _isRefreshing = false;
         }
 

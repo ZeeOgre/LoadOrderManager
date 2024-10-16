@@ -10,10 +10,9 @@ namespace ZO.LoadOrderManager
         {
             _ = Application.Current.Dispatcher.InvokeAsync(async () =>
             {
-                await FileManager.ScanGameDirectoryForStraysAsync(true);
+                await FileManager.ScanGameDirectoryForStraysAsync(fullScan);
             });
         }
-
 
         public static async Task ScanGameDirectoryForStraysAsync(bool fullScan = true)
         {
@@ -24,20 +23,10 @@ namespace ZO.LoadOrderManager
                 .Concat(Directory.GetFiles(dataFolder, "*.esm"))
                 .ToList();
 
-            var loadingWindow = new LoadingWindow
-            {
-                Owner = Application.Current.MainWindow // Set the owner to the main window
-            };
-            loadingWindow.ShowInForeground();
-            _ = loadingWindow.Activate(); // Ensure the window is brought to the foreground
-            if (fullScan)
-            {
-                loadingWindow.UpdateProgress(1, "Full Scan Selected, this may take several minutes as the game folder has VERY large files...");
-            }
-            else
-            {
-                loadingWindow.UpdateProgress(1, "Quick Scan Selected, starting scan...");
-            }
+            // Log start of scan and set the initial warning message
+            LoadOrderWindow.Instance.LOWVM.SetWarning(fullScan
+                ? "Full Scan Selected, this may take several minutes as the game folder has VERY large files..."
+                : "Quick Scan Selected, starting scan...");
 
             // Load all known FileInfo objects with the GameFolder flag set
             var knownGameFolderFiles = ZO.LoadOrderManager.FileInfo.GetAllFiles()
@@ -61,7 +50,8 @@ namespace ZO.LoadOrderManager
             {
                 currentFileIndex++;
                 long progress = 1 + (98 * currentFileIndex / totalFiles);
-                loadingWindow.UpdateProgress(progress, $"Processing {Path.GetFileName(pluginFile)}...");
+                string pluginFileName = Path.GetFileName(pluginFile);
+                LoadOrderWindow.Instance.LOWVM.SetWarning($"({currentFileIndex}/{totalFiles}) Adding file info for {pluginFileName}");
 
                 var fileInfo = new System.IO.FileInfo(pluginFile);
                 var pluginName = fileInfo.Name.ToLowerInvariant();
@@ -81,7 +71,6 @@ namespace ZO.LoadOrderManager
                     var existingPlugin = AggLoadInfo.Instance.Plugins.FirstOrDefault(p => p.PluginName.Equals(pluginName, StringComparison.OrdinalIgnoreCase));
                     if (existingPlugin != null)
                     {
-
                         if (existingFileInfo.DTStamp == dtStamp && (!fullScan && newHash != String.Empty))
                         {
                             existingPlugin.DTStamp = dtStamp;
@@ -92,8 +81,6 @@ namespace ZO.LoadOrderManager
                             existingFileInfo.Flags = FileFlags.GameFolder;
                             existingFileInfo.AbsolutePath = fileInfo.FullName;
                             _ = ZO.LoadOrderManager.FileInfo.InsertFileInfo(existingFileInfo, existingPlugin.PluginID);
-
-
                         }
                         else
                         {
@@ -150,8 +137,8 @@ namespace ZO.LoadOrderManager
                 await Task.Delay(10);
             }
 
-            loadingWindow.UpdateProgress(100, "Scan complete.");
-            loadingWindow.Close();
+            LoadOrderWindow.Instance.LOWVM.ClearWarning(); // Clear the warning after scan completion
+            App.LogDebug("Scan complete.");
         }
 
         private static void AddAffiliatedFiles(System.IO.FileInfo pluginFileInfo, long pluginId, bool fullScan)
@@ -163,15 +150,21 @@ namespace ZO.LoadOrderManager
             var ba2Files = Directory.GetFiles(dataFolder, $"{baseFileName}*.ba2");
             var iniFiles = Directory.GetFiles(dataFolder, $"{baseFileName}.ini");
 
+            int totalAffiliatedFiles = ba2Files.Length + iniFiles.Length;
+            int currentAffiliatedFileIndex = 0;
+
             foreach (var ba2File in ba2Files)
             {
+                currentAffiliatedFileIndex++;
+                string ba2FileName = Path.GetFileName(ba2File);
+                LoadOrderWindow.Instance.LOWVM.SetWarning($"({currentAffiliatedFileIndex}/{totalAffiliatedFiles}) Adding affiliated file info for {ba2FileName}");
 
                 string? newHash = null;
                 if (fullScan) newHash = ZO.LoadOrderManager.FileInfo.ComputeHash(ba2File);
 
                 var ba2FileInfo = new ZO.LoadOrderManager.FileInfo
                 {
-                    Filename = Path.GetFileName(ba2File),
+                    Filename = ba2FileName,
                     DTStamp = File.GetLastWriteTime(ba2File).ToString("yyyy-MM-dd HH:mm:ss"),
                     HASH = newHash,
                     Flags = FileFlags.IsArchive | FileFlags.GameFolder,
@@ -182,11 +175,15 @@ namespace ZO.LoadOrderManager
 
             foreach (var iniFile in iniFiles)
             {
+                currentAffiliatedFileIndex++;
+                string iniFileName = Path.GetFileName(iniFile);
+                LoadOrderWindow.Instance.LOWVM.SetWarning($"({currentAffiliatedFileIndex}/{totalAffiliatedFiles}) Adding affiliated file info for {iniFileName} ");
+
                 string? newHash = null;
                 if (fullScan) newHash = ZO.LoadOrderManager.FileInfo.ComputeHash(iniFile);
                 var iniFileInfo = new ZO.LoadOrderManager.FileInfo
                 {
-                    Filename = Path.GetFileName(iniFile),
+                    Filename = iniFileName,
                     DTStamp = File.GetLastWriteTime(iniFile).ToString("yyyy-MM-dd HH:mm:ss"),
                     HASH = newHash,
                     Flags = FileFlags.GameFolder,
@@ -196,5 +193,4 @@ namespace ZO.LoadOrderManager
             }
         }
     }
-
 }
