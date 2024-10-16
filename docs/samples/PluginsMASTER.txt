@@ -1,0 +1,113 @@
+# ZeeOgres Template Plugins.txt
+
+### BethesdaPaid @@ Bethesda paid mods 
+*sfbgs00a_a.esm
+*sfbgs00a_d.esm
+*sfbgs00a_f.esm
+*sfbgs023.esm
+*sfta01.esm
+
+
+### Community Patch
+*StarfieldCommunityPatch.esm
+
+
+### Places @@ New and furnished locations
+*CydoniaHome.esm
+*DWN_CoreManorFurnished.esm
+*DWN_ParadisoPlayerHome_Furnished.esm
+*DWN_TheWellApartmentFurnished.esm
+*MantisLairHome.esm
+*MercuryPenthouseFurnished.esm
+*tankgirlsmodelhome.esm
+*tankgirlsmodelhomepoi.esm
+*qso safehouse.esm
+*RyujinApartment.esm
+*SkySuiteExpanded.esm
+*cheatroom.esm
+
+### New Things
+*ultimate_starter_kit.esm
+
+#### Followers
+*grogufollower.esm
+*PilotAssistantBot.esm
+*OutpostResourceBot.esm
+
+
+#### Items @@ Added Clothing, Armor, Items
+*guyver.esm
+*KZ_Operative.esm
+*Skully's Suit Displays.esm
+
+#### New Ships
+*Spyder.esm
+*FurnishedStarbornShip.esm
+
+
+### Gameplay Modification @@ Mods which change game behavior, but you might want to still override some of the things that happen here.
+*AurieChooseVariantUniverse.esm
+*BARDS_OutpostCleaner.esm
+*CompanionPreviews.esm
+*Minimum Enemy Level.esm
+*Dynamic_System_Levels.esm
+*Easier Companion Affinity.esm
+*ImprovedFollowerBehavior.esm
+*Inquisitor_Starborn_Supervisor.esm
+*LazyScav.esm
+*LessAnnoyingTemples.esm
+*More Buildable Mission Boards.esm
+*MyPrice.esm
+*NASALandmark.esm
+*NaturallyGoodLoot.esm
+*NotANoob.esm
+*OpenNearbyDoors.esm
+*OrganicResourcesMerged.esm
+*Shades_Immersive_Looting.esm
+*Shades_Stealth_Takedowns.esm
+*SkillFixes.esm
+*SKKPlayerHomesAnywhere.esm
+*SKKShipTools.esm
+*SKKUniversalStash.esm
+*SmartDoc.esm
+*particlestealth.esm
+*SonaPonytail.esm
+*Unarmed Mastery.esm
+*Vanilla Flashlight Improved.esm
+*Venworks-Pawnshop.esm
+*VisibleCompanionAffinity.esm
+*WorkingStoves.esm
+
+
+### High Priority Mods @@ mods which should never be changed except by deliberate choice
+#### DarkStar
+*DarkStar_Astrodynamics.esm
+*DarkStar_Emissaries.esm
+*DarkStar_Manufacturing.esm
+*dsm patch - kz operative by zeeogre.esm
+*dsm_vulture_patch.esm
+
+
+#### Shipbuilding
+PlaceDoorsYourself.esm
+*Ship Power Fix.esm
+*ShipBuilderCategories.esm
+*TNSeparatedCategories.esm
+
+### High Priority Overrides @@ These mods are known to make changes that may override other mods, and should be loaded after everything else.
+*TakeItemsThroughUnity.esm
+*TheGangsAllHere.esm
+
+### ForcedOverrides @@ Deliberate override choices which you never want to be overriden by anything else
+*ZeeOgresOutpostTweaks.esm
+*zeeogresdomesticateallflora.esm
+*zeeogreswellstockedmerchants.esm
+
+
+### ESP @@ ESP files - these are generally "in development" mods, and should always be loaded last.
+*xatmosNoClutter.esp
+zeeogresaiogameplaytweaks.esp
+
+
+### NEVER_LOAD @@ This mod for JMPZ11's automatic cleaning tool, it should never actually load INTO the game. 
+A1_EMPTY_STUB_XXXXXXXXXX.esm
