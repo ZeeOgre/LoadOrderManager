@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
@@ -120,7 +120,7 @@
   </Target>
   <Target Name="PostBuild" AfterTargets="RunAdvancedInstaller" Condition="'$(Configuration)' == 'GitRelease'">
     <Message Text="Executing PostBuild target..." Importance="high" />
-    <Exec Command="powershell -ExecutionPolicy Bypass -File &quot;$(ProjectDir)scripts\post-build.ps1&quot; -configuration $(ConfigurationName) -msiFile &quot;$(ProjectDir)installer\output\$(MsiFileName)&quot; -versionFile &quot;$(ProjectDir)Properties\version.txt&quot;" />
+    <Exec Command="powershell -ExecutionPolicy Bypass -File &quot;$(ProjectDir)scripts\post-build.ps1&quot; -configuration $(ConfigurationName) -msiFile &quot;$(ProjectDir)installer\$(MsiFileName)&quot; -versionFile &quot;$(ProjectDir)Properties\version.txt&quot;" />
     <Message Text="PostBuild target execution completed." Importance="high" />
   </Target>
 </Project>
