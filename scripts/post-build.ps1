@@ -1,4 +1,3 @@
-# Function to execute a command and handle errors
 function Execute-Command {
     param (
         [string]$command
@@ -33,15 +32,13 @@ function Increment-Tag {
     }
 }
 
-# Ensure all changes are staged
-Execute-Command "git add -A"
-
-# Commit the changes
-try {
+# Check for changes before committing
+$changes = git status --porcelain
+if ($changes) {
+    Execute-Command "git add -A"
     Execute-Command "git commit -m 'Post-build commit for configuration $configuration'"
-} catch {
-    Write-Error "Failed to commit changes."
-    exit 1
+} else {
+    Write-Output "No changes to commit."
 }
 
 # Ensure correct directory
