@@ -1,0 +1,2 @@
+gameFolder: <<GAME ROOT FOLDER>> ## This is the folder where your game is installed if UseModManager is false, this is required. This functionality is not implemented yet.'
+autoCheckForUpdates: true ## If true, the app will check for updates on startup	

@@ -1,9 +1,0 @@
-{
-  "profiles": {
-    "ZO.LoadOrderManager": {
-      "commandName": "Project",
-      "nativeDebugging": false,
-      "sqlDebugging": false
-    }
-  }
-}
