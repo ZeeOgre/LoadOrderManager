@@ -176,4 +176,8 @@ if (-not (Get-Command gh -ErrorAction SilentlyContinue)) {
 if ($currentBranch -eq 'dev') {
     Execute-Command "git checkout dev"
     Write-Output "Switched back to dev branch."
+} else {
+    # Ensure master is pushed
+    Execute-Command "git push origin master"
+    Write-Output "Pushed master branch."
 }
