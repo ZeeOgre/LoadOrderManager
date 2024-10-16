@@ -77,18 +77,23 @@
 	</ItemGroup>
 
 	<!-- Ensure docs folder contents are copied to output -->
-	<ItemGroup>
-		<None Update="docs\**\*">
-			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
-		</None>
-	</ItemGroup>
-
-	<!-- Ensure data file is copied to the output directory for non-Debug configurations -->
+    <ItemGroup>
+					<None Update="docs\**\*">
+						<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+					</None>
+					<None Update="data\**\*">
+						<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+					</None>
+    </ItemGroup>
+	<!--<ItemGroup>
+		<Folder Include="data\**\*" />
+	</ItemGroup>-->
+	<!-- Ensure data file is copied to the output directory for non-Debug configurations --><!--
 	<ItemGroup Condition="'$(Configuration)' != 'Debug'">
 		<None Update="data\LoadOrderManager.db">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 		</None>
-	</ItemGroup>
+	</ItemGroup>-->
 
 	<!-- Ensure Settings.Designer.cs is generated correctly -->
 	<ItemGroup>
@@ -112,9 +117,7 @@
 		</EmbeddedResource>
 	</ItemGroup>
 
-	<ItemGroup>
-		<Folder Include="data\**\*" />
-	</ItemGroup>
+
 
 	<ItemGroup>
 		<Resource Include="Themes\ColorsDark.xaml" />
