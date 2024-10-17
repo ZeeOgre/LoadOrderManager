@@ -28,6 +28,11 @@ namespace ZO.LoadOrderManager
                 ? "Full Scan Selected, this may take several minutes as the game folder has VERY large files..."
                 : "Quick Scan Selected, starting scan...");
 
+
+            LoadOrderWindow.Instance.LOWVM.UpdateStatus(fullScan 
+                ? "Full Scan Selected, this may take several minutes as the game folder has VERY large files..."
+                : "Quick Scan Selected, starting scan...");
+
             // Load all known FileInfo objects with the GameFolder flag set
             var knownGameFolderFiles = ZO.LoadOrderManager.FileInfo.GetAllFiles()
                 .ToDictionary(f => f.Filename, StringComparer.OrdinalIgnoreCase);
@@ -137,7 +142,11 @@ namespace ZO.LoadOrderManager
                 await Task.Delay(10);
             }
 
-            LoadOrderWindow.Instance.LOWVM.ClearWarning(); // Clear the warning after scan completion
+            LoadOrderWindow.Instance.LOWVM.UpdateStatus("Completed Filescan");
+            LoadOrderWindow.Instance.LOWVM.LoadOrders.RefreshData(); // Clear the warning after scan completion
+
+
+            App.RestartDialog("Finished loading all files from the game folder. Please restart the application to see the changes.");
             App.LogDebug("Scan complete.");
         }
 

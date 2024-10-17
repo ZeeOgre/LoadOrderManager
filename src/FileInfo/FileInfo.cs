@@ -667,7 +667,7 @@ namespace ZO.LoadOrderManager
                     DTStamp = reader.GetString(3),
                     HASH = reader.IsDBNull(4) ? null : reader.GetString(4),
                     Flags = (FileFlags)reader.GetInt32(5),
-                    AbsolutePath = reader.GetString(6),
+                    AbsolutePath = reader.IsDBNull(6) ? null : reader.GetString(6),
                     CompressedContent = reader.IsDBNull(7) ? null : (byte[])reader[7]
                 };
 
