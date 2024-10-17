@@ -27,6 +27,7 @@ namespace ZO.LoadOrderManager
         public static string PackageID { get; }
         public static string Version { get; }
 
+
         private LoadOrderWindow? _mainWindow;
 
         static App()
@@ -47,6 +48,9 @@ namespace ZO.LoadOrderManager
             _ = Trace.Listeners.Add(new TextWriterTraceListener(Console.Out));
             Trace.AutoFlush = true;
         }
+
+
+
 
         protected override void OnStartup(StartupEventArgs e)
         {
@@ -316,6 +320,18 @@ namespace ZO.LoadOrderManager
                 _ = MessageBox.Show($"An error occurred in normal mode: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 Shutdown();
             }
+        }
+
+        public static void RestartDialog(string message)
+        {
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                var result = MessageBox.Show(message, "Restart Required", MessageBoxButton.YesNo, MessageBoxImage.Question);
+                if (result == MessageBoxResult.Yes)
+                {
+                    RestartApplication();
+                }
+            });
         }
 
         public static void RestartApplication()
