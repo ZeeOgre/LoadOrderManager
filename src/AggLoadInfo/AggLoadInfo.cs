@@ -884,9 +884,12 @@ namespace ZO.LoadOrderManager
 
                 if (matchingGSP == default)
                 {
+                    continue;
+                }
+
                     plugin.GroupID = matchingGSP.groupID;
                     plugin.GroupOrdinal = matchingGSP.Ordinal;
-                }
+                
             }
 
             // Update Groups' ParentID and Ordinal based on GroupSetGroups
@@ -897,9 +900,11 @@ namespace ZO.LoadOrderManager
 
                 if (matchingGSG == default)
                 {
-                    group.ParentID = matchingGSG.parentID;
-                    group.Ordinal = matchingGSG.Ordinal;
+                    continue;
                 }
+                group.ParentID = matchingGSG.parentID;
+                group.Ordinal = matchingGSG.Ordinal;
+
             }
 
             // Update LoadOuts by enabling appropriate plugins based on ProfilePlugins
