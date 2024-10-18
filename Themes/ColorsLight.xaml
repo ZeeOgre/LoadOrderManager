@@ -1,0 +1,46 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- Group Colors -->
+    <Color x:Key="GroupBackgroundColor">#ADD8E6</Color>
+    <!-- LightBlue for group background -->
+    <Color x:Key="SelectedGroupBackgroundColor">#87CEEB</Color>
+    <!-- SkyBlue -->
+    <SolidColorBrush x:Key="GroupBackgroundBrush" Color="{DynamicResource GroupBackgroundColor}" />
+    <SolidColorBrush x:Key="SelectedGroupBackgroundBrush" Color="{DynamicResource SelectedGroupBackgroundColor}" />
+
+    <!-- Plugin Colors -->
+    <Color x:Key="PluginBackgroundColor">Transparent</Color>
+    <!-- Transparent for plugin rows -->
+    <Color x:Key="SelectedPluginBackgroundColor">#1E90FF</Color>
+    <!-- DodgerBlue for plugin selection -->
+    <Color x:Key="PluginForegroundColor">#000000</Color>
+    <!-- Black for better contrast -->
+    <SolidColorBrush x:Key="PluginBackgroundBrush" Color="{DynamicResource PluginBackgroundColor}" />
+    <SolidColorBrush x:Key="SelectedPluginBackgroundBrush" Color="{DynamicResource SelectedPluginBackgroundColor}" />
+    <SolidColorBrush x:Key="PluginForegroundBrush" Color="{DynamicResource PluginForegroundColor}" />
+
+    <!-- Highlight Colors -->
+    <Color x:Key="SearchHighlightBackgroundColor">#FFD700</Color>
+    <!-- Gold for search highlight -->
+    <Color x:Key="SearchHighlightBorderColor">#DAA520</Color>
+    <!-- Goldenrod -->
+    <SolidColorBrush x:Key="SearchHighlightBackgroundBrush" Color="{DynamicResource SearchHighlightBackgroundColor}" />
+    <SolidColorBrush x:Key="SearchHighlightBorderBrush" Color="{DynamicResource SearchHighlightBorderColor}" />
+
+    <!-- Selection State -->
+    <Color x:Key="SelectedBackgroundColor">#1E90FF</Color>
+    <!-- DodgerBlue for selection -->
+    <Color x:Key="SelectedForegroundColor">#FFFFFF</Color>
+    <!-- White text for better readability on blue -->
+    <SolidColorBrush x:Key="SelectedBackgroundBrush" Color="{DynamicResource SelectedBackgroundColor}" />
+    <SolidColorBrush x:Key="SelectedForegroundBrush" Color="{DynamicResource SelectedForegroundColor}" />
+
+    <!-- Additional Fallback Colors -->
+    <Color x:Key="ControlBackgroundColor">#FFFFFF</Color>
+    <!-- White for control background -->
+    <Color x:Key="ControlForegroundColor">#000000</Color>
+    <!-- Black for control foreground -->
+    <SolidColorBrush x:Key="ControlBackgroundBrush" Color="{DynamicResource ControlBackgroundColor}" />
+    <SolidColorBrush x:Key="ControlForegroundBrush" Color="{DynamicResource ControlForegroundColor}" />
+</ResourceDictionary>

@@ -1,0 +1,132 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>True</UseWPF>
+    <ApplicationIcon>docs\img\ZeeOgre.ico</ApplicationIcon>
+    <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
+    <PackageId>ZeeOgre.LoadOrderManager</PackageId>
+    <Title>ZeeOgre's Load Order Manager</Title>
+    <Authors>ZeeOgre</Authors>
+    <Product>LoadOrderManager</Product>
+    <Copyright>2024 ZeeOgre</Copyright>
+    <PackageProjectUrl>https://github.com/ZeeOgre/ZO.LoadOrderManager</PackageProjectUrl>
+    <PackageIcon>docs\img\ZeeOgre_NoBackground.jpg</PackageIcon>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <RepositoryUrl>https://github.com/ZeeOgre/ZO.LoadOrderManager</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackAsTool>True</PackAsTool>
+    <ToolCommandName>ZeeOgre.LoadOrderManager</ToolCommandName>
+    <PackageLicenseExpression>AGPL-3.0-or-later</PackageLicenseExpression>
+    <RootNamespace>ZO.LoadOrderManager</RootNamespace>
+    <AssemblyName>LoadOrderManager</AssemblyName>
+    <Configurations>Debug;Release;GitRelease</Configurations>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <EnforceCodeStyleInBuild>True</EnforceCodeStyleInBuild>
+    <SupportedOSPlatformVersion>7.0</SupportedOSPlatformVersion>
+    <Version>0.0.7.0</Version>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='GitRelease|AnyCPU'">
+    <Optimize>True</Optimize>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Autoupdater.NET.Official" Version="1.9.2" />
+    <PackageReference Include="DiffPlex" Version="1.7.2" />
+    <PackageReference Include="DiffPlex.Wpf" Version="1.4.0" />
+    <PackageReference Include="MahApps.Metro.IconPacks.Material" Version="5.0.1" />
+    <PackageReference Include="MaterialDesignColors" Version="3.1.0" />
+    <PackageReference Include="MaterialDesignThemes" Version="5.1.0" />
+    <PackageReference Include="MaterialDesignThemes.MahApps" Version="3.1.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="System.Data.SqlClient" Version="4.8.6" />
+    <PackageReference Include="System.Data.SQLite" Version="1.0.119" />
+    <PackageReference Include="System.Drawing.Common" Version="8.0.10" />
+    <PackageReference Include="System.IO.Hashing" Version="8.0.0" />
+    <PackageReference Include="YamlDotNet" Version="16.1.3" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Update="Properties\Settings.Designer.cs">
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Settings.settings</DependentUpon>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="data\**\*" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="docs\**\*" CopyToOutputDirectory="OverwriteAlways" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Remove="installer\ZO.LoadOrderManager-cache\**" />
+    <EmbeddedResource Remove="installer\ZO.LoadOrderManager-cache\**" />
+    <None Remove="installer\ZO.LoadOrderManager-cache\**" />
+    <Page Remove="installer\ZO.LoadOrderManager-cache\**" />
+  </ItemGroup>
+  <Target Name="RearrangeOutputFiles" AfterTargets="Build;Publish" BeforeTargets="PostBuildEvent">
+    <ItemGroup>
+      <DllFiles Include="$(OutputPath)*.dll" Exclude="$(OutputPath)LoadOrderManager.dll;$(OutputPath)lib\**\*.*" />
+      <ResourceDllFiles Include="$(OutputPath)**\*.resources.dll" Exclude="$(OutputPath)lib\locale\**\*.*" />
+      <LocaleFiles Include="$(OutputPath)locale\**\*" />
+      <RuntimeFiles Include="$(OutputPath)runtimes\**\*" />
+    </ItemGroup>
+    <Move SourceFiles="@(DllFiles)" DestinationFolder="$(OutputPath)lib\%(RecursiveDir)" />
+    <MakeDir Directories="$(OutputPath)lib\locale" />
+    <Move SourceFiles="@(ResourceDllFiles)" DestinationFolder="$(OutputPath)lib\locale\%(RecursiveDir)" />
+    <Move SourceFiles="@(LocaleFiles)" DestinationFolder="$(OutputPath)lib\locale\%(RecursiveDir)" />
+    <MakeDir Directories="$(OutputPath)lib\runtimes" />
+    <Move SourceFiles="@(RuntimeFiles)" DestinationFolder="$(OutputPath)lib\runtimes\%(RecursiveDir)" />
+    <RemoveEmptyDirectories RootDirectory="$(OutputPath)" />
+  </Target>
+  <Target Name="CopyConfigFile" AfterTargets="Build;Publish" BeforeTargets="PostBuildEvent">
+    <ItemGroup>
+      <ConfigFile Include="config\config.yaml" Condition="'$(Configuration)' == 'Debug'" />
+      <ConfigFile Include="config\config_sample.yaml" Condition="'$(Configuration)' != 'Debug'" />
+    </ItemGroup>
+    <Copy SourceFiles="@(ConfigFile)" DestinationFiles="$(OutputPath)config\config.yaml" />
+  </Target>
+  <UsingTask TaskName="RemoveEmptyDirectories" TaskFactory="CodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+    <ParameterGroup>
+      <RootDirectory ParameterType="System.String" Required="true" />
+    </ParameterGroup>
+    <Task>
+      <Using Namespace="System.IO" />
+      <Code Type="Fragment" Language="cs"><![CDATA[
+          var directories = Directory.GetDirectories(RootDirectory, "*", SearchOption.AllDirectories)
+                                     .OrderByDescending(d => d.Count(c => c == Path.DirectorySeparatorChar));
+
+          foreach (var dir in directories)
+          {
+            if (Directory.GetFiles(dir).Length == 0 && Directory.GetDirectories(dir).Length == 0)
+            {
+              Directory.Delete(dir, false);
+            }
+          }
+        ]]></Code>
+    </Task>
+  </UsingTask>
+  <Target Name="PreBuild" BeforeTargets="PreBuildEvent" Condition="'$(Configuration)' == 'GitRelease'">
+    <Exec Command="powershell -ExecutionPolicy Bypass -File $(ProjectDir)scripts\IncrementVersion.ps1 -SettingsFile $(ProjectDir)Properties\Settings.settings -CsprojFilePath $(ProjectDir)ZO.LOM.APP.csproj -AppConfigFilePath $(ProjectDir)App.config -VersionTxtFilePath $(ProjectDir)Properties\version.txt -AipFilePath $(ProjectDir)Installer\ZO.LoadOrderManager.aip -XmlOutputPath $(ProjectDir)Properties\AutoUpdater.xml -Configuration $(Configuration) -AssemblyInfoFilePath $(ProjectDir)Properties\AssemblyInfo.cs" />
+  </Target>
+  <Target Name="PostBuildMoveCheck" BeforeTargets="RunAdvancedInstaller" AfterTargets="PostBuildEvent">
+    <Message Text="Executing PostBuildMoveCheck target..." Importance="high" />
+    <Exec Command="powershell -ExecutionPolicy Bypass -File &quot;$(ProjectDir)scripts\WaitForFileMove.ps1&quot; -filePath &quot;$(TargetDir)lib\*.dll&quot; -timeoutInSeconds 60" />
+    <Message Text="PostBuildMoveCheck target execution completed." Importance="high" />
+  </Target>
+  <PropertyGroup>
+    <MsiFileName Condition="'$(Configuration)' == 'GitRelease'">ZO.LoadOrderManager.msi</MsiFileName>
+    <MsiFileName Condition="'$(Configuration)' == 'Release'">ZO.LoadOrderManager.release.msi</MsiFileName>
+    <MsiFileName Condition="'$(Configuration)' == 'Debug'">ZO.LoadOrderManager.debug.msi</MsiFileName>
+    <PackageReleaseNotes>ful automation test.</PackageReleaseNotes>
+  </PropertyGroup>
+  <Target Name="RunAdvancedInstaller" AfterTargets="PostBuildMoveCheck" Condition="'$(Configuration)' == 'GitRelease' Or '$(Configuration)' == 'Release'">
+    <Message Text="Executing RunAdvancedInstaller target..." Importance="high" />
+    <Exec Command="%25ADVINST_COM%25 /build &quot;$(ProjectDir)installer\ZO.LoadOrderManager.aip&quot; -buildslist &quot;AnyCPU_$(Configuration)&quot;" />
+    <Message Text="RunAdvancedInstaller target execution completed." Importance="high" />
+  </Target>
+  <Target Name="PostBuild" AfterTargets="RunAdvancedInstaller" Condition="'$(Configuration)' == 'GitRelease'">
+    <Message Text="Executing PostBuild target..." Importance="high" />
+    <Exec Command="powershell -ExecutionPolicy Bypass -File &quot;$(ProjectDir)scripts\post-build.ps1&quot; -configuration $(ConfigurationName) -msiFile &quot;$(ProjectDir)installer\$(MsiFileName)&quot; -versionFile &quot;$(ProjectDir)Properties\version.txt&quot;" />
+    <Message Text="PostBuild target execution completed." Importance="high" />
+  </Target>
+</Project>
