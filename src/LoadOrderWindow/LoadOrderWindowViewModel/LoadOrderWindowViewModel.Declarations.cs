@@ -17,6 +17,7 @@ namespace ZO.LoadOrderManager
         private bool _isRefreshing = false;
         private string _warningMessage;
         private bool _isWarningActive;
+
         private bool _hideUnloadedPlugins;
         public bool HideUnloadedPlugins
         {
@@ -27,10 +28,30 @@ namespace ZO.LoadOrderManager
                 {
                     _hideUnloadedPlugins = value;
                     OnPropertyChanged(nameof(HideUnloadedPlugins));
+
+                    // Call a method to recursively propagate to all child items
+                    foreach (var item in LoadOrders.Items)
+                    {
+                        PropagateHideUnloadedPlugins(item, value);
+                    }
                 }
             }
         }
 
+        private void PropagateHideUnloadedPlugins(LoadOrderItemViewModel item, bool hideUnloaded)
+        {
+            // Update the HideUnloadedPlugins property for the current item
+            item.HideUnloadedPlugins = hideUnloaded;
+
+            // Recursively propagate the change to all children
+            if (item.Children != null)
+            {
+                foreach (var child in item.Children)
+                {
+                    PropagateHideUnloadedPlugins(child, hideUnloaded);
+                }
+            }
+        }
 
         public string WarningMessage
         {

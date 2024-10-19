@@ -22,17 +22,6 @@ namespace ZO.LoadOrderManager
             LoadOrders = new LoadOrdersViewModel();
             CachedGroupSetLoadOrders = new LoadOrdersViewModel();
 
-            ////Rebuild Flat List whenever LoadOrders Items are updated
-            //if (LoadOrders?.Items != null)
-            //{
-            //    LoadOrders.Items.CollectionChanged += (s, e) =>
-            //    {
-            //        if (!_isSynchronizing && !InitializationManager.IsAnyInitializing())
-            //        {
-            //            RebuildFlatList();
-            //        }
-            //    };
-            //}
 
             SearchCommand = new RelayCommand(_ => Search(SearchText)); // LoadOrderWindowViewModel.TreeCommands.cs
 

@@ -19,6 +19,10 @@
         <local:ItemStateToColorConverter x:Key="ItemStateToColorConverter"/>
         <local:BooleanToOpacityConverter x:Key="BooleanToOpacityConverter"/>
 
+        <!-- Collapsed Template to handle hidden plugins -->
+        <DataTemplate x:Key="CollapsedTemplate">
+            <Grid Visibility="Collapsed" />
+        </DataTemplate>
 
         <HierarchicalDataTemplate x:Key="GroupTemplate" ItemsSource="{Binding Children}">
             <Grid>
@@ -60,10 +64,8 @@
             </Grid>
         </HierarchicalDataTemplate>
 
-
         <DataTemplate x:Key="PluginTemplate">
             <Grid>
-
                 <!-- Set the Background using the ItemStateToColorConverter -->
                 <Grid.Background>
                     <MultiBinding Converter="{StaticResource ItemStateToColorConverter}">
@@ -81,10 +83,6 @@
                     <Binding Path="InGameFolder" Converter="{StaticResource BooleanToOpacityConverter}"/>
                 </Grid.Opacity>
 
-                <Grid.Visibility>
-                    <Binding Path="PluginVisibility"/>
-                </Grid.Visibility>
-
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="30"/>
                     <ColumnDefinition Width="*" MinWidth="175"/>
@@ -98,7 +96,7 @@
                 <!-- Checkbox for IsActive -->
                 <CheckBox IsChecked="{Binding IsActive, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
                               Tag="checkbox"
-                              Command="{Binding DataContext.ToggleEnableCommand, RelativeSource={RelativeSource AncestorType=Window}}" 
+                          Command="{Binding DataContext.ToggleEnableCommand, RelativeSource={RelativeSource AncestorType=Window}}" 
                               CommandParameter="{Binding}" Grid.Column="0" Margin="5" HorizontalAlignment="Stretch">
                     <CheckBox.Foreground>
                         <MultiBinding Converter="{StaticResource ItemStateToColorConverter}">
@@ -153,30 +151,30 @@
                         </MultiBinding>
                     </CheckBox.Foreground>
                 </CheckBox>
-                
+
                 <TextBlock Text="{Binding PluginData.DTStamp}" Grid.Column="4" Margin="5" HorizontalAlignment="Left"/>
 
                 <!-- Hyperlink with BethesdaID -->
                 <TextBlock Grid.Column="5" Margin="5" HorizontalAlignment="Left">
-                        <Hyperlink NavigateUri="{Binding PluginData.BethesdaID, Converter={StaticResource BethesdaUrlConverter}}" RequestNavigate="Hyperlink_RequestNavigate">
-                            <TextBlock Text="{Binding PluginData.BethesdaID, TargetNullValue='Bethesda', FallbackValue='Bethesda'}"/>
-                        </Hyperlink>
-                    </TextBlock>
+                    <Hyperlink NavigateUri="{Binding PluginData.BethesdaID, Converter={StaticResource BethesdaUrlConverter}}" RequestNavigate="Hyperlink_RequestNavigate">
+                        <TextBlock Text="{Binding PluginData.BethesdaID, TargetNullValue='Bethesda', FallbackValue='Bethesda'}"/>
+                    </Hyperlink>
+                </TextBlock>
 
                 <!-- Hyperlink with NexusID -->
                 <TextBlock Grid.Column="6" Margin="5" HorizontalAlignment="Left">
-                        <Hyperlink NavigateUri="{Binding PluginData.NexusID, Converter={StaticResource NexusUrlConverter}}" RequestNavigate="Hyperlink_RequestNavigate">
-                            <TextBlock Text="{Binding PluginData.NexusID, TargetNullValue='Nexus', FallbackValue='Nexus'}"/>
-                        </Hyperlink>
-                    </TextBlock>
+                    <Hyperlink NavigateUri="{Binding PluginData.NexusID, Converter={StaticResource NexusUrlConverter}}" RequestNavigate="Hyperlink_RequestNavigate">
+                        <TextBlock Text="{Binding PluginData.NexusID, TargetNullValue='Nexus', FallbackValue='Nexus'}"/>
+                    </Hyperlink>
+                </TextBlock>
             </Grid>
         </DataTemplate>
 
-
-
+        <!-- Updated EntityTypeTemplateSelector with CollapsedTemplate -->
         <local:EntityTypeTemplateSelector x:Key="EntityTypeTemplateSelector"
                                           GroupTemplate="{StaticResource GroupTemplate}"
-                                          PluginTemplate="{StaticResource PluginTemplate}" />
+                                          PluginTemplate="{StaticResource PluginTemplate}"
+                                          CollapsedTemplate="{StaticResource CollapsedTemplate}" />
     </Window.Resources>
 
     <Grid>
@@ -238,12 +236,12 @@
         </Grid>
 
         <local:MultiSelectTreeView x:Name="LoadOrderTreeView" Grid.Row="2" ItemsSource="{Binding LoadOrders.Items}" 
-   ItemTemplateSelector="{StaticResource EntityTypeTemplateSelector}"
-   HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
-   SelectedItems="{Binding SelectedItems, Mode=TwoWay}"
-   KeyDown="TreeView_KeyDown"
-   MouseRightButtonDown="TreeView_MouseRightButtonDown"
-   Loaded="LoadOrderTreeView_Loaded">
+                                   ItemTemplateSelector="{StaticResource EntityTypeTemplateSelector}"
+                                   HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
+                                   SelectedItems="{Binding SelectedItems, Mode=TwoWay}"
+                                   KeyDown="TreeView_KeyDown"
+                                   MouseRightButtonDown="TreeView_MouseRightButtonDown"
+                                   Loaded="LoadOrderTreeView_Loaded">
 
             <TreeView.Resources>
                 <ContextMenu x:Key="ItemContextMenu">
@@ -268,20 +266,27 @@
 
             <TreeView.ItemContainerStyle>
                 <Style TargetType="TreeViewItem" BasedOn="{StaticResource {x:Type TreeViewItem}}">
-                    <!-- Ensure we inherit ModernWPF styling -->
                     <Setter Property="ContextMenu" Value="{StaticResource ItemContextMenu}" />
                     <Setter Property="IsExpanded" Value="{Binding GroupID, Converter={StaticResource GroupIDToIsExpandedConverter}}"/>
                     <Setter Property="FontSize" Value="14" />
                     <Setter Property="Padding" Value="5" />
+
+                    <!-- Only apply Visibility binding to Plugin rows -->
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding EntityType}" Value="Plugin">
+                            <Setter Property="Visibility" Value="{Binding PluginVisibility}" />
+                        </DataTrigger>
+                    </Style.Triggers>
                 </Style>
             </TreeView.ItemContainerStyle>
 
+
         </local:MultiSelectTreeView>
 
-
+        <!-- CachedGroupSetTreeView -->
         <local:MultiSelectTreeView x:Name="CachedGroupSetTreeView" Grid.Row="3" ItemsSource="{Binding CachedGroupSetLoadOrders.Items}" 
-   ItemTemplateSelector="{StaticResource EntityTypeTemplateSelector}"
-   HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
+                                   ItemTemplateSelector="{StaticResource EntityTypeTemplateSelector}"
+                                   HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
    SelectedItems="{Binding SelectedCachedItems, Mode=TwoWay}"
    Loaded="CachedGroupSetTreeView_Loaded"
    KeyDown="TreeView_KeyDown"
@@ -352,12 +357,12 @@
                 <ComboBox x:Name="cmbGroupSet" Grid.Row="1" 
                   ItemsSource="{Binding GroupSets}" 
                   SelectedItem="{Binding SelectedGroupSet, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-                    <ComboBox.ItemTemplate>
-                        <DataTemplate>
-                            <TextBlock Text="{Binding GroupSetName}" />
-                        </DataTemplate>
-                    </ComboBox.ItemTemplate>
-                </ComboBox>
+            <ComboBox.ItemTemplate>
+                <DataTemplate>
+                    <TextBlock Text="{Binding GroupSetName}" />
+                </DataTemplate>
+            </ComboBox.ItemTemplate>
+        </ComboBox>
 
                 <Button Content="Edit GroupSets"
          Command="{Binding EditGroupSetCommand}" 
@@ -371,13 +376,13 @@
                 <!-- ComboBox for LoadOuts -->
                 <ComboBox x:Name="cmbLoadOut" Grid.Row="2"
           ItemsSource="{Binding LoadOuts}"
-          SelectedItem="{Binding SelectedLoadOut, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-                    <ComboBox.ItemTemplate>
-                        <DataTemplate>
-                            <TextBlock Text="{Binding Name}" />
-                        </DataTemplate>
-                    </ComboBox.ItemTemplate>
-                </ComboBox>
+                  SelectedItem="{Binding SelectedLoadOut, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+            <ComboBox.ItemTemplate>
+                <DataTemplate>
+                    <TextBlock Text="{Binding Name}" />
+                </DataTemplate>
+            </ComboBox.ItemTemplate>
+        </ComboBox>
 
                 <Button Content="Edit LoadOuts"
             Command="{Binding EditLoadOutCommand}"
@@ -450,8 +455,6 @@
                 </Grid>
             </StatusBarItem>
         </StatusBar>
-
-
 
     </Grid>
 </metro:MetroWindow>
