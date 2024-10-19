@@ -18,12 +18,23 @@ namespace ZO.LoadOrderManager
         public required DataTemplate GroupTemplate { get; set; }
         public required DataTemplate PluginTemplate { get; set; }
         public required DataTemplate LoadOutTemplate { get; set; }
+        public required DataTemplate CollapsedTemplate { get; set; }  // Adding the CollapsedTemplate
 
         public override DataTemplate SelectTemplate(object item, DependencyObject container)
         {
-            var entityType = (item as LoadOrderItemViewModel)?.EntityType;
+            var loadOrderItem = item as LoadOrderItemViewModel;
 
-            return entityType switch
+            if (loadOrderItem == null)
+                return base.SelectTemplate(item, container);
+
+            // First, check if the item's visibility is collapsed, if so return the CollapsedTemplate
+            if (loadOrderItem.PluginVisibility == System.Windows.Visibility.Collapsed)
+            {
+                return CollapsedTemplate;
+            }
+
+            // Otherwise, select the appropriate template based on EntityType
+            return loadOrderItem.EntityType switch
             {
                 EntityType.Group => GroupTemplate,
                 EntityType.Plugin => PluginTemplate,
@@ -32,8 +43,8 @@ namespace ZO.LoadOrderManager
             };
         }
     }
-    public static class EntityTypeHelper
-    {
+        public static class EntityTypeHelper
+        {
         public static object? GetUnderlyingObject(LoadOrderItemViewModel item)
         {
             return item.EntityType switch
