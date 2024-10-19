@@ -231,7 +231,7 @@ namespace ZO.LoadOrderManager
             // Retrieve necessary information for the header
             var groupSetName = AggLoadInfo.Instance.ActiveGroupSet.GroupSetName ?? "Default_GroupSet";
             var loadOutName = AggLoadInfo.Instance.ActiveLoadOut.Name ?? "Default_Profile";
-            var dateTimeNow = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+            var dateTimeNow = DateTime.Now.ToString("o");
 
             string defaultFileName;
             string pluginsFilePath;

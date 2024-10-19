@@ -22,7 +22,16 @@ namespace ZO.LoadOrderManager
         public ICommand EditLoadOutCommand { get; }
         public RelayCommand RefreshCommand { get; }
 
-
+        private ICommand _toggleUnloadedVisibilityCommand;
+        public ICommand ToggleUnloadedVisibilityCommand => _toggleUnloadedVisibilityCommand ??= new RelayCommand(ToggleUnloadedVisibility);
+        
+        
+        private void ToggleUnloadedVisibility(object? parameter )
+        {
+            HideUnloadedPlugins = !HideUnloadedPlugins;
+            // Notify the UI to refresh the visibility of items
+            OnPropertyChanged(nameof(HideUnloadedPlugins));
+        }
 
         private void UpdateStatusLight()
         {

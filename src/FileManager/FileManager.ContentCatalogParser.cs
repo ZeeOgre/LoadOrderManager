@@ -26,16 +26,13 @@ namespace ZO.LoadOrderManager
                 {
                     App.LogDebug($"Parsing property: {property.Name}");
                     var pluginData = property.Value;
-                    var pluginName = (pluginData["Files"]?.First?.ToString().ToLowerInvariant());
+                    var pluginName = pluginData["Files"]?
+                        .FirstOrDefault(file => file.ToString().ToLowerInvariant().EndsWith(".esm") || file.ToString().ToLowerInvariant().EndsWith(".esp"))?.ToString();
+
                     App.LogDebug($"Plugin name: {pluginName}");
                     string bethesdaID = (property.Name.Substring(3)).ToLowerInvariant();
 
-                    if (string.IsNullOrEmpty(pluginName))
-                    {
-                        continue;
-                    }
-
-                    var existingPlugin = AggLoadInfo.Instance.Plugins?.FirstOrDefault(p => p.PluginName.Equals(pluginName, StringComparison.OrdinalIgnoreCase));
+                    var existingPlugin = AggLoadInfo.Instance.Plugins?.FirstOrDefault(p => string.Equals(p.PluginName, pluginName, StringComparison.OrdinalIgnoreCase));
 
                     // Extract and process the version string
                     var versionString = pluginData["Version"]?.ToString();

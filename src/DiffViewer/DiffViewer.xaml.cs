@@ -31,7 +31,14 @@ namespace ZO.LoadOrderManager
 
             // Load content from FileInfo and the second file path
             string oldText = Encoding.UTF8.GetString(fileInfo.FileContent);
-            string newText = File.ReadAllText(filePath2);
+            string newText;
+            using (var stream = new FileStream(filePath2, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            {
+                using (var reader = new StreamReader(stream))
+                {
+                    newText = reader.ReadToEnd();
+                }
+            }
 
             // Set texts in DiffView
             DiffView.OldText = oldText;
@@ -57,8 +64,23 @@ namespace ZO.LoadOrderManager
                 filePath2 = OpenFileDialog("Select the second file to compare");
 
             // Load text from both files
-            string oldText = File.ReadAllText(filePath1);
-            string newText = File.ReadAllText(filePath2);
+            string oldText;
+            using (var stream = new FileStream(filePath1, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            {
+                using (var reader = new StreamReader(stream))
+                {
+                    oldText = reader.ReadToEnd();
+                }
+            }
+
+            string newText;
+            using (var stream = new FileStream(filePath2, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            {
+                using (var reader = new StreamReader(stream))
+                {
+                    newText = reader.ReadToEnd();
+                }
+            }
 
             // Set texts in DiffView
             DiffView.OldText = oldText;
@@ -83,7 +105,14 @@ namespace ZO.LoadOrderManager
 
             // Load content from FileInfo and the second file path
             string oldText = Encoding.UTF8.GetString(fileInfo.FileContent);
-            string newText = File.ReadAllText(filePath2);
+            string newText;
+            using (var stream = new FileStream(filePath2, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            {
+                using (var reader = new StreamReader(stream))
+                {
+                    newText = reader.ReadToEnd();
+                }
+            }
 
             // Set texts in DiffView
             DiffView.OldText = oldText;
