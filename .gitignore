@@ -366,3 +366,4 @@ FodyWeavers.xsd
 
 # Ignore Installer cache
 [Ii]nstaller/*-cache/**
+/installer/ZO.LoadOrderManager-cache/cacheIndex.txt
