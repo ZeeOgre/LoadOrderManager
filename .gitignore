@@ -366,4 +366,4 @@ FodyWeavers.xsd
 
 # Ignore Installer cache
 [Ii]nstaller/*-cache/**
-[Ii]nstaller/*-cache/**/*]
+[Ii]nstaller/*-cache/**/*

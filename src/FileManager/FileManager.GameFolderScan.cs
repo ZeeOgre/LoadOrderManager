@@ -62,7 +62,9 @@ namespace ZO.LoadOrderManager
 
             // Load all known FileInfo objects with the GameFolder flag set
             var knownGameFolderFiles = ZO.LoadOrderManager.FileInfo.GetAllFiles()
-                .ToDictionary(f => f.Filename, StringComparer.OrdinalIgnoreCase);
+    .GroupBy(f => f.Filename, StringComparer.OrdinalIgnoreCase)
+    .Select(g => g.First())
+    .ToDictionary(f => f.Filename, StringComparer.OrdinalIgnoreCase);
 
             // Dictionary to track the highest ordinal for each group
             var groupOrdinalTracker = new Dictionary<long, long>();

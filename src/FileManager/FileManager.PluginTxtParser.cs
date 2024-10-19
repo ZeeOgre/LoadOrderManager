@@ -277,7 +277,7 @@ namespace ZO.LoadOrderManager
             if (item.Children != null && item.Children.Any())
             {
                 // First, append all child plugins
-                foreach (var plugin in item.Children.Where(c => c.EntityType == EntityType.Plugin))
+                foreach (var plugin in item.Children.Where(c => c.EntityType == EntityType.Plugin && c.InGameFolder == true))
                 {
                     AppendItemToStringBuilder(plugin, sb);
                 }
@@ -288,10 +288,10 @@ namespace ZO.LoadOrderManager
                     var groupObject = ZO.LoadOrderManager.EntityTypeHelper.GetUnderlyingObject(group) as ModGroup;
                     if (groupObject != null)
                     {
-                        if (groupObject.GroupID <= 0)
-                        {
-                            continue;
-                        }
+                        //if (groupObject.GroupID <= 0)
+                        //{
+                        //    continue;
+                        //}
                         // Skip appending the root group itself but process its children
                         if (groupObject.GroupID != 1)
                         {

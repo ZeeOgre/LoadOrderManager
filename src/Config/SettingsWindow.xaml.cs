@@ -62,6 +62,8 @@ namespace ZO.LoadOrderManager
         // Close the window after saving
         private void OnSaveCompleted()
         {
+            // Set the dialog result to true to indicate success
+            this.DialogResult = true;
             // Close the window when saving is completed
             this.Close();
         }
