@@ -30,11 +30,27 @@ namespace ZO.LoadOrderManager
         public long? GroupID { get; set; } = 1; // Default group ID
         public long? GroupOrdinal { get; set; }
         public long? GroupSetID { get; set; }
+        
+        public bool InGameFolder
+        {
+            get => State.HasFlag(ModState.GameFolder);
+            set
+            {
+                if (value)
+                {
+                    State |= ModState.GameFolder; // Set the GameFolder flag
+                }
+                else
+                {
+                    State &= ~ModState.GameFolder; // Unset the GameFolder flag
+                }
+            }
+        }
 
         public Plugin()
         {
             Files = new List<FileInfo>();
-            if (Files.Count == 0)
+            if (!string.IsNullOrEmpty(PluginName))
             {
                 Files.Add(new FileInfo(PluginName));
             }
@@ -188,12 +204,12 @@ namespace ZO.LoadOrderManager
 
                 if (versionParts.Length >= 2 && long.TryParse(versionParts[0], out long timestamp))
                 {
-                    DTStamp = DateTimeOffset.FromUnixTimeSeconds(timestamp).ToString("yyyy-MM-dd HH:mm:ss");
+                    DTStamp = DateTimeOffset.FromUnixTimeSeconds(timestamp).ToString("o");
                     Version = timestamp > 0 && versionParts[1].All(c => c >= 32 && c <= 126) ? versionParts[1] : string.Empty;
                 }
                 else
                 {
-                    DTStamp = DateTimeOffset.FromUnixTimeSeconds(0).ToString("yyyy-MM-dd HH:mm:ss");
+                    DTStamp = DateTimeOffset.FromUnixTimeSeconds(0).ToString("o");
                     Version = string.Empty;
                 }
 
@@ -233,7 +249,7 @@ namespace ZO.LoadOrderManager
                 {
                     Filename = file.Name,
                     RelativePath = relativePath,
-                    DTStamp = file.LastWriteTime.ToString("yyyy-MM-dd HH:mm:ss"),
+                    DTStamp = file.LastWriteTime.ToString("o"),
                     HASH = newHash,
                     Flags = FileFlags.None
                 }
@@ -330,10 +346,16 @@ namespace ZO.LoadOrderManager
                             // Validate the new state to ensure no conflicting conditions
                             if (newState.HasFlag(ModState.None) && newState != ModState.None)
                             {
-                                newState = ModState.None; // If None is set, ensure no other flags are set
+                                newState &= ~ModState.None; // Unset the None flag if other flags are present
+                            }
+                            else if (newState == ModState.None)
+                            {
+                                // If the only flag is None, keep it as None
+                                newState = ModState.None;
                             }
 
                             this.State = newState;
+
                         }
                         // Retrieve the existing State value from the database and merge with the new value
                         if (!reader.IsDBNull(3))

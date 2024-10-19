@@ -37,7 +37,7 @@ namespace ZO.LoadOrderManager
                 {
                     InitializationManager.StartInitialization(nameof(FileManager));
                     App.LogDebug("FileManager: Starting initialization...");
-                    FileMonitor.InitializeAllMonitors();
+                    //FileMonitor.InitializeAllMonitors();
                     InitializeFavoriteGroupSetAndLoadOut();
                     //// Retrieve the singleton GroupSet and LoadOut from the database
                     //var singletonGroupSet = GroupSet.LoadGroupSet(2);

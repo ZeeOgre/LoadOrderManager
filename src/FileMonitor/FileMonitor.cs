@@ -64,7 +64,12 @@ namespace ZO.LoadOrderManager
                 if (newHash != _lastHash)
                 {
                     _lastHash = newHash;
-                    byte[] newContent = File.ReadAllBytes(_filePath);
+                    byte[] newContent;
+                    using (var stream = new FileStream(_filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                    {
+                        newContent = new byte[stream.Length];
+                        stream.Read(newContent, 0, newContent.Length);
+                    }
 
                     // Launch the DiffViewer
                     LaunchDiffViewer(_lastContent, newContent);
@@ -78,7 +83,7 @@ namespace ZO.LoadOrderManager
         private string ComputeFileHash(string filePath)
         {
             using var sha256 = SHA256.Create();
-            using var stream = File.OpenRead(filePath);
+            using var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
             var hashBytes = sha256.ComputeHash(stream);
             return BitConverter.ToString(hashBytes).Replace("-", "").ToLowerInvariant();
         }
@@ -121,7 +126,7 @@ namespace ZO.LoadOrderManager
                                 file.HASH = currentHash;
                                 file.FileContent = File.ReadAllBytes(resolvedPath);
                                 file.CompressedContent = CompressFile(file.FileContent);
-                                file.DTStamp = File.GetLastWriteTime(resolvedPath).ToString("yyyy-MM-dd HH:mm:ss");
+                                file.DTStamp = File.GetLastWriteTime(resolvedPath).ToString("o");
                                 _ = FileInfo.InsertFileInfo(file);
                             }
 
@@ -137,7 +142,7 @@ namespace ZO.LoadOrderManager
                             {
                                 AbsolutePath = resolvedPath,
                                 Filename = file.Filename,
-                                DTStamp = File.GetLastWriteTime(resolvedPath).ToString("yyyy-MM-dd HH:mm:ss"),
+                                DTStamp = File.GetLastWriteTime(resolvedPath).ToString("o"),
                                 FileContent = File.ReadAllBytes(resolvedPath),
                                 HASH = FileInfo.ComputeHash(resolvedPath),
                                 CompressedContent = CompressFile(File.ReadAllBytes(resolvedPath)),

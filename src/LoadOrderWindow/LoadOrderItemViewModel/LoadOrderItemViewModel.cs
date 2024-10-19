@@ -1,4 +1,6 @@
 using System.Collections.ObjectModel;
+using System.Windows;
+using System.Windows.Input;
 using ZO.LoadOrderManager;
 
 public class LoadOrderItemViewModel : ViewModelBase
@@ -15,7 +17,34 @@ public class LoadOrderItemViewModel : ViewModelBase
     public long? Ordinal { get; set; } // Expose Ordinal directly
 
     private bool isSelected;
+    private bool _hideUnloadedPlugins;
+    public bool HideUnloadedPlugins
+    {
+        get => _hideUnloadedPlugins;
+        set => SetProperty(ref _hideUnloadedPlugins, value);
+    }
 
+    public Visibility PluginVisibility
+    {
+        get
+        {
+            if (HideUnloadedPlugins == true && InGameFolder != true)
+            {
+                return Visibility.Collapsed;
+            }
+
+            return Visibility.Visible;
+        }
+    }
+
+    private ICommand _toggleUnloadedVisibilityCommand;
+    public ICommand ToggleUnloadedVisibilityCommand => _toggleUnloadedVisibilityCommand ??= new RelayCommand(ToggleUnloadedVisibility);
+
+    private void ToggleUnloadedVisibility(object? parameter)
+    {
+        HideUnloadedPlugins = !HideUnloadedPlugins;
+        OnPropertyChanged(nameof(HideUnloadedPlugins));
+    }
 
     private long groupSetId;
 
@@ -71,6 +100,20 @@ public class LoadOrderItemViewModel : ViewModelBase
 
     }
 
+    public bool? InGameFolder
+    {
+        get => EntityType == EntityType.Plugin ? PluginData.InGameFolder : (bool?)null;
+        set
+        {
+            if (EntityType == EntityType.Plugin && value.HasValue)
+            {
+                PluginData.InGameFolder = value.Value;
+                OnPropertyChanged(nameof(InGameFolder));
+            }
+        }
+    }
+
+
     // ObservableCollection to hold child items
     public ObservableCollection<LoadOrderItemViewModel> Children
     {
@@ -93,6 +136,8 @@ public class LoadOrderItemViewModel : ViewModelBase
         DisplayName = group.DisplayName;
         EntityType = EntityType.Group;
         Ordinal = group.Ordinal; // Set Ordinal from the group
+        InGameFolder = null;
+        _toggleUnloadedVisibilityCommand = new RelayCommand(ToggleUnloadedVisibility);
     }
 
     // Constructor for plugin items
@@ -105,11 +150,14 @@ public class LoadOrderItemViewModel : ViewModelBase
         PluginData = plugin;
         EntityType = EntityType.Plugin;
         Ordinal = plugin.GroupOrdinal; // Set Ordinal from the plugin
+        InGameFolder = plugin.InGameFolder;
+        _toggleUnloadedVisibilityCommand = new RelayCommand(ToggleUnloadedVisibility);
     }
 
     public LoadOrderItemViewModel()
     {
         // Default constructor
+        _toggleUnloadedVisibilityCommand = new RelayCommand(ToggleUnloadedVisibility);
     }
 
     // Retrieve the ModGroup associated with this item using the GroupID
