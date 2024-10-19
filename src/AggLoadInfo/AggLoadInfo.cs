@@ -1190,8 +1190,8 @@ namespace ZO.LoadOrderManager
 
                 // Clear existing items only for the current view model
                 viewModel.Items.Clear();
-                viewModel.SelectedGroupSet = groupSet;
-                viewModel.SelectedLoadOut = loadOut;
+                //viewModel.SelectedGroupSet = groupSet;
+                //viewModel.SelectedLoadOut = loadOut;
                 viewModel.Suppress997 = suppress997;
                 viewModel.IsCached = isCached;
 

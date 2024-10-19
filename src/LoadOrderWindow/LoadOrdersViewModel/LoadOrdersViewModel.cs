@@ -20,12 +20,13 @@ public class LoadOrdersViewModel : ViewModelBase
         {
             if (InitializationManager.IsAnyInitializing()) return;
 
-            if (SetProperty(ref _selectedGroupSet, value))
+            if (SetProperty(ref _selectedGroupSet, value)) // This will only proceed if the value changes
             {
                 OnSelectedGroupSetChanged();
             }
         }
     }
+
 
 
     private void OnSelectedGroupSetChanged()
@@ -50,7 +51,7 @@ public class LoadOrdersViewModel : ViewModelBase
     private void OnSelectedLoadOutChanged()
     {
         RefreshActivePlugins(_selectedLoadOut);
-        RefreshData();
+        //RefreshData();
     }
 
     public bool Suppress997 { get; set; }
@@ -70,6 +71,7 @@ public class LoadOrdersViewModel : ViewModelBase
         {
             Items.Clear();
             AggLoadInfo.Instance.PopulateLoadOrders(this, groupSet, loadOut, suppress997, isCached);
+            AggLoadInfo.Instance.SetDirty(false);
         });
     }
 
