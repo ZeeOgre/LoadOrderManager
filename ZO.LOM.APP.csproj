@@ -86,8 +86,9 @@
   </Target>
   <Target Name="CopyConfigFile" AfterTargets="Build;Publish" BeforeTargets="PostBuildEvent">
     <ItemGroup>
-      <ConfigFile Include="config\config.yaml" Condition="'$(Configuration)' == 'Debug'" />
-      <ConfigFile Include="config\config_sample.yaml" Condition="'$(Configuration)' != 'Debug'" />
+      <!--<ConfigFile Include="config\config.yaml" Condition="'$(Configuration)' == 'Debug'" />
+      <ConfigFile Include="config\config_sample.yaml" Condition="'$(Configuration)' != 'Debug'" />-->
+	  <ConfigFile Include="config\config_sample.yaml" />
     </ItemGroup>
     <Copy SourceFiles="@(ConfigFile)" DestinationFiles="$(OutputPath)config\config.yaml" />
   </Target>

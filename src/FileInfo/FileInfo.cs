@@ -144,7 +144,7 @@ namespace ZO.LoadOrderManager
             // Folder-specific flag setting
             foreach (var folder in FolderDefinitions)
             {
-                if (filename.StartsWith(folder.Value, StringComparison.OrdinalIgnoreCase))
+                if (folder.Value != null && filename.StartsWith(folder.Value, StringComparison.OrdinalIgnoreCase))
                 {
                     switch (folder.Key)
                     {
