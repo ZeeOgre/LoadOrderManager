@@ -1,5 +1,12 @@
 using System.IO;
 using System.Windows;
+using System.Windows.Forms;
+using Application = System.Windows.Application;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Formats.Tar;
+using System.Data.SQLite;
 
 namespace ZO.LoadOrderManager
 {
@@ -14,8 +21,28 @@ namespace ZO.LoadOrderManager
             });
         }
 
+        public static void MWMessage(string message, bool isUpdateStatus)
+        {
+            _ = Application.Current.Dispatcher.InvokeAsync(() =>
+            {
+                if (isUpdateStatus)
+                {
+                    LoadOrderWindow.Instance.LOWVM.UpdateStatus(message);
+                }
+                else
+                {
+                    LoadOrderWindow.Instance.LOWVM.SetWarning(message);
+                }
+            });
+        }
+
         public static async Task ScanGameDirectoryForStraysAsync(bool fullScan = true)
         {
+
+            MWMessage("Clearing all known file information", false); 
+            ResetPluginStatesAndFileFlags();
+            
+            MWMessage("Scanning Game Folder and computing hashes, please wait",true);
             App.LogDebug("Scan Game Directory For Strays");
             var gameFolder = FileManager.GameFolder;
             var dataFolder = Path.Combine(gameFolder, "data");
@@ -24,14 +51,14 @@ namespace ZO.LoadOrderManager
                 .ToList();
 
             // Log start of scan and set the initial warning message
-            LoadOrderWindow.Instance.LOWVM.SetWarning(fullScan
+            MWMessage(fullScan
                 ? "Full Scan Selected, this may take several minutes as the game folder has VERY large files..."
-                : "Quick Scan Selected, starting scan...");
+                : "Quick Scan Selected, starting scan...",false);
 
 
-            LoadOrderWindow.Instance.LOWVM.UpdateStatus(fullScan 
+            MWMessage(fullScan 
                 ? "Full Scan Selected, this may take several minutes as the game folder has VERY large files..."
-                : "Quick Scan Selected, starting scan...");
+                : "Quick Scan Selected, starting scan...",true);
 
             // Load all known FileInfo objects with the GameFolder flag set
             var knownGameFolderFiles = ZO.LoadOrderManager.FileInfo.GetAllFiles()
@@ -54,9 +81,9 @@ namespace ZO.LoadOrderManager
             foreach (var pluginFile in pluginFiles)
             {
                 currentFileIndex++;
-                long progress = 1 + (98 * currentFileIndex / totalFiles);
+                //long progress = 1 + (98 * currentFileIndex / totalFiles);
                 string pluginFileName = Path.GetFileName(pluginFile);
-                LoadOrderWindow.Instance.LOWVM.SetWarning($"({currentFileIndex}/{totalFiles}) Adding file info for {pluginFileName}");
+                MWMessage($"({currentFileIndex}/{totalFiles}) Adding file info for {pluginFileName}",false);
 
                 var fileInfo = new System.IO.FileInfo(pluginFile);
                 var pluginName = fileInfo.Name.ToLowerInvariant();
@@ -67,25 +94,28 @@ namespace ZO.LoadOrderManager
                     continue;
                 }
 
-                var dtStamp = fileInfo.LastWriteTime.ToString("yyyy-MM-dd HH:mm:ss");
+                var dtStamp = fileInfo.LastWriteTime.ToString("o");
                 string? newHash = null;
                 if (fullScan) newHash = ZO.LoadOrderManager.FileInfo.ComputeHash(fileInfo.FullName);
+                
 
                 if (knownGameFolderFiles.TryGetValue(pluginName, out var existingFileInfo))
                 {
+                    
                     var existingPlugin = AggLoadInfo.Instance.Plugins.FirstOrDefault(p => p.PluginName.Equals(pluginName, StringComparison.OrdinalIgnoreCase));
+                    bool coreFile = existingPlugin != null && (existingPlugin.GroupID == -999);
                     if (existingPlugin != null)
                     {
                         if (existingFileInfo.DTStamp == dtStamp && (!fullScan && newHash != String.Empty))
                         {
-                            existingPlugin.DTStamp = dtStamp;
-                            existingPlugin.State |= ModState.GameFolder;
-                            _ = existingPlugin.WriteMod();
+                        existingPlugin.DTStamp = dtStamp;
+                        existingPlugin.InGameFolder = true;
+                        _ = existingPlugin.WriteMod();
 
-                            if (fullScan) existingFileInfo.HASH = newHash;
-                            existingFileInfo.Flags = FileFlags.GameFolder;
-                            existingFileInfo.AbsolutePath = fileInfo.FullName;
-                            _ = ZO.LoadOrderManager.FileInfo.InsertFileInfo(existingFileInfo, existingPlugin.PluginID);
+                        if (fullScan & !coreFile) existingFileInfo.HASH = ZO.LoadOrderManager.FileInfo.ComputeHash(pluginFile);
+                        existingFileInfo.Flags |= FileFlags.GameFolder;
+                        existingFileInfo.AbsolutePath = fileInfo.FullName;
+                        _ = ZO.LoadOrderManager.FileInfo.InsertFileInfo(existingFileInfo, existingPlugin.PluginID);
                         }
                         else
                         {
@@ -102,11 +132,12 @@ namespace ZO.LoadOrderManager
                         }
 
                         // Check for affiliated archives
-                        AddAffiliatedFiles(fileInfo, existingPlugin.PluginID, fullScan);
+                        AddAffiliatedFilesAsync(fileInfo, existingPlugin.PluginID, fullScan && !coreFile);
                     }
                 }
                 else
                 {
+                    if (fullScan) newHash = ZO.LoadOrderManager.FileInfo.ComputeHash(fileInfo.FullName);
                     // Create a new Plugin object
                     var newPlugin = new Plugin
                     {
@@ -115,7 +146,7 @@ namespace ZO.LoadOrderManager
                         GroupID = groupID,
                         GroupSetID = groupSetID,
                         GroupOrdinal = groupOrdinalTracker[groupID], // Assign the next ordinal
-                        State = ModState.GameFolder // Set the installed flag
+                        InGameFolder = true // Set the installed flag
                     };
                     _ = newPlugin.WriteMod();
                     AggLoadInfo.Instance.Plugins.Add(newPlugin);
@@ -129,17 +160,20 @@ namespace ZO.LoadOrderManager
                         Filename = pluginName,
                         DTStamp = dtStamp,
                         HASH = newHash,
-                        Flags = FileFlags.GameFolder,
+                        Flags = FileFlags.GameFolder | FileFlags.Plugin,
                         AbsolutePath = fileInfo.FullName
                     };
+                    //newFileInfo.Flags &= ~FileFlags.IsArchive;
                     _ = ZO.LoadOrderManager.FileInfo.InsertFileInfo(newFileInfo, newPlugin.PluginID);
 
                     // Check for affiliated archives
-                    AddAffiliatedFiles(fileInfo, newPlugin.PluginID, fullScan);
+                    AddAffiliatedFilesAsync(fileInfo, newPlugin.PluginID, fullScan);
+                    
                 }
-
+                
                 // Allow UI to update
                 await Task.Delay(10);
+                
             }
 
             LoadOrderWindow.Instance.LOWVM.UpdateStatus("Completed Filescan");
@@ -150,7 +184,7 @@ namespace ZO.LoadOrderManager
             App.LogDebug("Scan complete.");
         }
 
-        private static void AddAffiliatedFiles(System.IO.FileInfo pluginFileInfo, long pluginId, bool fullScan)
+        private static async Task AddAffiliatedFilesAsync(System.IO.FileInfo pluginFileInfo, long pluginId, bool fullScan)
         {
             var dataFolder = pluginFileInfo.DirectoryName;
             if (dataFolder == null) return;
@@ -166,7 +200,7 @@ namespace ZO.LoadOrderManager
             {
                 currentAffiliatedFileIndex++;
                 string ba2FileName = Path.GetFileName(ba2File);
-                LoadOrderWindow.Instance.LOWVM.SetWarning($"({currentAffiliatedFileIndex}/{totalAffiliatedFiles}) Adding affiliated file info for {ba2FileName}");
+                MWMessage($"({currentAffiliatedFileIndex}/{totalAffiliatedFiles}) Adding affiliated file info for {ba2FileName}",false);
 
                 string? newHash = null;
                 if (fullScan) newHash = ZO.LoadOrderManager.FileInfo.ComputeHash(ba2File);
@@ -174,12 +208,15 @@ namespace ZO.LoadOrderManager
                 var ba2FileInfo = new ZO.LoadOrderManager.FileInfo
                 {
                     Filename = ba2FileName,
-                    DTStamp = File.GetLastWriteTime(ba2File).ToString("yyyy-MM-dd HH:mm:ss"),
+                    DTStamp = File.GetLastWriteTime(ba2File).ToString("o"),
                     HASH = newHash,
-                    Flags = FileFlags.IsArchive | FileFlags.GameFolder,
+                    Flags = FileFlags.IsArchive | FileFlags.GameFolder ,
                     AbsolutePath = ba2File
                 };
+                //newFileInfo.Flags &= ~FileFlags.IsPlugin;
                 _ = ZO.LoadOrderManager.FileInfo.InsertFileInfo(ba2FileInfo, pluginId);
+                await Task.Yield();
+
             }
 
             foreach (var iniFile in iniFiles)
@@ -193,12 +230,56 @@ namespace ZO.LoadOrderManager
                 var iniFileInfo = new ZO.LoadOrderManager.FileInfo
                 {
                     Filename = iniFileName,
-                    DTStamp = File.GetLastWriteTime(iniFile).ToString("yyyy-MM-dd HH:mm:ss"),
+                    DTStamp = File.GetLastWriteTime(iniFile).ToString("o"),
                     HASH = newHash,
                     Flags = FileFlags.GameFolder,
                     AbsolutePath = iniFile
                 };
                 _ = ZO.LoadOrderManager.FileInfo.InsertFileInfo(iniFileInfo, pluginId);
+            }
+        }
+        public static void ResetPluginStatesAndFileFlags()
+        {
+
+            // Use the DbManager singleton to get the database connection
+            using (var connection = DbManager.Instance.GetConnection())
+            {
+
+                // Update the State for all plugins where GroupID != -999
+                string updatePluginsSql = @"
+                UPDATE Plugins
+                SET State = State & ~1
+                WHERE PluginID NOT IN (
+                    SELECT PluginID
+                    FROM GroupSetPlugins
+                    WHERE GroupID = -999
+                )";
+
+                using (var command = new SQLiteCommand(updatePluginsSql, connection))
+                {
+                    command.ExecuteNonQuery();
+                }
+
+                // Update the Flags for all file info where PluginID is not in GroupID -999
+                string updateFileInfoSql = @"
+                UPDATE FileInfo
+                SET Flags = Flags & ~8
+                WHERE FileID NOT IN (
+                    SELECT FileID
+                    FROM Plugins
+                    WHERE PluginID IN (
+                        SELECT PluginID
+                        FROM GroupSetPlugins
+                        WHERE GroupID = -999
+                    )
+                )";
+
+                using (var command = new SQLiteCommand(updateFileInfoSql, connection))
+                {
+                    command.ExecuteNonQuery();
+                }
+
+                connection.Close();
             }
         }
     }

@@ -155,42 +155,42 @@ namespace ZO.LoadOrderManager
             }
         }
 
-        private void CleanOrdinals()
+        public static void CleanOrdinals(bool refreshMetadata = true)
         {
             try
             {
-                // Suppress all ObservableCollection change notifications using UniversalCollectionDisabler
+                // Suppress all ObservableCollection change notifications using UniversalCollectionDisabler if needed
 
                 using (var connection = DbManager.Instance.GetConnection())
                 {
                     using var transaction = connection.BeginTransaction();
                     const string cleanOrdinalsQuery = @"
-                    WITH OrderedGSP AS (
-                        SELECT GroupSetID, GroupID, PluginID,
-                               ROW_NUMBER() OVER (PARTITION BY GroupSetID, GroupID ORDER BY Ordinal) AS NewOrdinal
-                        FROM GroupSetPlugins
-                    )
-                    UPDATE GroupSetPlugins
-                    SET Ordinal = OrderedGSP.NewOrdinal
-                    FROM OrderedGSP
-                    WHERE GroupSetPlugins.GroupSetID = OrderedGSP.GroupSetID
-                      AND GroupSetPlugins.GroupID = OrderedGSP.GroupID
-                      AND GroupSetPlugins.PluginID = OrderedGSP.PluginID;
+            WITH OrderedGSP AS (
+                SELECT GroupSetID, GroupID, PluginID,
+                       ROW_NUMBER() OVER (PARTITION BY GroupSetID, GroupID ORDER BY Ordinal) AS NewOrdinal
+                FROM GroupSetPlugins
+            )
+            UPDATE GroupSetPlugins
+            SET Ordinal = OrderedGSP.NewOrdinal
+            FROM OrderedGSP
+            WHERE GroupSetPlugins.GroupSetID = OrderedGSP.GroupSetID
+              AND GroupSetPlugins.GroupID = OrderedGSP.GroupID
+              AND GroupSetPlugins.PluginID = OrderedGSP.PluginID;
 
-                    WITH OrderedGSG AS (
-                        SELECT GroupSetID, ParentID, GroupID,
-                               CASE WHEN GroupID < 0 THEN -GroupID + 9000
-                                    ELSE ROW_NUMBER() OVER (PARTITION BY GroupSetID, ParentID ORDER BY Ordinal)
-                               END AS NewOrdinal
-                        FROM GroupSetGroups
-                    )
-                    UPDATE GroupSetGroups
-                    SET Ordinal = OrderedGSG.NewOrdinal
-                    FROM OrderedGSG
-                    WHERE GroupSetGroups.GroupSetID = OrderedGSG.GroupSetID
-                      AND GroupSetGroups.ParentID = OrderedGSG.ParentID
-                      AND GroupSetGroups.GroupID = OrderedGSG.GroupID;
-                ";
+            WITH OrderedGSG AS (
+                SELECT GroupSetID, ParentID, GroupID,
+                       CASE WHEN GroupID < 0 THEN -GroupID + 9000
+                            ELSE ROW_NUMBER() OVER (PARTITION BY GroupSetID, ParentID ORDER BY Ordinal)
+                       END AS NewOrdinal
+                FROM GroupSetGroups
+            )
+            UPDATE GroupSetGroups
+            SET Ordinal = OrderedGSG.NewOrdinal
+            FROM OrderedGSG
+            WHERE GroupSetGroups.GroupSetID = OrderedGSG.GroupSetID
+              AND GroupSetGroups.ParentID = OrderedGSG.ParentID
+              AND GroupSetGroups.GroupID = OrderedGSG.GroupID;
+        ";
 
                     using (var command = connection.CreateCommand())
                     {
@@ -202,11 +202,16 @@ namespace ZO.LoadOrderManager
                     transaction.Commit();
                 }
 
-                // Refresh metadata from the database after the transaction
-                AggLoadInfo.Instance.RefreshMetadataFromDB();
+                // Conditionally refresh metadata from the database if the flag is true
+                if (refreshMetadata)
+                {
+                    AggLoadInfo.Instance.RefreshMetadataFromDB();
 
-                // Inform the user of success
-                _ = MessageBox.Show("Ordinals cleaned successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                    // Inform the user of success
+                    _ = MessageBox.Show("Ordinals cleaned successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+
+               
             }
             catch (Exception ex)
             {
@@ -214,6 +219,7 @@ namespace ZO.LoadOrderManager
                 _ = MessageBox.Show($"Error during cleaning ordinals: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+
 
 
         private void CompareFile(FileInfo file)

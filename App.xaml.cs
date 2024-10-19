@@ -36,7 +36,7 @@ namespace ZO.LoadOrderManager
             CompanyName = GetAssemblyAttribute<AssemblyCompanyAttribute>(assembly)?.Company ?? "Unknown Company";
             ProductName = GetAssemblyAttribute<AssemblyProductAttribute>(assembly)?.Product ?? "Unknown Product";
             PackageID = GetAssemblyAttribute<AssemblyProductAttribute>(assembly)?.Product ?? "Unknown Product";
-            Version = assembly.GetName().Version?.ToString() ?? "0.0.0.0";
+            Version = Settings.Default.version ?? "0.0.0.0";
         }
 
         public App()

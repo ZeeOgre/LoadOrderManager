@@ -222,14 +222,36 @@ function Update-AssemblyInfoFile {
     # Read all lines from AssemblyInfo.cs
     $assemblyInfoLines = Get-Content -Path $assemblyInfoFilePath -Encoding UTF8
 
+    $assemblyVersionFound = $false
+    $assemblyFileVersionFound = $false
+    $usingSystemReflectionFound = $false
+
     # Loop through each line and replace AssemblyVersion and AssemblyFileVersion
     for ($i = 0; $i -lt $assemblyInfoLines.Length; $i++) {
+        if ($assemblyInfoLines[$i] -match 'using System.Reflection;') {
+            $usingSystemReflectionFound = $true
+        }
         if ($assemblyInfoLines[$i] -match 'AssemblyVersion') {
             $assemblyInfoLines[$i] = "[assembly: AssemblyVersion(`"$newVersion`")]"
+            $assemblyVersionFound = $true
         }
         if ($assemblyInfoLines[$i] -match 'AssemblyFileVersion') {
             $assemblyInfoLines[$i] = "[assembly: AssemblyFileVersion(`"$newVersion`")]"
+            $assemblyFileVersionFound = $true
         }
+    }
+
+    # Add the using directive if not found
+    if (-not $usingSystemReflectionFound) {
+        $assemblyInfoLines = @("using System.Reflection;") + $assemblyInfoLines
+    }
+
+    # Add the attributes if they are not found
+    if (-not $assemblyVersionFound) {
+        $assemblyInfoLines += "[assembly: AssemblyVersion(`"$newVersion`")]"
+    }
+    if (-not $assemblyFileVersionFound) {
+        $assemblyInfoLines += "[assembly: AssemblyFileVersion(`"$newVersion`")]"
     }
 
     if ($WhatIf) {

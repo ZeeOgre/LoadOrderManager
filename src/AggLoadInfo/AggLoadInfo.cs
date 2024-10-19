@@ -456,35 +456,38 @@ namespace ZO.LoadOrderManager
 
         private void CreateAndPopulateGroup997(SQLiteConnection conn, Dictionary<long, Plugin> pluginDict)
         {
+            SettingsViewModel.CleanOrdinals(false);
             // Step 1: Start a transaction to handle everything in one go
             using var transaction = conn.BeginTransaction();
 
             var sqlCommandText = @"
-            -- Insert unassigned plugins into GroupSetPlugins for GroupID -997
-            INSERT INTO GroupSetPlugins (GroupSetID, GroupID, PluginID, Ordinal)
-            SELECT @GroupSetIDz, -997, PluginID, ROW_NUMBER() OVER (ORDER BY PluginID)
-            FROM Plugins p
-            WHERE NOT EXISTS (
-                -- Ensure the plugin is not already assigned to any group in the current GroupSet
-                SELECT 1 FROM GroupSetPlugins gsp
-                WHERE gsp.GroupSetID = @GroupSetIDz OR gsp.GroupID IN (1, -998, -999)
-                AND gsp.PluginID = p.PluginID
+            --Step 1: Insert all unassigned plugins into GroupSetPlugins for GroupID - 997
+            INSERT INTO GroupSetPlugins(GroupSetID, GroupID, PluginID, Ordinal)
+            SELECT @GroupSetIDz, -997, PluginID, ROW_NUMBER() OVER(ORDER BY PluginID)
+            FROM Plugins
+            WHERE PluginID IN(
+                SELECT DISTINCT PluginID
+                FROM GroupSetPlugins
+                WHERE GroupSetID != @GroupSetIDz
+                AND GroupID NOT IN(-998, -999, 1)
             )
             RETURNING PluginID;
             ";
 
-            //-- Step 1: Insert all unassigned plugins into GroupSetPlugins for GroupID -997
+            //-- Insert unassigned plugins into GroupSetPlugins for GroupID -997
             //INSERT INTO GroupSetPlugins (GroupSetID, GroupID, PluginID, Ordinal)
             //SELECT @GroupSetIDz, -997, PluginID, ROW_NUMBER() OVER (ORDER BY PluginID)
-            //FROM Plugins
-            //WHERE PluginID IN (
-            //    SELECT DISTINCT PluginID
-            //    FROM vwPluginGrpUnion
-            //    WHERE GroupSetID != @GroupSetIDz
-            //    AND GroupID NOT IN (-998, -999, 1)
+            //FROM Plugins p
+            //WHERE NOT EXISTS (
+            //    -- Ensure the plugin is not already assigned to any group in the current GroupSet
+            //    SELECT 1 FROM GroupSetPlugins gsp
+            //    WHERE gsp.GroupSetID = @GroupSetIDz OR gsp.GroupID IN (1, -998, -999)
+            //    AND gsp.PluginID = p.PluginID
             //)
             //RETURNING PluginID;
             //";
+
+            
 
             // Execute the SQL and capture the results (PluginIDs of inserted plugins)
             using var command = new SQLiteCommand(sqlCommandText, conn);
@@ -884,9 +887,12 @@ namespace ZO.LoadOrderManager
 
                 if (matchingGSP == default)
                 {
+                    continue;
+                }
+
                     plugin.GroupID = matchingGSP.groupID;
                     plugin.GroupOrdinal = matchingGSP.Ordinal;
-                }
+                
             }
 
             // Update Groups' ParentID and Ordinal based on GroupSetGroups
@@ -897,9 +903,11 @@ namespace ZO.LoadOrderManager
 
                 if (matchingGSG == default)
                 {
-                    group.ParentID = matchingGSG.parentID;
-                    group.Ordinal = matchingGSG.Ordinal;
+                    continue;
                 }
+                group.ParentID = matchingGSG.parentID;
+                group.Ordinal = matchingGSG.Ordinal;
+
             }
 
             // Update LoadOuts by enabling appropriate plugins based on ProfilePlugins

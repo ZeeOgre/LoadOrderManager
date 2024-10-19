@@ -4,6 +4,7 @@ using System.IO.Compression;
 using System.IO.Hashing;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Windows;
 using YamlDotNet.Serialization;
 
 
@@ -81,7 +82,7 @@ namespace ZO.LoadOrderManager
             RelativePath = null;
             DTStamp = DateTime.Now.ToString("o");
             HASH = null;
-            Flags = FileFlags.None;
+            Flags = GetFlagsFromFileName(filename);
             AbsolutePath = filename;
         }
 
@@ -91,7 +92,7 @@ namespace ZO.LoadOrderManager
             RelativePath = Path.GetRelativePath(Path.Combine(gameFolderPath, "data"), fileInfo.FullName);
             DTStamp = fileInfo.LastWriteTime.ToString("o");
             if (checkHash) { HASH = ComputeHash(fileInfo.FullName); }
-            Flags = CheckFileFlags(fileInfo);
+            Flags = GetFlagsFromFileObject(fileInfo);
             AbsolutePath = Flags.HasFlag(FileFlags.IsJunction) ? GetJunctionTarget(fileInfo.FullName) : fileInfo.FullName;
         }
 
@@ -109,9 +110,11 @@ namespace ZO.LoadOrderManager
 
             AbsolutePath = filename;
 
+            GetFlagsFromFileName(filename);
+
             if (monitor)
             {
-                Flags = FileFlags.IsMonitored;
+                Flags |= FileFlags.IsMonitored;
                 storeFile = true;
             }
             else
@@ -119,10 +122,95 @@ namespace ZO.LoadOrderManager
                 Flags = FileFlags.None;
             }
 
+
             if (storeFile == true)
             {
                 FileContent = System.IO.File.ReadAllBytes(filename); // Store raw file content
                 CompressedContent = CompressFile(FileContent); // Store compressed content
+            }
+        }
+
+        private FileFlags GetFlagsFromFileName(string filename)
+        {
+            FileFlags flags = FileFlags.None;
+
+            // Use helper methods to set flags more cleanly
+            SetFlagState(ref flags, FileFlags.IsArchive, CheckIfArchive(filename));
+
+            // Check for plugins
+            bool isPlugin = filename.EndsWith(".esp", StringComparison.OrdinalIgnoreCase) || filename.EndsWith(".esm", StringComparison.OrdinalIgnoreCase);
+            SetFlagState(ref flags, FileFlags.Plugin, isPlugin);
+
+            // Check for config files
+            bool isConfig = filename.EndsWith(".ini", StringComparison.OrdinalIgnoreCase) ||
+                            filename.EndsWith(".txt", StringComparison.OrdinalIgnoreCase) ||
+                            filename.EndsWith(".ccc", StringComparison.OrdinalIgnoreCase);
+            SetFlagState(ref flags, FileFlags.Config, isConfig);
+
+            // Folder-specific flag setting
+            foreach (var folder in FolderDefinitions)
+            {
+                if (filename.StartsWith(folder.Value, StringComparison.OrdinalIgnoreCase))
+                {
+                    switch (folder.Key)
+                    {
+                        case "GameAppData":
+                            SetFlagState(ref flags, FileFlags.GameAppData, true);
+                            break;
+                        case "GameDocs":
+                            SetFlagState(ref flags, FileFlags.GameDocs, true);
+                            break;
+                        case "GameFolder":
+                            SetFlagState(ref flags, FileFlags.GameFolder, true);
+                            break;
+                    }
+                }
+            }
+
+            return flags;
+        }
+
+        // Helper method for setting flags
+        private void SetFlagState(ref FileFlags flags, FileFlags flag, bool isEnabled)
+        {
+            if (isEnabled)
+            {
+                flags |= flag;
+            }
+            else
+            {
+                flags &= ~flag;
+            }
+        }
+
+
+        private FileFlags GetFlagsFromFileObject(System.IO.FileInfo fileInfo)
+        {
+            FileFlags flags = FileFlags.None;
+            if (fileInfo.Attributes.HasFlag(FileAttributes.ReparsePoint))
+            {
+                flags |= FileFlags.IsJunction;
+            }
+             flags |= GetFlagsFromFileName(fileInfo.FullName);
+            return Flags;
+        }
+
+        private bool CheckIfArchive(string filename)
+        {
+            string extension = Path.GetExtension(filename).ToLowerInvariant();
+            return extension == ".rar" || extension == ".zip" || extension == ".7z" || extension == ".ba2";
+        }
+
+        private bool CheckIfJunction(string filePath)
+        {
+            try
+            {
+                var fileInfo = new System.IO.FileInfo(filePath);
+                return fileInfo.Attributes.HasFlag(FileAttributes.ReparsePoint);
+            }
+            catch (ArgumentException)
+            {
+                return false;
             }
         }
 
@@ -396,6 +484,9 @@ namespace ZO.LoadOrderManager
         {
             const int bufferSize = 8 * 1024 * 1024; // 8MB buffer
 
+
+            System.Threading.Thread.Sleep(10);
+
             using var stream = new FileStream(
                 filePath,
                 FileMode.Open,
@@ -616,6 +707,7 @@ namespace ZO.LoadOrderManager
                 throw;
             }
         }
+
         public void ReplaceFlags(FileFlags newFlags)
         {
             this.Flags = newFlags;

@@ -81,8 +81,8 @@ Write-Output "Current Branch: $currentBranch"
 if ($currentBranch -eq 'master') {
     # Clobber down to dev
     Execute-Command "git checkout dev"
-    Execute-Command "git merge -X theirs master"
-    Write-Output "Merged master INTO dev with conflicts resolved in favor of master."
+    Execute-Command "git merge -X ours master"
+    Write-Output "Merged master INTO dev with conflicts resolved in favor of dev."
     $currentBranch = 'dev'
 } elseif ($currentBranch -eq 'dev') {
     # Friendly merge up to master
