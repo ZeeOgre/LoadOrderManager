@@ -107,6 +107,10 @@ namespace ZO.LoadOrderManager
             GroupSetComboBox.DisplayMemberPath = "GroupSetName";
             GroupSetComboBox.SelectedValuePath = "GroupSetID";
             GroupSetComboBox.SelectedValue = _tempModGroup.GroupSetID;
+
+            // Debug statements
+            Console.WriteLine("GroupSetComboBox ItemsSource set with {0} items.", _filteredGroupSets.Count);
+            Console.WriteLine("GroupSetComboBox SelectedValue set to {0}.", _tempModGroup.GroupSetID);
         }
 
         private void SaveButton_Click(object sender, RoutedEventArgs e)

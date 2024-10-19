@@ -31,6 +31,7 @@ namespace ZO.LoadOrderManager
             HideUnloadedPlugins = !HideUnloadedPlugins;
             // Notify the UI to refresh the visibility of items
             OnPropertyChanged(nameof(HideUnloadedPlugins));
+
         }
 
         private void UpdateStatusLight()

@@ -29,7 +29,11 @@
                 </UniformGrid.ContextMenu>
             </UniformGrid>
             <TextBlock Text="GroupSet:" Margin="0,0,0,5" FontWeight="Bold"/>
-            <ComboBox x:Name="GroupSetComboBox" Margin="0,0,0,10" DisplayMemberPath="GroupSetName" SelectedValuePath="GroupSetID" SelectedValue="{Binding GroupSetID, UpdateSourceTrigger=PropertyChanged}" Width="365"/>
+            <ComboBox x:Name="GroupSetComboBox" Margin="0,0,0,10" 
+                      DisplayMemberPath="GroupSetName" 
+                      SelectedValuePath="GroupSetID" 
+                      SelectedValue="{Binding GroupSetID, UpdateSourceTrigger=PropertyChanged}" 
+                      Width="365"/>
             <Button Content="Add To New GroupSet" Width="150" Margin="0,0,0,50" Click="AddToNewGroupSet_Click"/>
 
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">

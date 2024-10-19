@@ -2,6 +2,7 @@
   "profiles": {
     "ZO.LoadOrderManager": {
       "commandName": "Project",
+      "commandLineArgs": "\r\n",
       "nativeDebugging": false,
       "sqlDebugging": false
     }

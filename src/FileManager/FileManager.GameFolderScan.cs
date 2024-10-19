@@ -62,7 +62,9 @@ namespace ZO.LoadOrderManager
 
             // Load all known FileInfo objects with the GameFolder flag set
             var knownGameFolderFiles = ZO.LoadOrderManager.FileInfo.GetAllFiles()
-                .ToDictionary(f => f.Filename, StringComparer.OrdinalIgnoreCase);
+    .GroupBy(f => f.Filename, StringComparer.OrdinalIgnoreCase)
+    .Select(g => g.First())
+    .ToDictionary(f => f.Filename, StringComparer.OrdinalIgnoreCase);
 
             // Dictionary to track the highest ordinal for each group
             var groupOrdinalTracker = new Dictionary<long, long>();
@@ -96,7 +98,7 @@ namespace ZO.LoadOrderManager
 
                 var dtStamp = fileInfo.LastWriteTime.ToString("o");
                 string? newHash = null;
-                if (fullScan) newHash = ZO.LoadOrderManager.FileInfo.ComputeHash(fileInfo.FullName);
+        
                 
 
                 if (knownGameFolderFiles.TryGetValue(pluginName, out var existingFileInfo))
@@ -106,8 +108,7 @@ namespace ZO.LoadOrderManager
                     bool coreFile = existingPlugin != null && (existingPlugin.GroupID == -999);
                     if (existingPlugin != null)
                     {
-                        if (existingFileInfo.DTStamp == dtStamp && (!fullScan && newHash != String.Empty))
-                        {
+
                         existingPlugin.DTStamp = dtStamp;
                         existingPlugin.InGameFolder = true;
                         _ = existingPlugin.WriteMod();
@@ -116,20 +117,7 @@ namespace ZO.LoadOrderManager
                         existingFileInfo.Flags |= FileFlags.GameFolder;
                         existingFileInfo.AbsolutePath = fileInfo.FullName;
                         _ = ZO.LoadOrderManager.FileInfo.InsertFileInfo(existingFileInfo, existingPlugin.PluginID);
-                        }
-                        else
-                        {
-                            // DTStamp does not match, perform full update
-                            existingPlugin.DTStamp = dtStamp;
-                            existingPlugin.State |= ModState.GameFolder;
-                            _ = existingPlugin.WriteMod();
-
-                            existingFileInfo.DTStamp = dtStamp;
-                            if (fullScan) existingFileInfo.HASH = newHash;
-                            existingFileInfo.Flags = FileFlags.GameFolder;
-                            existingFileInfo.AbsolutePath = fileInfo.FullName;
-                            _ = ZO.LoadOrderManager.FileInfo.InsertFileInfo(existingFileInfo, existingPlugin.PluginID);
-                        }
+                       
 
                         // Check for affiliated archives
                         AddAffiliatedFilesAsync(fileInfo, existingPlugin.PluginID, fullScan && !coreFile);

@@ -14,7 +14,7 @@ public enum GroupFlags
     FilesLoaded = 16
 }
 
-public class GroupSet : INotifyPropertyChanged
+public class GroupSet : INotifyPropertyChanged, IEquatable<GroupSet>
 {
     public event PropertyChangedEventHandler PropertyChanged;
 
@@ -286,33 +286,6 @@ public class GroupSet : INotifyPropertyChanged
         return clonedGroupSet;
     }
 
-    // Equality comparison
-    public override bool Equals(object obj)
-    {
-        if (obj is GroupSet otherGroupSet)
-        {
-            return this.GroupSetID == otherGroupSet.GroupSetID ||
-                   this.GroupSetName == otherGroupSet.GroupSetName;
-        }
-
-        return false;
-    }
-
-    public override int GetHashCode()
-    {
-        unchecked // Overflow is fine, just wrap
-        {
-            int hash = 17;
-            hash = hash * 23 + GroupSetID.GetHashCode();
-            hash = hash * 23 + (GroupSetName?.GetHashCode() ?? 0);
-            return hash;
-        }
-    }
-
-
-
-
-
     // Dummy LoadOut methods - replace these with actual implementations
     public static IEnumerable<LoadOut> GetAllLoadOuts(long groupSetID)
     {
@@ -403,10 +376,36 @@ public class GroupSet : INotifyPropertyChanged
         }
     }
 
+    // Equality comparison
+    public override bool Equals(object obj)
+    {
+        if (obj is GroupSet otherGroupSet)
+        {
+            return Equals(otherGroupSet); // Reuse the Equals(GroupSet? other) method
+        }
+
+        return false;
+    }
+
+    public override int GetHashCode()
+    {
+        unchecked // Overflow is fine, just wrap
+        {
+            int hash = 17;
+            hash = hash * 23 + GroupSetID.GetHashCode();
+            hash = hash * 23 + (GroupSetName?.GetHashCode() ?? 0);
+            return hash;
+        }
+    }
 
     protected void OnPropertyChanged(string propertyName)
     {
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
 
+    public bool Equals(GroupSet? other)
+    {
+        if (other is null) return false; // Handle null case
+        return this.GroupSetID == other.GroupSetID || this.GroupSetName == other.GroupSetName;
+    }
 }

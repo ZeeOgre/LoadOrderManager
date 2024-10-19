@@ -18,32 +18,38 @@ public class LoadOrderItemViewModel : ViewModelBase
 
     private bool isSelected;
     private bool _hideUnloadedPlugins;
+    private ICommand _toggleUnloadedVisibilityCommand;
+
     public bool HideUnloadedPlugins
     {
         get => _hideUnloadedPlugins;
-        set => SetProperty(ref _hideUnloadedPlugins, value);
+        set
+        {
+            if (SetProperty(ref _hideUnloadedPlugins, value))
+            {
+                OnPropertyChanged(nameof(PluginVisibility));
+            }
+        }
     }
 
     public Visibility PluginVisibility
     {
         get
         {
-            if (HideUnloadedPlugins == true && InGameFolder != true)
+            // Collapse only if the plugin is NOT loaded and HideUnloadedPlugins is true
+            if ((InGameFolder != true) && HideUnloadedPlugins)
             {
                 return Visibility.Collapsed;
             }
-
             return Visibility.Visible;
         }
     }
 
-    private ICommand _toggleUnloadedVisibilityCommand;
     public ICommand ToggleUnloadedVisibilityCommand => _toggleUnloadedVisibilityCommand ??= new RelayCommand(ToggleUnloadedVisibility);
 
     private void ToggleUnloadedVisibility(object? parameter)
     {
         HideUnloadedPlugins = !HideUnloadedPlugins;
-        OnPropertyChanged(nameof(HideUnloadedPlugins));
     }
 
     private long groupSetId;

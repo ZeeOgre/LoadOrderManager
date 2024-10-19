@@ -294,6 +294,7 @@ namespace ZO.LoadOrderManager
                 try
                 {
                     _config = Config.LoadFromYaml(selectedFile);
+                    InitializeViewModel(); // Re-initialize the ViewModel to ensure commands are set up correctly
                     OnPropertyChanged(nameof(MonitoredFiles));
                     OnPropertyChanged(nameof(AutoCheckAtStartup));
                     OnPropertyChanged(nameof(GameFolder));

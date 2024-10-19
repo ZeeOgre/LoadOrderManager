@@ -54,102 +54,88 @@ namespace ZO.LoadOrderManager
 
         protected override void OnStartup(StartupEventArgs e)
         {
-
+            base.OnStartup(e);
             try
             {
+                LogDebug("OnStartup called");
+                SetProbingPaths();
 
-
-
-                App.LogDebug("OnStartup called");
-
-                try
+                // Determine if we're in settings mode or normal mode
+                if (e.Args.Contains("--settings"))
                 {
-                    base.OnStartup(e);
-                    SetProbingPaths();
-
-                    App.LogDebug("Checking command line arguments...");
-                    foreach (var arg in e.Args)
-                    {
-                        App.LogDebug($"Argument: {arg}");
-                    }
-
-                    if (Array.Exists(e.Args, arg => arg.Equals("--settings", StringComparison.OrdinalIgnoreCase)))
-                    {
-                        App.LogDebug("--settings argument detected. Entering settings mode.");
-                        IsSettingsMode = true;
-                        HandleSettingsMode();
-                    }
-                    else
-                    {
-                        App.LogDebug("No --settings argument detected. Entering normal mode.");
-                        HandleNormalMode();
-                    }
+                    LogDebug("--settings argument detected. Entering settings mode.");
+                    IsSettingsMode = true;
+                    HandleSettingsMode();
                 }
-                catch (Exception ex)
+                else
                 {
-                    App.LogDebug($"Exception during startup: {ex.Message}");
-                    _ = MessageBox.Show($"An error occurred during startup: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                    Shutdown();
+                    LogDebug("No --settings argument detected. Entering normal mode.");
+                    HandleNormalMode();
                 }
-
             }
-            catch (FileNotFoundException ex)
+            catch (Exception ex)
             {
-                Console.WriteLine($"File not found: {ex.FileName}");
-                Console.WriteLine($"Message: {ex.Message}");
-                Console.WriteLine($"Stack Trace: {ex.StackTrace}");
+                LogDebug($"Exception during startup: {ex.Message}");
+                MessageBox.Show($"An error occurred during startup: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                Shutdown();
             }
+
+
         }
-
-
 
 
 
         public void ApplyCustomTheme(bool isDarkMode)
         {
             var theme = isDarkMode ? ThemeManager.BaseColorDarkConst : ThemeManager.BaseColorLightConst;
-            Application.Current.Dispatcher.Invoke(() =>
+
+            if (Application.Current != null && Application.Current.Dispatcher != null)
             {
-                // Remove existing Resource Dictionaries related to themes.
-                var existingDictionaries = Application.Current.Resources.MergedDictionaries.ToList();
-                foreach (var dictionary in existingDictionaries)
+                Application.Current.Dispatcher.Invoke(() =>
                 {
-                    if (dictionary.Source != null &&
-                        (dictionary.Source.OriginalString.Contains("MaterialDesignTheme.Light.xaml") ||
-                         dictionary.Source.OriginalString.Contains("MaterialDesignTheme.Dark.xaml") ||
-                         dictionary.Source.OriginalString.Contains("MahApps.Metro;component/Styles/Themes/Light.Blue.xaml") ||
-                         dictionary.Source.OriginalString.Contains("MahApps.Metro;component/Styles/Themes/Dark.Blue.xaml") ||
-                         dictionary.Source.OriginalString.Contains("Themes/ColorsLight.xaml") ||
-                         dictionary.Source.OriginalString.Contains("Themes/ColorsDark.xaml")))
+                    // Remove existing Resource Dictionaries related to themes.
+                    var existingDictionaries = Application.Current.Resources.MergedDictionaries.ToList();
+                    foreach (var dictionary in existingDictionaries)
                     {
-                        _ = Application.Current.Resources.MergedDictionaries.Remove(dictionary);
+                        if (dictionary.Source != null &&
+                            (dictionary.Source.OriginalString.Contains("MaterialDesignTheme.Light.xaml") ||
+                             dictionary.Source.OriginalString.Contains("MaterialDesignTheme.Dark.xaml") ||
+                             dictionary.Source.OriginalString.Contains("MahApps.Metro;component/Styles/Themes/Light.Blue.xaml") ||
+                             dictionary.Source.OriginalString.Contains("MahApps.Metro;component/Styles/Themes/Dark.Blue.xaml") ||
+                             dictionary.Source.OriginalString.Contains("Themes/ColorsLight.xaml") ||
+                             dictionary.Source.OriginalString.Contains("Themes/ColorsDark.xaml")))
+                        {
+                            _ = Application.Current.Resources.MergedDictionaries.Remove(dictionary);
+                        }
                     }
-                }
 
-                // Load new theme dictionaries based on the selected mode
-                var materialDesignResourcePath = isDarkMode
-                    ? "pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesignTheme.Dark.xaml"
-                    : "pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesignTheme.Light.xaml";
+                    // Load new theme dictionaries based on the selected mode
+                    var materialDesignResourcePath = isDarkMode
+                        ? "pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesignTheme.Dark.xaml"
+                        : "pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesignTheme.Light.xaml";
 
-                var mahAppsResourcePath = isDarkMode
-                    ? "pack://application:,,,/MahApps.Metro;component/Styles/Themes/Dark.Blue.xaml"
-                    : "pack://application:,,,/MahApps.Metro;component/Styles/Themes/Light.Blue.xaml";
+                    var mahAppsResourcePath = isDarkMode
+                        ? "pack://application:,,,/MahApps.Metro;component/Styles/Themes/Dark.Blue.xaml"
+                        : "pack://application:,,,/MahApps.Metro;component/Styles/Themes/Light.Blue.xaml";
 
-                var customColorResourcePath = isDarkMode
-                    ? "pack://application:,,,/Themes/ColorsDark.xaml"
-                    : "pack://application:,,,/Themes/ColorsLight.xaml";
+                    var customColorResourcePath = isDarkMode
+                        ? "pack://application:,,,/Themes/ColorsDark.xaml"
+                        : "pack://application:,,,/Themes/ColorsLight.xaml";
 
-                Application.Current.Resources.MergedDictionaries.Add(new ResourceDictionary() { Source = new Uri(materialDesignResourcePath) });
-                Application.Current.Resources.MergedDictionaries.Add(new ResourceDictionary() { Source = new Uri(mahAppsResourcePath) });
-                Application.Current.Resources.MergedDictionaries.Add(new ResourceDictionary() { Source = new Uri(customColorResourcePath) });
+                    Application.Current.Resources.MergedDictionaries.Add(new ResourceDictionary() { Source = new Uri(materialDesignResourcePath) });
+                    Application.Current.Resources.MergedDictionaries.Add(new ResourceDictionary() { Source = new Uri(mahAppsResourcePath) });
+                    Application.Current.Resources.MergedDictionaries.Add(new ResourceDictionary() { Source = new Uri(customColorResourcePath) });
 
-                // Apply MahApps theme
-                _ = ThemeManager.Current.ChangeThemeBaseColor(Application.Current, theme);
-                _ = ThemeManager.Current.ChangeThemeColorScheme(Application.Current, "Blue");
-
-                // Restart the application to apply the new theme
-                //RestartApplication();
-            });
+                    // Apply MahApps theme
+                    _ = ThemeManager.Current.ChangeThemeBaseColor(Application.Current, theme);
+                    _ = ThemeManager.Current.ChangeThemeColorScheme(Application.Current, "Blue");
+                });
+            }
+            else
+            {
+                // Log or handle the case where Application.Current is null
+                LogDebug("Application.Current is null. Cannot apply custom theme.");
+            }
         }
 
 
@@ -185,11 +171,32 @@ namespace ZO.LoadOrderManager
 
                     App.LogDebug("Launching SettingsWindow in settings mode.");
                     var settingsWindow = new SettingsWindow(SettingsLaunchSource.CommandLine);
-                    settingsWindow.Closed += (s, e) =>
+
+                    // Use ShowDialog to wait for the window to be closed
+                    var result = settingsWindow.ShowDialog();
+                    App.LogDebug($"Settings window dialog result: {result}");
+
+                    if (result == true)  // If DialogResult was set to true (e.g., Save was clicked)
                     {
+                        App.LogDebug("Settings saved successfully.");
                         RestartApplication();
-                    };
-                    settingsWindow.Show();
+                        //Shutdown();
+                        //HandleNormalMode();  // Transition to normal mode
+                    }
+                    else
+                    {
+                        App.LogDebug("Settings window closed without saving.");
+                        // Only shut down if there is no configuration to proceed with
+                        if (Config.Instance == null)
+                        {
+                            App.LogDebug("Shutting down due to missing or invalid configuration.");
+                            Shutdown();  // App can't continue without valid settings
+                        }
+                        else
+                        {
+                            App.LogDebug("Proceeding without re-launching normal mode.");
+                        }
+                    }
                 });
             }
             catch (Exception ex)
@@ -200,41 +207,27 @@ namespace ZO.LoadOrderManager
             }
         }
 
+
         private void HandleNormalMode()
         {
             LoadingWindow loadingWindow = null;
 
             try
             {
-                // Show the loading window on the UI thread
                 Dispatcher.Invoke(() =>
                 {
+                    // Show the loading window
                     loadingWindow = new LoadingWindow();
                     loadingWindow.Show();
                 });
 
-                // Set progress callback
+                // Set progress callback to update the loading window
                 InitializationManager.SetProgressCallback((progress, message) =>
                 {
-                    try
+                    Dispatcher.Invoke(() =>
                     {
-                        if (Application.Current != null && Application.Current.Dispatcher != null && !Application.Current.Dispatcher.HasShutdownStarted)
-                        {
-                            App.LogDebug($"Setting progress: {progress} - {message}");
-                            Application.Current.Dispatcher.Invoke(() =>
-                            {
-                                loadingWindow?.UpdateProgress(progress, message);
-                            });
-                        }
-                    }
-                    catch (TaskCanceledException ex)
-                    {
-                        App.LogDebug($"Task canceled during progress update: {ex.Message}");
-                    }
-                    catch (Exception ex)
-                    {
-                        App.LogDebug($"Unexpected exception during progress update: {ex.Message}");
-                    }
+                        loadingWindow?.UpdateProgress(progress, message);
+                    });
                 });
 
                 // Run initialization tasks in a background thread
@@ -266,48 +259,33 @@ namespace ZO.LoadOrderManager
 
                         // Show the main window on the UI thread
                         Dispatcher.Invoke(() =>
-                        {
-                            try
-                            {
-                                if (_mainWindow == null)
-                                {
-                                    App.LogDebug("Creating a new instance of LoadOrderWindow...");
-                                    _mainWindow = LoadOrderWindow.Instance;
-                                }
-
-                                _mainWindow.WindowStartupLocation = WindowStartupLocation.CenterScreen;
-                                _mainWindow.Visibility = Visibility.Visible;
-                                _mainWindow.WindowState = WindowState.Normal;
-
-                                App.LogDebug("Attempting to show LoadOrderWindow...");
-                                _mainWindow.Show();
-                                App.LogDebug("LoadOrderWindow successfully shown.");
-                                loadingWindow?.UpdateProgress(100, "LoadOrderWindow successfully shown");
-                            }
-                            catch (Exception ex)
-                            {
-                                App.LogDebug($"Exception while showing LoadOrderWindow: {ex.Message}");
-                                _ = MessageBox.Show($"An error occurred while showing the main window: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                            }
-                        });
-                    }
-                    catch (TaskCanceledException ex)
+                {
+                    if (_mainWindow == null)
                     {
-                        App.LogDebug($"Task canceled: {ex.Message}");
+                        LogDebug("Creating a new instance of LoadOrderWindow...");
+                        _mainWindow = LoadOrderWindow.Instance;
                     }
+
+                    _mainWindow.WindowStartupLocation = WindowStartupLocation.CenterScreen;
+                    _mainWindow.Show();
+
+                    LogDebug("LoadOrderWindow successfully shown.");
+                    loadingWindow?.UpdateProgress(100, "LoadOrderWindow successfully shown");
+                });
+            }
                     catch (Exception ex)
                     {
-                        App.LogDebug($"Exception in HandleNormalMode: {ex.Message}");
+                        LogDebug($"Exception in HandleNormalMode: {ex.Message}");
                         Dispatcher.Invoke(() =>
                         {
-                            _ = MessageBox.Show($"An error occurred in normal mode: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                            MessageBox.Show($"An error occurred in normal mode: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                             Shutdown();
                         });
                     }
                     finally
                     {
-                        // Close the loading window on the UI thread
-                        _ = Dispatcher.InvokeAsync(() =>
+                        // Ensure the loading window is closed after initialization
+                        Dispatcher.Invoke(() =>
                         {
                             loadingWindow?.Close();
                         });
@@ -316,8 +294,8 @@ namespace ZO.LoadOrderManager
             }
             catch (Exception ex)
             {
-                App.LogDebug($"Exception in HandleNormalMode: {ex.Message}");
-                _ = MessageBox.Show($"An error occurred in normal mode: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                LogDebug($"Exception in HandleNormalMode: {ex.Message}");
+                MessageBox.Show($"An error occurred in normal mode: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 Shutdown();
             }
         }
