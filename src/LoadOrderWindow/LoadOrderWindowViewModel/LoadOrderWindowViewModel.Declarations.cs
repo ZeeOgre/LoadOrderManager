@@ -5,7 +5,7 @@ using System.Windows.Media;
 
 namespace ZO.LoadOrderManager
 {
-    public partial class LoadOrderWindowViewModel : INotifyPropertyChanged
+    public partial class LoadOrderWindowViewModel : ViewModelBase, INotifyPropertyChanged
     {
         // Fields
         private bool isSaved;
@@ -17,7 +17,19 @@ namespace ZO.LoadOrderManager
         private bool _isRefreshing = false;
         private string _warningMessage;
         private bool _isWarningActive;
-
+        private bool _hideUnloadedPlugins;
+        public bool HideUnloadedPlugins
+        {
+            get => _hideUnloadedPlugins;
+            set
+            {
+                if (_hideUnloadedPlugins != value)
+                {
+                    _hideUnloadedPlugins = value;
+                    OnPropertyChanged(nameof(HideUnloadedPlugins));
+                }
+            }
+        }
 
 
         public string WarningMessage
@@ -152,7 +164,10 @@ namespace ZO.LoadOrderManager
         // Update status method
         public void UpdateStatus(string message)
         {
-            StatusMessage = message;
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                StatusMessage = message;
+            });
         }
 
         // Update the status message
@@ -311,7 +326,7 @@ namespace ZO.LoadOrderManager
             }
 
             SelectedLoadOut = AggLoadInfo.Instance.ActiveLoadOut;
-            UpdateStatus($"LoadOuts updated for selected GroupSet. Selected Loadout is now {SelectedLoadOut}");
+            UpdateStatus($"LoadOuts updated for selected GroupSet. Selected Loadout is now {SelectedLoadOut.Name}");
             //AggLoadInfo.Instance.GetLoadOutForGroupSet(AggLoadInfo.Instance.ActiveGroupSet);
 
 
@@ -350,7 +365,7 @@ namespace ZO.LoadOrderManager
 
                         OnPropertyChanged(nameof(SelectedGroupSet)); // Notify only when changed
                     }
-                    UpdateStatus($"Selected GroupSet is now {SelectedGroupSet}");
+                    UpdateStatus($"Selected GroupSet is now {SelectedGroupSet.GroupSetName}");
                 }
                 finally
                 {
@@ -383,7 +398,7 @@ namespace ZO.LoadOrderManager
                         LoadOrders.SelectedLoadOut = value;
                         LoadOrders.RefreshActivePlugins(value);
                         OnPropertyChanged(nameof(SelectedLoadOut));
-                        UpdateStatus($"Selected LoadOut is now {SelectedLoadOut}");
+                        UpdateStatus($"Selected LoadOut is now {SelectedLoadOut.Name}");
                     }
                     finally
                     {

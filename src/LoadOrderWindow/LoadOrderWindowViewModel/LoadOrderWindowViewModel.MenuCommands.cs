@@ -225,7 +225,7 @@ namespace ZO.LoadOrderManager
         }
 
 
-        private void ImportContextCatalog()
+        private void ImportContentCatalog()
         {
 
             FileManager.ParseContentCatalogTxt();
@@ -250,6 +250,7 @@ namespace ZO.LoadOrderManager
 
         void ScanGameFolder()
         {
+            ImportContentCatalog();
             // Prompt the user to choose between a full scan and a quick scan
             var result = MessageBox.Show("Do you want to perform a full scan?", "Scan Type", MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
 

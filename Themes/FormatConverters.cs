@@ -129,6 +129,30 @@ namespace ZO.LoadOrderManager
         }
     }
 
+    public class BooleanToOpacityConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            // Treat null as true
+            if (value == null)
+            {
+                return 1.0; // Fully opaque
+            }
+
+            if (value is bool boolValue)
+            {
+                return boolValue ? 1.0 : 0.5; // Adjust the opacity values as needed
+            }
+
+            throw new InvalidOperationException("The target must be a boolean or null.");
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
     public class ArchiveFormatConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
