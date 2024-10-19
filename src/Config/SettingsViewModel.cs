@@ -206,6 +206,7 @@ namespace ZO.LoadOrderManager
                 if (refreshMetadata)
                 {
                     AggLoadInfo.Instance.RefreshMetadataFromDB();
+
                     // Inform the user of success
                     _ = MessageBox.Show("Ordinals cleaned successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
                 }

@@ -96,6 +96,7 @@ namespace ZO.LoadOrderManager
 
                 var dtStamp = fileInfo.LastWriteTime.ToString("o");
                 string? newHash = null;
+        
                 
 
                 if (knownGameFolderFiles.TryGetValue(pluginName, out var existingFileInfo))
@@ -105,6 +106,7 @@ namespace ZO.LoadOrderManager
                     bool coreFile = existingPlugin != null && (existingPlugin.GroupID == -999);
                     if (existingPlugin != null)
                     {
+
                         existingPlugin.DTStamp = dtStamp;
                         existingPlugin.InGameFolder = true;
                         _ = existingPlugin.WriteMod();
@@ -113,6 +115,7 @@ namespace ZO.LoadOrderManager
                         existingFileInfo.Flags |= FileFlags.GameFolder;
                         existingFileInfo.AbsolutePath = fileInfo.FullName;
                         _ = ZO.LoadOrderManager.FileInfo.InsertFileInfo(existingFileInfo, existingPlugin.PluginID);
+                       
 
                         // Check for affiliated archives
                         AddAffiliatedFilesAsync(fileInfo, existingPlugin.PluginID, fullScan && !coreFile);
