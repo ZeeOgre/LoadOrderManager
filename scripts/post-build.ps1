@@ -74,7 +74,7 @@ if (-not $manual) {
 
 Write-Output "Tag Name: $tagName"
 
-# Ensure on correct branch
+# Ensure on correct branch and push dev if necessary
 $currentBranch = git rev-parse --abbrev-ref HEAD
 Write-Output "Current Branch: $currentBranch"
 
@@ -83,8 +83,17 @@ if ($currentBranch -eq 'master') {
     Execute-Command "git checkout dev"
     Execute-Command "git merge -X ours master"
     Write-Output "Merged master INTO dev with conflicts resolved in favor of dev."
+
+    # Push dev to origin to ensure it's up to date (Line to Add)
+    Execute-Command "git push origin dev"
+    Write-Output "Pushed dev branch to origin."
+
     $currentBranch = 'dev'
 } elseif ($currentBranch -eq 'dev') {
+    # Push dev to origin to ensure it's up to date (Line to Add)
+    Execute-Command "git push origin dev"
+    Write-Output "Pushed dev branch to origin."
+
     # Friendly merge up to master
     Execute-Command "git checkout master"
     Execute-Command "git merge dev"
