@@ -257,10 +257,15 @@ public class PluginViewModel : INotifyPropertyChanged
 
         // Update mod state based on flags
         _plugin.State = Plugin.State;
+        _plugin.GroupSetID = SelectedGroupSet?.GroupSetID ?? 0; // Ensure GroupSetID is updated
 
-        _aggLoadInfo.UpdatePlugin(_plugin);
+        //_aggLoadInfo.UpdatePlugin(_plugin);
         // Write the plugin to the database, ensuring all changes are persisted
         _ = _plugin.WriteMod();
+
+
+
+
     }
 
 

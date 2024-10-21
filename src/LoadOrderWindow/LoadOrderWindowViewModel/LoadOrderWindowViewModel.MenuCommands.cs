@@ -415,27 +415,41 @@ namespace ZO.LoadOrderManager
             _ = (parentGroup.Plugins?.Remove(selectedItem.PluginData));
         }
 
+        private bool CanChangeGroup(LoadOrderItemViewModel item)
+        {
+            var underlyingObject = EntityTypeHelper.GetUnderlyingObject(item);
+
+            if (underlyingObject is ModGroup && item.GroupID <= 1)
+            {
+                return false; // Cannot change group if it's a group and GroupID <= 1
+            }
+            return true; // Can change group otherwise
+        }
+
 
         private void ChangeGroup(LoadOrderItemViewModel item, object parameter)
         {
+            if (!CanChangeGroup(item))
+            {
+                // Optionally, you can show a message to the user indicating why the action cannot be performed
+                MessageBox.Show($"Cannot change group for this {item}.");
+                return;
+            }
+
             if (parameter is long newGroupId)
             {
                 var underlyingObject = EntityTypeHelper.GetUnderlyingObject(item);
 
                 if (underlyingObject is ModGroup modGroup)
                 {
-                    if (item.GroupID > 1) modGroup.ChangeGroup(newGroupId);
+                    modGroup.ChangeGroup(newGroupId);
                 }
                 else if (underlyingObject is Plugin plugin)
                 {
                     plugin.ChangeGroup(newGroupId);
-
                 }
                 item.ParentID = newGroupId;
-
-
             }
-
             else
             {
                 throw new ArgumentException("Parameter must be a long representing the new group ID.", nameof(parameter));
@@ -446,7 +460,40 @@ namespace ZO.LoadOrderManager
 
 
 
-        private void ToggleEnable(LoadOrderItemViewModel itemViewModel, object sender)
+        //private void ToggleActive(LoadOrderItemViewModel itemViewModel, object sender)
+        //{
+        //    if (SelectedLoadOut == null)
+        //    {
+        //        UpdateStatus("No loadout selected.");
+        //        return;
+        //    }
+
+        //    // Retrieve the Tag property to determine the source (checkbox or right-click menu)
+        //    //if (sender is FrameworkElement element && element.Tag is string tag)
+        //    //{
+        //    //    bool isCheckbox = tag == "checkbox";
+
+        //        // Record the old state for debugging
+        //        Debug.WriteLine($"OldState: {itemViewModel.IsActive}");
+
+        //        // Determine the new state based on whether this is a checkbox toggle or right-click menu
+        //        //bool newState = isCheckbox ? itemViewModel.IsActive : !itemViewModel.IsActive;
+        //        bool newState = !itemViewModel.IsActive;
+        //        Debug.WriteLine($"NewState: {newState}");
+
+        //        // Set the new state to the UI-bound property
+        //        itemViewModel.IsActive = newState;
+
+        //        // Update the backend data (the database and in-memory LoadOut)
+        //        LoadOut.SetPluginEnabled(SelectedLoadOut.ProfileID, itemViewModel.PluginData.PluginID, newState);
+
+        //        // Notify the UI to refresh the view
+        //        OnPropertyChanged(nameof(LoadOuts));
+        //    //}
+        //}
+
+
+        private void ToggleActive(LoadOrderItemViewModel itemViewModel, object sender)
         {
             if (SelectedLoadOut == null)
             {
@@ -454,47 +501,70 @@ namespace ZO.LoadOrderManager
                 return;
             }
 
-            // Retrieve the Tag property to determine the source (checkbox or right-click menu)
-            if (sender is FrameworkElement element && element.Tag is string tag)
+            if (!CanExecuteToggleActive(itemViewModel))
             {
-                bool isCheckbox = tag == "checkbox";
+                UpdateStatus("Cannot toggle this group.");
+                return;
+            }
 
-                // Record the old state for debugging
-                Debug.WriteLine($"OldState: {itemViewModel.IsActive}");
+            // Toggle the new state
+            bool newState = !itemViewModel.IsActive;
 
-                // Determine the new state based on whether this is a checkbox toggle or right-click menu
-                bool newState = isCheckbox ? itemViewModel.IsActive : !itemViewModel.IsActive;
+            // Set the new state
+            itemViewModel.IsActive = newState;
 
-                Debug.WriteLine($"NewState: {newState}");
-
-                // Set the new state to the UI-bound property
-                itemViewModel.IsActive = newState;
-
-                // Update the backend data (the database and in-memory LoadOut)
+            // If the item is a group, recursively toggle all its child items
+            if (itemViewModel.EntityType == EntityType.Group)
+            {
+                ToggleChildrenRecursively(itemViewModel, newState);
+            }
+            else if (itemViewModel.EntityType == EntityType.Plugin)
+            {
+                // Update the backend for the plugin
                 LoadOut.SetPluginEnabled(SelectedLoadOut.ProfileID, itemViewModel.PluginData.PluginID, newState);
+            }
 
-                // Notify the UI to refresh the view
-                OnPropertyChanged(nameof(LoadOuts));
+            // Notify the UI to refresh the view
+            OnPropertyChanged(nameof(LoadOuts));
+        }
+
+        /// <summary>
+        /// Recursively toggles the child items of a group to match the group's new state.
+        /// </summary>
+        /// <param name="parentItem">The parent group whose children need to be toggled.</param>
+        /// <param name="newState">The new state to apply to the group's children.</param>
+        private void ToggleChildrenRecursively(LoadOrderItemViewModel parentItem, bool newState)
+        {
+            if (parentItem.Children == null || !parentItem.Children.Any())
+                return;
+
+            foreach (var childItem in parentItem.Children)
+            {
+                // For plugins, toggle IsActive and update the backend
+                if (childItem.EntityType == EntityType.Plugin)
+                {
+                    childItem.IsActive = newState;
+                    LoadOut.SetPluginEnabled(SelectedLoadOut.ProfileID, childItem.PluginData.PluginID, newState);
+                }
+                // For nested groups, toggle the group and recursively toggle its children
+                else if (childItem.EntityType == EntityType.Group)
+                {
+                    childItem.IsActive = newState;
+                    ToggleChildrenRecursively(childItem, newState);
+                }
             }
         }
 
 
-
-
-
-        private bool CanExecuteToggleEnable(object parameter)
+        private bool CanExecuteToggleActive(object parameter)
         {
-
-            //Debug.WriteLine($"Parameter Type: {parameter?.GetType().Name}");
-            //Debug.WriteLine($"Parameter Value: {parameter}");
-
             if (SelectedLoadOut != null && parameter is LoadOrderItemViewModel itemViewModel)
             {
-                return itemViewModel.GroupID > 0;
-
+                return itemViewModel.GroupID > 1 || itemViewModel.GroupID == -997;  // Validate based on GroupID
             }
             return true;
         }
+
 
 
         private bool CanExecuteDelete(object parameter)

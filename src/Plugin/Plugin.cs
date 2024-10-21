@@ -484,7 +484,7 @@ namespace ZO.LoadOrderManager
                 transaction.Rollback(); // Rollback the transaction in case of an error
                 throw;
             }
-
+            //AggLoadInfo.Instance.UpdatePlugin(this);
             return this;
         }
 
@@ -512,38 +512,52 @@ namespace ZO.LoadOrderManager
             using var connection = DbManager.Instance.GetConnection();
 
             using var transaction = connection.BeginTransaction();
-
+            long? groupSetID = this.GroupSetID ?? activeGroupSetID;
             try
             {
                 // Combine the move and sibling ordinal adjustment into one SQL query
                 using var updateCommand = new SQLiteCommand(connection)
                 {
                     CommandText = @"
-                -- Move the plugin to the new group and calculate the new ordinal
-                UPDATE GroupSetPlugins
-                SET GroupID = @NewGroupID, GroupSetID = @NewGroupSetID, Ordinal = (
-                    SELECT COALESCE(MAX(Ordinal), 0) + 1
-                    FROM GroupSetPlugins
-                    WHERE GroupID = @NewGroupID AND GroupSetID = @NewGroupSetID
-                )
-                WHERE PluginID = @PluginID AND GroupID = @OldGroupID AND GroupSetID = @OldGroupSetID;
+                        -- Move the plugin to the new group and calculate the new ordinal
+                        UPDATE GroupSetPlugins
+                        SET GroupID = @NewGroupID, GroupSetID = @NewGroupSetID, Ordinal = (
+                            SELECT COALESCE(MAX(Ordinal), 0) + 1
+                            FROM GroupSetPlugins
+                            WHERE GroupID = @NewGroupID AND GroupSetID = @NewGroupSetID
+                        )
+                        WHERE PluginID = @PluginID AND GroupID = @OldGroupID AND GroupSetID = @OldGroupSetID;
 
-                -- Decrement the ordinals of the old siblings after moving the plugin
-                UPDATE GroupSetPlugins
-                SET Ordinal = Ordinal - 1
-                WHERE GroupID = @OldGroupID AND GroupSetID = @OldGroupSetID AND Ordinal > @OldOrdinal;"
+                        -- Decrement the ordinals of the old siblings after moving the plugin
+                        UPDATE GroupSetPlugins
+                        SET Ordinal = Ordinal - 1
+                        WHERE GroupID = @OldGroupID AND GroupSetID = @OldGroupSetID AND Ordinal > @OldOrdinal;
+
+                        -- Return the new ordinal value
+                        SELECT Ordinal
+                        FROM GroupSetPlugins
+                        WHERE PluginID = @PluginID AND GroupID = @NewGroupID AND GroupSetID = @NewGroupSetID;"
                 };
+
+               
+
+                // Set the new ordinal value to this.GroupOrdinal
+                
 
                 // Add the shared parameters for both queries
                 updateCommand.Parameters.AddWithValue("@NewGroupID", newGroupId);
                 updateCommand.Parameters.AddWithValue("@NewGroupSetID", activeGroupSetID);
                 updateCommand.Parameters.AddWithValue("@PluginID", this.PluginID);
                 updateCommand.Parameters.AddWithValue("@OldGroupID", this.GroupID);
-                updateCommand.Parameters.AddWithValue("@OldGroupSetID", this.GroupSetID);
+                
+                updateCommand.Parameters.AddWithValue("@OldGroupSetID", this.GroupSetID ?? activeGroupSetID);
                 updateCommand.Parameters.AddWithValue("@OldOrdinal", this.GroupOrdinal);
 
-                // Execute the combined queries
-                updateCommand.ExecuteNonQuery();
+                // Execute the command and retrieve the new ordinal value
+                long newOrdinal = (long)updateCommand.ExecuteScalar();
+                this.GroupOrdinal = newOrdinal;
+                
+                //updateCommand.ExecuteNonQuery();
 
                 // Commit the transaction
                 transaction.Commit();
@@ -561,8 +575,9 @@ namespace ZO.LoadOrderManager
             // Update the in-memory object
             this.GroupID = newGroupId;
             this.GroupSetID = newGroupSetId;
-            this.GroupOrdinal = null; // The new ordinal will be set by the database
+            //this.GroupOrdinal = null; // The new ordinal will be set by the database
 
+            AggLoadInfo.Instance.UpdatePlugin(this);
             AggLoadInfo.Instance.RefreshMetadataFromDB();
 
         }

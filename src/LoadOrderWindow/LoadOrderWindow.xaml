@@ -96,7 +96,7 @@
                 <!-- Checkbox for IsActive -->
                 <CheckBox IsChecked="{Binding IsActive, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
                               Tag="checkbox"
-                          Command="{Binding DataContext.ToggleEnableCommand, RelativeSource={RelativeSource AncestorType=Window}}" 
+                          Command="{Binding DataContext.ToggleEnableCheckboxCommand, RelativeSource={RelativeSource AncestorType=Window}}" 
                               CommandParameter="{Binding}" Grid.Column="0" Margin="5" HorizontalAlignment="Stretch">
                     <CheckBox.Foreground>
                         <MultiBinding Converter="{StaticResource ItemStateToColorConverter}">

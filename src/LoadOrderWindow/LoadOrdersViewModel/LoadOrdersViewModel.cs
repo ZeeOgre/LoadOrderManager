@@ -128,6 +128,7 @@ public class LoadOrdersViewModel : ViewModelBase
                 item.IsActive = loadOut.IsPluginEnabled(pluginID);
             }
         }
-        OnPropertyChanged(nameof(Items)); // Notify the TreeView to refresh
+        //OnPropertyChanged(nameof(Items)); // Notify the TreeView to refresh
+        RefreshData();
     }
 }

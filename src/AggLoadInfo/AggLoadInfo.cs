@@ -593,7 +593,8 @@ namespace ZO.LoadOrderManager
                     NexusID = reader.IsDBNull(reader.GetOrdinal("NexusID")) ? string.Empty : reader.GetString(reader.GetOrdinal("NexusID")),
                     GroupID = reader.IsDBNull(reader.GetOrdinal("GroupID")) ? null : reader.GetInt64(reader.GetOrdinal("GroupID")),
                     GroupOrdinal = reader.IsDBNull(reader.GetOrdinal("GroupOrdinal")) ? null : reader.GetInt64(reader.GetOrdinal("GroupOrdinal")),
-                    GroupSetID = reader.IsDBNull(reader.GetOrdinal("GroupSetID")) ? null : reader.GetInt64(reader.GetOrdinal("GroupSetID"))
+                    GroupSetID = reader.IsDBNull(reader.GetOrdinal("GroupSetID")) ? ActiveGroupSet.GroupSetID : reader.GetInt64(reader.GetOrdinal("GroupSetID"))
+
                 };
 
                 Plugins.Add(plugin);
@@ -718,7 +719,7 @@ namespace ZO.LoadOrderManager
                 }
 
                 // Finally, save the plugin changes
-                _ = plugin.WriteMod();
+                //_ = plugin.WriteMod();
             }
         }
 
@@ -754,7 +755,7 @@ namespace ZO.LoadOrderManager
                 }
 
                 // Finally, save the group changes
-                _ = group.WriteGroup();
+                //_ = group.WriteGroup();
             }
         }
 
@@ -784,7 +785,7 @@ namespace ZO.LoadOrderManager
                 }
 
                 // Finally, save the loadOut changes
-                _ = loadOut.WriteProfile();
+                //_ = loadOut.WriteProfile();
             }
         }
 
