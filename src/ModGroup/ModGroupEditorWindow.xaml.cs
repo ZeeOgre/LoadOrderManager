@@ -39,6 +39,7 @@ namespace ZO.LoadOrderManager
             ParentGroupComboBox.SelectedValuePath = "GroupID";
             ParentGroupComboBox.SelectedValue = _tempModGroup.ParentID;
 
+            
             LoadPlugins();
             LoadGroupSets();
         }
@@ -83,25 +84,25 @@ namespace ZO.LoadOrderManager
 
         private void LoadGroupSets()
         {
-            _filteredGroupSets = new ObservableCollection<GroupSet>();
+            //_filteredGroupSets = new ObservableCollection<GroupSet>();
+            var _filteredGroupSets = AggLoadInfo.Instance.GetGroupSets();
+            //using (var connection = DbManager.Instance.GetConnection())
+            //{
+            //    using var command = new SQLiteCommand(connection);
+            //    command.CommandText = "SELECT GroupSetID, GroupSetName FROM vwGroupSetGroups WHERE GroupID = @GroupID";
+            //    _ = command.Parameters.AddWithValue("@GroupID", _tempModGroup.GroupID);
 
-            using (var connection = DbManager.Instance.GetConnection())
-            {
-                using var command = new SQLiteCommand(connection);
-                command.CommandText = "SELECT GroupSetID, GroupSetName FROM vwGroupSetGroups WHERE GroupID = @GroupID";
-                _ = command.Parameters.AddWithValue("@GroupID", _tempModGroup.GroupID);
-
-                using var reader = command.ExecuteReader();
-                while (reader.Read())
-                {
-                    var groupSet = new GroupSet
-                    {
-                        GroupSetID = reader.GetInt64(0),
-                        GroupSetName = reader.GetString(1)
-                    };
-                    _filteredGroupSets.Add(groupSet);
-                }
-            }
+            //    using var reader = command.ExecuteReader();
+            //    while (reader.Read())
+            //    {
+            //        var groupSet = new GroupSet
+            //        {
+            //            GroupSetID = reader.GetInt64(0),
+            //            GroupSetName = reader.GetString(1)
+            //        };
+            //        _filteredGroupSets.Add(groupSet);
+            //    }
+            //}
 
             GroupSetComboBox.ItemsSource = _filteredGroupSets;
             GroupSetComboBox.DisplayMemberPath = "GroupSetName";
@@ -119,6 +120,7 @@ namespace ZO.LoadOrderManager
             _originalModGroup.GroupName = _tempModGroup.GroupName;
             _originalModGroup.Description = _tempModGroup.Description;
             _originalModGroup.ParentID = _tempModGroup.ParentID;
+            _originalModGroup.GroupSetID = _tempModGroup.GroupSetID;
 
             // Persist changes
             _ = _originalModGroup.WriteGroup();
@@ -133,10 +135,6 @@ namespace ZO.LoadOrderManager
             this.Close();
         }
 
-        private void AddNewButton_Click(object sender, RoutedEventArgs e)
-        {
-            // Implementation for adding a new group set
-        }
 
         private void AddToNewGroupSet_Click(object sender, RoutedEventArgs e)
         {

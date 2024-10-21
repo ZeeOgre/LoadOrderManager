@@ -24,8 +24,22 @@ namespace ZO.LoadOrderManager
 
         private ICommand _toggleUnloadedVisibilityCommand;
         public ICommand ToggleUnloadedVisibilityCommand => _toggleUnloadedVisibilityCommand ??= new RelayCommand(ToggleUnloadedVisibility);
-        
-        
+
+        public ICommand ToggleEnableCheckboxCommand { get; }
+
+        private void ToggleEnableCheckbox(LoadOrderItemViewModel itemViewModel, object parameter)
+        {
+            if (itemViewModel == null || SelectedLoadOut == null)
+            {
+                UpdateStatus("No loadout selected or invalid item.");
+                return;
+            }
+
+            LoadOut.SetPluginEnabled(SelectedLoadOut.ProfileID, itemViewModel.PluginData.PluginID, itemViewModel.IsActive);
+            OnPropertyChanged(nameof(LoadOuts));
+        }
+
+
         private void ToggleUnloadedVisibility(object? parameter )
         {
             HideUnloadedPlugins = !HideUnloadedPlugins;
@@ -153,6 +167,8 @@ namespace ZO.LoadOrderManager
             }
             return false;
         }
+
+
 
         public bool CanMoveDown()
         {

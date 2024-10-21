@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Windows;
+using System.Windows.Input;
 
 namespace ZO.LoadOrderManager
 {
@@ -31,8 +32,13 @@ namespace ZO.LoadOrderManager
             CopyTextCommand = new RelayCommand<object?>(param => HandleMultipleSelectedItems(CopyText), param => CanExecuteCheckAllItems()); // LoadOrderWindowViewModel.MenuCommands.cs
             DeleteCommand = new RelayCommand<object?>(param => HandleMultipleSelectedItems(Delete), param => CanExecuteCheckAllItems()); // LoadOrderWindowViewModel.MenuCommands.cs
             EditCommand = new RelayCommand<object?>(param => HandleMultipleSelectedItems(EditHighlightedItem), param => CanExecuteCheckAllItems()); // LoadOrderWindowViewModel.TreeCommands.cs
-            ToggleEnableCommand = new RelayCommand<object?>(param => HandleMultipleSelectedItems(item => ToggleEnable(item, param)), param => CanExecuteCheckAllItems()); // LoadOrderWindowViewModel.MenuCommands.cs
-            ChangeGroupCommand = new RelayCommandWithParameter(param => HandleMultipleSelectedItems(item => ChangeGroup(item, param)), param => CanExecuteCheckAllItems()); // LoadOrderWindowViewModel.MenuCommands.cs
+            ToggleEnableCommand = new RelayCommand<object?>(param => HandleMultipleSelectedItems(item => ToggleActive(item, param)), param => CanExecuteCheckAllItems()); // LoadOrderWindowViewModel.MenuCommands.cs
+            ToggleEnableCheckboxCommand = new RelayCommand<object>(param => HandleMultipleSelectedItems(item => ToggleEnableCheckbox(item, param)), param => CanExecuteCheckAllItems());
+
+            ChangeGroupCommand = new RelayCommandWithParameter(
+                param => HandleMultipleSelectedItems(item => ChangeGroup(item, param)),
+                param => SelectedItems.All(item => CanChangeGroup((LoadOrderItemViewModel)item))
+            );
 
             SaveAsNewLoadoutCommand = new RelayCommand<object?>(param => SaveAsNewLoadout()); // LoadOrderWindowViewModel.MenuCommands.cs
             OpenGameFolderCommand = new RelayCommand<object?>(param => OpenGameFolder(), _ => true); // LoadOrderWindowViewModel.MenuCommands.cs

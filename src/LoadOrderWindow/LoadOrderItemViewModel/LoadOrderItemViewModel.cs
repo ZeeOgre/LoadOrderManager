@@ -101,10 +101,47 @@ public class LoadOrderItemViewModel : ViewModelBase
 
     public bool IsActive
     {
-        get => isActive;
-        set => SetProperty(ref isActive, value);
+        get
+        {
+            // A group is active if any of its direct child plugins are active
+            if (EntityType == EntityType.Group)
+            {
+                return Children.Any(child => child.EntityType == EntityType.Plugin && child.IsActive);
+            }
+            return isActive; // For plugins, return the actual stored value
+        }
+        set
+        {
+            if (EntityType == EntityType.Group)
+            {
 
+                // Recursively set IsActive for all children
+                foreach (var child in Children)
+                {
+                    child.IsActive = value;
+
+                    //if (child.EntityType == EntityType.Plugin)
+                    //{
+                    //    child.IsActive = value; // Set child plugin's IsActive
+                    //}
+                    //else if (child.EntityType == EntityType.Group)
+                    //{
+                    //    child.IsActive = value; // Recursively set child group's IsActive
+                    //}
+                }
+            }
+            else
+            {
+                // For plugins, just set the value
+                SetProperty(ref isActive, value);
+            }
+
+            // Notify that IsActive has changed
+            OnPropertyChanged(nameof(IsActive));
+        }
     }
+
+
 
     public bool? InGameFolder
     {
