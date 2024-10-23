@@ -26,7 +26,7 @@
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <EnforceCodeStyleInBuild>True</EnforceCodeStyleInBuild>
     <SupportedOSPlatformVersion>7.0</SupportedOSPlatformVersion>
-    <Version>0.0.4.0</Version>
+    <Version>0.0.5.0</Version>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='GitRelease|AnyCPU'">
     <Optimize>True</Optimize>
@@ -56,6 +56,12 @@
   <ItemGroup>
     <Content Include="data\**\*" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="docs\**\*" CopyToOutputDirectory="OverwriteAlways" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Remove="installer\ZO.LoadOrderManager-cache\**" />
+    <EmbeddedResource Remove="installer\ZO.LoadOrderManager-cache\**" />
+    <None Remove="installer\ZO.LoadOrderManager-cache\**" />
+    <Page Remove="installer\ZO.LoadOrderManager-cache\**" />
   </ItemGroup>
   <Target Name="RearrangeOutputFiles" AfterTargets="Build;Publish" BeforeTargets="PostBuildEvent">
     <ItemGroup>
