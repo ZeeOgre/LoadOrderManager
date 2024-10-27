@@ -52,9 +52,21 @@ namespace ZO.LoadOrderManager
                     // Check if files have already been loaded
                     if (AggLoadInfo.Instance.ActiveGroupSet.AreFilesLoaded)
                     {
-                        InitializationManager.ReportProgress(75, "Files already loaded...");
+                        InitializationManager.ReportProgress(25, "Files already loaded...");
+                        
+                        App.LogDebug("FileManager: Files have already been loaded. Skipping plugins initialization.");
+                        
+                        FileManager.ParseContentCatalogTxt(ContentCatalogFile, AggLoadInfo.Instance.ActiveGroupSet.GroupSetID);
+                        InitializationManager.ReportProgress(30, "Content catalog parsed");
+
+
+                        InitializationManager.ReportProgress(31, "Starting GameFolder Scan");
+                        //FileManager.ScanGameDirectoryForStraysAsync();
+                        FileManager.ScanGameDirectoryForStrays(true, AggLoadInfo.Instance.ActiveGroupSet.GroupSetID, true);
+                        InitializationManager.ReportProgress(95, "Finished GameFolder Scan");
+
                         InitializationManager.EndInitialization(nameof(FileManager));
-                        App.LogDebug("FileManager: Files have already been loaded. Skipping file initialization.");
+
                         _initialized = true;
                         return;
                     }
@@ -66,13 +78,13 @@ namespace ZO.LoadOrderManager
                     _ = FileManager.ParsePluginsTxt(AggLoadInfo.Instance, PluginsFile);
                     InitializationManager.ReportProgress(21, "Plugins parsed");
 
-                    FileManager.ParseContentCatalogTxt();
+                    FileManager.ParseContentCatalogTxt(ContentCatalogFile, AggLoadInfo.Instance.ActiveGroupSet.GroupSetID);
                     InitializationManager.ReportProgress(22, "Content catalog parsed");
 
 
                     InitializationManager.ReportProgress(21, "Starting GameFolder Scan");
                     //FileManager.ScanGameDirectoryForStraysAsync();
-                    FileManager.ScanGameDirectoryForStrays(true);
+                    FileManager.ScanGameDirectoryForStrays(true, AggLoadInfo.Instance.ActiveGroupSet.GroupSetID);
 
                     FileManager.MarkLoadOutComplete(AggLoadInfo.Instance);
                     InitializationManager.ReportProgress(89, "LoadOut marked complete");

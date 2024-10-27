@@ -85,33 +85,10 @@ public class LoadOrdersViewModel : ViewModelBase
 
         //LoadData(activeGroupSet, activeLoadOut, suppress997: false, isCached: false);
         LoadData(activeGroupSet, activeLoadOut, this.Suppress997, this.IsCached);
-        //OnPropertyChanged(nameof(Items));
+        OnPropertyChanged(nameof(Items));
 
 
-        // If there is a cached group, also populate it
-        //var cachedGroupSet = AggLoadInfo.GetCachedGroupSet1();
-        //if (cachedGroupSet != null)
-        //{
-        //    var cachedViewModel = new LoadOrdersViewModel();
-        //    AggLoadInfo.Instance.PopulateLoadOrders(cachedViewModel, cachedGroupSet, activeLoadOut, suppress997: true, isCached: true);
-        //}
     }
-
-    //public void OnDataRefreshed(object? sender, EventArgs e)
-    //{
-    //    AggLoadInfo.Instance.PerformLockedAction(() =>
-    //    {
-    //        // Reload the underlying data for the main LoadOrders
-    //        RefreshData();
-
-    //        // Unset the dirty flag on the sender after processing
-    //        if (sender is AggLoadInfo aggLoadInfo)
-    //        {
-    //            aggLoadInfo.SetDirty(false);
-    //        }
-    //    });
-    //}
-
 
 
     public void RefreshActivePlugins(LoadOut? loadOut = null)

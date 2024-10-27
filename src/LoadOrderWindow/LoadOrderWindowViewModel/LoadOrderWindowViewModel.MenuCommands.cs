@@ -228,7 +228,7 @@ namespace ZO.LoadOrderManager
         private void ImportContentCatalog()
         {
 
-            FileManager.ParseContentCatalogTxt();
+            FileManager.ParseContentCatalogTxt(FileManager.ContentCatalogFile, AggLoadInfo.Instance.ActiveGroupSet.GroupSetID);
             //var openFileDialog = new OpenFileDialog
             //{
             //    InitialDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "starfield"),
@@ -245,6 +245,7 @@ namespace ZO.LoadOrderManager
 
             //    RefreshData();
             //}
+            RefreshData();
         }
 
 
@@ -258,18 +259,20 @@ namespace ZO.LoadOrderManager
             if (result == MessageBoxResult.Yes)
             {
                 // Perform a full scan
-                _ = FileManager.ScanGameDirectoryForStraysAsync(fullScan: true);
+                FileManager.ScanGameDirectoryForStrays(fullScan: true,AggLoadInfo.Instance.ActiveGroupSet.GroupSetID);
             }
             else if (result == MessageBoxResult.No)
             {
                 // Perform a quick scan
-                _ = FileManager.ScanGameDirectoryForStraysAsync(fullScan: false);
+                FileManager.ScanGameDirectoryForStrays(fullScan: false, AggLoadInfo.Instance.ActiveGroupSet.GroupSetID);
             }
             else
             {
                 // User canceled the operation
                 _ = MessageBox.Show("Scan operation canceled.", "Canceled", MessageBoxButton.OK, MessageBoxImage.Information);
             }
+
+            RefreshData();
         }
 
         private void SettingsWindow()

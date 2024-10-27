@@ -66,18 +66,10 @@ namespace ZO.LoadOrderManager
 
         public static void ReportProgress(long progress, string message)
         {
-            if (Application.Current == null)
+            if (Application.Current == null || Application.Current.Dispatcher == null)
             {
                 // Log or set a breakpoint here to confirm the issue
-                Console.WriteLine("Application.Current is null, queuing progress update.");
-                ProgressQueue.Enqueue((progress, message));  // Queue the progress update
-                return;  // Immediately return to avoid null reference exceptions
-            }
-
-            if (Application.Current.Dispatcher == null)
-            {
-                // Log or set a breakpoint here to detect if this is ever the case
-                Console.WriteLine("Application.Current.Dispatcher is null, queuing progress update.");
+                Console.WriteLine("Application.Current or Dispatcher is null, queuing progress update.");
                 ProgressQueue.Enqueue((progress, message));  // Queue the progress update
                 return;  // Immediately return to avoid null reference exceptions
             }

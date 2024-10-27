@@ -123,7 +123,13 @@ if ($configuration -eq 'GitRelease') {
     }
 
     Execute-Command "git tag $tagName"
-    Execute-Command "git push origin $tagName"
+    # Push the tag to remote, force-pushing to overwrite if necessary
+try {
+    Execute-Command "git push --force origin $tagName"
+} catch {
+    Write-Error "Failed to push tag $tagName to origin."
+    exit 1
+}
     Write-Output "Tagged and pushed release: $tagName"
 
     # Create GitHub release

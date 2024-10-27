@@ -26,6 +26,7 @@ namespace ZO.LoadOrderManager
             var loadOut = aggLoadInfo.ActiveLoadOut;
             var groupSet = aggLoadInfo.ActiveGroupSet;
             var enabledPlugins = new HashSet<long>();
+            var disabledPlugins = new HashSet<long>();
             ModGroup currentGroup = defaultModGroup;
 
             var groupParentMapping = new Dictionary<long, ModGroup> { { 0, defaultModGroup } };
@@ -95,6 +96,8 @@ namespace ZO.LoadOrderManager
                             {
                                 existingGroup.Description = groupDescription;
                                 currentGroup = existingGroup;
+                                aggLoadInfo.UpdateModGroup(currentGroup);
+                                currentGroup.WriteGroup();
                             }
                             else
                             {
@@ -107,15 +110,18 @@ namespace ZO.LoadOrderManager
                                 else
                                 {
                                     currentGroup = existingGroup;
+                                    currentGroup.WriteGroup();
                                 }
+                                aggLoadInfo.Groups.Add(currentGroup);
+                            }
                                 groupParentMapping[level] = currentGroup;
                                 groupOrdinalTracker[parentGroup.GroupID ?? 1]++;
                                 if (!pluginOrdinalTracker.ContainsKey(currentGroup.GroupID ?? 1))
                                 {
                                     pluginOrdinalTracker[currentGroup.GroupID ?? 1] = 1;
                                 }
-                                aggLoadInfo.Groups.Add(currentGroup); // Add new group to aggLoadInfo.Groups
-                            }
+                                 // Add new group to aggLoadInfo.Groups
+                            
                         }
                         else
                         {
@@ -144,6 +150,18 @@ namespace ZO.LoadOrderManager
                     {
                         existingPlugin.GroupID = currentGroup.GroupID;
                         existingPlugin.GroupOrdinal = pluginOrdinalTracker[currentGroup.GroupID ?? 1];
+                        //existingPlugin.GroupSetID = groupSet.GroupSetID;
+                        AggLoadInfo.Instance.UpdatePlugin(existingPlugin);
+                        if (isEnabled)
+                        {
+                            _ = enabledPlugins.Add(existingPlugin.PluginID);
+                        }
+                        else
+                        {
+                            _ = disabledPlugins.Add(existingPlugin.PluginID);
+                        }
+                        existingPlugin.WriteMod();
+                        pluginOrdinalTracker[currentGroup.GroupID ?? 1]++;
                     }
                     else
                     {
@@ -171,14 +189,20 @@ namespace ZO.LoadOrderManager
 
                 // Directly update the enabled plugins in the loadOut
                 loadOut.UpdateEnabledPlugins(enabledPlugins);
+                
                 //aggLoadInfo.ProfilePlugins.Items.Clear();
                 foreach (var pluginID in enabledPlugins)
                 {
                     _ = aggLoadInfo.ProfilePlugins.Items.Add((loadOut.ProfileID, pluginID));
                 }
+                foreach (var pluginID in disabledPlugins)
+                {
+                    _ = aggLoadInfo.ProfilePlugins.Items.Remove((loadOut.ProfileID, pluginID));
+                }
 
                 // Refresh GroupSetPlugins, GroupSetGroups, and ProfilePlugins
                 //aggLoadInfo.RefreshMetadataFromDB();
+                aggLoadInfo.Save();
             }
             catch (Exception)
             {
@@ -195,13 +219,19 @@ namespace ZO.LoadOrderManager
 
             // Get the maximum ordinals for groups
             var maxGroupOrdinals = aggLoadInfo.GroupSetGroups.Items
-                .Where(item => item.groupSetID == groupSetID)
-                .GroupBy(item => item.groupID)
-                .Select(g => new { GroupID = g.Key, MaxOrdinal = g.Max(item => item.Ordinal) + 1 });
+                .Where(item => item.groupSetID == groupSetID && !(item.parentID == 1 && item.groupID == -997))
+                .GroupBy(item => item.parentID)
+                .Select(g => new
+                {
+                    GroupID = g.Key,
+                    MaxOrdinal = g.Max(item => item.Ordinal) + 1
+                })
+                .ToList();
 
+            // Ensure every group has at least a value of 1
             foreach (var group in maxGroupOrdinals)
             {
-                groupOrdinalTracker[group.GroupID] = group.MaxOrdinal;
+                groupOrdinalTracker[(long)group.GroupID] = Math.Max(group.MaxOrdinal, 1);
             }
 
             // Get the maximum ordinals for plugins
@@ -293,7 +323,7 @@ namespace ZO.LoadOrderManager
                         //    continue;
                         //}
                         // Skip appending the root group itself but process its children
-                        if (groupObject.GroupID != 1)
+                        if (groupObject.GroupID is not (1 or -999))
                         {
                             _ = sb.AppendLine();
                             _ = sb.AppendLine(groupObject.ToPluginsString());

@@ -236,6 +236,8 @@ namespace ZO.LoadOrderManager
                 WarningMessage = string.Empty;
                 IsWarningActive = false;
                 UpdateStatusLight();
+                OnPropertyChanged(nameof(WarningMessage));
+                OnPropertyChanged(nameof(IsWarningActive));
             });
         }
 
