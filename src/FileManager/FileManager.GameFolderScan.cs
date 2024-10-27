@@ -12,18 +12,20 @@ namespace ZO.LoadOrderManager
 {
     partial class FileManager
     {
+        private static bool _quiet = false;
 
-        public static void ScanGameDirectoryForStrays(bool fullScan = true)
-        {
-            _ = Application.Current.Dispatcher.InvokeAsync(async () =>
-            {
-                await FileManager.ScanGameDirectoryForStraysAsync(fullScan);
-            });
-        }
+        //public static void ScanGameDirectoryForStrays(bool fullScan = true, long? groupSetID = null)
+        //{
+        //    _ = Application.Current.Dispatcher.InvokeAsync(async () =>
+        //    {
+        //        await FileManager.ScanGameDirectoryForStraysAsync(fullScan);
+        //    });
+        //}
 
         public static void MWMessage(string message, bool isUpdateStatus)
         {
-            _ = Application.Current.Dispatcher.InvokeAsync(() =>
+            if (_quiet) return;
+            Application.Current.Dispatcher.Invoke(() =>
             {
                 if (isUpdateStatus)
                 {
@@ -36,9 +38,19 @@ namespace ZO.LoadOrderManager
             });
         }
 
-        public static async Task ScanGameDirectoryForStraysAsync(bool fullScan = true)
+        public static void MWClear()
         {
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                LoadOrderWindow.Instance.LOWVM.ClearWarning();
+            });
+        }
 
+
+        //public static async Task ScanGameDirectoryForStraysAsync(bool fullScan = true, long? groupSetID = null)
+       public static void ScanGameDirectoryForStrays(bool fullScan = true, long? groupSetID = null, bool quiet = false)
+        {
+            _quiet = quiet;
             MWMessage("Clearing all known file information", false); 
             ResetPluginStatesAndFileFlags();
             
@@ -71,7 +83,7 @@ namespace ZO.LoadOrderManager
 
             // Precompute the ordinal for the -997 group
             long groupID = -997; // Unassigned group
-            long groupSetID = 1; // Assign GroupSetID = 1 for Uncategorized group
+            groupSetID = groupSetID ?? 1; // Assign GroupSetID = 1 for Uncategorized group only when the incoming value is null
             groupOrdinalTracker[groupID] = AggLoadInfo.GetNextPluginOrdinal(groupID, groupSetID);
 
             // HashSet to track processed filenames
@@ -80,13 +92,16 @@ namespace ZO.LoadOrderManager
             int totalFiles = pluginFiles.Count;
             int currentFileIndex = 0;
 
+
             foreach (var pluginFile in pluginFiles)
             {
                 currentFileIndex++;
-                //long progress = 1 + (98 * currentFileIndex / totalFiles);
+                
                 string pluginFileName = Path.GetFileName(pluginFile);
                 MWMessage($"({currentFileIndex}/{totalFiles}) Adding file info for {pluginFileName}",false);
-
+                
+                long progress = 31 + (64 * currentFileIndex / totalFiles);
+                if (InitializationManager.IsAnyInitializing()) InitializationManager.ReportProgress(progress, $"({currentFileIndex}/{totalFiles}) Adding file info for {pluginFileName}");
                 var fileInfo = new System.IO.FileInfo(pluginFile);
                 var pluginName = fileInfo.Name.ToLowerInvariant();
 
@@ -120,7 +135,7 @@ namespace ZO.LoadOrderManager
                        
 
                         // Check for affiliated archives
-                        AddAffiliatedFilesAsync(fileInfo, existingPlugin.PluginID, fullScan && !coreFile);
+                        AddAffiliatedFiles(fileInfo, existingPlugin.PluginID, fullScan && !coreFile);
                     }
                 }
                 else
@@ -155,24 +170,31 @@ namespace ZO.LoadOrderManager
                     _ = ZO.LoadOrderManager.FileInfo.InsertFileInfo(newFileInfo, newPlugin.PluginID);
 
                     // Check for affiliated archives
-                    AddAffiliatedFilesAsync(fileInfo, newPlugin.PluginID, fullScan);
+                    AddAffiliatedFiles(fileInfo, newPlugin.PluginID, fullScan);
                     
                 }
-                
+
                 // Allow UI to update
-                await Task.Delay(10);
-                
+           
+
+                //await Task.Delay(10);
+
+
             }
 
-            LoadOrderWindow.Instance.LOWVM.UpdateStatus("Completed Filescan");
-            LoadOrderWindow.Instance.LOWVM.LoadOrders.RefreshData(); // Clear the warning after scan completion
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                LoadOrderWindow.Instance.LOWVM.UpdateStatus("Completed Filescan");
+                MWClear();
+                LoadOrderWindow.Instance.LOWVM.LoadOrders.RefreshData(); // Clear the warning after scan completion
+            });
 
+            //App.RestartDialog("Finished loading all files from the game folder. Please restart the application to see the changes.");
 
-            App.RestartDialog("Finished loading all files from the game folder. Please restart the application to see the changes.");
             App.LogDebug("Scan complete.");
         }
 
-        private static async Task AddAffiliatedFilesAsync(System.IO.FileInfo pluginFileInfo, long pluginId, bool fullScan)
+        public static void AddAffiliatedFiles(System.IO.FileInfo pluginFileInfo, long pluginId, bool fullScan)
         {
             var dataFolder = pluginFileInfo.DirectoryName;
             if (dataFolder == null) return;
@@ -203,7 +225,7 @@ namespace ZO.LoadOrderManager
                 };
                 //newFileInfo.Flags &= ~FileFlags.IsPlugin;
                 _ = ZO.LoadOrderManager.FileInfo.InsertFileInfo(ba2FileInfo, pluginId);
-                await Task.Yield();
+                //await Task.Delay(10);
 
             }
 
@@ -211,7 +233,7 @@ namespace ZO.LoadOrderManager
             {
                 currentAffiliatedFileIndex++;
                 string iniFileName = Path.GetFileName(iniFile);
-                LoadOrderWindow.Instance.LOWVM.SetWarning($"({currentAffiliatedFileIndex}/{totalAffiliatedFiles}) Adding affiliated file info for {iniFileName} ");
+                MWMessage($"({currentAffiliatedFileIndex}/{totalAffiliatedFiles}) Adding affiliated file info for {iniFileName}", false);
 
                 string? newHash = null;
                 if (fullScan) newHash = ZO.LoadOrderManager.FileInfo.ComputeHash(iniFile);

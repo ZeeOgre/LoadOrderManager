@@ -461,33 +461,23 @@ namespace ZO.LoadOrderManager
             using var transaction = conn.BeginTransaction();
 
             var sqlCommandText = @"
-            --Step 1: Insert all unassigned plugins into GroupSetPlugins for GroupID - 997
-            INSERT INTO GroupSetPlugins(GroupSetID, GroupID, PluginID, Ordinal)
-            SELECT @GroupSetIDz, -997, PluginID, ROW_NUMBER() OVER(ORDER BY PluginID)
-            FROM Plugins
-            WHERE PluginID IN(
-                SELECT DISTINCT PluginID
+        -- Step 1: Insert all unassigned plugins into GroupSetPlugins for GroupID - 997
+        INSERT INTO GroupSetPlugins(GroupSetID, GroupID, PluginID, Ordinal)
+        SELECT @GroupSetIDz, -997, PluginID, ROW_NUMBER() OVER(ORDER BY PluginID)
+        FROM Plugins
+        WHERE PluginID IN(
+            SELECT DISTINCT PluginID
+            FROM GroupSetPlugins
+            WHERE GroupSetID != @GroupSetIDz
+            AND GroupID NOT IN(-998, -999, 1)
+            AND PluginID NOT IN(
+                SELECT PluginID
                 FROM GroupSetPlugins
-                WHERE GroupSetID != @GroupSetIDz
-                AND GroupID NOT IN(-998, -999, 1)
+                WHERE GroupSetID = @GroupSetIDz
             )
-            RETURNING PluginID;
-            ";
-
-            //-- Insert unassigned plugins into GroupSetPlugins for GroupID -997
-            //INSERT INTO GroupSetPlugins (GroupSetID, GroupID, PluginID, Ordinal)
-            //SELECT @GroupSetIDz, -997, PluginID, ROW_NUMBER() OVER (ORDER BY PluginID)
-            //FROM Plugins p
-            //WHERE NOT EXISTS (
-            //    -- Ensure the plugin is not already assigned to any group in the current GroupSet
-            //    SELECT 1 FROM GroupSetPlugins gsp
-            //    WHERE gsp.GroupSetID = @GroupSetIDz OR gsp.GroupID IN (1, -998, -999)
-            //    AND gsp.PluginID = p.PluginID
-            //)
-            //RETURNING PluginID;
-            //";
-
-            
+        )
+        RETURNING PluginID;
+    ";
 
             // Execute the SQL and capture the results (PluginIDs of inserted plugins)
             using var command = new SQLiteCommand(sqlCommandText, conn);
@@ -511,16 +501,13 @@ namespace ZO.LoadOrderManager
                 if (pluginDict.TryGetValue(pluginID, out var plugin))
                 {
                     unassignedGroup.Plugins.Add(plugin);
+                    plugin.GroupSetID = ActiveGroupSet.GroupSetID;
                     plugin.GroupOrdinal = unassignedGroup.Plugins.Count;
                 }
             }
 
-            // Commit the transaction after all steps are completed
+            // Commit the transaction
             transaction.Commit();
-
-            // Step 3: Call RefreshMetaData to update the object model with the latest data
-
-            RefreshMetadataFromDB();
         }
 
 
@@ -835,13 +822,13 @@ namespace ZO.LoadOrderManager
             ActiveGroupSet.SaveGroupSet();
 
             // Save Groups
-            foreach (var group in Groups.Where(g => g.GroupSetID == ActiveGroupSet.GroupSetID))
+            foreach (var group in Groups.Where(g => g.GroupSetID == ActiveGroupSet.GroupSetID && (g.GroupID > 0 || g.GroupID == -997)))
             {
                 _ = group.WriteGroup();
             }
 
             // Save Plugins
-            foreach (var plugin in Plugins.Where(p => p.GroupSetID == ActiveGroupSet.GroupSetID))
+            foreach (var plugin in Plugins.Where(p => p.GroupSetID == ActiveGroupSet.GroupSetID && (p.GroupID != -999)))
             {
                 _ = plugin.WriteMod();
             }
@@ -852,7 +839,7 @@ namespace ZO.LoadOrderManager
                 _ = loadOut.WriteProfile();
             }
 
-
+            SettingsViewModel.CleanOrdinals(true);
             //RefreshMetadataFromDB();
             //    using var connection = DbManager.Instance.GetConnection();
             //    using var transaction = connection.BeginTransaction();

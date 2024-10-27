@@ -330,7 +330,7 @@ namespace ZO.LoadOrderManager
             enabledPlugins.Clear();
             foreach (var pluginID in pluginIDs)
             {
-                _ = enabledPlugins.Add(pluginID);
+               _ = enabledPlugins.Add(pluginID);
             }
             _ = WriteProfile();
         }

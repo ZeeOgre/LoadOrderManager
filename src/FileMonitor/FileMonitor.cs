@@ -21,7 +21,7 @@ namespace ZO.LoadOrderManager
         public FileMonitor(string filePath, byte[] initialContent)
         {
             _filePath = filePath;
-            _lastHash = ComputeFileHash(filePath);
+            _lastHash = FileInfo.ComputeHash(filePath);
             _lastContent = initialContent;
 
             _watcher = new FileSystemWatcher(Path.GetDirectoryName(filePath))
@@ -60,10 +60,14 @@ namespace ZO.LoadOrderManager
             if (e.ChangeType == WatcherChangeTypes.Changed || e.ChangeType == WatcherChangeTypes.Renamed)
             {
                 // Compute the new file hash and compare
-                string newHash = ComputeFileHash(_filePath);
+                string newHash = FileInfo.ComputeHash(_filePath);
                 if (newHash != _lastHash)
                 {
                     _lastHash = newHash;
+   
+
+                    // Launch the DiffViewer
+                    LaunchDiffViewer(_lastContent, _filePath);
                     byte[] newContent;
                     using (var stream = new FileStream(_filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
                     {
@@ -71,30 +75,19 @@ namespace ZO.LoadOrderManager
                         stream.Read(newContent, 0, newContent.Length);
                     }
 
-                    // Launch the DiffViewer
-                    LaunchDiffViewer(_lastContent, newContent);
-
                     // Update the last content
                     _lastContent = newContent;
                 }
             }
         }
 
-        private string ComputeFileHash(string filePath)
-        {
-            using var sha256 = SHA256.Create();
-            using var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-            var hashBytes = sha256.ComputeHash(stream);
-            return BitConverter.ToString(hashBytes).Replace("-", "").ToLowerInvariant();
-        }
-
-        private void LaunchDiffViewer(byte[] oldContent, byte[] newContent)
+        private void LaunchDiffViewer(byte[] oldContent, string filePath)
         {
             Application.Current.Dispatcher.Invoke(() =>
             {
                 if (_currentDiffViewer == null || !_currentDiffViewer.IsVisible)
                 {
-                    _currentDiffViewer = new DiffViewer(oldContent, newContent);
+                    _currentDiffViewer = new DiffViewer(oldContent, filePath);
                     _currentDiffViewer.Closed += (s, e) => _currentDiffViewer = null;
                     _currentDiffViewer.Show();
                 }

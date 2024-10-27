@@ -63,6 +63,7 @@ namespace ZO.LoadOrderManager
             {
                 StatusLightColor = new SolidColorBrush(Colors.Green);
             }
+            OnPropertyChanged(nameof(StatusLightColor));
         }
 
         private void ExecuteEditGroupSetCommand(object parameter)
