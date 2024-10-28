@@ -37,19 +37,12 @@ namespace ZO.LoadOrderManager
                 {
                     InitializationManager.StartInitialization(nameof(FileManager));
                     App.LogDebug("FileManager: Starting initialization...");
-                    //FileMonitor.InitializeAllMonitors();
                     InitializeFavoriteGroupSetAndLoadOut();
-                    //// Retrieve the singleton GroupSet and LoadOut from the database
-                    //var singletonGroupSet = GroupSet.LoadGroupSet(2);
-                    //var singletonLoadOut = LoadOut.Load(2);
 
-                    //AggLoadInfo.Instance.ActiveLoadOut = singletonLoadOut;
-                    //AggLoadInfo.Instance.ActiveGroupSet = singletonGroupSet;
-
-                    // Load data from the database INTO the AggLoadInfo instance
                     AggLoadInfo.Instance.InitFromDatabase();
                     FileMonitor.InitializeAllMonitors();
-                    // Check if files have already been loaded
+                    GameFolderMonitor.InitializeAllMonitors();
+
                     if (AggLoadInfo.Instance.ActiveGroupSet.AreFilesLoaded)
                     {
                         InitializationManager.ReportProgress(25, "Files already loaded...");
@@ -61,7 +54,6 @@ namespace ZO.LoadOrderManager
 
 
                         InitializationManager.ReportProgress(31, "Starting GameFolder Scan");
-                        //FileManager.ScanGameDirectoryForStraysAsync();
                         FileManager.ScanGameDirectoryForStrays(true, AggLoadInfo.Instance.ActiveGroupSet.GroupSetID, true);
                         InitializationManager.ReportProgress(95, "Finished GameFolder Scan");
 
