@@ -687,6 +687,7 @@ namespace ZO.LoadOrderManager
                 return hash;
             }
         }
+
     }
 }
 

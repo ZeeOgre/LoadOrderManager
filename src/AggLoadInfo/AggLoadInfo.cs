@@ -705,6 +705,13 @@ namespace ZO.LoadOrderManager
                     GroupSetPlugins.Items.Add((ActiveGroupSet.GroupSetID, plugin.GroupID ?? -1, plugin.PluginID, plugin.GroupOrdinal ?? 1));
                 }
 
+                // Update the state of the matching plugin in Plugins collection
+                var existingPlugin = Plugins.FirstOrDefault(p => p.PluginID == plugin.PluginID);
+                if (existingPlugin != null)
+                {
+                    Plugins[Plugins.IndexOf(existingPlugin)] = plugin;
+                }
+
                 // Finally, save the plugin changes
                 //_ = plugin.WriteMod();
             }

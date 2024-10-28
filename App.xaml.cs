@@ -344,22 +344,34 @@ namespace ZO.LoadOrderManager
         public static void LogDebug(string message, [CallerFilePath] string filePath = "", [CallerLineNumber] long lineNumber = 0, [CallerMemberName] string memberName = "")
         {
             string logMessage = $"{Path.GetFileName(filePath)}:{lineNumber} - {memberName}: {message}";
-            ActualLogMethod(logMessage);
-        }
 
-        private static void ActualLogMethod(string logMessage)
-        {
-            Console.WriteLine(logMessage);
+            // Always log to the debug output when logging is off
+            Debug.WriteLine(logMessage);  // This will write to the Debug Console in Visual Studio
 
             bool textLoggingEnabled = bool.TryParse(ConfigurationManager.AppSettings["TextLogging"], out bool result) && result;
+
             if (textLoggingEnabled)
             {
-                string logFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "app.log");
-                using var stream = new FileStream(logFilePath, FileMode.Append, FileAccess.Write, FileShare.ReadWrite);
-                using var writer = new StreamWriter(stream);
-                writer.WriteLine(logMessage + Environment.NewLine);
+                // Log to a file when text logging is enabled
+                LogFileMethod(logMessage);
+            }
+            else
+            {
+                // Log to the console when text logging is disabled (optional)
+                Console.WriteLine(logMessage);
             }
         }
+
+        private static void LogFileMethod(string logMessage)
+        {
+            Console.WriteLine(logMessage);  // Output to console, in case it's needed
+
+            string logFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "app.log");
+            using var stream = new FileStream(logFilePath, FileMode.Append, FileAccess.Write, FileShare.ReadWrite);
+            using var writer = new StreamWriter(stream);
+            writer.WriteLine(logMessage + Environment.NewLine);
+        }
+
 
         public static void CheckForUpdates(Window owner)
         {
