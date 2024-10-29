@@ -6,20 +6,20 @@
     <ROW Property="AI_BITMAP_DISPLAY_MODE" Value="0" />
     <ROW Property="AI_PREDEF_LCONDS_PROPS" Value="AI_DETECTED_ADMIN_USER" />
     <ROW Property="AI_PROPPATH_PERBUILD_bin_Dir" Value="..\bin\GitRelease\net8.0-windows" MultiBuildValue="AnyCPU_Debug:..\bin\Debug\net8.0-windows#AnyCPU_Release:..\bin\Release\net8.0-windows" />
-    <ROW Property="ALLUSERS" Value="1" MultiBuildValue="AnyCPU_GitRelease:2" />
+    <ROW Property="ALLUSERS" Value="1" MultiBuildValue="AnyCPU_GitRelease:2#AnyCPU_Release:2" />
     <ROW Property="ARPCOMMENTS" Value="This installer database contains the logic and data required to install [|ProductName]." ValueLocId="*" />
     <ROW Property="CTRLS" Value="2" />
     <ROW Property="Manufacturer" Value="ZeeOgre" />
-    <ROW Property="ProductCode" Value="1033:{f3d0db10-c74d-4c2d-b16e-8c361c010b47}" Type="16" />
+    <ROW Property="ProductCode" Value="1033:{72b3e1a3-d6d9-4d63-ba60-105d0a9797fc}" Type="16" />
     <ROW Property="ProductLanguage" Value="1033" />
     <ROW Property="ProductName" Value="ZO.LoadOrderManager" />
-    <ROW Property="ProductVersion" Value="0.0.5.0" Options="4" />
+    <ROW Property="ProductVersion" Value="0.0.16.0" Options="4" />
     <ROW Property="RUNAPPLICATION" Value="1" Type="4" />
     <ROW Property="SecureCustomProperties" Value="OLDPRODUCTS;AI_NEWERPRODUCTFOUND" />
     <ROW Property="UpgradeCode" Value="{F5AB9A71-4379-4D5F-A6EF-00686EEFC0AE}" />
     <ROW Property="WindowsType9X" MultiBuildValue="AnyCPU_GitRelease:Windows 9x/ME" ValueLocId="-" />
     <ROW Property="WindowsType9XDisplay" MultiBuildValue="AnyCPU_GitRelease:Windows 9x/ME" ValueLocId="-" />
-    <ROW Property="WindowsTypeNT" MultiBuildValue="AnyCPU_GitRelease:Windows 9x/ME/NT/2000/XP/Vista/Windows 7/Windows 8 x86/Windows 8.1 x86/Windows 10 x86" ValueLocId="-" />
+    <ROW Property="WindowsTypeNT" MultiBuildValue="AnyCPU_GitRelease:Windows 9x/ME/NT/2000/XP/Vista/Windows 7/Windows 8 x86/Windows 8.1 x86/Windows 10 x86#AnyCPU_Release:Windows 9x/ME/NT/2000/XP/Vista/Windows 7/Windows 8 x86/Windows 8.1 x86/Windows 10 x86" ValueLocId="-" />
     <ROW Property="WindowsTypeNT40" MultiBuildValue="AnyCPU_GitRelease:Windows NT 4.0" ValueLocId="-" />
     <ROW Property="WindowsTypeNT40Display" MultiBuildValue="AnyCPU_GitRelease:Windows NT 4.0" ValueLocId="-" />
     <ROW Property="WindowsTypeNT50" MultiBuildValue="AnyCPU_GitRelease:Windows 2000" ValueLocId="-" />
@@ -28,9 +28,9 @@
     <ROW Property="WindowsTypeNT5XDisplay" MultiBuildValue="AnyCPU_GitRelease:Windows XP/2003" ValueLocId="-" />
     <ROW Property="WindowsTypeNT60" MultiBuildValue="AnyCPU_GitRelease:Windows Vista/Server 2008" ValueLocId="-" />
     <ROW Property="WindowsTypeNT60Display" MultiBuildValue="AnyCPU_GitRelease:Windows Vista/Server 2008" ValueLocId="-" />
-    <ROW Property="WindowsTypeNT64" MultiBuildValue="AnyCPU_GitRelease:Windows 7 x64, Windows Server 2008 R2 x64, Windows 8 x64, Windows Server 2012 x64, Windows 8.1 x64, Windows Server 2012 R2 x64" ValueLocId="-" />
-    <ROW Property="WindowsTypeNT64Display" MultiBuildValue="AnyCPU_GitRelease:Windows 7 x64, Windows Server 2008 R2 x64, Windows 8 x64, Windows Server 2012 x64, Windows 8.1 x64, Windows Server 2012 R2 x64" ValueLocId="-" />
-    <ROW Property="WindowsTypeNTDisplay" MultiBuildValue="AnyCPU_GitRelease:32-bit Windows versions" ValueLocId="-" />
+    <ROW Property="WindowsTypeNT64" MultiBuildValue="AnyCPU_GitRelease:Windows 7 x64, Windows Server 2008 R2 x64, Windows 8 x64, Windows Server 2012 x64, Windows 8.1 x64, Windows Server 2012 R2 x64#AnyCPU_Release:Windows 7 x64, Windows Server 2008 R2 x64, Windows 8 x64, Windows Server 2012 x64, Windows 8.1 x64, Windows Server 2012 R2 x64" ValueLocId="-" />
+    <ROW Property="WindowsTypeNT64Display" MultiBuildValue="AnyCPU_GitRelease:Windows 7 x64, Windows Server 2008 R2 x64, Windows 8 x64, Windows Server 2012 x64, Windows 8.1 x64, Windows Server 2012 R2 x64#AnyCPU_Release:Windows 7 x64, Windows Server 2008 R2 x64, Windows 8 x64, Windows Server 2012 x64, Windows 8.1 x64, Windows Server 2012 R2 x64" ValueLocId="-" />
+    <ROW Property="WindowsTypeNTDisplay" MultiBuildValue="AnyCPU_GitRelease:32-bit Windows versions#AnyCPU_Release:32-bit Windows versions" ValueLocId="-" />
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.MsiDirsComponent">
     <ROW Directory="APPDIR" Directory_Parent="TARGETDIR" DefaultDir="APPDIR:." IsPseudoRoot="1" />
@@ -263,7 +263,7 @@
   <COMPONENT cid="caphyon.advinst.msicomp.BuildComponent">
     <ROW BuildKey="AnyCPU_Debug" BuildName="AnyCPU_Debug" BuildOrder="2" BuildType="0" PackageFolder="." PackageFileName="ZO.LoadOrderManager.debug" Languages="en" InstallationType="4" UseLargeSchema="true" />
     <ROW BuildKey="AnyCPU_GitRelease" BuildName="AnyCPU_GitRelease" BuildOrder="1" BuildType="0" PackageFolder="." PackageFileName="ZO.LoadOrderManager" Languages="en" InstallationType="4" SummInfoMetadata="Page Count:450" UseLargeSchema="true" MsiPackageType="x64" />
-    <ROW BuildKey="AnyCPU_Release" BuildName="AnyCPU_Release" BuildOrder="3" BuildType="0" PackageFolder="." PackageFileName="ZO.LoadOrderManager.release" Languages="en" InstallationType="4" UseLargeSchema="true" />
+    <ROW BuildKey="AnyCPU_Release" BuildName="AnyCPU_Release" BuildOrder="3" BuildType="0" PackageFolder="." PackageFileName="ZO.LoadOrderManager.release" Languages="en" InstallationType="4" SummInfoMetadata="Page Count:450" UseLargeSchema="true" MsiPackageType="x64" />
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.DictionaryComponent">
     <ROW Path="&lt;AI_DICTS&gt;ui.ail" />
@@ -340,7 +340,7 @@
     <ROW Action="AI_SETMIXINSTLOCATION" Type="1" Source="aicustact.dll" Target="MixedAllUsersInstallLocation" />
     <ROW Action="AI_SHOW_LOG" Type="65" Source="aicustact.dll" Target="LaunchLogFile" WithoutSeq="true" />
     <ROW Action="AI_STORE_LOCATION" Type="51" Source="ARPINSTALLLOCATION" Target="[APPDIR]" />
-    <ROW Action="SET_APPDIR" Type="307" Source="APPDIR" Target="[ProgramFilesFolder][Manufacturer]\[ProductName]" MultiBuildTarget="AnyCPU_GitRelease:[AI_UserProgramFiles][Manufacturer]\[ProductName]" />
+    <ROW Action="SET_APPDIR" Type="307" Source="APPDIR" Target="[ProgramFilesFolder][Manufacturer]\[ProductName]" MultiBuildTarget="AnyCPU_GitRelease:[AI_UserProgramFiles][Manufacturer]\[ProductName]#AnyCPU_Debug:[AI_UserProgramFiles][Manufacturer]\[ProductName]#AnyCPU_Release:[AI_UserProgramFiles][Manufacturer]\[ProductName]" />
     <ROW Action="SET_SHORTCUTDIR" Type="307" Source="SHORTCUTDIR" Target="[ProgramMenuFolder][ProductName]" />
     <ROW Action="SET_TARGETDIR_TO_APPDIR" Type="51" Source="TARGETDIR" Target="[APPDIR]" />
   </COMPONENT>
@@ -440,8 +440,8 @@
     <ROW Action="AI_SETMIXINSTLOCATION" Sequence="748" />
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.MsiLaunchConditionsComponent">
-    <ROW Condition="( Version9X OR ( NOT VersionNT64 ) OR ( VersionNT64 AND ((VersionNT64 &lt;&gt; 601) OR (MsiNTProductType &lt;&gt; 1)) AND ((VersionNT64 &lt;&gt; 601) OR (MsiNTProductType = 1)) AND ((VersionNT64 &lt;&gt; 602) OR (MsiNTProductType &lt;&gt; 1)) AND ((VersionNT64 &lt;&gt; 602) OR (MsiNTProductType = 1)) AND ((VersionNT64 &lt;&gt; 603) OR (MsiNTProductType &lt;&gt; 1)) AND ((VersionNT64 &lt;&gt; 603) OR (MsiNTProductType = 1)) ) )" Description="[ProductName] cannot be installed on the following Windows versions: [WindowsTypeNT64Display]." DescriptionLocId="AI.LaunchCondition.NoSpecificNT64" IsPredefined="true" Builds="AnyCPU_GitRelease" />
-    <ROW Condition="( Version9X OR VersionNT64 )" Description="[ProductName] cannot be installed on [WindowsTypeNTDisplay]." DescriptionLocId="AI.LaunchCondition.NoNT" IsPredefined="true" Builds="AnyCPU_GitRelease" />
+    <ROW Condition="( Version9X OR ( NOT VersionNT64 ) OR ( VersionNT64 AND ((VersionNT64 &lt;&gt; 601) OR (MsiNTProductType &lt;&gt; 1)) AND ((VersionNT64 &lt;&gt; 601) OR (MsiNTProductType = 1)) AND ((VersionNT64 &lt;&gt; 602) OR (MsiNTProductType &lt;&gt; 1)) AND ((VersionNT64 &lt;&gt; 602) OR (MsiNTProductType = 1)) AND ((VersionNT64 &lt;&gt; 603) OR (MsiNTProductType &lt;&gt; 1)) AND ((VersionNT64 &lt;&gt; 603) OR (MsiNTProductType = 1)) ) )" Description="[ProductName] cannot be installed on the following Windows versions: [WindowsTypeNT64Display]." DescriptionLocId="AI.LaunchCondition.NoSpecificNT64" IsPredefined="true" Builds="AnyCPU_GitRelease;AnyCPU_Release" />
+    <ROW Condition="( Version9X OR VersionNT64 )" Description="[ProductName] cannot be installed on [WindowsTypeNTDisplay]." DescriptionLocId="AI.LaunchCondition.NoNT" IsPredefined="true" Builds="AnyCPU_GitRelease;AnyCPU_Release" />
     <ROW Condition="((VersionNT &lt;&gt; 501) AND (VersionNT &lt;&gt; 502))" Description="[ProductName] cannot be installed on [WindowsTypeNT5XDisplay]." DescriptionLocId="AI.LaunchCondition.NoNT5X" IsPredefined="true" Builds="AnyCPU_GitRelease" />
     <ROW Condition="(VersionNT &lt;&gt; 400)" Description="[ProductName] cannot be installed on [WindowsTypeNT40Display]." DescriptionLocId="AI.LaunchCondition.NoNT40" IsPredefined="true" Builds="AnyCPU_GitRelease" />
     <ROW Condition="(VersionNT &lt;&gt; 500)" Description="[ProductName] cannot be installed on [WindowsTypeNT50Display]." DescriptionLocId="AI.LaunchCondition.NoNT50" IsPredefined="true" Builds="AnyCPU_GitRelease" />

@@ -1,113 +1,133 @@
-# ZeeOgres Template Plugins.txt
+# plugins.txt produced by ZeeOgre's LoadOutManager using Group Set ZeeOgre's Sample and profile ZeeOgre's Default on 2024-10-26T18:46:20.6933171-05:00
+##--------------------------------------------------------------------------------------------------------------------------------------------------------##
 
-### BethesdaPaid @@ Bethesda paid mods 
-*sfbgs00a_a.esm
-*sfbgs00a_d.esm
-*sfbgs00a_f.esm
-*sfbgs023.esm
+### BethesdaPaid @@ Bethesda paid mods
 *sfta01.esm
+*sfbgs00b.esm
 
-
-### Community Patch
-*StarfieldCommunityPatch.esm
-
+### Community Patch @@ https://starfieldpatch.dev
+*starfieldcommunitypatch.esm
 
 ### Places @@ New and furnished locations
-*CydoniaHome.esm
-*DWN_CoreManorFurnished.esm
-*DWN_ParadisoPlayerHome_Furnished.esm
-*DWN_TheWellApartmentFurnished.esm
-*MantisLairHome.esm
-*MercuryPenthouseFurnished.esm
-*tankgirlsmodelhome.esm
-*tankgirlsmodelhomepoi.esm
-*qso safehouse.esm
-*RyujinApartment.esm
-*SkySuiteExpanded.esm
 *cheatroom.esm
-
-### New Things
 *ultimate_starter_kit.esm
+skkplayerhomesanywhere.esm
+nasalandmark.esm
+CydoniaHome.esm
+DWN_CoreManorFurnished.esm
+DWN_DreamHomeFurnished.esm
+DWN_DreamHomeOverhaul.esm
+DWN_ParadisoPlayerHome_Furnished.esm
+DWN_DazraHomeFurnished.esm
+DWN_TheWellApartmentFurnished.esm
+MantisLairHome.esm
+MercuryPenthouseFurnished.esm
+mwgynRyujinApartment.esm
+SkySuiteExpanded.esm
+tankgirlsmodelhome.esm
+tankgirlsmodelhomepoi.esm
+qso safehouse.esm
+RyujinApartment.esm
+SkySuiteExpanded.esm
 
-#### Followers
-*grogufollower.esm
-*PilotAssistantBot.esm
-*OutpostResourceBot.esm
+##### Furnishings @@ Things for your places
+more buildable mission boards.esm
+*venworks-pawnshop.esm
+Skully's Suit Displays.esm
 
+### New Things @@ Objects, Followers, etc..
+
+#### Followers @@ People, critters and bots that will follow you around
+*inquisitor_starborn_supervisor.esm
+*pilotassistantbot.esm
+*outpostresourcebot.esm
+*darkstar_emissaries.esm
+
+##### Follower Appearance
+*companionpreviews.esm
+*sonaponytail.esm
+
+##### Follower Behavior
+*improvedfollowerbehavior.esm
+*easier companion affinity.esm
+*myprice.esm
+*visiblecompanionaffinity.esm
+*thegangsallhere.esm
 
 #### Items @@ Added Clothing, Armor, Items
-*guyver.esm
-*KZ_Operative.esm
-*Skully's Suit Displays.esm
+smarterspacesuitautohide.esm
+dam_thevoidthatstaresback.esm
+individualresourcetracking.esm
 
-#### New Ships
-*Spyder.esm
-*FurnishedStarbornShip.esm
+##### Clothing
 
+##### Armor @@ Protect yo butt
+guyver.esm
+KZ_Operative.esm
+
+###### Armor Skins @@ Look better in armor
+
+##### Weapons @@ More pew pew
+
+###### Weapon Skins @@ Change weapon appearance
+
+#### Ships @@ Ships and ship tools
+Spyder.esm
+*skkshiptools.esm
+*furnishedstarbornship.esm
+
+#### Vehicles @@ The REV-8 Buggy and it's related changes
+*shades_vehicle_tuner.esm
+vehiclevendor.esm
 
 ### Gameplay Modification @@ Mods which change game behavior, but you might want to still override some of the things that happen here.
-*AurieChooseVariantUniverse.esm
 *BARDS_OutpostCleaner.esm
-*CompanionPreviews.esm
-*Minimum Enemy Level.esm
-*Dynamic_System_Levels.esm
-*Easier Companion Affinity.esm
-*ImprovedFollowerBehavior.esm
-*Inquisitor_Starborn_Supervisor.esm
-*LazyScav.esm
-*LessAnnoyingTemples.esm
-*More Buildable Mission Boards.esm
-*MyPrice.esm
-*NASALandmark.esm
-*NaturallyGoodLoot.esm
-*NotANoob.esm
-*OpenNearbyDoors.esm
-*OrganicResourcesMerged.esm
-*Shades_Immersive_Looting.esm
-*Shades_Stealth_Takedowns.esm
-*SkillFixes.esm
-*SKKPlayerHomesAnywhere.esm
-*SKKShipTools.esm
-*SKKUniversalStash.esm
-*SmartDoc.esm
-*particlestealth.esm
-*SonaPonytail.esm
-*Unarmed Mastery.esm
-*Vanilla Flashlight Improved.esm
-*Venworks-Pawnshop.esm
-*VisibleCompanionAffinity.esm
-*WorkingStoves.esm
-
+*shades_stealth_takedowns.esm
+*shades_immersive_looting.esm
+*Shades_Glowy_Stuff.esm
+*trader_maal2_orbit.esm
+*notanoob.esm
+*lessannoyingtemples.esm
+skillfixes.esm
+*naturallygoodloot.esm
+*opennearbydoors.esm
+*organicresourcesmerged.esm
 
 ### High Priority Mods @@ mods which should never be changed except by deliberate choice
-#### DarkStar
-*DarkStar_Astrodynamics.esm
-*DarkStar_Emissaries.esm
-*DarkStar_Manufacturing.esm
-*dsm patch - kz operative by zeeogre.esm
+*auriechoosevariantuniverse.esm
+minimum enemy level.esm
+dynamic_system_levels.esm
+*vanilla flashlight improved.esm
+*smartdoc.esm
+*takeitemsthroughunity.esm
+*ship power fix.esm
+
+
+#### DarkStar @@ Darkstar by Wykkyd Gaming
+*darkstar_astrodynamics.esm
+*darkstar_manufacturing.esm
+##### DSM Patches @@ Patches for Darkstar Manufacturing for other things
+*DSM_ShatteredSpace_Patch.esm
 *dsm_vulture_patch.esm
+dsm patch - kz operative by zeeogre.esm
 
-
-#### Shipbuilding
-PlaceDoorsYourself.esm
-*Ship Power Fix.esm
-*ShipBuilderCategories.esm
-*TNSeparatedCategories.esm
+#### Shipbuilding @@ Habs, ship related mods, etc
+*tnseparatedcategories.esm
+*shipbuildercategories.esm
 
 ### High Priority Overrides @@ These mods are known to make changes that may override other mods, and should be loaded after everything else.
-*TakeItemsThroughUnity.esm
-*TheGangsAllHere.esm
+*skkuniversalstash.esm
 
 ### ForcedOverrides @@ Deliberate override choices which you never want to be overriden by anything else
-*ZeeOgresOutpostTweaks.esm
-*zeeogresdomesticateallflora.esm
-*zeeogreswellstockedmerchants.esm
 
 
-### ESP @@ ESP files - these are generally "in development" mods, and should always be loaded last.
-*xatmosNoClutter.esp
+### In Development @@ Specific Non-development mods. Generally best to be loaded very late to make sure there are no conflicts.
+*zeeogresshiptweaks.esp
+*zeeogreshandscannertweaks.esp
+*zeeogresdomesticateallflora.esp
+*zeeogresoutposttutorial-katydid3.esp
+*zeeogresoutposttutorial-tirna8c.esp
+*zeeogresoutposttutorial-bessel3b.esp
 zeeogresaiogameplaytweaks.esp
 
-
-### NEVER_LOAD @@ This mod for JMPZ11's automatic cleaning tool, it should never actually load INTO the game. 
-A1_EMPTY_STUB_XXXXXXXXXX.esm
+# End of plugins.txt

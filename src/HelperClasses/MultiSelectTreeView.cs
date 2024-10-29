@@ -158,7 +158,7 @@ namespace ZO.LoadOrderManager
                             var selectedRange = SelectRange(firstDataContext, lastDataContext);
                             foreach (var rangeItem in selectedRange)
                             {
-                                if (!SelectedItems.Contains(rangeItem))
+                                if (!SelectedItems.Contains(rangeItem) && rangeItem.HideUnloadedPlugins == true && rangeItem.InGameFolder != true)
                                 {
                                     SelectedItems.Add(rangeItem);
                                     rangeItem.IsSelected = true;

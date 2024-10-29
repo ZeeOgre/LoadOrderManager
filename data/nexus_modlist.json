@@ -1,0 +1,1072 @@
+[
+    {
+        "game": "starfield",
+        "modId": 8292,
+        "fileId": 30801,
+        "source": "nexus",
+        "enabled": false,
+        "vortexId": "24-01-30_VivecGod_Starfield_OutpostHandyMenu-8292-1-1706657010"
+    },
+    {
+        "name": "Bard's Outpost Cleaner",
+        "game": "starfield",
+        "modId": 8968,
+        "fileId": 34004,
+        "source": "nexus",
+        "enabled": true,
+        "vortexId": "Bard's Outpost Cleaner 0.1.0-8968-0-1-0-1712355912"
+    },
+    {
+        "name": "Bard's Characters Essential Changer",
+        "game": "starfield",
+        "modId": 8972,
+        "fileId": 34019,
+        "source": "nexus",
+        "enabled": false,
+        "vortexId": "Bards_CharactersEssentialModifier - 0.5.0-8972-0-5-0-1712416839"
+    },
+    {
+        "name": "Bard's Outpost Crew Command",
+        "game": "starfield",
+        "modId": 10122,
+        "fileId": 38886,
+        "source": "nexus",
+        "enabled": false,
+        "vortexId": "Bards_OutpostCrewCommand-0.3.5-10122-0-3-5-1719540383"
+    },
+    {
+        "name": "BetterConsole - Console Replacer and MOD Menu",
+        "game": "starfield",
+        "modId": 3683,
+        "fileId": 42116,
+        "source": "nexus",
+        "enabled": true,
+        "vortexId": "BetterConsole ASI-3683-1-4-0-1718410978"
+    },
+    {
+        "name": "Creation Kit Platform Extended for Starfield",
+        "game": "starfield",
+        "modId": 11802,
+        "fileId": 46087,
+        "source": "nexus",
+        "enabled": false,
+        "vortexId": "CK Platform Extended 0.4-b584-11802-0-4-b584-1729342037"
+    },
+    {
+        "name": "Choose Your Variant Universe",
+        "game": "starfield",
+        "modId": 9273,
+        "fileId": 39064,
+        "source": "nexus",
+        "enabled": true,
+        "vortexId": "Choose Your Variant Universe-9273-1-2-1-1719714108"
+    },
+    {
+        "name": "Cleanfield - A No-Intro and Clean Menu Fix",
+        "game": "starfield",
+        "modId": 88,
+        "fileId": 7900,
+        "source": "nexus",
+        "enabled": true,
+        "vortexId": "Cleanfield.v.1.7.2-Vortex-MO2-88-1-7-2-1694893644"
+    },
+    {
+        "name": "ClickLight - Highlight Objects Clicked in Console",
+        "game": "starfield",
+        "modId": 6040,
+        "fileId": 21025,
+        "source": "nexus",
+        "enabled": false,
+        "vortexId": "ClickLight - BAT Version-6040-1-0-1698427914"
+    },
+    {
+        "name": "ClickLight - Highlight Objects Clicked in Console",
+        "game": "starfield",
+        "modId": 6040,
+        "fileId": 21022,
+        "source": "nexus",
+        "enabled": false,
+        "vortexId": "ClickLight-6040-1-0-1698427751"
+    },
+    {
+        "name": "Burden Me Not - Clutter Begone",
+        "game": "starfield",
+        "modId": 809,
+        "fileId": 12011,
+        "source": "nexus",
+        "enabled": false,
+        "vortexId": "Clutter Begone - Full - Quality of Life-809-10d-1695687201"
+    },
+    {
+        "name": "Proper Companion Previews",
+        "game": "starfield",
+        "modId": 7591,
+        "fileId": 38619,
+        "source": "nexus",
+        "enabled": true,
+        "vortexId": "Companion Previews-7591-1-32-1719296588"
+    },
+    {
+        "name": "Customisable Animation Speed",
+        "game": "starfield",
+        "modId": 2489,
+        "fileId": 34914,
+        "source": "nexus",
+        "enabled": true,
+        "vortexId": "Customisable Animation Speed-2489-2-0-0-1715786711"
+    },
+    {
+        "name": "Cydonia Executive Suite",
+        "game": "starfield",
+        "modId": 9569,
+        "fileId": 36578,
+        "source": "nexus",
+        "enabled": true,
+        "vortexId": "Cydonia Executive Suite-9569-1-01-1717986449"
+    },
+    {
+        "name": "DSM patch - KZ Operative by ZeeOgre",
+        "game": "starfield",
+        "modId": 10454,
+        "fileId": 40095,
+        "source": "nexus",
+        "enabled": true,
+        "vortexId": "DSM Patch - KZ Operative by ZeeOgre-10454-1-0-1-1720742770"
+    },
+    {
+        "name": "DSM Shattered Space Patch",
+        "game": "starfield",
+        "modId": 12250,
+        "fileId": 46484,
+        "source": "nexus",
+        "enabled": true,
+        "vortexId": "DSM Shattered Space Patch-12250-1-0-1729963077"
+    },
+    {
+        "name": "DarkStar Astrodynamics",
+        "game": "starfield",
+        "modId": 9458,
+        "fileId": 41144,
+        "source": "nexus",
+        "enabled": true,
+        "vortexId": "DarkStar Astrodynamics-9458-4-1-1-1722800657"
+    },
+    {
+        "name": "DarkStar Emissaries",
+        "game": "starfield",
+        "modId": 10451,
+        "fileId": 42980,
+        "source": "nexus",
+        "enabled": true,
+        "vortexId": "DarkStar Emissaries-10451-1-0-0-1720364732"
+    },
+    {
+        "name": "DarkStar Manufacturing",
+        "game": "starfield",
+        "modId": 9963,
+        "fileId": 41145,
+        "source": "nexus",
+        "enabled": true,
+        "vortexId": "DarkStar Manufacturing-9963-2-0-1-1719451220"
+    },
+    {
+        "name": "Dream Home - Furnished",
+        "game": "starfield",
+        "modId": 10102,
+        "fileId": 38552,
+        "source": "nexus",
+        "enabled": true,
+        "vortexId": "Dream Home - Furnished-10102-1-2-1719243163"
+    },
+    {
+        "name": "Dream Home - Overhaul",
+        "game": "starfield",
+        "modId": 10294,
+        "fileId": 43817,
+        "source": "nexus",
+        "enabled": true,
+        "vortexId": "Dream Home Overhaul - Main-10294-2-3-1721578025"
+    },
+    {
+        "name": "Dynamic System Levels",
+        "game": "starfield",
+        "modId": 9921,
+        "fileId": 37896,
+        "source": "nexus",
+        "enabled": true,
+        "vortexId": "Dynamic System Levels-9921-1-1-1718746152"
+    },
+    {
+        "name": "Easier Companion Affinity",
+        "game": "starfield",
+        "modId": 9625,
+        "fileId": 36816,
+        "source": "nexus",
+        "enabled": true,
+        "vortexId": "Easier Companion Affinity-9625-1-0-0-1718132165"
+    },
+    {
+        "name": "Enhanced Player Boostbar",
+        "game": "starfield",
+        "modId": 537,
+        "fileId": 42388,
+        "source": "nexus",
+        "enabled": true,
+        "vortexId": "Enhanced Player Boostbar - Comp - GYOR-537-1-0-5-1724603134"
+    },
+    {
+        "name": "Fast Travel To Unknown",
+        "game": "starfield",
+        "modId": 6663,
+        "fileId": 42478,
+        "source": "nexus",
+        "enabled": true,
+        "vortexId": "FTTU_ASI-6663-1-1-5-1718271148"
+    },
+    {
+        "name": "Furnished Starborn Ship",
+        "game": "starfield",
+        "modId": 8009,
+        "fileId": 35078,
+        "source": "nexus",
+        "enabled": true,
+        "vortexId": "Furnished Starborn Ship-8009-2-3-1715905168"
+    },
+    {
+        "name": "Grogu Plushie Remade",
+        "game": "starfield",
+        "modId": 10031,
+        "fileId": 38316,
+        "source": "nexus",
+        "enabled": false,
+        "vortexId": "Grogu Plushie-10031-1-0-1719071144"
+    },
+    {
+        "name": "The Guyver Spacesuit",
+        "game": "starfield",
+        "modId": 10722,
+        "fileId": 40765,
+        "source": "nexus",
+        "enabled": true,
+        "vortexId": "Guyver spacesuit-10722-1-01-1722200843"
+    },
+    {
+        "name": "Show Power Name on HUD",
+        "game": "starfield",
+        "modId": 8150,
+        "fileId": 43516,
+        "source": "nexus",
+        "enabled": false,
+        "vortexId": "HUD Show Power Name-8150-2-0-1723215799"
+    },
+    {
+        "name": "Improved Follower Behavior",
+        "game": "starfield",
+        "modId": 9510,
+        "fileId": 41100,
+        "source": "nexus",
+        "enabled": true,
+        "vortexId": "Improved Follower Behavior-9510-1-1-1-1722202424"
+    },
+    {
+        "name": "Individual Resource Tracking",
+        "game": "starfield",
+        "modId": 7561,
+        "fileId": 27430,
+        "source": "nexus",
+        "enabled": true,
+        "vortexId": "Individual Resource Tracking-7561-1-0-1702117914"
+    },
+    {
+        "name": "KZ Operative 2.0",
+        "game": "starfield",
+        "modId": 8176,
+        "fileId": 39337,
+        "source": "nexus",
+        "enabled": true,
+        "vortexId": "KZ Operative 2.0-8176-1-0a-1719437904"
+    },
+    {
+        "name": "Lazy Scav - An AutoLoot Mod for Starfield",
+        "game": "starfield",
+        "modId": 8291,
+        "fileId": 33387,
+        "source": "nexus",
+        "enabled": true,
+        "vortexId": "Lazy Scav-8291-1-3-1711127259"
+    },
+    {
+        "name": "Less Annoying Temples",
+        "game": "starfield",
+        "modId": 7741,
+        "fileId": 35748,
+        "source": "nexus",
+        "enabled": true,
+        "vortexId": "Less Annoying Temples-7741-2-0-1716576661"
+    },
+    {
+        "name": "Lively's Sky Suite Expansion",
+        "game": "starfield",
+        "modId": 9891,
+        "fileId": 38317,
+        "source": "nexus",
+        "enabled": true,
+        "vortexId": "Lively's Sky Suite Expansion-9891-1-1-1719071396"
+    },
+    {
+        "name": "Mantis Lair Home",
+        "game": "starfield",
+        "modId": 9852,
+        "fileId": 37796,
+        "source": "nexus",
+        "enabled": true,
+        "vortexId": "MantisLairHome-9852-1-02-1718671819"
+    },
+    {
+        "name": "Mercury Tower Penthouse - Furnished",
+        "game": "starfield",
+        "modId": 9631,
+        "fileId": 42558,
+        "source": "nexus",
+        "enabled": true,
+        "vortexId": "Mercury Tower Penthouse - Furnished-9631-1-1-1718155131"
+    },
+    {
+        "name": "Minimum Enemy Level",
+        "game": "starfield",
+        "modId": 9477,
+        "fileId": 36820,
+        "source": "nexus",
+        "enabled": true,
+        "vortexId": "Minimum Enemy Level-9477-1-2-1718133713"
+    },
+    {
+        "name": "More Buildable Mission Boards",
+        "game": "starfield",
+        "modId": 9634,
+        "fileId": 37045,
+        "source": "nexus",
+        "enabled": true,
+        "vortexId": "More Buildable Mission Boards-9634-1-0-4-1718239432"
+    },
+    {
+        "name": "Ryujin Apartment 306",
+        "game": "starfield",
+        "modId": 9703,
+        "fileId": 43241,
+        "source": "nexus",
+        "enabled": true,
+        "vortexId": "Mwgyn Ryujin Apartment-9703-1-1-1725693171"
+    },
+    {
+        "name": "My Price - No One Dies",
+        "game": "starfield",
+        "modId": 8452,
+        "fileId": 45283,
+        "source": "nexus",
+        "enabled": true,
+        "vortexId": "My Price - No One Dies-8452-1-05-1718668416"
+    },
+    {
+        "name": "Naturally Good Loot - Better Exploration",
+        "game": "starfield",
+        "modId": 9689,
+        "fileId": 38040,
+        "source": "nexus",
+        "enabled": true,
+        "vortexId": "Naturally Good Loot - Exploration-9689-0-2b-1718872925"
+    },
+    {
+        "name": "New Landmark Quests - Cut Content Restored",
+        "game": "starfield",
+        "modId": 5824,
+        "fileId": 20179,
+        "source": "nexus",
+        "enabled": true,
+        "vortexId": "New Landmark Quests-5824-1-35-1698113071"
+    },
+    {
+        "name": "No More Temple Puzzles",
+        "game": "starfield",
+        "modId": 4570,
+        "fileId": 14756,
+        "source": "nexus",
+        "enabled": true,
+        "vortexId": "No More Temple Puzzles-4570-1-0-1-1696351077"
+    },
+    {
+        "name": "Not a noob (Experienced Background)",
+        "game": "starfield",
+        "modId": 9015,
+        "fileId": 34207,
+        "source": "nexus",
+        "enabled": true,
+        "vortexId": "Not A Noob-9015-1-1-1712998560"
+    },
+    {
+        "name": "O.R.B - Outpost Resource Bot",
+        "game": "starfield",
+        "modId": 9767,
+        "fileId": 37404,
+        "source": "nexus",
+        "enabled": true,
+        "vortexId": "O.R.B - Outpost Resource Bot-9767-1-1-1718450185"
+    },
+    {
+        "name": "OUT - Outpost Ultimate Tweaks and add-ons",
+        "game": "starfield",
+        "modId": 7013,
+        "fileId": 36510,
+        "source": "nexus",
+        "enabled": false,
+        "vortexId": "OUT1.57-7013-1-57-1717880320"
+    },
+    {
+        "name": "Open Nearby Doors",
+        "game": "starfield",
+        "modId": 7914,
+        "fileId": 29901,
+        "source": "nexus",
+        "enabled": true,
+        "vortexId": "Open Nearby Doors-7914-1-2-1704945670"
+    },
+    {
+        "name": "Organic Resource Inventory Decluttered",
+        "game": "starfield",
+        "modId": 8964,
+        "fileId": 33988,
+        "source": "nexus",
+        "enabled": true,
+        "vortexId": "Organic Resources Merged-8964-1-0-1712292446"
+    },
+    {
+        "name": "P.A.B - Pilot Assist Bot",
+        "game": "starfield",
+        "modId": 9709,
+        "fileId": 39700,
+        "source": "nexus",
+        "enabled": true,
+        "vortexId": "P.A.B - Pilot Assist Bot-9709-1-1-1718350508"
+    },
+    {
+        "name": "Paradiso Cabin - A Player Home",
+        "game": "starfield",
+        "modId": 9881,
+        "fileId": 40337,
+        "source": "nexus",
+        "enabled": true,
+        "vortexId": "Paradiso Cabin - A Player Home-9881-1-0-1718657267"
+    },
+    {
+        "name": "Personal Atmosphere restores Hazard Protection",
+        "game": "starfield",
+        "modId": 10042,
+        "fileId": 38354,
+        "source": "nexus",
+        "enabled": false,
+        "vortexId": "Personal Atmosphere Hazard Restoration (Main File)-10042-1-0-1719104536"
+    },
+    {
+        "name": "Dread Pirate's Pisa Face",
+        "game": "starfield",
+        "modId": 10300,
+        "fileId": 39115,
+        "source": "nexus",
+        "enabled": false,
+        "vortexId": "PisaFace.7z-10300-1-0-1719769516"
+    },
+    {
+        "name": "Place Doors Yourself",
+        "game": "starfield",
+        "modId": 6601,
+        "fileId": 35794,
+        "source": "nexus",
+        "enabled": false,
+        "vortexId": "Place Doors Yourself-6601-2-0-7beta-1716669473"
+    },
+    {
+        "name": "Ryujin Apartment 306 - Furnished",
+        "game": "starfield",
+        "modId": 9789,
+        "fileId": 43332,
+        "source": "nexus",
+        "enabled": true,
+        "vortexId": "Ryujin Apartment 306 - Furnished-9789-3-0-1725818816"
+    },
+    {
+        "name": "Starfield Hotkeys",
+        "game": "starfield",
+        "modId": 1578,
+        "fileId": 4445,
+        "source": "nexus",
+        "enabled": true,
+        "vortexId": "SFHotkeys-1578-1-0-1694361189"
+    },
+    {
+        "name": "SKK Fast Start New Game (Starfield)",
+        "game": "starfield",
+        "modId": 5971,
+        "fileId": 44856,
+        "source": "nexus",
+        "enabled": false,
+        "vortexId": "SKKFastStartNewGame_011-5971-011-1719330140"
+    },
+    {
+        "name": "SKK Outpost Attack Manager",
+        "game": "starfield",
+        "modId": 6671,
+        "fileId": 38084,
+        "source": "nexus",
+        "enabled": false,
+        "vortexId": "SKKOutpostAttacks_005-6671-005-1718923448"
+    },
+    {
+        "name": "Player homes anywhere",
+        "game": "starfield",
+        "modId": 7271,
+        "fileId": 37845,
+        "source": "nexus",
+        "enabled": true,
+        "vortexId": "SKKPlayerHomesAnywhere_003-7271-003-1718717555"
+    },
+    {
+        "name": "Ship Management Tools (Hack Call Teleport)",
+        "game": "starfield",
+        "modId": 5466,
+        "fileId": 37128,
+        "source": "nexus",
+        "enabled": true,
+        "vortexId": "SKKShipTools_007-5466-007-1718302377"
+    },
+    {
+        "name": "SKK Universal Stash (unlimited storage)",
+        "game": "starfield",
+        "modId": 5670,
+        "fileId": 38388,
+        "source": "nexus",
+        "enabled": true,
+        "vortexId": "SKKUniversalStash_009-5670-009-1719136881"
+    },
+    {
+        "name": "Shades Immersive Looting (strip and loot equipped armor)",
+        "game": "starfield",
+        "modId": 8383,
+        "fileId": 41896,
+        "source": "nexus",
+        "enabled": true,
+        "vortexId": "Shade's Immersive Looting-8383-2-1-3-1717990980"
+    },
+    {
+        "name": "Shades Stealth Takedowns (Knock-out or Lethal)",
+        "game": "starfield",
+        "modId": 8382,
+        "fileId": 36859,
+        "source": "nexus",
+        "enabled": true,
+        "vortexId": "Shade's Stealth Takedowns-8382-1-1-2-1718148452"
+    },
+    {
+        "name": "Shades Glowy Stuff (Glowing Highlight without Scanner - Accessibility Enhancements)",
+        "game": "starfield",
+        "modId": 11818,
+        "fileId": 45203,
+        "source": "nexus",
+        "enabled": true,
+        "vortexId": "Shades Glowy Stuff-11818-1-5-2-1728211050"
+    },
+    {
+        "name": "Shades Vehicle Tuner",
+        "game": "starfield",
+        "modId": 11058,
+        "fileId": 44338,
+        "source": "nexus",
+        "enabled": true,
+        "vortexId": "Shades Vehicle Tuner-11058-2-16-10-1727420988"
+    },
+    {
+        "name": "Ship Builder Categories",
+        "game": "starfield",
+        "modId": 7310,
+        "fileId": 42431,
+        "source": "nexus",
+        "enabled": true,
+        "vortexId": "Ship Builder Categories-7310-1-10-0-1718585322"
+    },
+    {
+        "name": "Ship HUD Tweaks",
+        "game": "starfield",
+        "modId": 5518,
+        "fileId": 35573,
+        "source": "nexus",
+        "enabled": true,
+        "vortexId": "Ship HUD Tweaks-5518-2-1-1716236825"
+    },
+    {
+        "name": "Ship Power Allocation Fix - Revert Unwanted Power Changes",
+        "game": "starfield",
+        "modId": 6707,
+        "fileId": 23776,
+        "source": "nexus",
+        "enabled": true,
+        "vortexId": "Ship Power Allocation Fix-6707-0-1-2-1699733717"
+    },
+    {
+        "name": "Show Power Names",
+        "game": "starfield",
+        "modId": 5129,
+        "fileId": 36566,
+        "source": "nexus",
+        "enabled": true,
+        "vortexId": "Show Power Names-5129-1-6-1717975785"
+    },
+    {
+        "name": "Show Star Names",
+        "game": "starfield",
+        "modId": 5188,
+        "fileId": 37433,
+        "source": "nexus",
+        "enabled": true,
+        "vortexId": "Show Star Names-5188-2-2-1718463905"
+    },
+    {
+        "name": "Show XP on Loading Screens",
+        "game": "starfield",
+        "modId": 5616,
+        "fileId": 36893,
+        "source": "nexus",
+        "enabled": true,
+        "vortexId": "Show XP on Loading Screens-5616-1-2-1718158577"
+    },
+    {
+        "name": "Skill Fixes",
+        "game": "starfield",
+        "modId": 5660,
+        "fileId": 46108,
+        "source": "nexus",
+        "enabled": true,
+        "vortexId": "Skill Fixes-5660-2-0-1718833718"
+    },
+    {
+        "name": "Skully's Suit Display Cases",
+        "game": "starfield",
+        "modId": 10680,
+        "fileId": 40535,
+        "source": "nexus",
+        "enabled": true,
+        "vortexId": "Skully's Suit Displays-10680-1-0-1721705167"
+    },
+    {
+        "name": "SmartDoc - Automated Medicine Inventory Management",
+        "game": "starfield",
+        "modId": 6483,
+        "fileId": 37155,
+        "source": "nexus",
+        "enabled": true,
+        "vortexId": "SmartDoc-6483-2-0-0-1718312412"
+    },
+    {
+        "name": "Smarter Spacesuit Auto-Hide",
+        "game": "starfield",
+        "modId": 8423,
+        "fileId": 44576,
+        "source": "nexus",
+        "enabled": true,
+        "vortexId": "Smarter Spacesuit Auto-Hide-8423-2-2-0-1727740172"
+    },
+    {
+        "name": "Sona ponytail haircut",
+        "game": "starfield",
+        "modId": 5879,
+        "fileId": 20344,
+        "source": "nexus",
+        "enabled": true,
+        "vortexId": "SonaPonytailPlatinum-5879-1-0-0-1698177060"
+    },
+    {
+        "name": "StarUI Configurator",
+        "game": "starfield",
+        "modId": 5467,
+        "fileId": 18964,
+        "source": "nexus",
+        "enabled": true,
+        "vortexId": "StarUI Configurator-5467-1-1-1697717225"
+    },
+    {
+        "name": "StarUI HUD",
+        "game": "starfield",
+        "modId": 3444,
+        "fileId": 44739,
+        "source": "nexus",
+        "enabled": true,
+        "vortexId": "StarUI HUD-3444-1-2-1697031805"
+    },
+    {
+        "name": "StarUI Inventory",
+        "game": "starfield",
+        "modId": 773,
+        "fileId": 45019,
+        "source": "nexus",
+        "enabled": true,
+        "vortexId": "StarUI Inventory-773-2-3-2-1696885797"
+    },
+    {
+        "name": "StarUI Outpost",
+        "game": "starfield",
+        "modId": 5766,
+        "fileId": 44815,
+        "source": "nexus",
+        "enabled": true,
+        "vortexId": "StarUI Outpost-5766-1-2-1699971409"
+    },
+    {
+        "name": "StarUI Ship Builder",
+        "game": "starfield",
+        "modId": 6402,
+        "fileId": 44741,
+        "source": "nexus",
+        "enabled": true,
+        "vortexId": "StarUI Ship Builder-6402-1-2-1699970499+PATCH"
+    },
+    {
+        "name": "StarUI Workbench",
+        "game": "starfield",
+        "modId": 4966,
+        "fileId": 44847,
+        "source": "nexus",
+        "enabled": true,
+        "vortexId": "StarUI Workbench-4966-1-1-1697259449"
+    },
+    {
+        "name": "Starborn Supervisor",
+        "game": "starfield",
+        "modId": 8771,
+        "fileId": 35279,
+        "source": "nexus",
+        "enabled": true,
+        "vortexId": "Starborn Supervisor 1.11.36 Should Work-8771-1-2-1716021294"
+    },
+    {
+        "name": "Starborn's Bounty",
+        "game": "starfield",
+        "modId": 4978,
+        "fileId": 17001,
+        "source": "nexus",
+        "enabled": true,
+        "vortexId": "Starborn's Bounty - Always Loot-4978-1-0-3-1696969196"
+    },
+    {
+        "name": "Starfield Community Patch (SFCP)",
+        "game": "starfield",
+        "modId": 1,
+        "fileId": 44566,
+        "source": "nexus",
+        "enabled": true,
+        "vortexId": "Starfield Community Patch-1-0-1-6-1718654816"
+    },
+    {
+        "name": "Starfield Plugin Bridge",
+        "game": "starfield",
+        "modId": 10189,
+        "fileId": 39936,
+        "source": "nexus",
+        "enabled": false,
+        "vortexId": "Starfield Plugin Bridge-10189-1-0-1720738172"
+    },
+    {
+        "name": "TN's Separated Categories",
+        "game": "starfield",
+        "modId": 7467,
+        "fileId": 38209,
+        "source": "nexus",
+        "enabled": true,
+        "vortexId": "TN's Separated Categories-7467-v1-1-1718994424"
+    },
+    {
+        "name": "Take Items Through Unity - No Console Commands",
+        "game": "starfield",
+        "modId": 7309,
+        "fileId": 37304,
+        "source": "nexus",
+        "enabled": true,
+        "vortexId": "TakeItemsThroughUnity-7309-2-0-1-1718402847"
+    },
+    {
+        "name": "The Core Residence - Furnished",
+        "game": "starfield",
+        "modId": 9693,
+        "fileId": 40550,
+        "source": "nexus",
+        "enabled": true,
+        "vortexId": "The Core Residence - Furnished-9693-1-2-1718451093"
+    },
+    {
+        "name": "The Gang's All Here - Multiple Companions and Crew",
+        "game": "starfield",
+        "modId": 7469,
+        "fileId": 45721,
+        "source": "nexus",
+        "enabled": true,
+        "vortexId": "The Gang's All Here-7469-2-6-1711031231+CK_SOURCE"
+    },
+    {
+        "name": "The Spyder",
+        "game": "starfield",
+        "modId": 10707,
+        "fileId": 40875,
+        "source": "nexus",
+        "enabled": true,
+        "vortexId": "The Spyder-10707-1-1-1721967279"
+    },
+    {
+        "name": "The Void that Stares Back",
+        "game": "starfield",
+        "modId": 12235,
+        "fileId": 46448,
+        "source": "nexus",
+        "enabled": true,
+        "vortexId": "The Void that Stares Back-12235-1-0-1729901851"
+    },
+    {
+        "name": "The Well Apartment - Furnished",
+        "game": "starfield",
+        "modId": 9721,
+        "fileId": 39281,
+        "source": "nexus",
+        "enabled": true,
+        "vortexId": "The Well Apartment - Furnished-9721-1-1-1718362647"
+    },
+    {
+        "name": "Unarmed Mastery",
+        "game": "starfield",
+        "modId": 10047,
+        "fileId": 39116,
+        "source": "nexus",
+        "enabled": false,
+        "vortexId": "Unarmed mastery-10047-1-0-1719113535"
+    },
+    {
+        "name": "Unity Plus - Background and Trait Changer",
+        "game": "starfield",
+        "modId": 8049,
+        "fileId": 40772,
+        "source": "nexus",
+        "enabled": false,
+        "vortexId": "Unity Plus-8049-2-3-1722208584"
+    },
+    {
+        "name": "Vanilla Flashlight Improved (VFI)",
+        "game": "starfield",
+        "modId": 701,
+        "fileId": 37734,
+        "source": "nexus",
+        "enabled": true,
+        "vortexId": "Vanilla Flashlight Improved-701-3-0-1-1718634794"
+    },
+    {
+        "name": "Var'uun'kai - Dazra - Furnished Player Home",
+        "game": "starfield",
+        "modId": 11888,
+        "fileId": 45156,
+        "source": "nexus",
+        "enabled": true,
+        "vortexId": "Var'uun'kai - Dazra - Furnished Player Home-11888-1-0-1728168558"
+    },
+    {
+        "name": "Venpi's Galactic Pawn Shop",
+        "game": "starfield",
+        "modId": 6982,
+        "fileId": 38360,
+        "source": "nexus",
+        "enabled": true,
+        "vortexId": "Venworks-PawnShop-6982-3-0-2-1719110227"
+    },
+    {
+        "name": "Visible Companion Affinity",
+        "game": "starfield",
+        "modId": 7028,
+        "fileId": 31561,
+        "source": "nexus",
+        "enabled": true,
+        "vortexId": "Visible Companion Affinity v1.21-7028-1-21-1707950304"
+    },
+    {
+        "name": "Working Stoves",
+        "game": "starfield",
+        "modId": 6878,
+        "fileId": 37996,
+        "source": "nexus",
+        "enabled": false,
+        "vortexId": "Working Stoves-Cook Station-6878-2-0-1718839856"
+    },
+    {
+        "name": "ZeeOgres Bat File Collection",
+        "game": "starfield",
+        "modId": 10327,
+        "fileId": 39225,
+        "source": "nexus",
+        "enabled": true,
+        "vortexId": "ZeeOgres bat File Collection-10327-1-0-1-1719864814"
+    },
+    {
+        "name": "ZeeOgre's AIO Gameplay Tweaks",
+        "game": "starfield",
+        "modId": 10558,
+        "fileId": 40741,
+        "source": "nexus",
+        "enabled": false,
+        "vortexId": "ZeeOgresAIOGameplayTweaks-10558-1-0-2-1722146414"
+    },
+    {
+        "name": "ZeeOgre's AIO Gameplay Tweaks",
+        "game": "starfield",
+        "modId": 10558,
+        "fileId": 40741,
+        "source": "nexus",
+        "enabled": false,
+        "vortexId": "ZeeOgresAIOGameplayTweaks-10558-1-0-2-1722146414+SOURCE"
+    },
+    {
+        "name": "ZeeOgre's Denser Outposts",
+        "game": "starfield",
+        "modId": 10485,
+        "fileId": 39816,
+        "source": "nexus",
+        "enabled": false,
+        "vortexId": "ZeeOgresDenserOutposts-10485-1-0-0-1720566239"
+    },
+    {
+        "name": "ZeeOgre's Denser Outposts",
+        "game": "starfield",
+        "modId": 10485,
+        "fileId": 39816,
+        "source": "nexus",
+        "enabled": false,
+        "vortexId": "ZeeOgresDenserOutposts-10485-1-0-0-1720566239+SOURCE"
+    },
+    {
+        "name": "ZeeOgre's Easy Repair Button",
+        "game": "starfield",
+        "modId": 10664,
+        "fileId": 40578,
+        "source": "nexus",
+        "enabled": false,
+        "vortexId": "ZeeOgresEasyRepairButton-10664-1-0-1-1721776648"
+    },
+    {
+        "name": "ZeeOgre's Easy Repair Button",
+        "game": "starfield",
+        "modId": 10664,
+        "fileId": 40578,
+        "source": "nexus",
+        "enabled": false,
+        "vortexId": "ZeeOgresEasyRepairButton-10664-1-0-1-1721776648+SOURCE"
+    },
+    {
+        "name": "ZeeOgre's Easy Repair Button",
+        "game": "starfield",
+        "modId": 10664,
+        "fileId": 41040,
+        "source": "nexus",
+        "enabled": false,
+        "vortexId": "ZeeOgresEasyRepairButton-10664-1-0-3-1722627606"
+    },
+    {
+        "name": "ZeeOgre's Hand Scanner Tweaks",
+        "game": "starfield",
+        "modId": 10296,
+        "fileId": 39106,
+        "source": "nexus",
+        "enabled": false,
+        "vortexId": "ZeeOgresHandScannerTweaks-10296-1-0-0-1719765142"
+    },
+    {
+        "name": "ZeeOgre's Hand Scanner Tweaks",
+        "game": "starfield",
+        "modId": 10296,
+        "fileId": 39106,
+        "source": "nexus",
+        "enabled": false,
+        "vortexId": "ZeeOgresHandScannerTweaks-10296-1-0-0-1719765142+SOURCE"
+    },
+    {
+        "name": "ZeeOgre's NUKE IT FROM ORBIT Button",
+        "game": "starfield",
+        "modId": 10682,
+        "fileId": 40537,
+        "source": "nexus",
+        "enabled": false,
+        "vortexId": "ZeeOgresNukeItFromOrbit-10682-1-0-0-1721705922"
+    },
+    {
+        "name": "ZeeOgre's NUKE IT FROM ORBIT Button",
+        "game": "starfield",
+        "modId": 10682,
+        "fileId": 40537,
+        "source": "nexus",
+        "enabled": false,
+        "vortexId": "ZeeOgresNukeItFromOrbit-10682-1-0-0-1721705922+SOURCE"
+    },
+    {
+        "name": "ZeeOgre's Outpost Tweaks",
+        "game": "starfield",
+        "modId": 10303,
+        "fileId": 39740,
+        "source": "nexus",
+        "enabled": false,
+        "vortexId": "ZeeOgresOutpostTweaks-10303-1-0-2-1720485826"
+    },
+    {
+        "name": "ZeeOgre's Outpost Tweaks",
+        "game": "starfield",
+        "modId": 10303,
+        "fileId": 39740,
+        "source": "nexus",
+        "enabled": false,
+        "vortexId": "ZeeOgresOutpostTweaks-10303-1-0-2-1720485826+SOURCE"
+    },
+    {
+        "name": "ZeeOgre's Ship Tweaks",
+        "game": "starfield",
+        "modId": 10302,
+        "fileId": 39119,
+        "source": "nexus",
+        "enabled": false,
+        "vortexId": "ZeeOgresShipTweaks-10302-1-0-0-1719772610"
+    },
+    {
+        "name": "ZeeOgre's Ship Tweaks",
+        "game": "starfield",
+        "modId": 10302,
+        "fileId": 39119,
+        "source": "nexus",
+        "enabled": false,
+        "vortexId": "ZeeOgresShipTweaks-10302-1-0-0-1719772610+SOURCE"
+    },
+    {
+        "name": "No visions for artifacts powers and unity",
+        "game": "starfield",
+        "modId": 3128,
+        "fileId": 8909,
+        "source": "nexus",
+        "enabled": true,
+        "vortexId": "no_visions_aio-3128-1-0-1695053712"
+    },
+    {
+        "name": "Starfield Achievement Enabler",
+        "game": "starfield",
+        "modId": 1402,
+        "fileId": 42019,
+        "source": "nexus",
+        "enabled": true,
+        "vortexId": "vcruntime140_1.dll-1402-1-4-4-1718128544"
+    },
+    {
+        "name": "Rev-8 Ship Vendor Fix",
+        "game": "starfield",
+        "modId": 11098,
+        "fileId": 42204,
+        "source": "nexus",
+        "enabled": true,
+        "vortexId": "vehiclevendor-11098-1-0-1724430670"
+    }
+]

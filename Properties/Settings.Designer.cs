@@ -44,7 +44,7 @@ namespace ZO.LoadOrderManager.Properties {
         
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("0.0.13.0")]
+        [global::System.Configuration.DefaultSettingValueAttribute("0.0.16.0")]
         public string version {
             get {
                 return ((string)(this["version"]));

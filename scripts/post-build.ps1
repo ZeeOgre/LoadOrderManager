@@ -5,6 +5,9 @@ param (
     [bool]$manual = $false
 )
 
+# Add a 5-second delay to ensure the MSI file is finished writing
+Start-Sleep -Seconds 5
+
 # Function to execute a command and handle errors
 function Execute-Command {
     param (
@@ -74,17 +77,31 @@ if (-not $manual) {
 
 Write-Output "Tag Name: $tagName"
 
-# Ensure on correct branch
+# Ensure on correct branch and push dev if necessary
 $currentBranch = git rev-parse --abbrev-ref HEAD
 Write-Output "Current Branch: $currentBranch"
 
 if ($currentBranch -eq 'master') {
     # Clobber down to dev
     Execute-Command "git checkout dev"
-    Execute-Command "git merge -X theirs master"
-    Write-Output "Merged master INTO dev with conflicts resolved in favor of master."
+    Execute-Command "git merge -X ours master"
+    Write-Output "Merged master INTO dev with conflicts resolved in favor of dev."
+
+    # Push dev to origin to ensure it's up to date (Line to Add)
+    Execute-Command "git push origin dev"
+    Write-Output "Pushed dev branch to origin."
+
     $currentBranch = 'dev'
 } elseif ($currentBranch -eq 'dev') {
+    # Push dev to origin to ensure it's up to date (Line to Add)
+    try {
+        Execute-Command "git push origin dev"
+        Write-Output "Pushed dev branch to origin."
+    } catch {
+        Write-Error "Failed to push dev branch to origin. Please check your network connection, authentication, and branch protection rules."
+        exit 1
+    }
+
     # Friendly merge up to master
     Execute-Command "git checkout master"
     Execute-Command "git merge dev"
@@ -114,7 +131,13 @@ if ($configuration -eq 'GitRelease') {
     }
 
     Execute-Command "git tag $tagName"
-    Execute-Command "git push origin $tagName"
+    # Push the tag to remote, force-pushing to overwrite if necessary
+    try {
+        Execute-Command "git push --force origin $tagName"
+    } catch {
+        Write-Error "Failed to push tag $tagName to origin."
+        exit 1
+    }
     Write-Output "Tagged and pushed release: $tagName"
 
     # Create GitHub release

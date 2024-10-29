@@ -28,7 +28,8 @@ namespace ZO.LoadOrderManager
         {
             InitializationManager.StartInitialization(nameof(LoadOrderWindow));
             InitializeComponent();
-            
+            this.Closing += LoadOrderWindow_Closing; // Subscribe to the Closing event
+
 
             try
             {
@@ -88,6 +89,8 @@ namespace ZO.LoadOrderManager
             }
         }
 
+
+
         private void LoadOrderWindow_Loaded(object sender, RoutedEventArgs e)
         {
             var viewModel = DataContext as LoadOrderWindowViewModel;
@@ -134,6 +137,19 @@ namespace ZO.LoadOrderManager
         private void LoadOrderWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
         {
             App.LogDebug("MainWindow is closing.");
+
+            // Perform DBManager.FlushDB on shutdown
+            try
+            {
+                DbManager.CompactFileInfoTable();
+                DbManager.CompactExternalIDsTable();
+                DbManager.FlushDB();
+                App.LogDebug("Database flushed successfully.");
+            }
+            catch (Exception ex)
+            {
+                App.LogDebug($"Error flushing database: {ex.Message}");
+            }
         }
 
         private void Hyperlink_RequestNavigate(object sender, RequestNavigateEventArgs e)
@@ -218,14 +234,17 @@ namespace ZO.LoadOrderManager
                 }
                 else if (e.Key == Key.Space)
                 {
-                    // Toggle IsActive state when the spacebar is pressed
+                    // Toggle IsActive state when the spacebar is pressed for all selected items
                     if (viewModel.SelectedItems.Count > 0)
                     {
-                        var selectedItem = viewModel.SelectedItems[0] as LoadOrderItemViewModel;
-                        if (selectedItem != null)
+                        // Iterate through all the selected items and execute the ToggleEnableCheckboxCommand
+                        foreach (var selectedItem in viewModel.SelectedItems)
                         {
-                            selectedItem.IsActive = !selectedItem.IsActive;
-                            viewModel.OnPropertyChanged(nameof(selectedItem.IsActive));
+                            if (selectedItem is LoadOrderItemViewModel itemViewModel)
+                            {
+                                // Trigger the command that handles toggling the IsActive state
+                                viewModel.ToggleEnableCommand.Execute(itemViewModel);
+                            }
                         }
                     }
                 }

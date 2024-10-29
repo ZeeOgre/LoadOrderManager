@@ -1,9 +1,10 @@
+using System.ComponentModel;
 using System.Data.SQLite;
 using System.Diagnostics;
 
 namespace ZO.LoadOrderManager
 {
-    public class LoadOut
+    public class LoadOut : INotifyPropertyChanged, IEquatable<LoadOut>
     {
         public long ProfileID { get; set; }
         public required string Name { get; set; }
@@ -329,7 +330,7 @@ namespace ZO.LoadOrderManager
             enabledPlugins.Clear();
             foreach (var pluginID in pluginIDs)
             {
-                _ = enabledPlugins.Add(pluginID);
+               _ = enabledPlugins.Add(pluginID);
             }
             _ = WriteProfile();
         }
@@ -339,14 +340,15 @@ namespace ZO.LoadOrderManager
             return enabledPlugins.Contains(pluginID);
         }
 
+        public bool Equals(LoadOut? other)
+        {
+            if (other is null) return false; // Handle null case
+            return ProfileID == other.ProfileID;
+        }
 
         public override bool Equals(object obj)
         {
-            if (obj is LoadOut other)
-            {
-                return ProfileID == other.ProfileID;
-            }
-            return false;
+            return Equals(obj as LoadOut); // Use the type-safe Equals method
         }
 
         public override int GetHashCode()
@@ -354,7 +356,13 @@ namespace ZO.LoadOrderManager
             return ProfileID.GetHashCode();
         }
 
+        // INotifyPropertyChanged implementation
+        public event PropertyChangedEventHandler? PropertyChanged;
 
+        protected void OnPropertyChanged(string propertyName)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
 
     }
 }
