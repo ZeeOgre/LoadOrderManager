@@ -37,28 +37,24 @@ namespace ZO.LoadOrderManager
                 {
                     InitializationManager.StartInitialization(nameof(FileManager));
                     App.LogDebug("FileManager: Starting initialization...");
+                    FileMonitor.InitializeAllMonitors();
                     InitializeFavoriteGroupSetAndLoadOut();
+                    //// Retrieve the singleton GroupSet and LoadOut from the database
+                    //var singletonGroupSet = GroupSet.LoadGroupSet(2);
+                    //var singletonLoadOut = LoadOut.Load(2);
 
+                    //AggLoadInfo.Instance.ActiveLoadOut = singletonLoadOut;
+                    //AggLoadInfo.Instance.ActiveGroupSet = singletonGroupSet;
+
+                    // Load data from the database INTO the AggLoadInfo instance
                     AggLoadInfo.Instance.InitFromDatabase();
                     FileMonitor.InitializeAllMonitors();
-                    GameFolderMonitor.InitializeAllMonitors();
-
+                    // Check if files have already been loaded
                     if (AggLoadInfo.Instance.ActiveGroupSet.AreFilesLoaded)
                     {
-                        InitializationManager.ReportProgress(25, "Files already loaded...");
-                        
-                        App.LogDebug("FileManager: Files have already been loaded. Skipping plugins initialization.");
-                        
-                        FileManager.ParseContentCatalogTxt(ContentCatalogFile, AggLoadInfo.Instance.ActiveGroupSet.GroupSetID);
-                        InitializationManager.ReportProgress(30, "Content catalog parsed");
-
-
-                        InitializationManager.ReportProgress(31, "Starting GameFolder Scan");
-                        FileManager.ScanGameDirectoryForStrays(true, AggLoadInfo.Instance.ActiveGroupSet.GroupSetID, true);
-                        InitializationManager.ReportProgress(95, "Finished GameFolder Scan");
-
+                        InitializationManager.ReportProgress(75, "Files already loaded...");
                         InitializationManager.EndInitialization(nameof(FileManager));
-
+                        App.LogDebug("FileManager: Files have already been loaded. Skipping file initialization.");
                         _initialized = true;
                         return;
                     }
@@ -70,13 +66,13 @@ namespace ZO.LoadOrderManager
                     _ = FileManager.ParsePluginsTxt(AggLoadInfo.Instance, PluginsFile);
                     InitializationManager.ReportProgress(21, "Plugins parsed");
 
-                    FileManager.ParseContentCatalogTxt(ContentCatalogFile, AggLoadInfo.Instance.ActiveGroupSet.GroupSetID);
+                    FileManager.ParseContentCatalogTxt();
                     InitializationManager.ReportProgress(22, "Content catalog parsed");
 
 
                     InitializationManager.ReportProgress(21, "Starting GameFolder Scan");
                     //FileManager.ScanGameDirectoryForStraysAsync();
-                    FileManager.ScanGameDirectoryForStrays(true, AggLoadInfo.Instance.ActiveGroupSet.GroupSetID);
+                    FileManager.ScanGameDirectoryForStrays(true);
 
                     FileManager.MarkLoadOutComplete(AggLoadInfo.Instance);
                     InitializationManager.ReportProgress(89, "LoadOut marked complete");

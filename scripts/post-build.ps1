@@ -74,26 +74,17 @@ if (-not $manual) {
 
 Write-Output "Tag Name: $tagName"
 
-# Ensure on correct branch and push dev if necessary
+# Ensure on correct branch
 $currentBranch = git rev-parse --abbrev-ref HEAD
 Write-Output "Current Branch: $currentBranch"
 
 if ($currentBranch -eq 'master') {
     # Clobber down to dev
     Execute-Command "git checkout dev"
-    Execute-Command "git merge -X ours master"
-    Write-Output "Merged master INTO dev with conflicts resolved in favor of dev."
-
-    # Push dev to origin to ensure it's up to date (Line to Add)
-    Execute-Command "git push origin dev"
-    Write-Output "Pushed dev branch to origin."
-
+    Execute-Command "git merge -X theirs master"
+    Write-Output "Merged master INTO dev with conflicts resolved in favor of master."
     $currentBranch = 'dev'
 } elseif ($currentBranch -eq 'dev') {
-    # Push dev to origin to ensure it's up to date (Line to Add)
-    Execute-Command "git push origin dev"
-    Write-Output "Pushed dev branch to origin."
-
     # Friendly merge up to master
     Execute-Command "git checkout master"
     Execute-Command "git merge dev"
@@ -123,13 +114,7 @@ if ($configuration -eq 'GitRelease') {
     }
 
     Execute-Command "git tag $tagName"
-    # Push the tag to remote, force-pushing to overwrite if necessary
-try {
-    Execute-Command "git push --force origin $tagName"
-} catch {
-    Write-Error "Failed to push tag $tagName to origin."
-    exit 1
-}
+    Execute-Command "git push origin $tagName"
     Write-Output "Tagged and pushed release: $tagName"
 
     # Create GitHub release

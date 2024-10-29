@@ -30,27 +30,11 @@ namespace ZO.LoadOrderManager
         public long? GroupID { get; set; } = 1; // Default group ID
         public long? GroupOrdinal { get; set; }
         public long? GroupSetID { get; set; }
-        
-        public bool InGameFolder
-        {
-            get => State.HasFlag(ModState.GameFolder);
-            set
-            {
-                if (value)
-                {
-                    State |= ModState.GameFolder; // Set the GameFolder flag
-                }
-                else
-                {
-                    State &= ~ModState.GameFolder; // Unset the GameFolder flag
-                }
-            }
-        }
 
         public Plugin()
         {
             Files = new List<FileInfo>();
-            if (!string.IsNullOrEmpty(PluginName))
+            if (Files.Count == 0)
             {
                 Files.Add(new FileInfo(PluginName));
             }
@@ -204,12 +188,12 @@ namespace ZO.LoadOrderManager
 
                 if (versionParts.Length >= 2 && long.TryParse(versionParts[0], out long timestamp))
                 {
-                    DTStamp = DateTimeOffset.FromUnixTimeSeconds(timestamp).ToString("o");
+                    DTStamp = DateTimeOffset.FromUnixTimeSeconds(timestamp).ToString("yyyy-MM-dd HH:mm:ss");
                     Version = timestamp > 0 && versionParts[1].All(c => c >= 32 && c <= 126) ? versionParts[1] : string.Empty;
                 }
                 else
                 {
-                    DTStamp = DateTimeOffset.FromUnixTimeSeconds(0).ToString("o");
+                    DTStamp = DateTimeOffset.FromUnixTimeSeconds(0).ToString("yyyy-MM-dd HH:mm:ss");
                     Version = string.Empty;
                 }
 
@@ -249,7 +233,7 @@ namespace ZO.LoadOrderManager
                 {
                     Filename = file.Name,
                     RelativePath = relativePath,
-                    DTStamp = file.LastWriteTime.ToString("o"),
+                    DTStamp = file.LastWriteTime.ToString("yyyy-MM-dd HH:mm:ss"),
                     HASH = newHash,
                     Flags = FileFlags.None
                 }
@@ -346,16 +330,10 @@ namespace ZO.LoadOrderManager
                             // Validate the new state to ensure no conflicting conditions
                             if (newState.HasFlag(ModState.None) && newState != ModState.None)
                             {
-                                newState &= ~ModState.None; // Unset the None flag if other flags are present
-                            }
-                            else if (newState == ModState.None)
-                            {
-                                // If the only flag is None, keep it as None
-                                newState = ModState.None;
+                                newState = ModState.None; // If None is set, ensure no other flags are set
                             }
 
                             this.State = newState;
-
                         }
                         // Retrieve the existing State value from the database and merge with the new value
                         if (!reader.IsDBNull(3))
@@ -484,7 +462,7 @@ namespace ZO.LoadOrderManager
                 transaction.Rollback(); // Rollback the transaction in case of an error
                 throw;
             }
-            //AggLoadInfo.Instance.UpdatePlugin(this);
+
             return this;
         }
 
@@ -512,52 +490,38 @@ namespace ZO.LoadOrderManager
             using var connection = DbManager.Instance.GetConnection();
 
             using var transaction = connection.BeginTransaction();
-            long? groupSetID = this.GroupSetID ?? activeGroupSetID;
+
             try
             {
                 // Combine the move and sibling ordinal adjustment into one SQL query
                 using var updateCommand = new SQLiteCommand(connection)
                 {
                     CommandText = @"
-                        -- Move the plugin to the new group and calculate the new ordinal
-                        UPDATE GroupSetPlugins
-                        SET GroupID = @NewGroupID, GroupSetID = @NewGroupSetID, Ordinal = (
-                            SELECT COALESCE(MAX(Ordinal), 0) + 1
-                            FROM GroupSetPlugins
-                            WHERE GroupID = @NewGroupID AND GroupSetID = @NewGroupSetID
-                        )
-                        WHERE PluginID = @PluginID AND GroupID = @OldGroupID AND GroupSetID = @OldGroupSetID;
+                -- Move the plugin to the new group and calculate the new ordinal
+                UPDATE GroupSetPlugins
+                SET GroupID = @NewGroupID, GroupSetID = @NewGroupSetID, Ordinal = (
+                    SELECT COALESCE(MAX(Ordinal), 0) + 1
+                    FROM GroupSetPlugins
+                    WHERE GroupID = @NewGroupID AND GroupSetID = @NewGroupSetID
+                )
+                WHERE PluginID = @PluginID AND GroupID = @OldGroupID AND GroupSetID = @OldGroupSetID;
 
-                        -- Decrement the ordinals of the old siblings after moving the plugin
-                        UPDATE GroupSetPlugins
-                        SET Ordinal = Ordinal - 1
-                        WHERE GroupID = @OldGroupID AND GroupSetID = @OldGroupSetID AND Ordinal > @OldOrdinal;
-
-                        -- Return the new ordinal value
-                        SELECT Ordinal
-                        FROM GroupSetPlugins
-                        WHERE PluginID = @PluginID AND GroupID = @NewGroupID AND GroupSetID = @NewGroupSetID;"
+                -- Decrement the ordinals of the old siblings after moving the plugin
+                UPDATE GroupSetPlugins
+                SET Ordinal = Ordinal - 1
+                WHERE GroupID = @OldGroupID AND GroupSetID = @OldGroupSetID AND Ordinal > @OldOrdinal;"
                 };
-
-               
-
-                // Set the new ordinal value to this.GroupOrdinal
-                
 
                 // Add the shared parameters for both queries
                 updateCommand.Parameters.AddWithValue("@NewGroupID", newGroupId);
                 updateCommand.Parameters.AddWithValue("@NewGroupSetID", activeGroupSetID);
                 updateCommand.Parameters.AddWithValue("@PluginID", this.PluginID);
                 updateCommand.Parameters.AddWithValue("@OldGroupID", this.GroupID);
-                
-                updateCommand.Parameters.AddWithValue("@OldGroupSetID", this.GroupSetID ?? activeGroupSetID);
+                updateCommand.Parameters.AddWithValue("@OldGroupSetID", this.GroupSetID);
                 updateCommand.Parameters.AddWithValue("@OldOrdinal", this.GroupOrdinal);
 
-                // Execute the command and retrieve the new ordinal value
-                long newOrdinal = (long)updateCommand.ExecuteScalar();
-                this.GroupOrdinal = newOrdinal;
-                
-                //updateCommand.ExecuteNonQuery();
+                // Execute the combined queries
+                updateCommand.ExecuteNonQuery();
 
                 // Commit the transaction
                 transaction.Commit();
@@ -575,9 +539,8 @@ namespace ZO.LoadOrderManager
             // Update the in-memory object
             this.GroupID = newGroupId;
             this.GroupSetID = newGroupSetId;
-            //this.GroupOrdinal = null; // The new ordinal will be set by the database
+            this.GroupOrdinal = null; // The new ordinal will be set by the database
 
-            AggLoadInfo.Instance.UpdatePlugin(this);
             AggLoadInfo.Instance.RefreshMetadataFromDB();
 
         }

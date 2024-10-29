@@ -20,13 +20,12 @@ public class LoadOrdersViewModel : ViewModelBase
         {
             if (InitializationManager.IsAnyInitializing()) return;
 
-            if (SetProperty(ref _selectedGroupSet, value)) // This will only proceed if the value changes
+            if (SetProperty(ref _selectedGroupSet, value))
             {
                 OnSelectedGroupSetChanged();
             }
         }
     }
-
 
 
     private void OnSelectedGroupSetChanged()
@@ -51,7 +50,7 @@ public class LoadOrdersViewModel : ViewModelBase
     private void OnSelectedLoadOutChanged()
     {
         RefreshActivePlugins(_selectedLoadOut);
-        //RefreshData();
+        RefreshData();
     }
 
     public bool Suppress997 { get; set; }
@@ -71,7 +70,6 @@ public class LoadOrdersViewModel : ViewModelBase
         {
             Items.Clear();
             AggLoadInfo.Instance.PopulateLoadOrders(this, groupSet, loadOut, suppress997, isCached);
-            AggLoadInfo.Instance.SetDirty(false);
         });
     }
 
@@ -85,10 +83,33 @@ public class LoadOrdersViewModel : ViewModelBase
 
         //LoadData(activeGroupSet, activeLoadOut, suppress997: false, isCached: false);
         LoadData(activeGroupSet, activeLoadOut, this.Suppress997, this.IsCached);
-        OnPropertyChanged(nameof(Items));
+        //OnPropertyChanged(nameof(Items));
 
 
+        // If there is a cached group, also populate it
+        //var cachedGroupSet = AggLoadInfo.GetCachedGroupSet1();
+        //if (cachedGroupSet != null)
+        //{
+        //    var cachedViewModel = new LoadOrdersViewModel();
+        //    AggLoadInfo.Instance.PopulateLoadOrders(cachedViewModel, cachedGroupSet, activeLoadOut, suppress997: true, isCached: true);
+        //}
     }
+
+    //public void OnDataRefreshed(object? sender, EventArgs e)
+    //{
+    //    AggLoadInfo.Instance.PerformLockedAction(() =>
+    //    {
+    //        // Reload the underlying data for the main LoadOrders
+    //        RefreshData();
+
+    //        // Unset the dirty flag on the sender after processing
+    //        if (sender is AggLoadInfo aggLoadInfo)
+    //        {
+    //            aggLoadInfo.SetDirty(false);
+    //        }
+    //    });
+    //}
+
 
 
     public void RefreshActivePlugins(LoadOut? loadOut = null)
@@ -105,7 +126,6 @@ public class LoadOrdersViewModel : ViewModelBase
                 item.IsActive = loadOut.IsPluginEnabled(pluginID);
             }
         }
-        //OnPropertyChanged(nameof(Items)); // Notify the TreeView to refresh
-        RefreshData();
+        OnPropertyChanged(nameof(Items)); // Notify the TreeView to refresh
     }
 }
