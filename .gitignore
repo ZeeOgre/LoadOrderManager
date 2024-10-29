@@ -361,3 +361,9 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+[Ii]nstaller/*-cache/
+
+# Ignore Installer cache
+[Ii]nstaller/*-cache/**
+[Ii]nstaller/*-cache/**/*
