@@ -1,5 +1,6 @@
 using Microsoft.Win32; // For OpenFileDialog
 using System.Collections.ObjectModel;
+using System.Data.SQLite;
 using System.Windows;
 using System.Windows.Input;
 
@@ -182,6 +183,9 @@ namespace ZO.LoadOrderManager
                 _ = MessageBox.Show($"Error during vacuum and reindex: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+
+        
+
 
         public static void CleanOrdinals(bool refreshMetadata = true)
         {

@@ -24,6 +24,7 @@ namespace ZO.LoadOrderManager
         public ICommand EditContentCatalogCommand { get; }
         public ICommand ImportContextCatalogCommand { get; }
         public ICommand ScanGameFolderCommand { get; }
+        public ICommand ScanModFolderCommand { get; }
 
         public ICommand CopyTextCommand { get; }
         public ICommand DeleteCommand { get; }
@@ -229,22 +230,6 @@ namespace ZO.LoadOrderManager
         {
 
             FileManager.ParseContentCatalogTxt(FileManager.ContentCatalogFile, AggLoadInfo.Instance.ActiveGroupSet.GroupSetID);
-            //var openFileDialog = new OpenFileDialog
-            //{
-            //    InitialDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "starfield"),
-            //    Filter = "Text files (*.txt)|*.txt|All files (*.*)|*.*",
-            //    Title = "Select ContentCatalog.txt file"
-            //};
-
-            //if (openFileDialog.ShowDialog() == true)
-            //{
-            //    var selectedFile = openFileDialog.FileName;
-            //    FileManager.ParseContentCatalogTxt(selectedFile);
-
-            //    _ = MessageBox.Show("Content catalog imported successfully.", "Import Content Catalog", MessageBoxButton.OK, MessageBoxImage.Information);
-
-            //    RefreshData();
-            //}
             RefreshData();
         }
 
@@ -259,12 +244,12 @@ namespace ZO.LoadOrderManager
             if (result == MessageBoxResult.Yes)
             {
                 // Perform a full scan
-                FileManager.ScanGameDirectoryForStrays(fullScan: true,AggLoadInfo.Instance.ActiveGroupSet.GroupSetID);
+                FileManager.ScanGameDirectoryForStrays(fullScan: true,AggLoadInfo.Instance.ActiveGroupSet.GroupSetID, false);
             }
             else if (result == MessageBoxResult.No)
             {
                 // Perform a quick scan
-                FileManager.ScanGameDirectoryForStrays(fullScan: false, AggLoadInfo.Instance.ActiveGroupSet.GroupSetID);
+                FileManager.ScanGameDirectoryForStrays(fullScan: false, AggLoadInfo.Instance.ActiveGroupSet.GroupSetID, false);
             }
             else
             {
@@ -461,41 +446,6 @@ namespace ZO.LoadOrderManager
         }
 
 
-
-
-        //private void ToggleActive(LoadOrderItemViewModel itemViewModel, object sender)
-        //{
-        //    if (SelectedLoadOut == null)
-        //    {
-        //        UpdateStatus("No loadout selected.");
-        //        return;
-        //    }
-
-        //    // Retrieve the Tag property to determine the source (checkbox or right-click menu)
-        //    //if (sender is FrameworkElement element && element.Tag is string tag)
-        //    //{
-        //    //    bool isCheckbox = tag == "checkbox";
-
-        //        // Record the old state for debugging
-        //        Debug.WriteLine($"OldState: {itemViewModel.IsActive}");
-
-        //        // Determine the new state based on whether this is a checkbox toggle or right-click menu
-        //        //bool newState = isCheckbox ? itemViewModel.IsActive : !itemViewModel.IsActive;
-        //        bool newState = !itemViewModel.IsActive;
-        //        Debug.WriteLine($"NewState: {newState}");
-
-        //        // Set the new state to the UI-bound property
-        //        itemViewModel.IsActive = newState;
-
-        //        // Update the backend data (the database and in-memory LoadOut)
-        //        LoadOut.SetPluginEnabled(SelectedLoadOut.ProfileID, itemViewModel.PluginData.PluginID, newState);
-
-        //        // Notify the UI to refresh the view
-        //        OnPropertyChanged(nameof(LoadOuts));
-        //    //}
-        //}
-
-
         private void ToggleActive(LoadOrderItemViewModel itemViewModel, object sender)
         {
             if (SelectedLoadOut == null)
@@ -599,6 +549,17 @@ namespace ZO.LoadOrderManager
                     _ = MessageBox.Show("An error occurred while loading the configuration.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
+        }
+
+        private void ScanModFolder()
+        {
+            if (string.IsNullOrEmpty(Config.Instance.ModManagerRepoFolder) || !Directory.Exists(Config.Instance.ModManagerRepoFolder) || !File.Exists(FileManager.ModMetaDataFile))
+            {
+                MessageBox.Show("To use this feature you must define the ModManager repository folder (aka the Staging Folder), and use the Modlist Backup Extension to \"Modlist Backup Only This Game\" and place the file \"nexus_modlist.json\" at the root of the mod staging folder.\n\nThen this will autopopulate all the NexusID's that are known.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+            FileManager.UpdatePluginsFromModList(false);
         }
 
     }

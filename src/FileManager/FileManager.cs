@@ -35,6 +35,7 @@ namespace ZO.LoadOrderManager
 
                 try
                 {
+                    _quiet = true;
                     InitializationManager.StartInitialization(nameof(FileManager));
                     App.LogDebug("FileManager: Starting initialization...");
                     InitializeFavoriteGroupSetAndLoadOut();
@@ -78,13 +79,18 @@ namespace ZO.LoadOrderManager
                     //FileManager.ScanGameDirectoryForStraysAsync();
                     FileManager.ScanGameDirectoryForStrays(true, AggLoadInfo.Instance.ActiveGroupSet.GroupSetID);
 
+                    
+                    InitializationManager.ReportProgress(90, "Scanning ModManager Repo");
+                    FileManager.UpdatePluginsFromModList();
+
                     FileManager.MarkLoadOutComplete(AggLoadInfo.Instance);
-                    InitializationManager.ReportProgress(89, "LoadOut marked complete");
+                    InitializationManager.ReportProgress(99, "LoadOut marked complete");
 
                     InitializationManager.PrintInitializingComponents();
 
 
                     _initialized = true;
+                    _quiet = false;
                     App.LogDebug("FileManager: Initialization completed successfully.");
 
 

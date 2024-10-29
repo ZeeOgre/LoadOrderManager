@@ -48,6 +48,7 @@ namespace ZO.LoadOrderManager
             ImportPluginsCommand = new RelayCommand<object?>(param => ImportPlugins()); // LoadOrderWindowViewModel.MenuCommands.cs
             ImportContextCatalogCommand = new RelayCommand<object?>(param => ImportContentCatalog()); // LoadOrderWindowViewModel.MenuCommands.cs
             ScanGameFolderCommand = new RelayCommand<object?>(param => ScanGameFolder(), _ => true); // LoadOrderWindowViewModel.MenuCommands.cs
+            ScanModFolderCommand = new RelayCommand<object?>(param => ScanModFolder(), _ => true); // LoadOrderWindowViewModel.MenuCommands.cs
             SavePluginsCommand = new RelayCommand(param => SavePlugins(), param => CanSavePlugins()); // LoadOrderWindowViewModel.ButtonCommands.cs
             OpenAppDataFolderCommand = new RelayCommand<object?>(param => OpenAppDataFolder(), _ => true); // LoadOrderWindowViewModel.MenuCommands.cs
             OpenGameLocalAppDataCommand = new RelayCommand<object?>(param => OpenGameLocalAppData(), _ => true); // LoadOrderWindowViewModel.MenuCommands.cs
