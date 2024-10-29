@@ -193,6 +193,7 @@
                 <MenuItem Header="Import _Plugins.txt file" Command="{Binding ImportPluginsCommand}"/>
                 <MenuItem Header="Import _ContextCatalog.txt" Command="{Binding ImportContextCatalogCommand}"/>
                 <MenuItem Header="Scan _Game Folder" Command="{Binding ScanGameFolderCommand}" />
+                <MenuItem Header="Scan _ModStaging Folder" Command="{Binding ScanModFolderCommand}" />
                 <MenuItem Header="_Save Plugins.txt" Command="{Binding SavePluginsCommand}"/>
                 <MenuItem Header="Save _Active Loadout to database" Command="{Binding SaveCommand}"/>
                 <MenuItem Header="Save as _new loadout" Command="{Binding SaveAsNewLoadoutCommand}"/>

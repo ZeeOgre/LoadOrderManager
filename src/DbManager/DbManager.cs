@@ -260,6 +260,108 @@ namespace ZO.LoadOrderManager
             App.LogDebug($"Database marked as initialized: {status}");
         }
 
+
+        public static void CompactFileInfoTable()
+        {
+            using var connection = Instance.GetConnection();
+            using var transaction = connection.BeginTransaction();
+            try
+            {
+                // Create a temporary table with the same structure as FileInfo
+                using (var createTempTableCommand = new SQLiteCommand(
+                    "CREATE TABLE IF NOT EXISTS TempFileInfo AS SELECT * FROM FileInfo;", connection))
+                {
+                    createTempTableCommand.ExecuteNonQuery();
+                }
+
+                // Clear the main FileInfo table
+                using (var deleteFromFileInfoCommand = new SQLiteCommand("DELETE FROM FileInfo;", connection))
+                {
+                    deleteFromFileInfoCommand.ExecuteNonQuery();
+                }
+
+                // Reset the autoincrement counter
+                using (var resetAutoIncrementCommand = new SQLiteCommand("DELETE FROM sqlite_sequence WHERE name='FileInfo';", connection))
+                {
+                    resetAutoIncrementCommand.ExecuteNonQuery();
+                }
+
+                // Insert data back into FileInfo with new sequential FileIDs
+                using (var insertFromTempCommand = new SQLiteCommand(
+                    @"INSERT INTO FileInfo (PluginID, Filename, RelativePath, AbsolutePath, ModManagerFolderPath, DTStamp, HASH, Flags, FileContent)
+                      SELECT PluginID, Filename, RelativePath, AbsolutePath, ModManagerFolderPath, DTStamp, HASH, Flags, FileContent
+                      FROM TempFileInfo;", connection))
+                {
+                    insertFromTempCommand.ExecuteNonQuery();
+                }
+
+                // Drop the temporary table
+                using (var dropTempTableCommand = new SQLiteCommand("DROP TABLE IF EXISTS TempFileInfo;", connection))
+                {
+                    dropTempTableCommand.ExecuteNonQuery();
+                }
+
+                transaction.Commit();
+                App.LogDebug("FileInfo table compacted successfully.");
+            }
+            catch (Exception ex)
+            {
+                App.LogDebug($"Error compacting FileInfo table: {ex.Message}");
+                transaction.Rollback();
+            }
+        }
+
+        public static void CompactExternalIDsTable()
+        {
+            using var connection = Instance.GetConnection();
+            using var transaction = connection.BeginTransaction();
+            try
+            {
+                // Create a temporary table with the same structure as ExternalIDs
+                using (var createTempTableCommand = new SQLiteCommand(
+                    "CREATE TABLE IF NOT EXISTS TempExternalIDs AS SELECT * FROM ExternalIDs;", connection))
+                {
+                    createTempTableCommand.ExecuteNonQuery();
+                }
+
+                // Clear the main ExternalIDs table
+                using (var deleteFromExternalIDsCommand = new SQLiteCommand("DELETE FROM ExternalIDs;", connection))
+                {
+                    deleteFromExternalIDsCommand.ExecuteNonQuery();
+                }
+
+                // Reset the autoincrement counter
+                using (var resetAutoIncrementCommand = new SQLiteCommand("DELETE FROM sqlite_sequence WHERE name='ExternalIDs';", connection))
+                {
+                    resetAutoIncrementCommand.ExecuteNonQuery();
+                }
+
+                // Insert data back into ExternalIDs with new sequential ExternalIDs
+                using (var insertFromTempCommand = new SQLiteCommand(
+                    @"INSERT INTO ExternalIDs (PluginID, BethesdaID, NexusID)
+              SELECT PluginID, BethesdaID, NexusID
+              FROM TempExternalIDs;", connection))
+                {
+                    insertFromTempCommand.ExecuteNonQuery();
+                }
+
+                // Drop the temporary table
+                using (var dropTempTableCommand = new SQLiteCommand("DROP TABLE IF EXISTS TempExternalIDs;", connection))
+                {
+                    dropTempTableCommand.ExecuteNonQuery();
+                }
+
+                transaction.Commit();
+                App.LogDebug("ExternalIDs table compacted successfully.");
+            }
+            catch (Exception ex)
+            {
+                App.LogDebug($"Error compacting ExternalIDs table: {ex.Message}");
+                transaction.Rollback();
+            }
+        }
+
+
         public static void FlushDB()
         {
             using var connection = Instance.GetConnection();

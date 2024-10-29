@@ -1,19 +1,34 @@
 using System.IO;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace ZO.LoadOrderManager
 {
     public class NexusModItem
     {
-        public string Game { get; set; }
-        public int ModId { get; set; }
-        public int FileId { get; set; }
-        public string Source { get; set; }
-        public bool Enabled { get; set; }
-        public string VortexId { get; set; }
+        [JsonPropertyName("name")]
         public string Name { get; set; }
 
-        public static List<NexusModItem> LoadModList(string filePath)
+        [JsonPropertyName("game")]
+        public string Game { get; set; }
+
+        [JsonPropertyName("modId")]
+        public int ModId { get; set; }
+
+        [JsonPropertyName("fileId")]
+        public int FileId { get; set; }
+
+        [JsonPropertyName("source")]
+        public string Source { get; set; }
+
+        [JsonPropertyName("enabled")]
+        public bool Enabled { get; set; }
+
+        [JsonPropertyName("vortexId")]
+        public string VortexId { get; set; }
+    
+
+    public static List<NexusModItem> LoadModList(string filePath)
         {
             var jsonString = File.ReadAllText(filePath);
             return JsonSerializer.Deserialize<List<NexusModItem>>(jsonString);

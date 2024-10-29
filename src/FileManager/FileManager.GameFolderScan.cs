@@ -175,11 +175,11 @@ namespace ZO.LoadOrderManager
                 }
 
                 // Allow UI to update
-           
+
 
                 //await Task.Delay(10);
 
-
+                _quiet = false;
             }
 
             Application.Current.Dispatcher.Invoke(() =>
