@@ -35,13 +35,12 @@ namespace ZO.LoadOrderManager
 
 
 
+        #region Mod Groups Handlers
+
         private void AddModGroup_Click(object sender, RoutedEventArgs e)
         {
             var newModGroup = new ModGroup { GroupName = "New Group" };
             _aggLoadInfo.Groups.Add(newModGroup);
-            var modGroupEditor = new ModGroupEditorWindow(newModGroup);
-            _ = modGroupEditor.ShowDialog();
-            ModGroupsListBox.ItemsSource = _aggLoadInfo.Groups; // Refresh the ListBox
         }
 
         private void EditModGroup_Click(object sender, RoutedEventArgs e)
@@ -50,7 +49,6 @@ namespace ZO.LoadOrderManager
             {
                 var modGroupEditor = new ModGroupEditorWindow(selectedGroup);
                 _ = modGroupEditor.ShowDialog();
-                ModGroupsListBox.ItemsSource = _aggLoadInfo.Groups; // Refresh the ListBox
             }
         }
 
@@ -59,7 +57,6 @@ namespace ZO.LoadOrderManager
             if (ModGroupsListBox.SelectedItem is ModGroup selectedGroup)
             {
                 _ = _aggLoadInfo.Groups.Remove(selectedGroup);
-                ModGroupsListBox.ItemsSource = _aggLoadInfo.Groups; // Refresh the ListBox
             }
         }
 
@@ -72,6 +69,7 @@ namespace ZO.LoadOrderManager
             }
         }
 
+        #endregion
 
         #region Plugins Handlers
 

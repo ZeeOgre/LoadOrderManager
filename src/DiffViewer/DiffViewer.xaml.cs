@@ -31,14 +31,7 @@ namespace ZO.LoadOrderManager
 
             // Load content from FileInfo and the second file path
             string oldText = Encoding.UTF8.GetString(fileInfo.FileContent);
-            string newText;
-            using (var stream = new FileStream(filePath2, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-            {
-                using (var reader = new StreamReader(stream))
-                {
-                    newText = reader.ReadToEnd();
-                }
-            }
+            string newText = File.ReadAllText(filePath2);
 
             // Set texts in DiffView
             DiffView.OldText = oldText;
@@ -64,23 +57,8 @@ namespace ZO.LoadOrderManager
                 filePath2 = OpenFileDialog("Select the second file to compare");
 
             // Load text from both files
-            string oldText;
-            using (var stream = new FileStream(filePath1, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-            {
-                using (var reader = new StreamReader(stream))
-                {
-                    oldText = reader.ReadToEnd();
-                }
-            }
-
-            string newText;
-            using (var stream = new FileStream(filePath2, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-            {
-                using (var reader = new StreamReader(stream))
-                {
-                    newText = reader.ReadToEnd();
-                }
-            }
+            string oldText = File.ReadAllText(filePath1);
+            string newText = File.ReadAllText(filePath2);
 
             // Set texts in DiffView
             DiffView.OldText = oldText;
@@ -93,33 +71,6 @@ namespace ZO.LoadOrderManager
             LoadData();
         }
 
-        public DiffViewer(byte[] oldContent, string filePath2)
-        {
-            InitializeComponent();
-
-            // Convert byte array to string
-            string oldText = Encoding.UTF8.GetString(oldContent);
-
-            // Load text from the file path
-            string newText;
-            using (var stream = new FileStream(filePath2, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-            {
-                using (var reader = new StreamReader(stream))
-                {
-                    newText = reader.ReadToEnd();
-                }
-            }
-
-            // Set texts in DiffView
-            DiffView.OldText = oldText;
-            DiffView.NewText = newText;
-            DiffView.IsCommandBarVisible = false;
-
-            // Set the window title
-            Title = $"DiffViewer | Comparing {Path.GetFileName(filePath2)}...";
-
-            LoadData();
-        }
         // Constructor 3: FileInfo and a single file path, prompts for missing file
         public DiffViewer(FileInfo fileInfo, string? filePath2)
         {
@@ -132,14 +83,7 @@ namespace ZO.LoadOrderManager
 
             // Load content from FileInfo and the second file path
             string oldText = Encoding.UTF8.GetString(fileInfo.FileContent);
-            string newText;
-            using (var stream = new FileStream(filePath2, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-            {
-                using (var reader = new StreamReader(stream))
-                {
-                    newText = reader.ReadToEnd();
-                }
-            }
+            string newText = File.ReadAllText(filePath2);
 
             // Set texts in DiffView
             DiffView.OldText = oldText;
@@ -223,25 +167,5 @@ namespace ZO.LoadOrderManager
         {
             DiffView.OpenViewModeContextMenu();
         }
-
-        private void KeepOldButton_Click(object sender, RoutedEventArgs e)
-        {
-            if (!string.IsNullOrEmpty(filePath1))
-            {
-                File.WriteAllText(filePath1, DiffView.OldText);
-                MessageBox.Show($"Successfully kept old version: {filePath1}");
-            }
-        }
-
-        // Button handler: Keep New version
-        private void KeepNewButton_Click(object sender, RoutedEventArgs e)
-        {
-            if (!string.IsNullOrEmpty(filePath2))
-            {
-                File.WriteAllText(filePath2, DiffView.NewText);
-                MessageBox.Show($"Successfully kept new version: {filePath2}");
-            }
-        }
-       
     }
 }

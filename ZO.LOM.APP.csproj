@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
@@ -26,7 +26,7 @@
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <EnforceCodeStyleInBuild>True</EnforceCodeStyleInBuild>
     <SupportedOSPlatformVersion>7.0</SupportedOSPlatformVersion>
-    <Version>0.0.13.0</Version>
+    <Version>0.0.5.0</Version>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='GitRelease|AnyCPU'">
     <Optimize>True</Optimize>
@@ -63,12 +63,6 @@
     <None Remove="installer\ZO.LoadOrderManager-cache\**" />
     <Page Remove="installer\ZO.LoadOrderManager-cache\**" />
   </ItemGroup>
-  <ItemGroup>
-    <None Update="Properties\Settings.settings">
-      <Generator>SettingsSingleFileGenerator</Generator>
-      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
-    </None>
-  </ItemGroup>
   <Target Name="RearrangeOutputFiles" AfterTargets="Build;Publish" BeforeTargets="PostBuildEvent">
     <ItemGroup>
       <DllFiles Include="$(OutputPath)*.dll" Exclude="$(OutputPath)LoadOrderManager.dll;$(OutputPath)lib\**\*.*" />
@@ -86,9 +80,8 @@
   </Target>
   <Target Name="CopyConfigFile" AfterTargets="Build;Publish" BeforeTargets="PostBuildEvent">
     <ItemGroup>
-      <!--<ConfigFile Include="config\config.yaml" Condition="'$(Configuration)' == 'Debug'" />
-      <ConfigFile Include="config\config_sample.yaml" Condition="'$(Configuration)' != 'Debug'" />-->
-      <ConfigFile Include="config\config_sample.yaml" />
+      <ConfigFile Include="config\config.yaml" Condition="'$(Configuration)' == 'Debug'" />
+      <ConfigFile Include="config\config_sample.yaml" Condition="'$(Configuration)' != 'Debug'" />
     </ItemGroup>
     <Copy SourceFiles="@(ConfigFile)" DestinationFiles="$(OutputPath)config\config.yaml" />
   </Target>

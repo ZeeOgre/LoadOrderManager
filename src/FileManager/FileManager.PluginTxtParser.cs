@@ -26,7 +26,6 @@ namespace ZO.LoadOrderManager
             var loadOut = aggLoadInfo.ActiveLoadOut;
             var groupSet = aggLoadInfo.ActiveGroupSet;
             var enabledPlugins = new HashSet<long>();
-            var disabledPlugins = new HashSet<long>();
             ModGroup currentGroup = defaultModGroup;
 
             var groupParentMapping = new Dictionary<long, ModGroup> { { 0, defaultModGroup } };
@@ -96,8 +95,6 @@ namespace ZO.LoadOrderManager
                             {
                                 existingGroup.Description = groupDescription;
                                 currentGroup = existingGroup;
-                                aggLoadInfo.UpdateModGroup(currentGroup);
-                                currentGroup.WriteGroup();
                             }
                             else
                             {
@@ -110,18 +107,15 @@ namespace ZO.LoadOrderManager
                                 else
                                 {
                                     currentGroup = existingGroup;
-                                    currentGroup.WriteGroup();
                                 }
-                                aggLoadInfo.Groups.Add(currentGroup);
-                            }
                                 groupParentMapping[level] = currentGroup;
                                 groupOrdinalTracker[parentGroup.GroupID ?? 1]++;
                                 if (!pluginOrdinalTracker.ContainsKey(currentGroup.GroupID ?? 1))
                                 {
                                     pluginOrdinalTracker[currentGroup.GroupID ?? 1] = 1;
                                 }
-                                 // Add new group to aggLoadInfo.Groups
-                            
+                                aggLoadInfo.Groups.Add(currentGroup); // Add new group to aggLoadInfo.Groups
+                            }
                         }
                         else
                         {
@@ -150,18 +144,6 @@ namespace ZO.LoadOrderManager
                     {
                         existingPlugin.GroupID = currentGroup.GroupID;
                         existingPlugin.GroupOrdinal = pluginOrdinalTracker[currentGroup.GroupID ?? 1];
-                        //existingPlugin.GroupSetID = groupSet.GroupSetID;
-                        AggLoadInfo.Instance.UpdatePlugin(existingPlugin);
-                        if (isEnabled)
-                        {
-                            _ = enabledPlugins.Add(existingPlugin.PluginID);
-                        }
-                        else
-                        {
-                            _ = disabledPlugins.Add(existingPlugin.PluginID);
-                        }
-                        existingPlugin.WriteMod();
-                        pluginOrdinalTracker[currentGroup.GroupID ?? 1]++;
                     }
                     else
                     {
@@ -189,20 +171,14 @@ namespace ZO.LoadOrderManager
 
                 // Directly update the enabled plugins in the loadOut
                 loadOut.UpdateEnabledPlugins(enabledPlugins);
-                
                 //aggLoadInfo.ProfilePlugins.Items.Clear();
                 foreach (var pluginID in enabledPlugins)
                 {
                     _ = aggLoadInfo.ProfilePlugins.Items.Add((loadOut.ProfileID, pluginID));
                 }
-                foreach (var pluginID in disabledPlugins)
-                {
-                    _ = aggLoadInfo.ProfilePlugins.Items.Remove((loadOut.ProfileID, pluginID));
-                }
 
                 // Refresh GroupSetPlugins, GroupSetGroups, and ProfilePlugins
                 //aggLoadInfo.RefreshMetadataFromDB();
-                aggLoadInfo.Save();
             }
             catch (Exception)
             {
@@ -219,19 +195,13 @@ namespace ZO.LoadOrderManager
 
             // Get the maximum ordinals for groups
             var maxGroupOrdinals = aggLoadInfo.GroupSetGroups.Items
-                .Where(item => item.groupSetID == groupSetID && !(item.parentID == 1 && item.groupID == -997))
-                .GroupBy(item => item.parentID)
-                .Select(g => new
-                {
-                    GroupID = g.Key,
-                    MaxOrdinal = g.Max(item => item.Ordinal) + 1
-                })
-                .ToList();
+                .Where(item => item.groupSetID == groupSetID)
+                .GroupBy(item => item.groupID)
+                .Select(g => new { GroupID = g.Key, MaxOrdinal = g.Max(item => item.Ordinal) + 1 });
 
-            // Ensure every group has at least a value of 1
             foreach (var group in maxGroupOrdinals)
             {
-                groupOrdinalTracker[(long)group.GroupID] = Math.Max(group.MaxOrdinal, 1);
+                groupOrdinalTracker[group.GroupID] = group.MaxOrdinal;
             }
 
             // Get the maximum ordinals for plugins
@@ -261,7 +231,7 @@ namespace ZO.LoadOrderManager
             // Retrieve necessary information for the header
             var groupSetName = AggLoadInfo.Instance.ActiveGroupSet.GroupSetName ?? "Default_GroupSet";
             var loadOutName = AggLoadInfo.Instance.ActiveLoadOut.Name ?? "Default_Profile";
-            var dateTimeNow = DateTime.Now.ToString("o");
+            var dateTimeNow = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
 
             string defaultFileName;
             string pluginsFilePath;
@@ -307,7 +277,7 @@ namespace ZO.LoadOrderManager
             if (item.Children != null && item.Children.Any())
             {
                 // First, append all child plugins
-                foreach (var plugin in item.Children.Where(c => c.EntityType == EntityType.Plugin && c.InGameFolder == true))
+                foreach (var plugin in item.Children.Where(c => c.EntityType == EntityType.Plugin))
                 {
                     AppendItemToStringBuilder(plugin, sb);
                 }
@@ -318,12 +288,12 @@ namespace ZO.LoadOrderManager
                     var groupObject = ZO.LoadOrderManager.EntityTypeHelper.GetUnderlyingObject(group) as ModGroup;
                     if (groupObject != null)
                     {
-                        //if (groupObject.GroupID <= 0)
-                        //{
-                        //    continue;
-                        //}
+                        if (groupObject.GroupID <= 0)
+                        {
+                            continue;
+                        }
                         // Skip appending the root group itself but process its children
-                        if (groupObject.GroupID is not (1 or -999))
+                        if (groupObject.GroupID != 1)
                         {
                             _ = sb.AppendLine();
                             _ = sb.AppendLine(groupObject.ToPluginsString());

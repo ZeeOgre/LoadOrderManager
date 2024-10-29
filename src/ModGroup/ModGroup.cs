@@ -339,10 +339,7 @@ namespace ZO.LoadOrderManager
         public ModGroup WriteGroup()
         {
             var existingMatch = this.FindMatchingModGroup();
-            if (existingMatch != null)
-            {
-                this.GroupID = existingMatch.GroupID;
-            }
+            if (existingMatch != null) return existingMatch;
 
             using var connection = DbManager.Instance.GetConnection();
             using var transaction = connection.BeginTransaction();
@@ -423,7 +420,7 @@ namespace ZO.LoadOrderManager
         public static ModGroup GetModGroupById(long groupId)
         {
             return AggLoadInfo.Instance.Groups
-                .FirstOrDefault(g => g.GroupID == groupId) ?? throw new InvalidOperationException("Group not found");
+                .FirstOrDefault(g => g.GroupID == groupId);
         }
 
         public ModGroup? FindMatchingModGroup()
