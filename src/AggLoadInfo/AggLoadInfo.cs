@@ -711,7 +711,7 @@ namespace ZO.LoadOrderManager
                 {
                     Plugins[Plugins.IndexOf(existingPlugin)] = plugin;
                 }
-
+                RaiseDataRefreshed();
                 // Finally, save the plugin changes
                 //_ = plugin.WriteMod();
             }
