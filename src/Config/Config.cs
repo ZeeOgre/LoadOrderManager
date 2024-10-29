@@ -18,8 +18,14 @@ namespace ZO.LoadOrderManager
         public static readonly string configFilePath = Path.Combine(localAppDataPath, "config.yaml");
         public static readonly string dbFilePath = Path.Combine(localAppDataPath, "LoadOrderManager.db");
         private static bool _isVerificationInProgress = false; // Flag to track verification
+
         public List<FileInfo> MonitoredFiles { get; set; } = new List<FileInfo>();
         public bool DarkMode { get; set; } = true;
+        public string? GameFolder { get; set; }
+        public string? ModManagerRepoFolder { get; set; }
+        public string? ModManagerExecutable { get; set; }
+        public string? ModManagerArguments { get; set; }
+        public bool AutoCheckForUpdates { get; set; } = true;
 
         public static Config Instance
         {
@@ -39,19 +45,18 @@ namespace ZO.LoadOrderManager
             }
         }
 
-        public string? GameFolder { get; set; }
-        public bool AutoCheckForUpdates { get; set; } = true;
-
         public void UpdateFrom(Config other)
         {
             if (other == null) throw new ArgumentNullException(nameof(other));
 
             this.GameFolder = other.GameFolder;
+            this.ModManagerRepoFolder = other.ModManagerRepoFolder;
+            this.ModManagerExecutable = other.ModManagerExecutable;
+            this.ModManagerArguments = other.ModManagerArguments;
             this.AutoCheckForUpdates = other.AutoCheckForUpdates;
-            this.MonitoredFiles = other.MonitoredFiles;
-            this.DarkMode = other.DarkMode; // Update the DarkMode property
+            this.DarkMode = other.DarkMode;
+            this.MonitoredFiles = new List<FileInfo>(other.MonitoredFiles);
         }
-
 
         public static void Initialize()
         {
@@ -204,8 +209,6 @@ namespace ZO.LoadOrderManager
             File.WriteAllText(filePath, yaml);
         }
 
-
-
         public static Config? LoadFromDatabase()
         {
             using (var connection = DbManager.Instance.GetConnection())
@@ -217,6 +220,9 @@ namespace ZO.LoadOrderManager
                     _instance = new Config
                     {
                         GameFolder = reader["GameFolder"]?.ToString(),
+                        ModManagerRepoFolder = reader["ModManagerRepoFolder"]?.ToString(),
+                        ModManagerExecutable = reader["ModManagerExecutable"]?.ToString(),
+                        ModManagerArguments = reader["ModManagerArguments"]?.ToString(),
                         AutoCheckForUpdates = Convert.ToBoolean(reader["AutoCheckForUpdates"]),
                         DarkMode = Convert.ToBoolean(reader["DarkMode"]),
                         MonitoredFiles = FileInfo.GetMonitoredFiles() // Ensure MonitoredFiles is loaded
@@ -238,17 +244,26 @@ namespace ZO.LoadOrderManager
                 _ = command.ExecuteNonQuery();
 
                 command.CommandText = @"
-            INSERT INTO Config (
-                GameFolder,
-                AutoCheckForUpdates,
-                DarkMode
-            ) VALUES (
-                @GameFolder,
-                @AutoCheckForUpdates,
-                @DarkMode
-            )";
+                    INSERT INTO Config (
+                        GameFolder,
+                        ModManagerRepoFolder,
+                        ModManagerExecutable,
+                        ModManagerArguments,
+                        AutoCheckForUpdates,
+                        DarkMode
+                    ) VALUES (
+                        @GameFolder,
+                        @ModManagerRepoFolder,
+                        @ModManagerExecutable,
+                        @ModManagerArguments,
+                        @AutoCheckForUpdates,
+                        @DarkMode
+                    )";
 
                 _ = command.Parameters.AddWithValue("@GameFolder", config.GameFolder ?? (object)DBNull.Value);
+                _ = command.Parameters.AddWithValue("@ModManagerRepoFolder", config.ModManagerRepoFolder ?? (object)DBNull.Value);
+                _ = command.Parameters.AddWithValue("@ModManagerExecutable", config.ModManagerExecutable ?? (object)DBNull.Value);
+                _ = command.Parameters.AddWithValue("@ModManagerArguments", config.ModManagerArguments ?? (object)DBNull.Value);
                 _ = command.Parameters.AddWithValue("@AutoCheckForUpdates", config.AutoCheckForUpdates ? 1 : 0);
                 _ = command.Parameters.AddWithValue("@DarkMode", config.DarkMode ? 1 : 0);
 
@@ -256,6 +271,5 @@ namespace ZO.LoadOrderManager
             }
             transaction.Commit();
         }
-
     }
 }

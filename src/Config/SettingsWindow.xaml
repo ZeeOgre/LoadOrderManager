@@ -10,6 +10,12 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <!-- Game Folder -->
+            <RowDefinition Height="Auto"/>
+            <!-- Mod Manager Executable -->
+            <RowDefinition Height="Auto"/>
+            <!-- Mod Manager Arguments -->
+            <RowDefinition Height="Auto"/>
+            <!-- Mod Manager Repo -->
             <RowDefinition Height="*"/>
             <!-- Monitored Files -->
             <RowDefinition Height="Auto"/>
@@ -19,15 +25,34 @@
         </Grid.RowDefinitions>
 
         <!-- Existing Game Folder StackPanel (Row 0) -->
-        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="10">
-            <TextBlock Text="Game Folder:" VerticalAlignment="Center"/>
-            <TextBox Name="GameFolderTextBox" Width="500" Margin="10,0,10,0" Text="{Binding GameFolder}"/>
-            <!-- Folder Button to Launch Folder Browser -->
-            <Button Content="📁" Command="{Binding BrowseGameFolderCommand}" Width="30" />
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="10" HorizontalAlignment="Stretch">
+            <TextBlock Text="Game Folder:" VerticalAlignment="Center" Width="150"/>
+            <TextBox Name="GameFolderTextBox" Width="500" Margin="10,0,10,0" Text="{Binding GameFolder}" HorizontalAlignment="Stretch"/>
+            <Button Content="📁" Command="{Binding BrowseGameFolderCommand}" Width="30" HorizontalAlignment="Right"/>
         </StackPanel>
 
-        <!-- Monitored Files Section (Row 1) -->
-        <GroupBox Header="Monitored Files" Grid.Row="1" Margin="10">
+        <!-- Mod Manager Executable (Row 1) -->
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="10" HorizontalAlignment="Stretch">
+            <TextBlock Text="Mod Manager Executable:" VerticalAlignment="Center" Width="150"/>
+            <TextBox Name="ModManagerExecutableTextBox" Width="500" Margin="10,0,10,0" Text="{Binding ModManagerExecutable}" HorizontalAlignment="Stretch"/>
+            <Button Content="..." Command="{Binding BrowseModManagerExecutableCommand}" Width="30" HorizontalAlignment="Right"/>
+        </StackPanel>
+
+        <!-- Mod Manager Arguments (Row 2) -->
+        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="10" HorizontalAlignment="Stretch">
+            <TextBlock Text="Mod Manager Arguments:" VerticalAlignment="Center" Width="150"/>
+            <TextBox Name="ModManagerArgumentsTextBox" Width="500" Margin="10,0,10,0" Text="{Binding ModManagerArguments}" HorizontalAlignment="Stretch"/>
+        </StackPanel>
+
+        <!-- Mod Manager Repo (Row 3) -->
+        <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="10" HorizontalAlignment="Stretch">
+            <TextBlock Text="Mod Manager Repo:" VerticalAlignment="Center" Width="150"/>
+            <TextBox Name="ModManagerRepoTextBox" Width="500" Margin="10,0,10,0" Text="{Binding ModManagerRepoFolder}" HorizontalAlignment="Stretch"/>
+            <Button Content="📁" Command="{Binding BrowseModManagerRepoFolderCommand}" Width="30" HorizontalAlignment="Right"/>
+        </StackPanel>
+
+        <!-- Monitored Files Section (Row 4) -->
+        <GroupBox Header="Monitored Files" Grid.Row="4" Margin="10">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="*"/>
@@ -67,17 +92,15 @@
             </Grid>
         </GroupBox>
 
-        <!-- New Buttons Row (Row 2) -->
-        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="10">
+        <!-- New Buttons Row (Row 5) -->
+        <StackPanel Grid.Row="5" Orientation="Horizontal" HorizontalAlignment="Center" Margin="10">
             <Button Content="Vacuum/Reindex Database" Command="{Binding VacuumReindexCommand}" Width="150" Margin="5"/>
             <Button Content="Clean Ordinals" Command="{Binding CleanOrdinalsCommand}" Width="150" Margin="5"/>
             <Label Content="Select Palette:" Grid.Row="0" Grid.Column="0" Margin="5" VerticalAlignment="Center"/>
-
-          
         </StackPanel>
 
-        <!-- Version/Check for Updates/Save/Load from YAML (Row 3) -->
-        <Grid Grid.Row="3" Margin="10">
+        <!-- Version/Check for Updates/Save/Load from YAML (Row 6) -->
+        <Grid Grid.Row="6" Margin="10">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
@@ -91,14 +114,12 @@
                 <TextBlock Text="{x:Static local:App.Version}" VerticalAlignment="Center" Margin="5"/>
                 <Button Content="Check for Updates" Command="{Binding CheckForUpdatesCommand}" Width="100"  Margin="5"/>
                 <!-- Flip the checkbox and label for Dark Mode -->
-
             </StackPanel>
             <CheckBox FlowDirection="RightToLeft" Content="Dark Mode" 
                       IsChecked="{Binding Path=DarkMode, Mode=TwoWay}" 
                       Checked="DarkModeCheckBox_Checked"
                       Unchecked="DarkModeCheckBox_Unchecked"
                       VerticalAlignment="Center" Margin="471,0,0,0" HorizontalAlignment="Left" Width="89" Grid.ColumnSpan="2"/>
-
             <Button Content="Load from YAML" Command="{Binding LoadFromYamlCommand}" Width="100" Grid.Column="2" Margin="5"/>
             <Button Content="Save" Command="{Binding SaveCommand}" Width="100" Grid.Column="3" Margin="5"/>
         </Grid>
