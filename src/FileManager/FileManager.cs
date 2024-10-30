@@ -75,13 +75,13 @@ namespace ZO.LoadOrderManager
                     InitializationManager.ReportProgress(22, "Content catalog parsed");
 
 
-                    InitializationManager.ReportProgress(21, "Starting GameFolder Scan");
+                    InitializationManager.ReportProgress(25, "Starting GameFolder Scan");
                     //FileManager.ScanGameDirectoryForStraysAsync();
                     FileManager.ScanGameDirectoryForStrays(true, AggLoadInfo.Instance.ActiveGroupSet.GroupSetID);
 
                     
-                    InitializationManager.ReportProgress(90, "Scanning ModManager Repo");
-                    FileManager.UpdatePluginsFromModList();
+                    InitializationManager.ReportProgress(50, "Scanning ModManager Repo");
+                    FileManager.UpdatePluginsFromModList(true);
 
                     FileManager.MarkLoadOutComplete(AggLoadInfo.Instance);
                     InitializationManager.ReportProgress(99, "LoadOut marked complete");

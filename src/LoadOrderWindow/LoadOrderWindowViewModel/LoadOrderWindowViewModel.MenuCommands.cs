@@ -371,6 +371,12 @@ namespace ZO.LoadOrderManager
 
                     // Adjust ordinals of sibling groups and move child plugins to unassigned group
                     AdjustSiblingGroupsAndMoveChildPlugins(selectedItem, parentGroup);
+
+                    // Remove the group from the GroupSetGroupCollection
+                    var groupSetID = parentGroup.GroupSetID;
+                    var groupID = selectedItem.GetModGroup().GroupID;
+                    selectedItem.ParentID = null;
+                    
                 }
             }
 

@@ -456,7 +456,7 @@ namespace ZO.LoadOrderManager
 
         private void CreateAndPopulateGroup997(SQLiteConnection conn, Dictionary<long, Plugin> pluginDict)
         {
-            SettingsViewModel.CleanOrdinals(false);
+            SettingsViewModel.CleanOrdinals(false, true);
             // Step 1: Start a transaction to handle everything in one go
             using var transaction = conn.BeginTransaction();
 
@@ -846,7 +846,7 @@ namespace ZO.LoadOrderManager
                 _ = loadOut.WriteProfile();
             }
 
-            SettingsViewModel.CleanOrdinals(true);
+            SettingsViewModel.CleanOrdinals(true, true);
             //RefreshMetadataFromDB();
             //    using var connection = DbManager.Instance.GetConnection();
             //    using var transaction = connection.BeginTransaction();
