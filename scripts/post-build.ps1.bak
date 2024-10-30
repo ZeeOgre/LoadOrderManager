@@ -96,7 +96,7 @@ if ($currentBranch -eq 'master') {
 
     # Friendly merge up to master
     Execute-Command "git checkout master"
-    Execute-Command "git merge -X theirs dev"
+    Execute-Command "git merge dev"
     Write-Output "Merged dev INTO master."
     $currentBranch = 'master'
 }
