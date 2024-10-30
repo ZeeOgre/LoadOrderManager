@@ -27,28 +27,30 @@
         <!-- Existing Game Folder StackPanel (Row 0) -->
         <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="10" HorizontalAlignment="Stretch">
             <TextBlock Text="Game Folder:" VerticalAlignment="Center" Width="150"/>
-            <TextBox Name="GameFolderTextBox" Width="500" Margin="10,0,10,0" Text="{Binding GameFolder}" HorizontalAlignment="Stretch"/>
+            <TextBox Name="GameFolderTextBox" Width="400" Margin="10,0,10,0" Text="{Binding GameFolder}" HorizontalAlignment="Stretch"/>
             <Button Content="📁" Command="{Binding BrowseGameFolderCommand}" Width="30" HorizontalAlignment="Right"/>
+            <CheckBox Checked="{Binding AutoScanGameFolder}" Content="AutoScan" Margin="10,0,10,0" />
         </StackPanel>
 
         <!-- Mod Manager Executable (Row 1) -->
         <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="10" HorizontalAlignment="Stretch">
             <TextBlock Text="Mod Manager Executable:" VerticalAlignment="Center" Width="150"/>
-            <TextBox Name="ModManagerExecutableTextBox" Width="500" Margin="10,0,10,0" Text="{Binding ModManagerExecutable}" HorizontalAlignment="Stretch"/>
+            <TextBox Name="ModManagerExecutableTextBox" Width="400" Margin="10,0,10,0" Text="{Binding ModManagerExecutable}" HorizontalAlignment="Stretch"/>
             <Button Content="..." Command="{Binding BrowseModManagerExecutableCommand}" Width="30" HorizontalAlignment="Right"/>
         </StackPanel>
 
         <!-- Mod Manager Arguments (Row 2) -->
         <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="10" HorizontalAlignment="Stretch">
             <TextBlock Text="Mod Manager Arguments:" VerticalAlignment="Center" Width="150"/>
-            <TextBox Name="ModManagerArgumentsTextBox" Width="500" Margin="10,0,10,0" Text="{Binding ModManagerArguments}" HorizontalAlignment="Stretch"/>
+            <TextBox Name="ModManagerArgumentsTextBox" Width="400" Margin="10,0,10,0" Text="{Binding ModManagerArguments}" HorizontalAlignment="Stretch"/>
         </StackPanel>
 
         <!-- Mod Manager Repo (Row 3) -->
         <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="10" HorizontalAlignment="Stretch">
             <TextBlock Text="Mod Manager Repo:" VerticalAlignment="Center" Width="150"/>
-            <TextBox Name="ModManagerRepoTextBox" Width="500" Margin="10,0,10,0" Text="{Binding ModManagerRepoFolder}" HorizontalAlignment="Stretch"/>
+            <TextBox Name="ModManagerRepoTextBox" Width="400" Margin="10,0,10,0" Text="{Binding ModManagerRepoFolder}" HorizontalAlignment="Stretch"/>
             <Button Content="📁" Command="{Binding BrowseModManagerRepoFolderCommand}" Width="30" HorizontalAlignment="Right"/>
+            <CheckBox Checked="{Binding AutoScanModRepoFolder}" Content="AutoScan" Margin="10,0,10,0" />
         </StackPanel>
 
         <!-- Monitored Files Section (Row 4) -->
@@ -112,7 +114,7 @@
                 <CheckBox Content="Automatically check at startup" IsChecked="{Binding AutoCheckAtStartup}" Margin="5" VerticalAlignment="Center"/>
                 <TextBlock Text="Version:" VerticalAlignment="Center" Margin="5"/>
                 <TextBlock Text="{x:Static local:App.Version}" VerticalAlignment="Center" Margin="5"/>
-                <Button Content="Check for Updates" Command="{Binding CheckForUpdatesCommand}" Width="100"  Margin="5"/>
+                <Button Content="Check for Updates" Command="{Binding CheckForUpdatesCommand}" Width="125"  Margin="5"/>
                 <!-- Flip the checkbox and label for Dark Mode -->
             </StackPanel>
             <CheckBox FlowDirection="RightToLeft" Content="Dark Mode" 

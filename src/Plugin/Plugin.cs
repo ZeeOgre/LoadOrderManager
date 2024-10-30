@@ -31,6 +31,58 @@ namespace ZO.LoadOrderManager
         public long? GroupOrdinal { get; set; }
         public long? GroupSetID { get; set; }
 
+
+
+        // Properties for ModState flags
+        public bool InGameFolder
+        {
+            get => State.HasFlag(ModState.GameFolder);
+            set
+            {
+                if (value)
+                    State |= ModState.GameFolder;
+                else
+                    State &= ~ModState.GameFolder;
+            }
+        }
+
+        public bool InBethesda
+        {
+            get => State.HasFlag(ModState.Bethesda);
+            set
+            {
+                if (value)
+                    State |= ModState.Bethesda;
+                else
+                    State &= ~ModState.Bethesda;
+            }
+        }
+
+        public bool InNexus
+        {
+            get => State.HasFlag(ModState.Nexus);
+            set
+            {
+                if (value)
+                    State |= ModState.Nexus;
+                else
+                    State &= ~ModState.Nexus;
+            }
+        }
+
+        public bool InModManager
+        {
+            get => State.HasFlag(ModState.ModManager);
+            set
+            {
+                if (value)
+                    State |= ModState.ModManager;
+                else
+                    State &= ~ModState.ModManager;
+            }
+        }
+
+
         public Plugin()
         {
             Files = new List<FileInfo>();

@@ -62,6 +62,7 @@ namespace ZO.LoadOrderManager
                 {
                     base.OnStartup(e);
                     SetProbingPaths();
+                    CheckForUpdates(null);
 
                     App.LogDebug("Checking command line arguments...");
                     foreach (var arg in e.Args)
