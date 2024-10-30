@@ -26,7 +26,7 @@
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <EnforceCodeStyleInBuild>True</EnforceCodeStyleInBuild>
     <SupportedOSPlatformVersion>7.0</SupportedOSPlatformVersion>
-    <Version>0.0.16.0</Version>
+    <Version>0.0.15.0</Version>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='GitRelease|AnyCPU'">
     <Optimize>True</Optimize>
