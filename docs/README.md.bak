@@ -39,7 +39,7 @@ For your first start though, click on the folder, find the Starfield game folder
 If you've deleted and reinstalled, and remember where your "good yaml" is, you can also just load straight from that.
 
 Hit save, and it'll restart. 
-![Main Window (light)](./img/mainwindow_light.png)
+![Main Window (light)](./img/mainwindow_light_.png)
 The first time you start, by default, it's going to start in my "Sample Set" that I've built for you.
 
 It will have also pulled in all your existing mods and populated more detailed information from your `ContentCatalog.txt`.

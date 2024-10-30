@@ -1,4 +1,6 @@
 using System.Collections.ObjectModel;
+using System.Windows;
+using System.Windows.Input;
 using ZO.LoadOrderManager;
 
 public class LoadOrderItemViewModel : ViewModelBase
@@ -15,7 +17,40 @@ public class LoadOrderItemViewModel : ViewModelBase
     public long? Ordinal { get; set; } // Expose Ordinal directly
 
     private bool isSelected;
+    private bool _hideUnloadedPlugins;
+    private ICommand _toggleUnloadedVisibilityCommand;
 
+    public bool HideUnloadedPlugins
+    {
+        get => _hideUnloadedPlugins;
+        set
+        {
+            if (SetProperty(ref _hideUnloadedPlugins, value))
+            {
+                OnPropertyChanged(nameof(PluginVisibility));
+            }
+        }
+    }
+
+    public Visibility PluginVisibility
+    {
+        get
+        {
+            // Collapse only if the plugin is NOT loaded and HideUnloadedPlugins is true
+            if ((InGameFolder != true) && HideUnloadedPlugins)
+            {
+                return Visibility.Collapsed;
+            }
+            return Visibility.Visible;
+        }
+    }
+
+    public ICommand ToggleUnloadedVisibilityCommand => _toggleUnloadedVisibilityCommand ??= new RelayCommand(ToggleUnloadedVisibility);
+
+    private void ToggleUnloadedVisibility(object? parameter)
+    {
+        HideUnloadedPlugins = !HideUnloadedPlugins;
+    }
 
     private long groupSetId;
 
@@ -66,10 +101,61 @@ public class LoadOrderItemViewModel : ViewModelBase
 
     public bool IsActive
     {
-        get => isActive;
-        set => SetProperty(ref isActive, value);
+        get
+        {
+            // A group is active if any of its direct child plugins are active
+            if (EntityType == EntityType.Group)
+            {
+                return Children.Any(child => child.EntityType == EntityType.Plugin && child.IsActive);
+            }
+            return isActive; // For plugins, return the actual stored value
+        }
+        set
+        {
+            if (EntityType == EntityType.Group)
+            {
 
+                // Recursively set IsActive for all children
+                foreach (var child in Children)
+                {
+                    child.IsActive = value;
+
+                    //if (child.EntityType == EntityType.Plugin)
+                    //{
+                    //    child.IsActive = value; // Set child plugin's IsActive
+                    //}
+                    //else if (child.EntityType == EntityType.Group)
+                    //{
+                    //    child.IsActive = value; // Recursively set child group's IsActive
+                    //}
+                }
+            }
+            else
+            {
+                // For plugins, just set the value
+                SetProperty(ref isActive, value);
+            }
+
+            // Notify that IsActive has changed
+            OnPropertyChanged(nameof(IsActive));
+        }
     }
+
+
+
+    public bool? InGameFolder
+    {
+        get => EntityType == EntityType.Plugin ? PluginData.InGameFolder : (bool?)null;
+        set
+        {
+            if (EntityType == EntityType.Plugin && value.HasValue)
+            {
+                PluginData.InGameFolder = value.Value;
+                OnPropertyChanged(nameof(InGameFolder));
+            }
+        }
+    }
+
 
     // ObservableCollection to hold child items
     public ObservableCollection<LoadOrderItemViewModel> Children
@@ -93,6 +179,8 @@ public class LoadOrderItemViewModel : ViewModelBase
         DisplayName = group.DisplayName;
         EntityType = EntityType.Group;
         Ordinal = group.Ordinal; // Set Ordinal from the group
+        InGameFolder = null;
+        _toggleUnloadedVisibilityCommand = new RelayCommand(ToggleUnloadedVisibility);
     }
 
     // Constructor for plugin items
@@ -105,11 +193,14 @@ public class LoadOrderItemViewModel : ViewModelBase
         PluginData = plugin;
         EntityType = EntityType.Plugin;
         Ordinal = plugin.GroupOrdinal; // Set Ordinal from the plugin
+        InGameFolder = plugin.InGameFolder;
+        _toggleUnloadedVisibilityCommand = new RelayCommand(ToggleUnloadedVisibility);
     }
 
     public LoadOrderItemViewModel()
     {
         // Default constructor
+        _toggleUnloadedVisibilityCommand = new RelayCommand(ToggleUnloadedVisibility);
     }
 
     // Retrieve the ModGroup associated with this item using the GroupID

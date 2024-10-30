@@ -89,6 +89,8 @@ namespace ZO.LoadOrderManager
             }
         }
 
+
+
         private void LoadOrderWindow_Loaded(object sender, RoutedEventArgs e)
         {
             var viewModel = DataContext as LoadOrderWindowViewModel;
@@ -232,14 +234,17 @@ namespace ZO.LoadOrderManager
                 }
                 else if (e.Key == Key.Space)
                 {
-                    // Toggle IsActive state when the spacebar is pressed
+                    // Toggle IsActive state when the spacebar is pressed for all selected items
                     if (viewModel.SelectedItems.Count > 0)
                     {
-                        var selectedItem = viewModel.SelectedItems[0] as LoadOrderItemViewModel;
-                        if (selectedItem != null)
+                        // Iterate through all the selected items and execute the ToggleEnableCheckboxCommand
+                        foreach (var selectedItem in viewModel.SelectedItems)
                         {
-                            selectedItem.IsActive = !selectedItem.IsActive;
-                            viewModel.OnPropertyChanged(nameof(selectedItem.IsActive));
+                            if (selectedItem is LoadOrderItemViewModel itemViewModel)
+                            {
+                                // Trigger the command that handles toggling the IsActive state
+                                viewModel.ToggleEnableCommand.Execute(itemViewModel);
+                            }
                         }
                     }
                 }

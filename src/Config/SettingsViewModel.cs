@@ -1,4 +1,5 @@
 using Microsoft.Win32; // For OpenFileDialog
+using System;
 using System.Collections.ObjectModel;
 using System.Data.SQLite;
 using System.Windows;
@@ -6,7 +7,6 @@ using System.Windows.Input;
 
 namespace ZO.LoadOrderManager
 {
-
     public enum SettingsLaunchSource
     {
         MainWindow,
@@ -14,7 +14,6 @@ namespace ZO.LoadOrderManager
         DatabaseInitialization,
         MissingConfigDialog
     }
-
 
     class SettingsViewModel : ViewModelBase
     {
@@ -25,7 +24,35 @@ namespace ZO.LoadOrderManager
         public ObservableCollection<FileInfo> MonitoredFiles { get; set; }
         public FileInfo SelectedMonitoredFile { get; set; }
 
-        public bool AutoCheckAtStartup
+
+        public bool AutoScanModRepoFolder
+        {
+            get => _config.AutoScanModRepoFolder;
+            set
+            {
+                if (_config.AutoScanModRepoFolder != value)
+                {
+                    _config.AutoScanModRepoFolder = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        public bool AutoScanGameFolder
+        {
+            get => _config.AutoScanGameFolder;
+            set
+            {
+                if (_config.AutoScanGameFolder != value)
+                {
+                    _config.AutoScanGameFolder = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+
+        public bool AutoCheckForUpdates
         {
             get => _config.AutoCheckForUpdates;
             set
@@ -37,6 +64,89 @@ namespace ZO.LoadOrderManager
                 }
             }
         }
+
+
+
+
+        // New properties for the additional settings
+        public string LootExePath
+        {
+            get => _config.LootExePath;
+            set
+            {
+                if (_config.LootExePath != value)
+                {
+                    _config.LootExePath = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        public string NexusExportFile
+        {
+            get => _config.NexusExportFile;
+            set
+            {
+                if (_config.NexusExportFile != value)
+                {
+                    _config.NexusExportFile = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        public string MO2ExportFile
+        {
+            get => _config.MO2ExportFile;
+            set
+            {
+                if (_config.MO2ExportFile != value)
+                {
+                    _config.MO2ExportFile = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        public int WebServicePort
+        {
+            get => _config.WebServicePort;
+            set
+            {
+                if (_config.WebServicePort != value)
+                {
+                    _config.WebServicePort = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        public bool PluginWarning
+        {
+            get => _config.PluginWarning;
+            set
+            {
+                if (_config.PluginWarning != value)
+                {
+                    _config.PluginWarning = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        public bool ShowDiff
+        {
+            get => _config.ShowDiff;
+            set
+            {
+                if (_config.ShowDiff != value)
+                {
+                    _config.ShowDiff = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
 
         public string GameFolder
         {
@@ -119,6 +229,9 @@ namespace ZO.LoadOrderManager
         public ICommand BrowseModManagerExecutableCommand { get; private set; }
         public ICommand BrowseModManagerRepoFolderCommand { get; private set; }
 
+        // New commands for additional settings
+        public ICommand BrowseLootExecutableCommand { get; private set; }
+
         public SettingsViewModel()
         {
             _config = Config.Instance;
@@ -148,6 +261,7 @@ namespace ZO.LoadOrderManager
             SaveCommand = new RelayCommand(_ => Save());
             BrowseModManagerExecutableCommand = new RelayCommand(_ => BrowseModManagerExecutable());
             BrowseModManagerRepoFolderCommand = new RelayCommand(_ => BrowseModManagerRepoFolder());
+            BrowseLootExecutableCommand = new RelayCommand(_ => BrowseLootExecutable());
         }
 
         private void AddNewFile()
@@ -184,7 +298,7 @@ namespace ZO.LoadOrderManager
             }
         }
 
-        
+
 
 
         public static void CleanOrdinals(bool refreshMetadata = true, bool quiet = false)
@@ -235,7 +349,7 @@ namespace ZO.LoadOrderManager
                 if (refreshMetadata)
                 {
                     AggLoadInfo.Instance.RefreshMetadataFromDB();
-                   if (!quiet) _ = MessageBox.Show("Ordinals cleaned successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                    if (!quiet) _ = MessageBox.Show("Ordinals cleaned successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
             }
             catch (Exception ex)
@@ -328,6 +442,20 @@ namespace ZO.LoadOrderManager
             }
         }
 
+        private void BrowseLootExecutable()
+        {
+            var openFileDialog = new OpenFileDialog
+            {
+                Filter = "Executable files (*.exe)|*.exe|All files (*.*)|*.*",
+                Title = "Select Loot Executable"
+            };
+
+            if (openFileDialog.ShowDialog() == true)
+            {
+                LootExePath = openFileDialog.FileName;
+            }
+        }
+
         private void CheckForUpdates()
         {
             App.CheckForUpdates(Application.Current.MainWindow);
@@ -350,12 +478,20 @@ namespace ZO.LoadOrderManager
                     _config = Config.LoadFromYaml(selectedFile);
                     InitializeViewModel();
                     OnPropertyChanged(nameof(MonitoredFiles));
-                    OnPropertyChanged(nameof(AutoCheckAtStartup));
+                    OnPropertyChanged(nameof(AutoCheckForUpdates));
+                    OnPropertyChanged(nameof(AutoScanModRepoFolder));
+                    OnPropertyChanged(nameof(AutoScanGameFolder));  
                     OnPropertyChanged(nameof(GameFolder));
                     OnPropertyChanged(nameof(DarkMode));
                     OnPropertyChanged(nameof(ModManagerExecutable));
                     OnPropertyChanged(nameof(ModManagerArguments));
                     OnPropertyChanged(nameof(ModManagerRepoFolder));
+                    OnPropertyChanged(nameof(LootExePath));
+                    OnPropertyChanged(nameof(NexusExportFile));
+                    OnPropertyChanged(nameof(MO2ExportFile));
+                    OnPropertyChanged(nameof(WebServicePort));
+                    OnPropertyChanged(nameof(PluginWarning));
+                    OnPropertyChanged(nameof(ShowDiff));
                     _ = MessageBox.Show("Configuration loaded successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
                 catch (Exception ex)
@@ -373,6 +509,7 @@ namespace ZO.LoadOrderManager
                 Config.Instance.UpdateFrom(_config);
                 Config.SaveToYaml();
                 Config.SaveToDatabase();
+                SaveCompleted?.Invoke();
             }
             catch (Exception ex)
             {

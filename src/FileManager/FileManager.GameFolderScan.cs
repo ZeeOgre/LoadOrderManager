@@ -126,7 +126,7 @@ namespace ZO.LoadOrderManager
                     {
 
                         existingPlugin.DTStamp = dtStamp;
-                        existingPlugin. = true;
+                        existingPlugin.InGameFolder = true;
                         _ = existingPlugin.WriteMod();
 
                         if (fullScan & !coreFile) existingFileInfo.HASH = ZO.LoadOrderManager.FileInfo.ComputeHash(pluginFile);

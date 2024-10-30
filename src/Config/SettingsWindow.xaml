@@ -4,7 +4,7 @@
         xmlns:metro="http://metro.mahapps.com/winfx/xaml/controls"
         Style="{StaticResource MaterialDesignWindow}"
         xmlns:local="clr-namespace:ZO.LoadOrderManager"
-        Title="Settings" Height="600" Width="800">
+        Title="Settings" Height="700" Width="800">
     <Grid>
         <!-- Define Grid Rows -->
         <Grid.RowDefinitions>
@@ -16,6 +16,10 @@
             <!-- Mod Manager Arguments -->
             <RowDefinition Height="Auto"/>
             <!-- Mod Manager Repo -->
+            
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <!-- Monitored Files -->
             <RowDefinition Height="Auto"/>
@@ -29,7 +33,8 @@
             <TextBlock Text="Game Folder:" VerticalAlignment="Center" Width="150"/>
             <TextBox Name="GameFolderTextBox" Width="400" Margin="10,0,10,0" Text="{Binding GameFolder}" HorizontalAlignment="Stretch"/>
             <Button Content="📁" Command="{Binding BrowseGameFolderCommand}" Width="30" HorizontalAlignment="Right"/>
-            <CheckBox Checked="{Binding AutoScanGameFolder}" Content="AutoScan" Margin="10,0,10,0" />
+            <CheckBox IsChecked="{Binding AutoScanGameFolder}" Content="AutoScan" Margin="10,0,10,0" />
+
         </StackPanel>
 
         <!-- Mod Manager Executable (Row 1) -->
@@ -50,11 +55,33 @@
             <TextBlock Text="Mod Manager Repo:" VerticalAlignment="Center" Width="150"/>
             <TextBox Name="ModManagerRepoTextBox" Width="400" Margin="10,0,10,0" Text="{Binding ModManagerRepoFolder}" HorizontalAlignment="Stretch"/>
             <Button Content="📁" Command="{Binding BrowseModManagerRepoFolderCommand}" Width="30" HorizontalAlignment="Right"/>
-            <CheckBox Checked="{Binding AutoScanModRepoFolder}" Content="AutoScan" Margin="10,0,10,0" />
+            <CheckBox IsChecked="{Binding AutoScanModRepoFolder}" Content="AutoScan" Margin="10,0,10,0" />
         </StackPanel>
 
+        <!-- Loot Executable (New Row 4) -->
+        <StackPanel Grid.Row="4" Orientation="Horizontal" Margin="10" HorizontalAlignment="Stretch">
+            <TextBlock Text="Loot Executable:" VerticalAlignment="Center" Width="150"/>
+            <TextBox Name="LootExecutableTextBox" Width="400" Margin="10,0,10,0" Text="{Binding LootExePath}" HorizontalAlignment="Stretch"/>
+            <Button Content="..." Command="{Binding BrowseLootExecutableCommand}" Width="30" HorizontalAlignment="Right"/>
+        </StackPanel>
+
+        <!-- Nexus Export and MO2 Export (New Row 5) -->
+        <StackPanel Grid.Row="5" Orientation="Horizontal" Margin="10" HorizontalAlignment="Stretch">
+            <TextBlock Text="Nexus Export:" VerticalAlignment="Center" Width="150"/>
+            <TextBox Name="NexusExportTextBox" Width="200" Margin="10,0,10,0" Text="{Binding NexusExportFile}" HorizontalAlignment="Stretch"/>
+            <TextBlock Text="MO2 Export:" VerticalAlignment="Center" Width="100" Margin="10,0,10,0"/>
+            <TextBox Name="MO2ExportTextBox" Width="200" Margin="10,0,10,0" Text="{Binding MO2ExportFile}" HorizontalAlignment="Stretch"/>
+        </StackPanel>
+
+        <!-- Web Service Port, Plugin Warning, and Show Diff (New Row 6) -->
+        <StackPanel Grid.Row="6" Orientation="Horizontal" Margin="10" HorizontalAlignment="Stretch">
+            <TextBlock Text="Web Service Port:" VerticalAlignment="Center" Width="150"/>
+            <TextBox Name="WebServicePortTextBox" Width="100" Margin="10,0,10,0" Text="{Binding WebServicePort}" HorizontalAlignment="Stretch"/>
+            <CheckBox Content="Plugin Warning" IsChecked="{Binding PluginWarning}" Margin="10,0,10,0" VerticalAlignment="Center"/>
+            <CheckBox Content="Show Diff" IsChecked="{Binding ShowDiff}" Margin="10,0,10,0" VerticalAlignment="Center"/>
+        </StackPanel>
         <!-- Monitored Files Section (Row 4) -->
-        <GroupBox Header="Monitored Files" Grid.Row="4" Margin="10">
+        <GroupBox Header="Monitored Files" Grid.Row="7" Margin="10">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="*"/>
@@ -95,14 +122,14 @@
         </GroupBox>
 
         <!-- New Buttons Row (Row 5) -->
-        <StackPanel Grid.Row="5" Orientation="Horizontal" HorizontalAlignment="Center" Margin="10">
+        <StackPanel Grid.Row="8" Orientation="Horizontal" HorizontalAlignment="Center" Margin="10">
             <Button Content="Vacuum/Reindex Database" Command="{Binding VacuumReindexCommand}" Width="150" Margin="5"/>
             <Button Content="Clean Ordinals" Command="{Binding CleanOrdinalsCommand}" Width="150" Margin="5"/>
             <Label Content="Select Palette:" Grid.Row="0" Grid.Column="0" Margin="5" VerticalAlignment="Center"/>
         </StackPanel>
 
         <!-- Version/Check for Updates/Save/Load from YAML (Row 6) -->
-        <Grid Grid.Row="6" Margin="10">
+        <Grid Grid.Row="9" Margin="10">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>

@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Windows;
+using System.Windows.Input;
 
 namespace ZO.LoadOrderManager
 {
@@ -22,17 +23,6 @@ namespace ZO.LoadOrderManager
             LoadOrders = new LoadOrdersViewModel();
             CachedGroupSetLoadOrders = new LoadOrdersViewModel();
 
-            ////Rebuild Flat List whenever LoadOrders Items are updated
-            //if (LoadOrders?.Items != null)
-            //{
-            //    LoadOrders.Items.CollectionChanged += (s, e) =>
-            //    {
-            //        if (!_isSynchronizing && !InitializationManager.IsAnyInitializing())
-            //        {
-            //            RebuildFlatList();
-            //        }
-            //    };
-            //}
 
             SearchCommand = new RelayCommand(_ => Search(SearchText)); // LoadOrderWindowViewModel.TreeCommands.cs
 
@@ -42,15 +32,21 @@ namespace ZO.LoadOrderManager
             CopyTextCommand = new RelayCommand<object?>(param => HandleMultipleSelectedItems(CopyText), param => CanExecuteCheckAllItems()); // LoadOrderWindowViewModel.MenuCommands.cs
             DeleteCommand = new RelayCommand<object?>(param => HandleMultipleSelectedItems(Delete), param => CanExecuteCheckAllItems()); // LoadOrderWindowViewModel.MenuCommands.cs
             EditCommand = new RelayCommand<object?>(param => HandleMultipleSelectedItems(EditHighlightedItem), param => CanExecuteCheckAllItems()); // LoadOrderWindowViewModel.TreeCommands.cs
-            ToggleEnableCommand = new RelayCommand<object?>(param => HandleMultipleSelectedItems(item => ToggleEnable(item, param)), param => CanExecuteCheckAllItems()); // LoadOrderWindowViewModel.MenuCommands.cs
-            ChangeGroupCommand = new RelayCommandWithParameter(param => HandleMultipleSelectedItems(item => ChangeGroup(item, param)), param => CanExecuteCheckAllItems()); // LoadOrderWindowViewModel.MenuCommands.cs
+            ToggleEnableCommand = new RelayCommand<object?>(param => HandleMultipleSelectedItems(item => ToggleActive(item, param)), param => CanExecuteCheckAllItems()); // LoadOrderWindowViewModel.MenuCommands.cs
+            ToggleEnableCheckboxCommand = new RelayCommand<object>(param => HandleMultipleSelectedItems(item => ToggleEnableCheckbox(item, param)), param => CanExecuteCheckAllItems());
+
+            ChangeGroupCommand = new RelayCommandWithParameter(
+                param => HandleMultipleSelectedItems(item => ChangeGroup(item, param)),
+                param => SelectedItems.All(item => CanChangeGroup((LoadOrderItemViewModel)item))
+            );
 
             SaveAsNewLoadoutCommand = new RelayCommand<object?>(param => SaveAsNewLoadout()); // LoadOrderWindowViewModel.MenuCommands.cs
             OpenGameFolderCommand = new RelayCommand<object?>(param => OpenGameFolder(), _ => true); // LoadOrderWindowViewModel.MenuCommands.cs
             OpenGameSaveFolderCommand = new RelayCommand<object?>(param => OpenGameSaveFolder(), _ => true); // LoadOrderWindowViewModel.MenuCommands.cs
             EditPluginsCommand = new RelayCommand<object?>(param => EditPlugins(), _ => true); // LoadOrderWindowViewModel.MenuCommands.cs
             EditContentCatalogCommand = new RelayCommand<object?>(param => EditContentCatalog(), _ => true); // LoadOrderWindowViewModel.MenuCommands.cs
-            ImportContextCatalogCommand = new RelayCommand<object?>(param => ImportContextCatalog()); // LoadOrderWindowViewModel.MenuCommands.cs
+            ImportPluginsCommand = new RelayCommand<object?>(param => ImportPlugins()); // LoadOrderWindowViewModel.MenuCommands.cs
+            ImportContextCatalogCommand = new RelayCommand<object?>(param => ImportContentCatalog()); // LoadOrderWindowViewModel.MenuCommands.cs
             ScanGameFolderCommand = new RelayCommand<object?>(param => ScanGameFolder(), _ => true); // LoadOrderWindowViewModel.MenuCommands.cs
             ScanModFolderCommand = new RelayCommand<object?>(param => ScanModFolder(), _ => true); // LoadOrderWindowViewModel.MenuCommands.cs
             SavePluginsCommand = new RelayCommand(param => SavePlugins(), param => CanSavePlugins()); // LoadOrderWindowViewModel.ButtonCommands.cs

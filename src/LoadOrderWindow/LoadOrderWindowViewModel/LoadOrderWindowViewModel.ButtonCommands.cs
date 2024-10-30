@@ -22,7 +22,31 @@ namespace ZO.LoadOrderManager
         public ICommand EditLoadOutCommand { get; }
         public RelayCommand RefreshCommand { get; }
 
+        private ICommand _toggleUnloadedVisibilityCommand;
+        public ICommand ToggleUnloadedVisibilityCommand => _toggleUnloadedVisibilityCommand ??= new RelayCommand(ToggleUnloadedVisibility);
 
+        public ICommand ToggleEnableCheckboxCommand { get; }
+
+        private void ToggleEnableCheckbox(LoadOrderItemViewModel itemViewModel, object parameter)
+        {
+            if (itemViewModel == null || SelectedLoadOut == null)
+            {
+                UpdateStatus("No loadout selected or invalid item.");
+                return;
+            }
+
+            LoadOut.SetPluginEnabled(SelectedLoadOut.ProfileID, itemViewModel.PluginData.PluginID, itemViewModel.IsActive);
+            OnPropertyChanged(nameof(LoadOuts));
+        }
+
+
+        private void ToggleUnloadedVisibility(object? parameter )
+        {
+            HideUnloadedPlugins = !HideUnloadedPlugins;
+            // Notify the UI to refresh the visibility of items
+            OnPropertyChanged(nameof(HideUnloadedPlugins));
+
+        }
 
         private void UpdateStatusLight()
         {
@@ -39,6 +63,7 @@ namespace ZO.LoadOrderManager
             {
                 StatusLightColor = new SolidColorBrush(Colors.Green);
             }
+            OnPropertyChanged(nameof(StatusLightColor));
         }
 
         private void ExecuteEditGroupSetCommand(object parameter)
@@ -143,6 +168,8 @@ namespace ZO.LoadOrderManager
             }
             return false;
         }
+
+
 
         public bool CanMoveDown()
         {

@@ -247,7 +247,7 @@ namespace ZO.LoadOrderManager
                         LootExePath = reader["LootExePath"]?.ToString(),
                         NexusExportFile = reader["NexusExportFile"]?.ToString(),
                         MO2ExportFile = reader["MO2ExportFile"]?.ToString(),
-                        WebServicePort = Convert.ToInt32(reader["WebServicePort"]),
+                        WebServicePort = reader["WebServicePort"] != DBNull.Value ? Convert.ToInt32(reader["WebServicePort"]) : default(int),
                         PluginWarning = Convert.ToBoolean(reader["PluginWarning"]),
                         ShowDiff = Convert.ToBoolean(reader["ShowDiff"]),
                         MonitoredFiles = FileInfo.GetMonitoredFiles() // Ensure MonitoredFiles is loaded

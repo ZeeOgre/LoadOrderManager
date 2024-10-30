@@ -13,16 +13,14 @@ namespace ZO.LoadOrderManager
         {
             InitializeComponent();
             _viewModel = new SettingsViewModel();
-            DataContext = _viewModel;
+            DataContext = _viewModel;  // This should be here before any other references to `_viewModel`
 
             if (launchSource == SettingsLaunchSource.CommandLine)
             {
-                _viewModel.UseEmptyConfig(); // Use an empty config instance for command line launches
+                _viewModel.UseEmptyConfig();
             }
 
             _viewModel.SaveCompleted += OnSaveCompleted;
-
-            // Set the _isLoaded flag to true after the window has finished initializing
             Loaded += (s, e) => _isLoaded = true;
         }
 
@@ -34,13 +32,7 @@ namespace ZO.LoadOrderManager
             //((App)Application.Current).ApplyModernTheme();
             ((App)Application.Current).ApplyCustomTheme(isDarkMode);
 
-            // Prompt the user to restart the application
-            MessageBoxResult result = MessageBox.Show("Restart now to apply changes?", "Restart Application", MessageBoxButton.YesNo, MessageBoxImage.Question);
-            if (result == MessageBoxResult.Yes)
-            {
-                // Restart the application
-                App.RestartApplication();
-            }
+            App.RestartDialog("Please restart to apply the custom theme.");
         }
 
         private void DarkModeCheckBox_Checked(object sender, RoutedEventArgs e)
@@ -68,6 +60,8 @@ namespace ZO.LoadOrderManager
         // Close the window after saving
         private void OnSaveCompleted()
         {
+            // Set the dialog result to true to indicate success
+            this.DialogResult = true;
             // Close the window when saving is completed
             this.Close();
         }
