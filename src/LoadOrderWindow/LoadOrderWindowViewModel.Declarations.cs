@@ -5,7 +5,7 @@ using System.Windows.Media;
 
 namespace ZO.LoadOrderManager
 {
-    public partial class LoadOrderWindowViewModel : INotifyPropertyChanged
+    public partial class LoadOrderWindowViewModel : ViewModelBase, INotifyPropertyChanged
     {
         // Fields
         private bool isSaved;
@@ -18,7 +18,40 @@ namespace ZO.LoadOrderManager
         private string _warningMessage;
         private bool _isWarningActive;
 
+        private bool _hideUnloadedPlugins;
+        public bool HideUnloadedPlugins
+        {
+            get => _hideUnloadedPlugins;
+            set
+            {
+                if (_hideUnloadedPlugins != value)
+                {
+                    _hideUnloadedPlugins = value;
+                    OnPropertyChanged(nameof(HideUnloadedPlugins));
 
+                    // Call a method to recursively propagate to all child items
+                    foreach (var item in LoadOrders.Items)
+                    {
+                        PropagateHideUnloadedPlugins(item, value);
+                    }
+                }
+            }
+        }
+
+        private void PropagateHideUnloadedPlugins(LoadOrderItemViewModel item, bool hideUnloaded)
+        {
+            // Update the HideUnloadedPlugins property for the current item
+            item.HideUnloadedPlugins = hideUnloaded;
+
+            // Recursively propagate the change to all children
+            if (item.Children != null)
+            {
+                foreach (var child in item.Children)
+                {
+                    PropagateHideUnloadedPlugins(child, hideUnloaded);
+                }
+            }
+        }
 
         public string WarningMessage
         {
@@ -152,7 +185,12 @@ namespace ZO.LoadOrderManager
         // Update status method
         public void UpdateStatus(string message)
         {
-            StatusMessage = message;
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                StatusMessage = message;
+                OnPropertyChanged(nameof(StatusMessage));
+            });
+            
         }
 
         // Update the status message
@@ -166,6 +204,7 @@ namespace ZO.LoadOrderManager
             {
                 StatusMessage = "No item selected";
             }
+            OnPropertyChanged(nameof(StatusMessage));
         }
 
         public void SetWarning(string message)
@@ -186,6 +225,7 @@ namespace ZO.LoadOrderManager
                 {
                     refreshTimer.Stop();
                     OnPropertyChanged(nameof(WarningMessage));
+                    OnPropertyChanged(nameof(IsWarningActive));
                 };
 
                 refreshTimer.Start();
@@ -200,6 +240,8 @@ namespace ZO.LoadOrderManager
                 WarningMessage = string.Empty;
                 IsWarningActive = false;
                 UpdateStatusLight();
+                OnPropertyChanged(nameof(WarningMessage));
+                OnPropertyChanged(nameof(IsWarningActive));
             });
         }
 
@@ -267,24 +309,7 @@ namespace ZO.LoadOrderManager
                 {
                     UpdateStatusLight();
                 }
-                //if (e.PropertyName == nameof(AggLoadInfo.ActiveGroupSet))
-                //{
-                //    if (!ReferenceEquals(_selectedGroupSet, AggLoadInfo.Instance.ActiveGroupSet))
-                //    {
-                //        _selectedGroupSet = AggLoadInfo.Instance.ActiveGroupSet;
-                //        _selectedLoadOut = AggLoadInfo.Instance.ActiveLoadOut;
-                //        OnPropertyChanged(nameof(SelectedGroupSet));
-                //        OnPropertyChanged(nameof(SelectedLoadOut));
-                //    }
-                //}
-                //else if (e.PropertyName == nameof(AggLoadInfo.ActiveLoadOut))
-                //{
-                //    if (!ReferenceEquals(_selectedLoadOut, AggLoadInfo.Instance.ActiveLoadOut))
-                //    {
-                //        _selectedLoadOut = AggLoadInfo.Instance.ActiveLoadOut;
-                //        OnPropertyChanged(nameof(SelectedLoadOut));
-                //    }
-                //}
+
                 else if (e.PropertyName == nameof(LoadOuts))
                 {
                     UpdateLoadOutsForSelectedGroupSet();
@@ -311,7 +336,7 @@ namespace ZO.LoadOrderManager
             }
 
             SelectedLoadOut = AggLoadInfo.Instance.ActiveLoadOut;
-            UpdateStatus($"LoadOuts updated for selected GroupSet. Selected Loadout is now {SelectedLoadOut}");
+            UpdateStatus($"LoadOuts updated for selected GroupSet. Selected Loadout is now {SelectedLoadOut.Name}");
             //AggLoadInfo.Instance.GetLoadOutForGroupSet(AggLoadInfo.Instance.ActiveGroupSet);
 
 
@@ -350,7 +375,7 @@ namespace ZO.LoadOrderManager
 
                         OnPropertyChanged(nameof(SelectedGroupSet)); // Notify only when changed
                     }
-                    UpdateStatus($"Selected GroupSet is now {SelectedGroupSet}");
+                    UpdateStatus($"Selected GroupSet is now {SelectedGroupSet.GroupSetName}");
                 }
                 finally
                 {
@@ -383,7 +408,7 @@ namespace ZO.LoadOrderManager
                         LoadOrders.SelectedLoadOut = value;
                         LoadOrders.RefreshActivePlugins(value);
                         OnPropertyChanged(nameof(SelectedLoadOut));
-                        UpdateStatus($"Selected LoadOut is now {SelectedLoadOut}");
+                        UpdateStatus($"Selected LoadOut is now {SelectedLoadOut.Name}");
                     }
                     finally
                     {

@@ -1,5 +1,6 @@
 using Microsoft.Win32; // For OpenFileDialog
 using System.Collections.ObjectModel;
+using System.Data.SQLite;
 using System.Windows;
 using System.Windows.Input;
 
@@ -15,16 +16,13 @@ namespace ZO.LoadOrderManager
     }
 
 
-    public class SettingsViewModel : ViewModelBase
+    class SettingsViewModel : ViewModelBase
     {
         private Config _config;
         private readonly DbManager _dbManager;
 
         public event Action SaveCompleted;
-
-        // Bindable properties for UI
         public ObservableCollection<FileInfo> MonitoredFiles { get; set; }
-
         public FileInfo SelectedMonitoredFile { get; set; }
 
         public bool AutoCheckAtStartup
@@ -62,23 +60,52 @@ namespace ZO.LoadOrderManager
                 {
                     _config.DarkMode = value;
                     OnPropertyChanged();
-
-                    // Call the updated methods from the App class
-                    Application.Current.Dispatcher.Invoke(() =>
-                    {
-                        // Apply the modern theme and custom TreeView theme
-                        //((App)Application.Current).ApplyModernTheme();
-                        //((App)Application.Current).ApplyCustomTheme(_config.DarkMode);
-                    });
                     Save();
+                }
+            }
+        }
 
+        public string ModManagerExecutable
+        {
+            get => _config.ModManagerExecutable;
+            set
+            {
+                if (_config.ModManagerExecutable != value)
+                {
+                    _config.ModManagerExecutable = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        public string ModManagerArguments
+        {
+            get => _config.ModManagerArguments;
+            set
+            {
+                if (_config.ModManagerArguments != value)
+                {
+                    _config.ModManagerArguments = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        public string ModManagerRepoFolder
+        {
+            get => _config.ModManagerRepoFolder;
+            set
+            {
+                if (_config.ModManagerRepoFolder != value)
+                {
+                    _config.ModManagerRepoFolder = value;
+                    OnPropertyChanged();
                 }
             }
         }
 
         public string Version => App.Version;
 
-        // Read-only command properties initialized in the constructor
         public ICommand AddNewMonitoredFileCommand { get; private set; }
         public ICommand RestartMonitorCommand { get; private set; }
         public ICommand VacuumReindexCommand { get; private set; }
@@ -89,6 +116,8 @@ namespace ZO.LoadOrderManager
         public ICommand CheckForUpdatesCommand { get; private set; }
         public ICommand LoadFromYamlCommand { get; private set; }
         public ICommand SaveCommand { get; private set; }
+        public ICommand BrowseModManagerExecutableCommand { get; private set; }
+        public ICommand BrowseModManagerRepoFolderCommand { get; private set; }
 
         public SettingsViewModel()
         {
@@ -99,26 +128,26 @@ namespace ZO.LoadOrderManager
 
         public void UseEmptyConfig()
         {
-            _config = new Config(); // Create a new empty config object
-            InitializeViewModel();  // Re-initialize commands and properties with the new config
+            _config = new Config();
+            InitializeViewModel();
         }
 
         private void InitializeViewModel()
         {
-            // Initialize monitored files from Config
             MonitoredFiles = new ObservableCollection<FileInfo>(_config.MonitoredFiles);
 
-            // Initialize commands in the constructor
             AddNewMonitoredFileCommand = new RelayCommand(_ => AddNewFile());
             RestartMonitorCommand = new RelayCommand(_ => RestartMonitor());
             VacuumReindexCommand = new RelayCommand(_ => VacuumDatabase());
-            CleanOrdinalsCommand = new RelayCommand(_ => CleanOrdinals());
+            CleanOrdinalsCommand = new RelayCommand(_ => CleanOrdinals(true, false));
             EditFileCommand = new RelayCommand<FileInfo>(file => EditFile(file));
             CompareFileCommand = new RelayCommand<FileInfo>(file => CompareFile(file));
             BrowseGameFolderCommand = new RelayCommand(_ => BrowseGameFolder());
             CheckForUpdatesCommand = new RelayCommand(_ => CheckForUpdates());
             LoadFromYamlCommand = new RelayCommand(_ => LoadFromYaml());
             SaveCommand = new RelayCommand(_ => Save());
+            BrowseModManagerExecutableCommand = new RelayCommand(_ => BrowseModManagerExecutable());
+            BrowseModManagerRepoFolderCommand = new RelayCommand(_ => BrowseModManagerRepoFolder());
         }
 
         private void AddNewFile()
@@ -155,42 +184,43 @@ namespace ZO.LoadOrderManager
             }
         }
 
-        private void CleanOrdinals()
+        
+
+
+        public static void CleanOrdinals(bool refreshMetadata = true, bool quiet = false)
         {
             try
             {
-                // Suppress all ObservableCollection change notifications using UniversalCollectionDisabler
-
                 using (var connection = DbManager.Instance.GetConnection())
                 {
                     using var transaction = connection.BeginTransaction();
                     const string cleanOrdinalsQuery = @"
-                    WITH OrderedGSP AS (
-                        SELECT GroupSetID, GroupID, PluginID,
-                               ROW_NUMBER() OVER (PARTITION BY GroupSetID, GroupID ORDER BY Ordinal) AS NewOrdinal
-                        FROM GroupSetPlugins
-                    )
-                    UPDATE GroupSetPlugins
-                    SET Ordinal = OrderedGSP.NewOrdinal
-                    FROM OrderedGSP
-                    WHERE GroupSetPlugins.GroupSetID = OrderedGSP.GroupSetID
-                      AND GroupSetPlugins.GroupID = OrderedGSP.GroupID
-                      AND GroupSetPlugins.PluginID = OrderedGSP.PluginID;
+                        WITH OrderedGSP AS (
+                            SELECT GroupSetID, GroupID, PluginID,
+                                   ROW_NUMBER() OVER (PARTITION BY GroupSetID, GroupID ORDER BY Ordinal) AS NewOrdinal
+                            FROM GroupSetPlugins
+                        )
+                        UPDATE GroupSetPlugins
+                        SET Ordinal = OrderedGSP.NewOrdinal
+                        FROM OrderedGSP
+                        WHERE GroupSetPlugins.GroupSetID = OrderedGSP.GroupSetID
+                          AND GroupSetPlugins.GroupID = OrderedGSP.GroupID
+                          AND GroupSetPlugins.PluginID = OrderedGSP.PluginID;
 
-                    WITH OrderedGSG AS (
-                        SELECT GroupSetID, ParentID, GroupID,
-                               CASE WHEN GroupID < 0 THEN -GroupID + 9000
-                                    ELSE ROW_NUMBER() OVER (PARTITION BY GroupSetID, ParentID ORDER BY Ordinal)
-                               END AS NewOrdinal
-                        FROM GroupSetGroups
-                    )
-                    UPDATE GroupSetGroups
-                    SET Ordinal = OrderedGSG.NewOrdinal
-                    FROM OrderedGSG
-                    WHERE GroupSetGroups.GroupSetID = OrderedGSG.GroupSetID
-                      AND GroupSetGroups.ParentID = OrderedGSG.ParentID
-                      AND GroupSetGroups.GroupID = OrderedGSG.GroupID;
-                ";
+                        WITH OrderedGSG AS (
+                            SELECT GroupSetID, ParentID, GroupID,
+                                   CASE WHEN GroupID < 0 THEN -GroupID + 9000
+                                        ELSE ROW_NUMBER() OVER (PARTITION BY GroupSetID, ParentID ORDER BY Ordinal)
+                                   END AS NewOrdinal
+                            FROM GroupSetGroups
+                        )
+                        UPDATE GroupSetGroups
+                        SET Ordinal = OrderedGSG.NewOrdinal
+                        FROM OrderedGSG
+                        WHERE GroupSetGroups.GroupSetID = OrderedGSG.GroupSetID
+                          AND GroupSetGroups.ParentID = OrderedGSG.ParentID
+                          AND GroupSetGroups.GroupID = OrderedGSG.GroupID;
+                    ";
 
                     using (var command = connection.CreateCommand())
                     {
@@ -202,19 +232,17 @@ namespace ZO.LoadOrderManager
                     transaction.Commit();
                 }
 
-                // Refresh metadata from the database after the transaction
-                AggLoadInfo.Instance.RefreshMetadataFromDB();
-
-                // Inform the user of success
-                _ = MessageBox.Show("Ordinals cleaned successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                if (refreshMetadata)
+                {
+                    AggLoadInfo.Instance.RefreshMetadataFromDB();
+                   if (!quiet) _ = MessageBox.Show("Ordinals cleaned successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
             }
             catch (Exception ex)
             {
-                // Handle and inform the user of any errors
                 _ = MessageBox.Show($"Error during cleaning ordinals: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-
 
         private void CompareFile(FileInfo file)
         {
@@ -268,6 +296,38 @@ namespace ZO.LoadOrderManager
             }
         }
 
+        private void BrowseModManagerExecutable()
+        {
+            var openFileDialog = new OpenFileDialog
+            {
+                Filter = "Executable files (*.exe)|*.exe|All files (*.*)|*.*",
+                Title = "Select Mod Manager Executable"
+            };
+
+            if (openFileDialog.ShowDialog() == true)
+            {
+                ModManagerExecutable = openFileDialog.FileName;
+            }
+        }
+
+        private void BrowseModManagerRepoFolder()
+        {
+            var dialog = new OpenFileDialog
+            {
+                CheckFileExists = false,
+                CheckPathExists = true,
+                FileName = "Select Folder",
+                Filter = "Folders|*.",
+                Title = "Select your Mod Staging Folder"
+            };
+
+            if (dialog.ShowDialog() == true)
+            {
+                string folderPath = System.IO.Path.GetDirectoryName(dialog.FileName);
+                ModManagerRepoFolder = folderPath;
+            }
+        }
+
         private void CheckForUpdates()
         {
             App.CheckForUpdates(Application.Current.MainWindow);
@@ -275,7 +335,7 @@ namespace ZO.LoadOrderManager
 
         private void LoadFromYaml()
         {
-            var openFileDialog = new Microsoft.Win32.OpenFileDialog
+            var openFileDialog = new OpenFileDialog
             {
                 InitialDirectory = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "ZeeOgre", "LoadOrderManager"),
                 Filter = "YAML files (*.yaml)|*.yaml|All files (*.*)|*.*",
@@ -288,10 +348,14 @@ namespace ZO.LoadOrderManager
                 try
                 {
                     _config = Config.LoadFromYaml(selectedFile);
+                    InitializeViewModel();
                     OnPropertyChanged(nameof(MonitoredFiles));
                     OnPropertyChanged(nameof(AutoCheckAtStartup));
                     OnPropertyChanged(nameof(GameFolder));
                     OnPropertyChanged(nameof(DarkMode));
+                    OnPropertyChanged(nameof(ModManagerExecutable));
+                    OnPropertyChanged(nameof(ModManagerArguments));
+                    OnPropertyChanged(nameof(ModManagerRepoFolder));
                     _ = MessageBox.Show("Configuration loaded successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
                 catch (Exception ex)
@@ -306,22 +370,14 @@ namespace ZO.LoadOrderManager
         {
             try
             {
-                // Update the singleton instance with current values
                 Config.Instance.UpdateFrom(_config);
-
-                // Save to YAML
                 Config.SaveToYaml();
-
-                // Save to Database
                 Config.SaveToDatabase();
-
-                SaveCompleted?.Invoke();
             }
             catch (Exception ex)
             {
                 Console.WriteLine("Error saving configuration: " + ex.Message);
             }
         }
-
     }
 }

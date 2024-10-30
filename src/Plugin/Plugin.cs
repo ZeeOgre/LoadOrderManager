@@ -708,6 +708,91 @@ namespace ZO.LoadOrderManager
             }
         }
 
+
+
+        public void SoftDelete(long groupSetID)
+        {
+            using var connection = DbManager.Instance.GetConnection();
+            using var transaction = connection.BeginTransaction();
+
+            try
+            {
+                // Update the GroupID to -997 for this PluginID within the specified GroupSetID
+                using var updateGroupSetPluginsCommand = new SQLiteCommand(connection)
+                {
+                    CommandText = @"
+            UPDATE GroupSetPlugins
+            SET GroupID = -997
+            WHERE PluginID = @PluginID AND GroupSetID = @GroupSetID;"
+                };
+                updateGroupSetPluginsCommand.Parameters.AddWithValue("@PluginID", this.PluginID);
+                updateGroupSetPluginsCommand.Parameters.AddWithValue("@GroupSetID", groupSetID);
+                updateGroupSetPluginsCommand.ExecuteNonQuery();
+
+                transaction.Commit();
+                App.LogDebug($"SoftDelete executed successfully for PluginID={this.PluginID} in GroupSetID={groupSetID}.");
+            }
+            catch (Exception ex)
+            {
+                transaction.Rollback();
+                App.LogDebug($"SoftDelete error for PluginID={this.PluginID} in GroupSetID={groupSetID}: {ex.Message}");
+                throw;
+            }
+        }
+
+        public void HardDelete()
+        {
+            using var connection = DbManager.Instance.GetConnection();
+            using var transaction = connection.BeginTransaction();
+
+            try
+            {
+                // Perform SoftDelete for each GroupSetID associated with this PluginID
+                using var command = new SQLiteCommand(connection)
+                {
+                    CommandText = @"
+            SELECT DISTINCT GroupSetID
+            FROM GroupSetPlugins
+            WHERE PluginID = @PluginID;"
+                };
+                command.Parameters.AddWithValue("@PluginID", this.PluginID);
+
+                using var reader = command.ExecuteReader();
+                var groupSetIDs = new List<long>();
+
+                while (reader.Read())
+                {
+                    groupSetIDs.Add(reader.GetInt64(0));
+                }
+
+                foreach (var groupSetID in groupSetIDs)
+                {
+                    SoftDelete(groupSetID);
+                }
+
+                // Now, remove the Plugin record from the Plugins table, which will cascade delete associated entries
+                using var deletePluginCommand = new SQLiteCommand(connection)
+                {
+                    CommandText = @"
+            DELETE FROM Plugins
+            WHERE PluginID = @PluginID;"
+                };
+                deletePluginCommand.Parameters.AddWithValue("@PluginID", this.PluginID);
+                deletePluginCommand.ExecuteNonQuery();
+
+                transaction.Commit();
+                App.LogDebug($"HardDelete executed successfully for PluginID={this.PluginID}.");
+            }
+            catch (Exception ex)
+            {
+                transaction.Rollback();
+                App.LogDebug($"HardDelete error for PluginID={this.PluginID}: {ex.Message}");
+                throw;
+            }
+        }
+
+
+
     }
 
 

@@ -35,6 +35,7 @@ namespace ZO.LoadOrderManager
 
                 try
                 {
+                    _quiet = true;
                     InitializationManager.StartInitialization(nameof(FileManager));
                     App.LogDebug("FileManager: Starting initialization...");
                     FileMonitor.InitializeAllMonitors();
@@ -70,17 +71,22 @@ namespace ZO.LoadOrderManager
                     InitializationManager.ReportProgress(22, "Content catalog parsed");
 
 
-                    InitializationManager.ReportProgress(21, "Starting GameFolder Scan");
+                    InitializationManager.ReportProgress(25, "Starting GameFolder Scan");
                     //FileManager.ScanGameDirectoryForStraysAsync();
                     FileManager.ScanGameDirectoryForStrays(true);
 
+                    
+                    InitializationManager.ReportProgress(50, "Scanning ModManager Repo");
+                    FileManager.UpdatePluginsFromModList(true);
+
                     FileManager.MarkLoadOutComplete(AggLoadInfo.Instance);
-                    InitializationManager.ReportProgress(89, "LoadOut marked complete");
+                    InitializationManager.ReportProgress(99, "LoadOut marked complete");
 
                     InitializationManager.PrintInitializingComponents();
 
 
                     _initialized = true;
+                    _quiet = false;
                     App.LogDebug("FileManager: Initialization completed successfully.");
 
 

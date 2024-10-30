@@ -480,5 +480,99 @@ namespace ZO.LoadOrderManager
             _ = other.WriteGroup();
             AggLoadInfo.Instance.RefreshMetadataFromDB();
         }
+
+        public void SoftDelete(long groupSetID)
+        {
+            using var connection = DbManager.Instance.GetConnection();
+            using var transaction = connection.BeginTransaction();
+
+            try
+            {
+                // Remove the GroupSetGroups entry for the specified GroupSetID
+                using var deleteGroupSetGroupsCommand = new SQLiteCommand(connection)
+                {
+                    CommandText = @"
+                DELETE FROM GroupSetGroups
+                WHERE GroupID = @GroupID AND GroupSetID = @GroupSetID;"
+                };
+                deleteGroupSetGroupsCommand.Parameters.AddWithValue("@GroupID", this.GroupID);
+                deleteGroupSetGroupsCommand.Parameters.AddWithValue("@GroupSetID", groupSetID);
+                deleteGroupSetGroupsCommand.ExecuteNonQuery();
+
+                // Update GroupSetPlugins entries to the reserved group (-997) for the same GroupID and GroupSetID
+                using var updateGroupSetPluginsCommand = new SQLiteCommand(connection)
+                {
+                    CommandText = @"
+                UPDATE GroupSetPlugins
+                SET GroupID = -997
+                WHERE GroupID = @GroupID AND GroupSetID = @GroupSetID;"
+                };
+                updateGroupSetPluginsCommand.Parameters.AddWithValue("@GroupID", this.GroupID);
+                updateGroupSetPluginsCommand.Parameters.AddWithValue("@GroupSetID", groupSetID);
+                updateGroupSetPluginsCommand.ExecuteNonQuery();
+
+                transaction.Commit();
+                App.LogDebug($"SoftDelete executed successfully for GroupID={this.GroupID} in GroupSetID={groupSetID}.");
+            }
+            catch (Exception ex)
+            {
+                transaction.Rollback();
+                App.LogDebug($"SoftDelete error for GroupID={this.GroupID} in GroupSetID={groupSetID}: {ex.Message}");
+                throw;
+            }
+        }
+
+        public void HardDelete()
+        {
+            using var connection = DbManager.Instance.GetConnection();
+            using var transaction = connection.BeginTransaction();
+
+            try
+            {
+                // First, perform SoftDelete for each GroupSetID associated with this GroupID
+                using var command = new SQLiteCommand(connection)
+                {
+                    CommandText = @"
+                SELECT DISTINCT GroupSetID
+                FROM GroupSetGroups
+                WHERE GroupID = @GroupID;"
+                };
+                command.Parameters.AddWithValue("@GroupID", this.GroupID);
+
+                using var reader = command.ExecuteReader();
+                var groupSetIDs = new List<long>();
+
+                while (reader.Read())
+                {
+                    groupSetIDs.Add(reader.GetInt64(0));
+                }
+
+                foreach (var groupSetID in groupSetIDs)
+                {
+                    SoftDelete(groupSetID);
+                }
+
+                // Finally, delete the ModGroup from ModGroups table
+                using var deleteModGroupCommand = new SQLiteCommand(connection)
+                {
+                    CommandText = @"
+                DELETE FROM ModGroups
+                WHERE GroupID = @GroupID;"
+                };
+                deleteModGroupCommand.Parameters.AddWithValue("@GroupID", this.GroupID);
+                deleteModGroupCommand.ExecuteNonQuery();
+
+                transaction.Commit();
+                App.LogDebug($"HardDelete executed successfully for GroupID={this.GroupID}.");
+            }
+            catch (Exception ex)
+            {
+                transaction.Rollback();
+                App.LogDebug($"HardDelete error for GroupID={this.GroupID}: {ex.Message}");
+                throw;
+            }
+        }
+
+
     }
 }

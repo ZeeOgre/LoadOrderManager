@@ -8,8 +8,8 @@ namespace ZO.LoadOrderManager
 {
     public partial class DiffViewer : MetroWindow
     {
-        private string? filePath1;
-        private string? filePath2;
+        private string? filePath1;  //old file
+        private string? filePath2;  //new file
 
         // Constructor 1: FileInfo handling
         public DiffViewer()
@@ -31,7 +31,14 @@ namespace ZO.LoadOrderManager
 
             // Load content from FileInfo and the second file path
             string oldText = Encoding.UTF8.GetString(fileInfo.FileContent);
-            string newText = File.ReadAllText(filePath2);
+            string newText;
+            using (var stream = new FileStream(filePath2, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            {
+                using (var reader = new StreamReader(stream))
+                {
+                    newText = reader.ReadToEnd();
+                }
+            }
 
             // Set texts in DiffView
             DiffView.OldText = oldText;
@@ -57,8 +64,23 @@ namespace ZO.LoadOrderManager
                 filePath2 = OpenFileDialog("Select the second file to compare");
 
             // Load text from both files
-            string oldText = File.ReadAllText(filePath1);
-            string newText = File.ReadAllText(filePath2);
+            string oldText;
+            using (var stream = new FileStream(filePath1, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            {
+                using (var reader = new StreamReader(stream))
+                {
+                    oldText = reader.ReadToEnd();
+                }
+            }
+
+            string newText;
+            using (var stream = new FileStream(filePath2, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            {
+                using (var reader = new StreamReader(stream))
+                {
+                    newText = reader.ReadToEnd();
+                }
+            }
 
             // Set texts in DiffView
             DiffView.OldText = oldText;
@@ -71,6 +93,33 @@ namespace ZO.LoadOrderManager
             LoadData();
         }
 
+        public DiffViewer(byte[] oldContent, string filePath2)
+        {
+            InitializeComponent();
+
+            // Convert byte array to string
+            string oldText = Encoding.UTF8.GetString(oldContent);
+
+            // Load text from the file path
+            string newText;
+            using (var stream = new FileStream(filePath2, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            {
+                using (var reader = new StreamReader(stream))
+                {
+                    newText = reader.ReadToEnd();
+                }
+            }
+
+            // Set texts in DiffView
+            DiffView.OldText = oldText;
+            DiffView.NewText = newText;
+            DiffView.IsCommandBarVisible = false;
+
+            // Set the window title
+            Title = $"DiffViewer | Comparing {Path.GetFileName(filePath2)}...";
+
+            LoadData();
+        }
         // Constructor 3: FileInfo and a single file path, prompts for missing file
         public DiffViewer(FileInfo fileInfo, string? filePath2)
         {
@@ -83,7 +132,14 @@ namespace ZO.LoadOrderManager
 
             // Load content from FileInfo and the second file path
             string oldText = Encoding.UTF8.GetString(fileInfo.FileContent);
-            string newText = File.ReadAllText(filePath2);
+            string newText;
+            using (var stream = new FileStream(filePath2, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            {
+                using (var reader = new StreamReader(stream))
+                {
+                    newText = reader.ReadToEnd();
+                }
+            }
 
             // Set texts in DiffView
             DiffView.OldText = oldText;
@@ -167,5 +223,31 @@ namespace ZO.LoadOrderManager
         {
             DiffView.OpenViewModeContextMenu();
         }
+
+
+        // Button handler: Keep New version
+        private void KeepOldButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (filePath2 != null && DiffView.OldText != null)
+            {
+                try
+                {
+                    // Write the old byte array content directly to the new file location (filePath2)
+                    File.WriteAllText(filePath2, DiffView.OldText);
+
+                    MessageBox.Show($"Successfully replaced new version with the old content: {filePath2}");
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Failed to write old content to {filePath2}. Error: {ex.Message}");
+                }
+            }
+            else
+            {
+                MessageBox.Show("Source content or target path is missing or invalid.");
+            }
+        }
+
+
     }
 }

@@ -28,7 +28,8 @@ namespace ZO.LoadOrderManager
         {
             InitializationManager.StartInitialization(nameof(LoadOrderWindow));
             InitializeComponent();
-            
+            this.Closing += LoadOrderWindow_Closing; // Subscribe to the Closing event
+
 
             try
             {
@@ -134,6 +135,19 @@ namespace ZO.LoadOrderManager
         private void LoadOrderWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
         {
             App.LogDebug("MainWindow is closing.");
+
+            // Perform DBManager.FlushDB on shutdown
+            try
+            {
+                DbManager.CompactFileInfoTable();
+                DbManager.CompactExternalIDsTable();
+                DbManager.FlushDB();
+                App.LogDebug("Database flushed successfully.");
+            }
+            catch (Exception ex)
+            {
+                App.LogDebug($"Error flushing database: {ex.Message}");
+            }
         }
 
         private void Hyperlink_RequestNavigate(object sender, RequestNavigateEventArgs e)

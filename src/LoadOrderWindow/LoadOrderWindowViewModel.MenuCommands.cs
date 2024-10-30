@@ -24,6 +24,7 @@ namespace ZO.LoadOrderManager
         public ICommand EditContentCatalogCommand { get; }
         public ICommand ImportContextCatalogCommand { get; }
         public ICommand ScanGameFolderCommand { get; }
+        public ICommand ScanModFolderCommand { get; }
 
         public ICommand CopyTextCommand { get; }
         public ICommand DeleteCommand { get; }
@@ -225,31 +226,17 @@ namespace ZO.LoadOrderManager
         }
 
 
-        private void ImportContextCatalog()
+        private void ImportContentCatalog()
         {
 
-            FileManager.ParseContentCatalogTxt();
-            //var openFileDialog = new OpenFileDialog
-            //{
-            //    InitialDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "starfield"),
-            //    Filter = "Text files (*.txt)|*.txt|All files (*.*)|*.*",
-            //    Title = "Select ContentCatalog.txt file"
-            //};
-
-            //if (openFileDialog.ShowDialog() == true)
-            //{
-            //    var selectedFile = openFileDialog.FileName;
-            //    FileManager.ParseContentCatalogTxt(selectedFile);
-
-            //    _ = MessageBox.Show("Content catalog imported successfully.", "Import Content Catalog", MessageBoxButton.OK, MessageBoxImage.Information);
-
-            //    RefreshData();
-            //}
+            FileManager.ParseContentCatalogTxt(FileManager.ContentCatalogFile, AggLoadInfo.Instance.ActiveGroupSet.GroupSetID);
+            RefreshData();
         }
 
 
         void ScanGameFolder()
         {
+            ImportContentCatalog();
             // Prompt the user to choose between a full scan and a quick scan
             var result = MessageBox.Show("Do you want to perform a full scan?", "Scan Type", MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
 
@@ -257,18 +244,20 @@ namespace ZO.LoadOrderManager
             if (result == MessageBoxResult.Yes)
             {
                 // Perform a full scan
-                _ = FileManager.ScanGameDirectoryForStraysAsync(fullScan: true);
+                FileManager.ScanGameDirectoryForStrays(fullScan: true,AggLoadInfo.Instance.ActiveGroupSet.GroupSetID, false);
             }
             else if (result == MessageBoxResult.No)
             {
                 // Perform a quick scan
-                _ = FileManager.ScanGameDirectoryForStraysAsync(fullScan: false);
+                FileManager.ScanGameDirectoryForStrays(fullScan: false, AggLoadInfo.Instance.ActiveGroupSet.GroupSetID, false);
             }
             else
             {
                 // User canceled the operation
                 _ = MessageBox.Show("Scan operation canceled.", "Canceled", MessageBoxButton.OK, MessageBoxImage.Information);
             }
+
+            RefreshData();
         }
 
         private void SettingsWindow()
@@ -382,6 +371,12 @@ namespace ZO.LoadOrderManager
 
                     // Adjust ordinals of sibling groups and move child plugins to unassigned group
                     AdjustSiblingGroupsAndMoveChildPlugins(selectedItem, parentGroup);
+
+                    // Remove the group from the GroupSetGroupCollection
+                    var groupSetID = parentGroup.GroupSetID;
+                    var groupID = selectedItem.GetModGroup().GroupID;
+                    selectedItem.ParentID = null;
+                    
                 }
             }
 
@@ -414,27 +409,41 @@ namespace ZO.LoadOrderManager
             _ = (parentGroup.Plugins?.Remove(selectedItem.PluginData));
         }
 
+        private bool CanChangeGroup(LoadOrderItemViewModel item)
+        {
+            var underlyingObject = EntityTypeHelper.GetUnderlyingObject(item);
+
+            if (underlyingObject is ModGroup && item.GroupID <= 1)
+            {
+                return false; // Cannot change group if it's a group and GroupID <= 1
+            }
+            return true; // Can change group otherwise
+        }
+
 
         private void ChangeGroup(LoadOrderItemViewModel item, object parameter)
         {
+            if (!CanChangeGroup(item))
+            {
+                // Optionally, you can show a message to the user indicating why the action cannot be performed
+                MessageBox.Show($"Cannot change group for this {item}.");
+                return;
+            }
+
             if (parameter is long newGroupId)
             {
                 var underlyingObject = EntityTypeHelper.GetUnderlyingObject(item);
 
                 if (underlyingObject is ModGroup modGroup)
                 {
-                    if (item.GroupID > 1) modGroup.ChangeGroup(newGroupId);
+                    modGroup.ChangeGroup(newGroupId);
                 }
                 else if (underlyingObject is Plugin plugin)
                 {
                     plugin.ChangeGroup(newGroupId);
-
                 }
                 item.ParentID = newGroupId;
-
-
             }
-
             else
             {
                 throw new ArgumentException("Parameter must be a long representing the new group ID.", nameof(parameter));
@@ -443,9 +452,7 @@ namespace ZO.LoadOrderManager
         }
 
 
-
-
-        private void ToggleEnable(LoadOrderItemViewModel itemViewModel, object sender)
+        private void ToggleActive(LoadOrderItemViewModel itemViewModel, object sender)
         {
             if (SelectedLoadOut == null)
             {
@@ -453,47 +460,70 @@ namespace ZO.LoadOrderManager
                 return;
             }
 
-            // Retrieve the Tag property to determine the source (checkbox or right-click menu)
-            if (sender is FrameworkElement element && element.Tag is string tag)
+            if (!CanExecuteToggleActive(itemViewModel))
             {
-                bool isCheckbox = tag == "checkbox";
+                UpdateStatus("Cannot toggle this group.");
+                return;
+            }
 
-                // Record the old state for debugging
-                Debug.WriteLine($"OldState: {itemViewModel.IsActive}");
+            // Toggle the new state
+            bool newState = !itemViewModel.IsActive;
 
-                // Determine the new state based on whether this is a checkbox toggle or right-click menu
-                bool newState = isCheckbox ? itemViewModel.IsActive : !itemViewModel.IsActive;
+            // Set the new state
+            itemViewModel.IsActive = newState;
 
-                Debug.WriteLine($"NewState: {newState}");
-
-                // Set the new state to the UI-bound property
-                itemViewModel.IsActive = newState;
-
-                // Update the backend data (the database and in-memory LoadOut)
+            // If the item is a group, recursively toggle all its child items
+            if (itemViewModel.EntityType == EntityType.Group)
+            {
+                ToggleChildrenRecursively(itemViewModel, newState);
+            }
+            else if (itemViewModel.EntityType == EntityType.Plugin)
+            {
+                // Update the backend for the plugin
                 LoadOut.SetPluginEnabled(SelectedLoadOut.ProfileID, itemViewModel.PluginData.PluginID, newState);
+            }
 
-                // Notify the UI to refresh the view
-                OnPropertyChanged(nameof(LoadOuts));
+            // Notify the UI to refresh the view
+            OnPropertyChanged(nameof(LoadOuts));
+        }
+
+        /// <summary>
+        /// Recursively toggles the child items of a group to match the group's new state.
+        /// </summary>
+        /// <param name="parentItem">The parent group whose children need to be toggled.</param>
+        /// <param name="newState">The new state to apply to the group's children.</param>
+        private void ToggleChildrenRecursively(LoadOrderItemViewModel parentItem, bool newState)
+        {
+            if (parentItem.Children == null || !parentItem.Children.Any())
+                return;
+
+            foreach (var childItem in parentItem.Children)
+            {
+                // For plugins, toggle IsActive and update the backend
+                if (childItem.EntityType == EntityType.Plugin)
+                {
+                    childItem.IsActive = newState;
+                    LoadOut.SetPluginEnabled(SelectedLoadOut.ProfileID, childItem.PluginData.PluginID, newState);
+                }
+                // For nested groups, toggle the group and recursively toggle its children
+                else if (childItem.EntityType == EntityType.Group)
+                {
+                    childItem.IsActive = newState;
+                    ToggleChildrenRecursively(childItem, newState);
+                }
             }
         }
 
 
-
-
-
-        private bool CanExecuteToggleEnable(object parameter)
+        private bool CanExecuteToggleActive(object parameter)
         {
-
-            //Debug.WriteLine($"Parameter Type: {parameter?.GetType().Name}");
-            //Debug.WriteLine($"Parameter Value: {parameter}");
-
             if (SelectedLoadOut != null && parameter is LoadOrderItemViewModel itemViewModel)
             {
-                return itemViewModel.GroupID > 0;
-
+                return itemViewModel.GroupID > 1 || itemViewModel.GroupID == -997;  // Validate based on GroupID
             }
             return true;
         }
+
 
 
         private bool CanExecuteDelete(object parameter)
@@ -525,6 +555,17 @@ namespace ZO.LoadOrderManager
                     _ = MessageBox.Show("An error occurred while loading the configuration.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
+        }
+
+        private void ScanModFolder()
+        {
+            if (string.IsNullOrEmpty(Config.Instance.ModManagerRepoFolder) || !Directory.Exists(Config.Instance.ModManagerRepoFolder) || !File.Exists(FileManager.ModMetaDataFile))
+            {
+                MessageBox.Show("To use this feature you must define the ModManager repository folder (aka the Staging Folder), and use the Modlist Backup Extension to \"Modlist Backup Only This Game\" and place the file \"nexus_modlist.json\" at the root of the mod staging folder.\n\nThen this will autopopulate all the NexusID's that are known.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+            FileManager.UpdatePluginsFromModList(false);
         }
 
     }
