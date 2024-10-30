@@ -236,22 +236,21 @@ namespace ZO.LoadOrderManager
                 {
                     _instance = new Config
                     {
-                        GameFolder = reader["GameFolder"]?.ToString(),
-                        AutoScanGameFolder = Convert.ToBoolean(reader["AutoScanGameFolder"]),
-                        ModManagerRepoFolder = reader["ModManagerRepoFolder"]?.ToString(),
-                        AutoScanModRepoFolder = Convert.ToBoolean(reader["AutoScanModRepoFolder"]),
-                        ModManagerExecutable = reader["ModManagerExecutable"]?.ToString(),
-                        ModManagerArguments = reader["ModManagerArguments"]?.ToString(),
-                        AutoCheckForUpdates = Convert.ToBoolean(reader["AutoCheckForUpdates"]),
-                        DarkMode = Convert.ToBoolean(reader["DarkMode"]),
-                        LootExePath = reader["LootExePath"]?.ToString(),
-                        NexusExportFile = reader["NexusExportFile"]?.ToString(),
-                        MO2ExportFile = reader["MO2ExportFile"]?.ToString(),
+                        GameFolder = reader["GameFolder"] != DBNull.Value ? reader["GameFolder"].ToString() : null,
+                        AutoScanGameFolder = reader["AutoScanGameFolder"] != DBNull.Value && Convert.ToBoolean(reader["AutoScanGameFolder"]),
+                        ModManagerRepoFolder = reader["ModManagerRepoFolder"] != DBNull.Value ? reader["ModManagerRepoFolder"].ToString() : null,
+                        AutoScanModRepoFolder = reader["AutoScanModRepoFolder"] != DBNull.Value && Convert.ToBoolean(reader["AutoScanModRepoFolder"]),
+                        ModManagerExecutable = reader["ModManagerExecutable"] != DBNull.Value ? reader["ModManagerExecutable"].ToString() : null,
+                        ModManagerArguments = reader["ModManagerArguments"] != DBNull.Value ? reader["ModManagerArguments"].ToString() : null,
+                        AutoCheckForUpdates = reader["AutoCheckForUpdates"] != DBNull.Value && Convert.ToBoolean(reader["AutoCheckForUpdates"]),
+                        DarkMode = reader["DarkMode"] != DBNull.Value && Convert.ToBoolean(reader["DarkMode"]),
+                        LootExePath = reader["LootExePath"] != DBNull.Value ? reader["LootExePath"].ToString() : null,
+                        NexusExportFile = reader["NexusExportFile"] != DBNull.Value ? reader["NexusExportFile"].ToString() : null,
+                        MO2ExportFile = reader["MO2ExportFile"] != DBNull.Value ? reader["MO2ExportFile"].ToString() : null,
                         WebServicePort = reader["WebServicePort"] != DBNull.Value ? Convert.ToInt32(reader["WebServicePort"]) : default(int),
-                        PluginWarning = Convert.ToBoolean(reader["PluginWarning"]),
-                        ShowDiff = Convert.ToBoolean(reader["ShowDiff"]),
-                        MonitoredFiles = FileInfo.GetMonitoredFiles() // Ensure MonitoredFiles is loaded
-                        
+                        PluginWarning = reader["PluginWarning"] != DBNull.Value && Convert.ToBoolean(reader["PluginWarning"]),
+                        ShowDiff = reader["ShowDiff"] != DBNull.Value && Convert.ToBoolean(reader["ShowDiff"]),
+                        MonitoredFiles = FileInfo.GetMonitoredFiles()
                     };
                 }
             }
