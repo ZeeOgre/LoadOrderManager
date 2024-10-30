@@ -8,8 +8,8 @@ namespace ZO.LoadOrderManager
 {
     public partial class DiffViewer : MetroWindow
     {
-        private string? filePath1;
-        private string? filePath2;
+        private string? filePath1;  //old file
+        private string? filePath2;  //new file
 
         // Constructor 1: FileInfo handling
         public DiffViewer()
@@ -224,24 +224,30 @@ namespace ZO.LoadOrderManager
             DiffView.OpenViewModeContextMenu();
         }
 
+
+        // Button handler: Keep New version
         private void KeepOldButton_Click(object sender, RoutedEventArgs e)
         {
-            if (!string.IsNullOrEmpty(filePath1))
+            if (filePath2 != null && DiffView.OldText != null)
             {
-                File.WriteAllText(filePath1, DiffView.OldText);
-                MessageBox.Show($"Successfully kept old version: {filePath1}");
+                try
+                {
+                    // Write the old byte array content directly to the new file location (filePath2)
+                    File.WriteAllText(filePath2, DiffView.OldText);
+
+                    MessageBox.Show($"Successfully replaced new version with the old content: {filePath2}");
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Failed to write old content to {filePath2}. Error: {ex.Message}");
+                }
+            }
+            else
+            {
+                MessageBox.Show("Source content or target path is missing or invalid.");
             }
         }
 
-        // Button handler: Keep New version
-        private void KeepNewButton_Click(object sender, RoutedEventArgs e)
-        {
-            if (!string.IsNullOrEmpty(filePath2))
-            {
-                File.WriteAllText(filePath2, DiffView.NewText);
-                MessageBox.Show($"Successfully kept new version: {filePath2}");
-            }
-        }
-       
+
     }
 }

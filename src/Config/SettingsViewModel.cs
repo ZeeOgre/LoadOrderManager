@@ -139,7 +139,7 @@ namespace ZO.LoadOrderManager
             AddNewMonitoredFileCommand = new RelayCommand(_ => AddNewFile());
             RestartMonitorCommand = new RelayCommand(_ => RestartMonitor());
             VacuumReindexCommand = new RelayCommand(_ => VacuumDatabase());
-            CleanOrdinalsCommand = new RelayCommand(_ => CleanOrdinals());
+            CleanOrdinalsCommand = new RelayCommand(_ => CleanOrdinals(true, false));
             EditFileCommand = new RelayCommand<FileInfo>(file => EditFile(file));
             CompareFileCommand = new RelayCommand<FileInfo>(file => CompareFile(file));
             BrowseGameFolderCommand = new RelayCommand(_ => BrowseGameFolder());
@@ -187,7 +187,7 @@ namespace ZO.LoadOrderManager
         
 
 
-        public static void CleanOrdinals(bool refreshMetadata = true)
+        public static void CleanOrdinals(bool refreshMetadata = true, bool quiet = false)
         {
             try
             {
@@ -235,7 +235,7 @@ namespace ZO.LoadOrderManager
                 if (refreshMetadata)
                 {
                     AggLoadInfo.Instance.RefreshMetadataFromDB();
-                    _ = MessageBox.Show("Ordinals cleaned successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                   if (!quiet) _ = MessageBox.Show("Ordinals cleaned successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
             }
             catch (Exception ex)
