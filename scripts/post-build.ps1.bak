@@ -5,9 +5,6 @@ param (
     [bool]$manual = $false
 )
 
-# Add a 5-second delay to ensure the MSI file is finished writing
-Start-Sleep -Seconds 5
-
 # Function to execute a command and handle errors
 function Execute-Command {
     param (
@@ -94,17 +91,12 @@ if ($currentBranch -eq 'master') {
     $currentBranch = 'dev'
 } elseif ($currentBranch -eq 'dev') {
     # Push dev to origin to ensure it's up to date (Line to Add)
-    try {
-        Execute-Command "git push origin dev"
-        Write-Output "Pushed dev branch to origin."
-    } catch {
-        Write-Error "Failed to push dev branch to origin. Please check your network connection, authentication, and branch protection rules."
-        exit 1
-    }
+    Execute-Command "git push origin dev"
+    Write-Output "Pushed dev branch to origin."
 
     # Friendly merge up to master
     Execute-Command "git checkout master"
-    Execute-Command "git merge -X theirs dev"
+    Execute-Command "git merge dev"
     Write-Output "Merged dev INTO master."
     $currentBranch = 'master'
 }
@@ -132,12 +124,12 @@ if ($configuration -eq 'GitRelease') {
 
     Execute-Command "git tag $tagName"
     # Push the tag to remote, force-pushing to overwrite if necessary
-    try {
-        Execute-Command "git push --force origin $tagName"
-    } catch {
-        Write-Error "Failed to push tag $tagName to origin."
-        exit 1
-    }
+try {
+    Execute-Command "git push --force origin $tagName"
+} catch {
+    Write-Error "Failed to push tag $tagName to origin."
+    exit 1
+}
     Write-Output "Tagged and pushed release: $tagName"
 
     # Create GitHub release
