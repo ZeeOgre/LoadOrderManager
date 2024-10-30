@@ -26,6 +26,7 @@ namespace ZO.LoadOrderManager
         public static void UpdatePluginsFromModList(bool quiet = false)
         {
             _quiet = quiet;
+
             if (string.IsNullOrEmpty(Config.Instance.ModManagerRepoFolder) || !Directory.Exists(Config.Instance.ModManagerRepoFolder) || !File.Exists(FileManager.ModMetaDataFile))
             {
                 if (!InitializationManager.IsAnyInitializing()) MessageBox.Show("Mod list file not found. Save the Modlist Backup: this game as nexus_modlist.json to the mod staging folder", "Mod list not found", MessageBoxButton.OK, MessageBoxImage.Error);

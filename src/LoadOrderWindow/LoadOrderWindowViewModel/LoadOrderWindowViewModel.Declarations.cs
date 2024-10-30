@@ -188,7 +188,9 @@ namespace ZO.LoadOrderManager
             Application.Current.Dispatcher.Invoke(() =>
             {
                 StatusMessage = message;
+                OnPropertyChanged(nameof(StatusMessage));
             });
+            
         }
 
         // Update the status message
@@ -202,6 +204,7 @@ namespace ZO.LoadOrderManager
             {
                 StatusMessage = "No item selected";
             }
+            OnPropertyChanged(nameof(StatusMessage));
         }
 
         public void SetWarning(string message)
@@ -222,6 +225,7 @@ namespace ZO.LoadOrderManager
                 {
                     refreshTimer.Stop();
                     OnPropertyChanged(nameof(WarningMessage));
+                    OnPropertyChanged(nameof(IsWarningActive));
                 };
 
                 refreshTimer.Start();
@@ -305,24 +309,7 @@ namespace ZO.LoadOrderManager
                 {
                     UpdateStatusLight();
                 }
-                //if (e.PropertyName == nameof(AggLoadInfo.ActiveGroupSet))
-                //{
-                //    if (!ReferenceEquals(_selectedGroupSet, AggLoadInfo.Instance.ActiveGroupSet))
-                //    {
-                //        _selectedGroupSet = AggLoadInfo.Instance.ActiveGroupSet;
-                //        _selectedLoadOut = AggLoadInfo.Instance.ActiveLoadOut;
-                //        OnPropertyChanged(nameof(SelectedGroupSet));
-                //        OnPropertyChanged(nameof(SelectedLoadOut));
-                //    }
-                //}
-                //else if (e.PropertyName == nameof(AggLoadInfo.ActiveLoadOut))
-                //{
-                //    if (!ReferenceEquals(_selectedLoadOut, AggLoadInfo.Instance.ActiveLoadOut))
-                //    {
-                //        _selectedLoadOut = AggLoadInfo.Instance.ActiveLoadOut;
-                //        OnPropertyChanged(nameof(SelectedLoadOut));
-                //    }
-                //}
+
                 else if (e.PropertyName == nameof(LoadOuts))
                 {
                     UpdateLoadOutsForSelectedGroupSet();
