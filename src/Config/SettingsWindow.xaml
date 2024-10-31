@@ -138,7 +138,7 @@
                 <!-- New column for Load from YAML -->
             </Grid.ColumnDefinitions>
             <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,10,0">
-                <CheckBox Content="Automatically check at startup" IsChecked="{Binding AutoCheckAtStartup}" Margin="5" VerticalAlignment="Center"/>
+                <CheckBox Content="Automatically check at startup" IsChecked="{Binding AutoCheckForUpdates}" Margin="5" VerticalAlignment="Center"/>
                 <TextBlock Text="Version:" VerticalAlignment="Center" Margin="5"/>
                 <TextBlock Text="{x:Static local:App.Version}" VerticalAlignment="Center" Margin="5"/>
                 <Button Content="Check for Updates" Command="{Binding CheckForUpdatesCommand}" Width="125"  Margin="5"/>

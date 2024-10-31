@@ -1,2 +1,15 @@
-gameFolder: M:\SteamLibrary\steamapps\common\Starfield ## This is the folder where your game is installed if UseModManager is false, this is required. This functionality is not implemented yet.'
-autoCheckForUpdates: true ## If true, the app will check for updates on startup	
+monitoredFiles: []
+darkMode: true
+gameFolder: M:\SteamLibrary\steamapps\common\Starfield
+autoScanGameFolder: true
+modManagerRepoFolder: M:\Games\ModStaging\Starfield_Steam
+autoScanModRepoFolder: false
+modManagerExecutable: S:\Games\Vortex\Vortex.exe
+modManagerArguments: --user-data S:\Games\VortexSteamData
+autoCheckForUpdates: true
+lootExePath: M:\Games\Starfield\Tools\LOOT\LOOT.exe
+nexusExportFile: nexus_modlist.json
+mO2ExportFile: 
+webServicePort: 23306
+pluginWarning: true
+showDiff: true

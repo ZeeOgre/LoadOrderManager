@@ -559,7 +559,7 @@ namespace ZO.LoadOrderManager
 
         private void ScanModFolder()
         {
-            if (string.IsNullOrEmpty(Config.Instance.ModManagerRepoFolder) || !Directory.Exists(Config.Instance.ModManagerRepoFolder) || !File.Exists(FileManager.ModMetaDataFile))
+            if (string.IsNullOrEmpty(Config.Instance.ModManagerRepoFolder) || string.IsNullOrEmpty(Config.Instance.NexusExportFile) || !Directory.Exists(Config.Instance.ModManagerRepoFolder))
             {
                 MessageBox.Show("To use this feature you must define the ModManager repository folder (aka the Staging Folder), and use the Modlist Backup Extension to \"Modlist Backup Only This Game\" and place the file \"nexus_modlist.json\" at the root of the mod staging folder.\n\nThen this will autopopulate all the NexusID's that are known.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;

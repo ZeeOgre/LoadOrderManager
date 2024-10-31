@@ -16,25 +16,21 @@ namespace ZO.LoadOrderManager
 {
     partial class FileManager
     {
-        static readonly string _repoFolder = Config.Instance?.ModManagerRepoFolder ?? throw new InvalidOperationException("ModManagerRepoFolder is not configured.");
-        static readonly string _modMetaDataFile = Path.Combine(_repoFolder, "nexus_modlist.json");
+ 
         
-        public static string ModMetaDataFile => _modMetaDataFile;
-
-        
-
         public static void UpdatePluginsFromModList(bool quiet = false)
         {
             _quiet = quiet;
-
-            if (string.IsNullOrEmpty(Config.Instance.ModManagerRepoFolder) || !Directory.Exists(Config.Instance.ModManagerRepoFolder) || !File.Exists(FileManager.ModMetaDataFile))
+            string modMetaDataFile = Path.Combine(Config.Instance.ModManagerRepoFolder ?? String.Empty, Config.Instance.NexusExportFile ?? String.Empty);
+            if (string.IsNullOrEmpty(Config.Instance.ModManagerRepoFolder) || string.IsNullOrEmpty(Config.Instance.NexusExportFile) || !Directory.Exists(Config.Instance.ModManagerRepoFolder) || !File.Exists(modMetaDataFile))
             {
                 if (!InitializationManager.IsAnyInitializing()) MessageBox.Show("Mod list file not found. Save the Modlist Backup: this game as nexus_modlist.json to the mod staging folder", "Mod list not found", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
-            MWMessage($"Updating plugins from mod list...{_modMetaDataFile}",true);
-            MWMessage($"Updating plugins from mod list...{_modMetaDataFile}", false);
-            var modList = NexusModItem.LoadModList(_modMetaDataFile);
+            
+            MWMessage($"Updating plugins from mod list...{modMetaDataFile}",true);
+            MWMessage($"Updating plugins from mod list...{modMetaDataFile}", false);
+            var modList = NexusModItem.LoadModList(modMetaDataFile);
             var knownFiles = ZO.LoadOrderManager.FileInfo.GetAllFiles()
 .GroupBy(f => f.Filename, StringComparer.OrdinalIgnoreCase)
 .Select(g => g.First())
@@ -53,7 +49,7 @@ var knownFileNames = new HashSet<string>(knownFiles.Select(f => f.Value.Filename
                 long progress = (long)(100 * ((double)currentFileIndex / totalFiles));
                 if (InitializationManager.IsAnyInitializing()) InitializationManager.ReportProgress(progress, $"({currentFileIndex}/{totalFiles}) Adding file info for {mod.Name}");
                 MWMessage($"Updating {mod.Name} ({currentFileIndex}/{totalFiles})", false);
-                var modFolder = Path.Combine(_repoFolder, mod.VortexId);
+                var modFolder = Path.Combine(Config.Instance.ModManagerRepoFolder, mod.VortexId);
                 if (!Directory.Exists(modFolder))
                 {
                     continue;
