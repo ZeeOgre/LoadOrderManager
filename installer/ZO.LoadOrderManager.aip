@@ -14,10 +14,10 @@
     <ROW Property="ARPURLUPDATEINFO" Value="https://github.com/ZeeOgre/ZO.LoadOrderManager/releases/latest" />
     <ROW Property="CTRLS" Value="2" />
     <ROW Property="Manufacturer" Value="ZeeOgre" />
-    <ROW Property="ProductCode" Value="1033:{c1391d40-351d-4170-be0a-5879ae38a88d}" Type="16" />
+    <ROW Property="ProductCode" Value="1033:{0ac36d1a-da4a-4d11-a19b-6f5a5cdbbac4}" Type="16" />
     <ROW Property="ProductLanguage" Value="1033" />
     <ROW Property="ProductName" Value="ZO.LoadOrderManager" />
-    <ROW Property="ProductVersion" Value="0.0.16.0" Options="4" />
+    <ROW Property="ProductVersion" Value="0.0.17.0" Options="4" />
     <ROW Property="RUNAPPLICATION" Value="1" Type="4" />
     <ROW Property="SecureCustomProperties" Value="OLDPRODUCTS;AI_NEWERPRODUCTFOUND" />
     <ROW Property="UpgradeCode" Value="{F5AB9A71-4379-4D5F-A6EF-00686EEFC0AE}" />

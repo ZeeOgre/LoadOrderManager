@@ -371,30 +371,39 @@ namespace ZO.LoadOrderManager
         {
             const int bufferSize = 8 * 1024 * 1024; // 8MB buffer
 
-
             System.Threading.Thread.Sleep(10);
 
-            using var stream = new FileStream(
-                filePath,
-                FileMode.Open,
-                FileAccess.Read,
-                FileShare.Read,
-                bufferSize: bufferSize,
-                useAsync: false);
-
-            var hasher = new XxHash64();
-
-            byte[] buffer = new byte[bufferSize];
-            int bytesRead;
-            while ((bytesRead = stream.Read(buffer, 0, buffer.Length)) > 0)
+            try
             {
-                hasher.Append(buffer.AsSpan(0, bytesRead));
+                using var stream = new FileStream(
+                    filePath,
+                    FileMode.Open,
+                    FileAccess.Read,
+                    FileShare.ReadWrite,
+                    bufferSize: bufferSize,
+                    useAsync: false);
+
+                var hasher = new XxHash64();
+
+                byte[] buffer = new byte[bufferSize];
+                int bytesRead;
+                while ((bytesRead = stream.Read(buffer, 0, buffer.Length)) > 0)
+                {
+                    hasher.Append(buffer.AsSpan(0, bytesRead));
+                }
+
+                byte[] hashBytes = hasher.GetCurrentHash();
+
+                return BitConverter.ToString(hashBytes).Replace("-", "").ToLowerInvariant();
             }
-
-            byte[] hashBytes = hasher.GetCurrentHash();
-
-            return BitConverter.ToString(hashBytes).Replace("-", "").ToLowerInvariant();
+            catch (IOException ex)
+            {
+                // Log the exception (you can replace this with your logging mechanism)
+                Console.WriteLine($"Error computing hash for file {filePath}: {ex.Message}");
+                return string.Empty; // Return an empty string or a default value
+            }
         }
+
 
 
 

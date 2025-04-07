@@ -1,133 +1,182 @@
-# plugins.txt produced by ZeeOgre's LoadOutManager using Group Set ZeeOgre's Sample and profile ZeeOgre's Default on 2024-10-26T18:46:20.6933171-05:00
+# plugins.txt produced by ZeeOgre's LoadOutManager using Group Set ZeeOgre's Sample and profile ZeeOgre's Minimal Development on 2025-04-06T12:21:34.8945184-05:00
 ##--------------------------------------------------------------------------------------------------------------------------------------------------------##
-
 ### BethesdaPaid @@ Bethesda paid mods
-*sfta01.esm
-*sfbgs00b.esm
+sfbgs00a_i.esm
+sfbgs00a_f.esm
+sfbgs019.esm
+sfta01.esm
+kgcdoom.esm
 
 ### Community Patch @@ https://starfieldpatch.dev
-*starfieldcommunitypatch.esm
+starfieldcommunitypatch.esm
 
 ### Places @@ New and furnished locations
-*cheatroom.esm
-*ultimate_starter_kit.esm
-skkplayerhomesanywhere.esm
-nasalandmark.esm
-CydoniaHome.esm
-DWN_CoreManorFurnished.esm
-DWN_DreamHomeFurnished.esm
-DWN_DreamHomeOverhaul.esm
-DWN_ParadisoPlayerHome_Furnished.esm
-DWN_DazraHomeFurnished.esm
-DWN_TheWellApartmentFurnished.esm
-MantisLairHome.esm
-MercuryPenthouseFurnished.esm
-mwgynRyujinApartment.esm
-SkySuiteExpanded.esm
-tankgirlsmodelhome.esm
-tankgirlsmodelhomepoi.esm
-qso safehouse.esm
-RyujinApartment.esm
-SkySuiteExpanded.esm
-
-##### Furnishings @@ Things for your places
-more buildable mission boards.esm
-*venworks-pawnshop.esm
-Skully's Suit Displays.esm
+cheatroom.esm
+cheatroomdlc001.esm
 
 ### New Things @@ Objects, Followers, etc..
+ultimate_starter_kit.esm
 
 #### Followers @@ People, critters and bots that will follow you around
-*inquisitor_starborn_supervisor.esm
-*pilotassistantbot.esm
-*outpostresourcebot.esm
-*darkstar_emissaries.esm
+##### New Followers
+##### Follower Changes
+visiblecompanionaffinity.esm
+myprice.esm
 
-##### Follower Appearance
-*companionpreviews.esm
-*sonaponytail.esm
-
-##### Follower Behavior
-*improvedfollowerbehavior.esm
-*easier companion affinity.esm
-*myprice.esm
-*visiblecompanionaffinity.esm
-*thegangsallhere.esm
+#### Player Changes @@ Appearances, backgrounds etc..
+zeeogresjoat.esm
 
 #### Items @@ Added Clothing, Armor, Items
-smarterspacesuitautohide.esm
-dam_thevoidthatstaresback.esm
-individualresourcetracking.esm
+##### Armor
+darkstar_boostfixer.esm
+
+##### Weapons
+darkstar_traineemaelstrom.esm
+darkstar_recruitbeowulf.esm
 
 ##### Clothing
+atlasclothing.esm
 
-##### Armor @@ Protect yo butt
-guyver.esm
-KZ_Operative.esm
+##### Items
+mattgyverposters_af.esm
+###### Item Mods
+particlestealth.esm
 
-###### Armor Skins @@ Look better in armor
 
-##### Weapons @@ More pew pew
+### Outpost and Player Home Mods
 
-###### Weapon Skins @@ Change weapon appearance
+#### TankGirl Buildables
+tankgirlsworldsinajar.esm
 
-#### Ships @@ Ships and ship tools
-Spyder.esm
-*skkshiptools.esm
-*furnishedstarbornship.esm
+#### New habs and constructibles
+wicked outpost fortified.esm
+wicked outpost projeckt 2.esm
+zeeogresoutpostmaterielterminal.esm
+zeeogresoutpostmaterielterminal_af.esm
 
+#### New Decorations
+trippy_morestoves.esm
+
+#### Outpost Changes
+outpostshipbuilderunlocked.esm
+tnoutpoststorage.esm
+
+
+
+#### New Ships @@ Ships
 #### Vehicles @@ The REV-8 Buggy and it's related changes
-*shades_vehicle_tuner.esm
-vehiclevendor.esm
+grav_79_z.esm
+shades_vehicle_tuner.esm
 
 ### Gameplay Modification @@ Mods which change game behavior, but you might want to still override some of the things that happen here.
-*BARDS_OutpostCleaner.esm
-*shades_stealth_takedowns.esm
-*shades_immersive_looting.esm
-*Shades_Glowy_Stuff.esm
-*trader_maal2_orbit.esm
-*notanoob.esm
-*lessannoyingtemples.esm
-skillfixes.esm
-*naturallygoodloot.esm
-*opennearbydoors.esm
-*organicresourcesmerged.esm
+astrophysicsreworked.esm
+smartdoc.esm
+auriechooseyouruniverse.esm
+aurie_chooseyouruniverse.esm
+
+vanilla flashlight improved.esm
+smarterspacesuitautohide.esm
+companionpreviews.esm
+eli_renamedsnowglobes.esm
+globe_collectables.esm
+lessannoyingtemples.esm
+opennearbydoors.esm
+sonaponytail.esm
+uniquechildhead.esm
+starbornlegendary.esm
+
+
 
 ### High Priority Mods @@ mods which should never be changed except by deliberate choice
-*auriechoosevariantuniverse.esm
-minimum enemy level.esm
-dynamic_system_levels.esm
-*vanilla flashlight improved.esm
-*smartdoc.esm
-*takeitemsthroughunity.esm
-*ship power fix.esm
-
-
-#### DarkStar @@ Darkstar by Wykkyd Gaming
-*darkstar_astrodynamics.esm
-*darkstar_manufacturing.esm
-##### DSM Patches @@ Patches for Darkstar Manufacturing for other things
-*DSM_ShatteredSpace_Patch.esm
-*dsm_vulture_patch.esm
-dsm patch - kz operative by zeeogre.esm
 
 #### Shipbuilding @@ Habs, ship related mods, etc
-*tnseparatedcategories.esm
-*shipbuildercategories.esm
+##### Ship Habs
+stroudpremiumedition.esm
+stroudpremiumedition_af.esm
+
+##### Ship Parts
+##### Ship Interiors
+
+#### DarkStar @@ Darkstar by Wykkyd Gaming -- For me this takes higher priority over any other ship
+darkstar_manufacturing.esm
+darkstar_astrodynamics.esm
+
+##### DarkStar Patches @@ patches for darkstar to work with other mods, always after both DS and the other ones
+dsm_shatteredspace_patch.esm
+dsm_vulture_patch.esm
 
 ### High Priority Overrides @@ These mods are known to make changes that may override other mods, and should be loaded after everything else.
-*skkuniversalstash.esm
+trader_maal2_orbit.esm
+shades_stealth_takedowns.esm
+shades_immersive_looting.esm
+skkuniversalstash.esm
 
-### ForcedOverrides @@ Deliberate override choices which you never want to be overriden by anything else
+### Ship System changes
+allshippiecesatoutpost.esm
+tnclassm.esm
+skkshiptools.esm
+ship power fix.esm
+shipbuildercategories.esm
+tnseparatedcategories.esm
 
+
+### InterfaceChanges @@ While these *can* go anywhere, Lump them together to keep track of the order (last load wins!!)
+showstarnames.esm
+showpowernamehud.esm
+starui_outpost.esm
+starui_inventory.esm
+starui_shipbuilder.esm
+starui_workbench.esm
+starui_hud.esm
+starui_aio.esm
+onek_btdt.esm
+
+#### Interface Patches @@ While these *can* go anywhere, Lump them together to keep track of the order (last load wins!!)
+starui_workbench_maxpatch.esm
+
+### Forced Overrides @@ Deliberate override choices which you never want to be overriden by anything else
+zeeogreseasyrepairbutton.esm
+zeeogresdenseroutposts.esm
+zeeogreswellstockedmerchants.esm
+zeeogresshiptweaks.esm
+zeeogreshandscannertweaks.esm
+
+
+### ESP @@ ESP files - these are generally "in development" mods, and should always be loaded last.
+dwn_settledsystemsshuttleservice.esp
+mattgyverposters_af.esp
+notanoob.esp
+starui_aio.esp
+starui_hud.esp
+starui_inventory.esp
+starui_outpost.esp
+starui_shipbuilder.esp
+starui_workbench.esp
+starui_workbench_maxpatch.esp
+stroudpremiumedition.esp
+stroudpremiumedition_af.esp
+tankgirlsbuildthelodge.esp
+tankgirlsxenologyexpanded.esp
+tankgirlsxenologyexpanded_0303.esp
+tankgirlsxenologyexpanded_as4.esp
+tankgirlsxenologyexpanded_bad.esp
+zeeogresachievementsafecheckframework.esp
+zeeogresjoat.esp
+zeeogresoutpostenhancements.esp
+zeeogresoutposttutorial_part1_leveling.esp
 
 ### In Development @@ Specific Non-development mods. Generally best to be loaded very late to make sure there are no conflicts.
-*zeeogresshiptweaks.esp
-*zeeogreshandscannertweaks.esp
-*zeeogresdomesticateallflora.esp
-*zeeogresoutposttutorial-katydid3.esp
-*zeeogresoutposttutorial-tirna8c.esp
-*zeeogresoutposttutorial-bessel3b.esp
-zeeogresaiogameplaytweaks.esp
+tankgirlsxenologyexpanded.esm
+tankgirlsxenologyexpanded.x.esm
+tankgirlsbuildthelodge.esm
+zeeogresoutpostmaterielterminal_af.x.esm
+zeeogresoutposttutorial_part1_leveling.x.esm
+zeeogresoutpostmaterielterminal.x.esm
+zeeogresachievementsafecheckframework.esm
+zeeogresoutposttutorial_part1_leveling.esm
+
+### Uncategorized @@ This is a reserved group to temporarily hold uncategorized mods
+
+
 
 # End of plugins.txt
