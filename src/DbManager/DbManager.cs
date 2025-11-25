@@ -126,7 +126,8 @@ namespace ZO.LoadOrderManager
             // Ensure the settings window is launched on the UI thread
             Application.Current.Dispatcher.Invoke(() =>
             {
-                var settingsWindow = new SettingsWindow(source);
+                var settingsWindow = new SettingsWindow();
+                settingsWindow.LaunchSource = source;
                 result = settingsWindow.ShowDialog();
             });
 

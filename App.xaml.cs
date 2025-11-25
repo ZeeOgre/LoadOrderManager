@@ -170,7 +170,8 @@ namespace ZO.LoadOrderManager
                     ApplyCustomTheme(IsSystemInDarkMode());
 
                     App.LogDebug("Launching SettingsWindow in settings mode.");
-                    var settingsWindow = new SettingsWindow(SettingsLaunchSource.CommandLine);
+                    var settingsWindow = new SettingsWindow();
+                    settingsWindow.LaunchSource = SettingsLaunchSource.CommandLine;
 
                     // Use ShowDialog to wait for the window to be closed
                     var result = settingsWindow.ShowDialog();

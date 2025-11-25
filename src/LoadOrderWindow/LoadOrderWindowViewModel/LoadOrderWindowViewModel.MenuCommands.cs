@@ -261,12 +261,12 @@ namespace ZO.LoadOrderManager
         }
 
         private void SettingsWindow()
-
         {
             try
             {
-                var settingsWindow = new SettingsWindow(SettingsLaunchSource.MainWindow)
+                var settingsWindow = new SettingsWindow
                 {
+                    LaunchSource = SettingsLaunchSource.MainWindow,
                     Tag = "Settings"
                 };
                 _ = settingsWindow.ShowDialog();

@@ -19,7 +19,8 @@ namespace ZO.LoadOrderManager
         private void SettingsWindow_Click(object sender, RoutedEventArgs e)
         {
             // Logic to open the settings window
-            var settingsWindow = new SettingsWindow(SettingsLaunchSource.MissingConfigDialog);
+            var settingsWindow = new SettingsWindow();
+            settingsWindow.LaunchSource = SettingsLaunchSource.MissingConfigDialog;
             settingsWindow.Show();
         }
 

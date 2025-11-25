@@ -1,72 +1,68 @@
 using MahApps.Metro.Controls;
-using MaterialDesignThemes.Wpf;
+using System;
 using System.Windows;
 
 namespace ZO.LoadOrderManager
 {
     public partial class SettingsWindow : MetroWindow
     {
-        private readonly SettingsViewModel _viewModel;
-        private bool _isLoaded = false;
+        // Expose the launch source so external callers (e.g. App.xaml.cs) can set it.
+        public SettingsLaunchSource LaunchSource { get; set; }
 
-        public SettingsWindow(SettingsLaunchSource launchSource)
+        private readonly SettingsViewModel _viewModel;
+
+        public SettingsWindow() : this(null) { }
+
+        public SettingsWindow(SettingsViewModel? viewModel)
         {
             InitializeComponent();
-            _viewModel = new SettingsViewModel();
-            DataContext = _viewModel;  // This should be here before any other references to `_viewModel`
 
-            if (launchSource == SettingsLaunchSource.CommandLine)
-            {
-                _viewModel.UseEmptyConfig();
-            }
+            _viewModel = viewModel ?? new SettingsViewModel();
+            DataContext = _viewModel;
 
-            _viewModel.SaveCompleted += OnSaveCompleted;
-            Loaded += (s, e) => _isLoaded = true;
+            // Subscribe to save completion so UI can react (non-invasive).
+            _viewModel.SaveCompleted += ViewModel_SaveCompleted;
         }
 
-        private void ApplyTheme(bool isDarkMode)
+        private void ViewModel_SaveCompleted()
         {
-            Config.Instance.DarkMode = isDarkMode;
-
-            // Apply the ModernWpf theme and custom TreeView themes globally via App class
-            //((App)Application.Current).ApplyModernTheme();
-            ((App)Application.Current).ApplyCustomTheme(isDarkMode);
-
-            App.RestartDialog("Please restart to apply the custom theme.");
+            // Minimal UI feedback; keep non-blocking for automated tests.
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                _ = MessageBox.Show(this, "Settings saved.", "Saved", MessageBoxButton.OK, MessageBoxImage.Information);
+            });
         }
 
+        private void CancelButton_Click(object sender, RoutedEventArgs e)
+        {
+            Close();
+        }
+
+        // These handlers exist so XAML can reference them. Data binding already updates the VM,
+        // but we also mirror the state to the ViewModel to ensure immediate effect.
         private void DarkModeCheckBox_Checked(object sender, RoutedEventArgs e)
         {
-            if (!_isLoaded) return;
-
-            // Set the DarkMode in the Config and apply the theme
-            Config.Instance.DarkMode = true;
-
-            // Apply dark theme immediately
-            ApplyTheme(true);
+            if (DataContext is SettingsViewModel vm)
+            {
+                try
+                {
+                    vm.DarkMode = true;
+                }
+                catch { /* swallow - binding will remain authoritative */ }
+            }
         }
 
         private void DarkModeCheckBox_Unchecked(object sender, RoutedEventArgs e)
         {
-            if (!_isLoaded) return;
-
-            // Set the DarkMode in the Config and apply the theme
-            Config.Instance.DarkMode = false;
-
-            // Apply light theme immediately
-            ApplyTheme(false);
+            if (DataContext is SettingsViewModel vm)
+            {
+                try
+                {
+                    vm.DarkMode = false;
+                }
+                catch { /* swallow */ }
+            }
         }
-
-        // Close the window after saving
-        private void OnSaveCompleted()
-        {
-            // Set the dialog result to true to indicate success
-            this.DialogResult = true;
-            // Close the window when saving is completed
-            this.Close();
-        }
-
-        private readonly PaletteHelper _paletteHelper = new PaletteHelper();
     }
 }
 

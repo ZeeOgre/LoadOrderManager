@@ -1,13 +1,15 @@
-﻿<metro:MetroWindow x:Class="ZO.LoadOrderManager.SettingsWindow"
+﻿    <metro:MetroWindow x:Class="ZO.LoadOrderManager.SettingsWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:metro="http://metro.mahapps.com/winfx/xaml/controls"
+        xmlns:mahappsIcons="http://metro.mahapps.com/winfx/xaml/iconpacks"
         Style="{StaticResource MaterialDesignWindow}"
         xmlns:local="clr-namespace:ZO.LoadOrderManager"
         Title="Settings" Height="700" Width="800">
     <Grid>
         <!-- Define Grid Rows -->
         <Grid.RowDefinitions>
+            <!-- NEW top row for Profile ID / Profile Name -->
             <RowDefinition Height="Auto"/>
             <!-- Game Folder -->
             <RowDefinition Height="Auto"/>
@@ -16,77 +18,93 @@
             <!-- Mod Manager Arguments -->
             <RowDefinition Height="Auto"/>
             <!-- Mod Manager Repo -->
-            
             <RowDefinition Height="Auto"/>
+            <!-- Loot Executable -->
             <RowDefinition Height="Auto"/>
+            <!-- Nexus / MO2 Export -->
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
+            <!-- Web Service / flags -->
+            <RowDefinition Height="Auto"/>
             <!-- Monitored Files -->
+            <RowDefinition Height="*"/>
+            <!-- Buttons row for monitored files (inner to GroupBox) -->
             <RowDefinition Height="Auto"/>
-            <!-- New Row for buttons -->
+            <!-- RECORD NAVIGATION (new) -->
             <RowDefinition Height="Auto"/>
-            <!-- Version/Check Updates/Save -->
+            <!-- New Buttons Row (Vacuum / Clean / Palette) -->
+            <RowDefinition Height="Auto"/>
+            <!-- Version/Check Updates/Save/Load from YAML -->
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- Existing Game Folder StackPanel (Row 0) -->
+        <!-- TOP ROW: Profile ID / Profile Name (NEW) -->
         <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="10" HorizontalAlignment="Stretch">
+            <TextBlock Text="Profile ID:" VerticalAlignment="Center" Width="100"/>
+            <TextBox Width="80" Text="{Binding ProfileID}" IsReadOnly="True" Margin="0,0,20,0"/>
+            <TextBlock Text="Profile Name:" VerticalAlignment="Center" Width="110"/>
+            <TextBox Width="420" Text="{Binding ProfileName, UpdateSourceTrigger=PropertyChanged}" />
+        </StackPanel>
+
+        <!-- Existing Game Folder StackPanel (Row 1) -->
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="10" HorizontalAlignment="Stretch">
             <TextBlock Text="Game Folder:" VerticalAlignment="Center" Width="150"/>
             <TextBox Name="GameFolderTextBox" Width="400" Margin="10,0,10,0" Text="{Binding GameFolder}" HorizontalAlignment="Stretch"/>
             <Button Content="📁" Command="{Binding BrowseGameFolderCommand}" Width="30" HorizontalAlignment="Right"/>
             <CheckBox IsChecked="{Binding AutoScanGameFolder}" Content="AutoScan" Margin="10,0,10,0" />
-
         </StackPanel>
 
-        <!-- Mod Manager Executable (Row 1) -->
-        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="10" HorizontalAlignment="Stretch">
+        <!-- Mod Manager Executable (Row 2) -->
+        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="10" HorizontalAlignment="Stretch">
             <TextBlock Text="Mod Manager Executable:" VerticalAlignment="Center" Width="150"/>
             <TextBox Name="ModManagerExecutableTextBox" Width="400" Margin="10,0,10,0" Text="{Binding ModManagerExecutable}" HorizontalAlignment="Stretch"/>
             <Button Content="..." Command="{Binding BrowseModManagerExecutableCommand}" Width="30" HorizontalAlignment="Right"/>
         </StackPanel>
 
-        <!-- Mod Manager Arguments (Row 2) -->
-        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="10" HorizontalAlignment="Stretch">
+        <!-- Mod Manager Arguments (Row 3) -->
+        <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="10" HorizontalAlignment="Stretch">
             <TextBlock Text="Mod Manager Arguments:" VerticalAlignment="Center" Width="150"/>
             <TextBox Name="ModManagerArgumentsTextBox" Width="400" Margin="10,0,10,0" Text="{Binding ModManagerArguments}" HorizontalAlignment="Stretch"/>
         </StackPanel>
 
-        <!-- Mod Manager Repo (Row 3) -->
-        <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="10" HorizontalAlignment="Stretch">
+        <!-- Mod Manager Repo (Row 4) -->
+        <StackPanel Grid.Row="4" Orientation="Horizontal" Margin="10" HorizontalAlignment="Stretch">
             <TextBlock Text="Mod Manager Repo:" VerticalAlignment="Center" Width="150"/>
             <TextBox Name="ModManagerRepoTextBox" Width="400" Margin="10,0,10,0" Text="{Binding ModManagerRepoFolder}" HorizontalAlignment="Stretch"/>
             <Button Content="📁" Command="{Binding BrowseModManagerRepoFolderCommand}" Width="30" HorizontalAlignment="Right"/>
             <CheckBox IsChecked="{Binding AutoScanModRepoFolder}" Content="AutoScan" Margin="10,0,10,0" />
         </StackPanel>
 
-        <!-- Loot Executable (New Row 4) -->
-        <StackPanel Grid.Row="4" Orientation="Horizontal" Margin="10" HorizontalAlignment="Stretch">
+        <!-- Loot Executable (Row 5) -->
+        <StackPanel Grid.Row="5" Orientation="Horizontal" Margin="10" HorizontalAlignment="Stretch">
             <TextBlock Text="Loot Executable:" VerticalAlignment="Center" Width="150"/>
             <TextBox Name="LootExecutableTextBox" Width="400" Margin="10,0,10,0" Text="{Binding LootExePath}" HorizontalAlignment="Stretch"/>
             <Button Content="..." Command="{Binding BrowseLootExecutableCommand}" Width="30" HorizontalAlignment="Right"/>
         </StackPanel>
 
-        <!-- Nexus Export and MO2 Export (New Row 5) -->
-        <StackPanel Grid.Row="5" Orientation="Horizontal" Margin="10" HorizontalAlignment="Stretch">
+        <!-- Nexus Export and MO2 Export (Row 6) -->
+        <StackPanel Grid.Row="6" Orientation="Horizontal" Margin="10" HorizontalAlignment="Stretch">
             <TextBlock Text="Nexus Export:" VerticalAlignment="Center" Width="150"/>
             <TextBox Name="NexusExportTextBox" Width="200" Margin="10,0,10,0" Text="{Binding NexusExportFile}" HorizontalAlignment="Stretch"/>
             <TextBlock Text="MO2 Export:" VerticalAlignment="Center" Width="100" Margin="10,0,10,0"/>
             <TextBox Name="MO2ExportTextBox" Width="200" Margin="10,0,10,0" Text="{Binding MO2ExportFile}" HorizontalAlignment="Stretch"/>
         </StackPanel>
 
-        <!-- Web Service Port, Plugin Warning, and Show Diff (New Row 6) -->
-        <StackPanel Grid.Row="6" Orientation="Horizontal" Margin="10" HorizontalAlignment="Stretch">
+        <!-- Web Service Port, Plugin Warning, and Show Diff (Row 7) -->
+        <StackPanel Grid.Row="7" Orientation="Horizontal" Margin="10" HorizontalAlignment="Stretch">
             <TextBlock Text="Web Service Port:" VerticalAlignment="Center" Width="150"/>
             <TextBox Name="WebServicePortTextBox" Width="100" Margin="10,0,10,0" Text="{Binding WebServicePort}" HorizontalAlignment="Stretch"/>
             <CheckBox Content="Plugin Warning" IsChecked="{Binding PluginWarning}" Margin="10,0,10,0" VerticalAlignment="Center"/>
             <CheckBox Content="Show Diff" IsChecked="{Binding ShowDiff}" Margin="10,0,10,0" VerticalAlignment="Center"/>
         </StackPanel>
-        <!-- Monitored Files Section (Row 4) -->
-        <GroupBox Header="Monitored Files" Grid.Row="7" Margin="10">
+
+        <!-- Monitored Files Section (Row 8) -->
+        <GroupBox Header="Monitored Files" Grid.Row="8" Margin="10">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="*"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
+
                 <!-- List of Monitored Files -->
                 <ListBox ItemsSource="{Binding MonitoredFiles}" SelectedItem="{Binding SelectedMonitoredFile}" Grid.Row="0">
                     <ListBox.ItemTemplate>
@@ -121,28 +139,59 @@
             </Grid>
         </GroupBox>
 
-        <!-- New Buttons Row (Row 5) -->
-        <StackPanel Grid.Row="8" Orientation="Horizontal" HorizontalAlignment="Center" Margin="10">
-            <Button Content="Vacuum/Reindex Database" Command="{Binding VacuumReindexCommand}" Width="150" Margin="5"/>
-            <Button Content="Clean Ordinals" Command="{Binding CleanOrdinalsCommand}" Width="150" Margin="5"/>
-            <Label Content="Select Palette:" Grid.Row="0" Grid.Column="0" Margin="5" VerticalAlignment="Center"/>
+        <!-- RECORD NAVIGATION (Row 10) - using same icon buttons as LoadOutEditor.xaml -->
+        <StackPanel Grid.Row="10" Orientation="Horizontal" HorizontalAlignment="Center" Margin="10">
+            <Button Command="{Binding PrevProfileCommand}" Style="{StaticResource MahApps.Styles.Button.Circle}" Width="30" Height="30" Margin="5">
+                <mahappsIcons:PackIconMaterial Kind="SkipBackward" />
+            </Button>
+
+            <Button Command="{Binding PrevProfileCommand}" Style="{StaticResource MahApps.Styles.Button.Circle}" Width="30" Height="30" Margin="5">
+                <mahappsIcons:PackIconMaterial Kind="ChevronLeft" />
+            </Button>
+
+            <TextBox Width="40" Text="{Binding ProfileID, Mode=OneWay}" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="5" IsReadOnly="True"/>
+
+            <Button Command="{Binding NextProfileCommand}" Style="{StaticResource MahApps.Styles.Button.Circle}" Width="30" Height="30" Margin="5">
+                <mahappsIcons:PackIconMaterial Kind="ChevronRight" />
+            </Button>
+
+            <Button Command="{Binding NextProfileCommand}" Style="{StaticResource MahApps.Styles.Button.Circle}" Width="30" Height="30" Margin="5">
+                <mahappsIcons:PackIconMaterial Kind="SkipForward" />
+            </Button>
+
+            <Button Command="{Binding AddProfileCommand}" Style="{StaticResource MahApps.Styles.Button.Circle}" Width="30" Height="30" Margin="10,5">
+                <mahappsIcons:PackIconMaterial Kind="PlusBox" />
+            </Button>
+
+            <Button Command="{Binding DeleteProfileCommand}" Style="{StaticResource MahApps.Styles.Button.Circle}" Width="30" Height="30" Margin="5">
+                <mahappsIcons:PackIconMaterial Kind="DeleteForever" />
+            </Button>
+
+            <!-- Optional: Set Default and Save as text buttons to the right -->
+            <Button Content="Set Default" Command="{Binding SetDefaultCommand}" Width="96" Margin="12,4,4,4"/>
+            <Button Content="Save" Command="{Binding SaveCommand}" Width="80" Margin="6"/>
         </StackPanel>
 
-        <!-- Version/Check for Updates/Save/Load from YAML (Row 6) -->
-        <Grid Grid.Row="9" Margin="10">
+        <!-- New Buttons Row (Vacuum / Clean / Palette) (Row 11) -->
+        <StackPanel Grid.Row="11" Orientation="Horizontal" HorizontalAlignment="Center" Margin="10">
+            <Button Content="Vacuum &amp; Reindex Database" Command="{Binding VacuumReindexCommand}" Width="200" Margin="5"/>
+            <Button Content="Clean Ordinals" Command="{Binding CleanOrdinalsCommand}" Width="150" Margin="5"/>
+            <Label Content="Select Palette:" Margin="5" VerticalAlignment="Center"/>
+        </StackPanel>
+
+        <!-- Version/Check for Updates/Save/Load from YAML (Row 12) -->
+        <Grid Grid.Row="12" Margin="10">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="Auto"/>
-                <!-- New column for Load from YAML -->
             </Grid.ColumnDefinitions>
             <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,10,0">
                 <CheckBox Content="Automatically check at startup" IsChecked="{Binding AutoCheckForUpdates}" Margin="5" VerticalAlignment="Center"/>
                 <TextBlock Text="Version:" VerticalAlignment="Center" Margin="5"/>
                 <TextBlock Text="{x:Static local:App.Version}" VerticalAlignment="Center" Margin="5"/>
                 <Button Content="Check for Updates" Command="{Binding CheckForUpdatesCommand}" Width="125"  Margin="5"/>
-                <!-- Flip the checkbox and label for Dark Mode -->
             </StackPanel>
             <CheckBox FlowDirection="RightToLeft" Content="Dark Mode" 
                       IsChecked="{Binding Path=DarkMode, Mode=TwoWay}" 
