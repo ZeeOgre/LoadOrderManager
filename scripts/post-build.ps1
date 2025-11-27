@@ -17,7 +17,7 @@ function Execute-Command {
             Write-Output "Nothing to commit, working tree clean."
         } else {
             Write-Error "Command failed: $command"
-            Write-Error ($result -join "`n")
+            Write-Error ($result -join "`n")cd sc
             exit 1
         }
     }
