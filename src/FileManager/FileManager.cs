@@ -9,7 +9,7 @@ namespace ZO.LoadOrderManager
         public static readonly string PluginsFile = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "starfield", "plugins.txt");
         public static readonly string ContentCatalogFile = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "starfield", "contentcatalog.txt");
         public static string AppDataFolder => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "ZeeOgre", "LoadOrderManager");
-        public static string GameFolder => Config.Instance.GameFolder;
+        public static string GameFolder => GameFolderContext.Active?.GameRoot ?? Config.Instance.GameFolder;
         public static string GameDocsFolder => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "My Games", "Starfield");
         public static string GameSaveFolder => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "My Games", "Starfield", "Saves");
         public static string GameLocalAppDataFolder => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "starfield");
@@ -39,6 +39,13 @@ namespace ZO.LoadOrderManager
                     InitializationManager.StartInitialization(nameof(FileManager));
                     App.LogDebug("FileManager: Starting initialization...");
                     InitializeFavoriteGroupSetAndLoadOut();
+
+                    var gameFolders = ZO.LoadOrderManager.GameFolder.LoadAll();
+                    var activeGameFolder = gameFolders.FirstOrDefault(folder =>
+                        string.Equals(folder.GameRoot, Config.Instance.GameFolder, StringComparison.OrdinalIgnoreCase))
+                        ?? gameFolders.FirstOrDefault()
+                        ?? throw new InvalidOperationException("No game folder has been configured.");
+                    GameFolderContext.Select(activeGameFolder);
 
                     AggLoadInfo.Instance.InitFromDatabase();
                     FileMonitor.InitializeAllMonitors();
