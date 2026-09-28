@@ -10,6 +10,8 @@ BEGIN TRANSACTION;
 DROP TABLE IF EXISTS Config;
 
 CREATE TABLE IF NOT EXISTS Config (
+    ProfileID           INTEGER PRIMARY KEY AUTOINCREMENT,
+    IsActive            INTEGER NOT NULL DEFAULT (1),
     GameFolder           TEXT    NOT NULL,
     AutoCheckForUpdates  INTEGER DEFAULT (1),
     DarkMode             INTEGER DEFAULT (1),

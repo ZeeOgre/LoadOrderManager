@@ -115,57 +115,6 @@ namespace ZO.LoadOrderManager
             }
         }
 
-        /// <summary>
-        /// Adds configuration columns introduced after the original database release.
-        /// This runs before Config.LoadFromDatabase so an existing user database can
-        /// be read without being deleted or replaced.
-        /// </summary>
-        public void EnsureConfigSchemaCompatibility()
-        {
-            using var connection = GetConnection();
-            using var command = new SQLiteCommand(connection);
-            command.CommandText = "PRAGMA table_info(Config);";
-
-            var columns = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            using (var reader = command.ExecuteReader())
-            {
-                while (reader.Read())
-                {
-                    columns.Add(reader.GetString(1));
-                }
-            }
-
-            if (columns.Count == 0)
-            {
-                return;
-            }
-
-            var missingColumns = new (string Name, string Definition)[]
-            {
-                ("AutoScanGameFolder", "INTEGER NOT NULL DEFAULT 1"),
-                ("AutoScanModRepoFolder", "INTEGER NOT NULL DEFAULT 0"),
-                ("LootExePath", "TEXT"),
-                ("NexusExportFile", "TEXT"),
-                ("MO2ExportFile", "TEXT"),
-                ("WebServicePort", "INTEGER NOT NULL DEFAULT 23306"),
-                ("PluginWarning", "INTEGER NOT NULL DEFAULT 1"),
-                ("ShowDiff", "INTEGER NOT NULL DEFAULT 1")
-            };
-
-            using var transaction = connection.BeginTransaction();
-            foreach (var column in missingColumns)
-            {
-                if (columns.Contains(column.Name))
-                {
-                    continue;
-                }
-
-                command.CommandText = $"ALTER TABLE Config ADD COLUMN {column.Name} {column.Definition};";
-                command.ExecuteNonQuery();
-            }
-            transaction.Commit();
-        }
-
         private void EnsureGameFolderSchema()
         {
             using var connection = GetConnection();
