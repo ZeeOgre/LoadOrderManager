@@ -45,6 +45,7 @@ namespace ZO.LoadOrderManager
 
                 // Verify local app data files before any database operations
                 Config.VerifyLocalAppDataFiles();
+                EnsureConfigSchemaCompatibility();
 
                 bool dbExists = File.Exists(dbFilePath) && new System.IO.FileInfo(dbFilePath).Length > 0;
                 App.LogDebug($"Database file path: {dbFilePath}");
@@ -108,8 +109,137 @@ namespace ZO.LoadOrderManager
                     _ = Config.LoadFromDatabase();
                 }
 
+                EnsureGameFolderSchema();
+
                 _initialized = true;
             }
+        }
+
+        /// <summary>
+        /// Adds configuration columns introduced after the original database release.
+        /// This runs before Config.LoadFromDatabase so an existing user database can
+        /// be read without being deleted or replaced.
+        /// </summary>
+        public void EnsureConfigSchemaCompatibility()
+        {
+            using var connection = GetConnection();
+            using var command = new SQLiteCommand(connection);
+            command.CommandText = "PRAGMA table_info(Config);";
+
+            var columns = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            using (var reader = command.ExecuteReader())
+            {
+                while (reader.Read())
+                {
+                    columns.Add(reader.GetString(1));
+                }
+            }
+
+            if (columns.Count == 0)
+            {
+                return;
+            }
+
+            var missingColumns = new (string Name, string Definition)[]
+            {
+                ("ProfileID", "INTEGER"),
+                ("IsActive", "INTEGER NOT NULL DEFAULT 1"),
+                ("AutoScanGameFolder", "INTEGER NOT NULL DEFAULT 1"),
+                ("AutoScanModRepoFolder", "INTEGER NOT NULL DEFAULT 0"),
+                ("LootExePath", "TEXT"),
+                ("NexusExportFile", "TEXT"),
+                ("MO2ExportFile", "TEXT"),
+                ("WebServicePort", "INTEGER NOT NULL DEFAULT 23306"),
+                ("PluginWarning", "INTEGER NOT NULL DEFAULT 1"),
+                ("ShowDiff", "INTEGER NOT NULL DEFAULT 1")
+            };
+
+            using var transaction = connection.BeginTransaction();
+            foreach (var column in missingColumns)
+            {
+                if (columns.Contains(column.Name))
+                {
+                    continue;
+                }
+
+                command.CommandText = $"ALTER TABLE Config ADD COLUMN {column.Name} {column.Definition};";
+                command.ExecuteNonQuery();
+            }
+
+            // SQLite cannot add a PRIMARY KEY through ALTER TABLE. Existing Config rows
+            // receive their stable row ID as the profile identifier instead.
+            command.CommandText = "UPDATE Config SET ProfileID = rowid WHERE ProfileID IS NULL;";
+            command.ExecuteNonQuery();
+            transaction.Commit();
+        }
+
+        private void EnsureGameFolderSchema()
+        {
+            using var connection = GetConnection();
+            using var transaction = connection.BeginTransaction();
+            using var command = new SQLiteCommand(connection);
+            command.CommandText = @"
+                CREATE TABLE IF NOT EXISTS GameFolders (
+                    GameFolderID INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                    DisplayName TEXT NOT NULL,
+                    GameRoot TEXT NOT NULL COLLATE NOCASE UNIQUE
+                );";
+            command.ExecuteNonQuery();
+
+            command.CommandText = "PRAGMA table_info(FileInfo);";
+            var hasGameFolderID = false;
+            using (var reader = command.ExecuteReader())
+                while (reader.Read()) hasGameFolderID |= string.Equals(reader.GetString(1), "GameFolderID", StringComparison.OrdinalIgnoreCase);
+
+            if (!hasGameFolderID)
+            {
+                command.CommandText = @"
+                    DROP TRIGGER IF EXISTS trgInsteadOfInsert_vwLoadOuts;
+                    DROP TRIGGER IF EXISTS trgInsteadOfInsert_vwModGroups;
+                    DROP TRIGGER IF EXISTS trgInsteadOfInsert_vwPluginFiles;
+                    DROP TRIGGER IF EXISTS trgInsteadOfInsert_vwPlugins;
+                    DROP TRIGGER IF EXISTS trgInsteadOfUpdate_vwLoadOuts;
+                    DROP TRIGGER IF EXISTS trgInsteadOfUpdate_vwModGroups;
+                    DROP TRIGGER IF EXISTS fki_FileInfo_PluginID_Plugins_PluginID;
+                    DROP TRIGGER IF EXISTS fku_FileInfo_PluginID_Plugins_PluginID;
+                    DROP VIEW IF EXISTS vwPluginFiles;
+                    ALTER TABLE FileInfo RENAME TO FileInfo_Legacy;
+                    CREATE TABLE FileInfo (
+                        FileID INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        PluginID INTEGER REFERENCES Plugins(PluginID) ON DELETE CASCADE,
+                        GameFolderID INTEGER REFERENCES GameFolders(GameFolderID) ON DELETE CASCADE,
+                        Filename TEXT NOT NULL COLLATE NOCASE,
+                        RelativePath TEXT, AbsolutePath TEXT, ModManagerFolderPath TEXT,
+                        DTStamp TEXT NOT NULL, HASH TEXT, Flags INTEGER, FileContent BLOB,
+                        UNIQUE(GameFolderID, Filename)
+                    );
+                    INSERT INTO FileInfo (FileID, PluginID, Filename, RelativePath, AbsolutePath, ModManagerFolderPath, DTStamp, HASH, Flags, FileContent)
+                    SELECT FileID, PluginID, Filename, RelativePath, AbsolutePath, ModManagerFolderPath, DTStamp, HASH, Flags, FileContent FROM FileInfo_Legacy;
+                    DROP TABLE FileInfo_Legacy;";
+                command.ExecuteNonQuery();
+            }
+
+            var legacyRoot = Config.Instance.GameFolder;
+            if (!string.IsNullOrWhiteSpace(legacyRoot) && Directory.Exists(legacyRoot))
+            {
+                command.CommandText = @"
+                    INSERT INTO GameFolders (DisplayName, GameRoot) VALUES (@DisplayName, @GameRoot)
+                    ON CONFLICT(GameRoot) DO NOTHING;";
+                command.Parameters.Clear();
+                command.Parameters.AddWithValue("@DisplayName", new DirectoryInfo(legacyRoot).Name);
+                command.Parameters.AddWithValue("@GameRoot", Path.GetFullPath(legacyRoot).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
+                command.ExecuteNonQuery();
+            }
+
+            command.CommandText = @"
+                DROP VIEW IF EXISTS vwPluginFiles;
+                CREATE VIEW vwPluginFiles AS
+                SELECT fi.FileID, p.PluginID, p.PluginName, fi.Filename, fi.RelativePath,
+                       fi.DTStamp, fi.HASH, fi.Flags, fi.AbsolutePath, fi.GameFolderID
+                FROM Plugins p JOIN FileInfo fi ON p.PluginID = fi.PluginID;";
+            command.Parameters.Clear();
+            command.ExecuteNonQuery();
+            transaction.Commit();
         }
 
 
