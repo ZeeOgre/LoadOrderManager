@@ -11,7 +11,6 @@ namespace ZO.LoadOrderManager
         private ModGroup _originalModGroup;
         private ModGroup _tempModGroup;
         private ObservableCollection<ModGroup> _allModGroups;
-        private ObservableCollection<GroupSet> _filteredGroupSets;
 
 
         public Task<bool?> ShowDialogAsync()
@@ -85,7 +84,7 @@ namespace ZO.LoadOrderManager
         private void LoadGroupSets()
         {
             //_filteredGroupSets = new ObservableCollection<GroupSet>();
-            var _filteredGroupSets = AggLoadInfo.Instance.GetGroupSets();
+            var filteredGroupSets = AggLoadInfo.Instance.GetGroupSets();
             //using (var connection = DbManager.Instance.GetConnection())
             //{
             //    using var command = new SQLiteCommand(connection);
@@ -104,13 +103,13 @@ namespace ZO.LoadOrderManager
             //    }
             //}
 
-            GroupSetComboBox.ItemsSource = _filteredGroupSets;
+            GroupSetComboBox.ItemsSource = filteredGroupSets;
             GroupSetComboBox.DisplayMemberPath = "GroupSetName";
             GroupSetComboBox.SelectedValuePath = "GroupSetID";
             GroupSetComboBox.SelectedValue = _tempModGroup.GroupSetID;
 
             // Debug statements
-            Console.WriteLine("GroupSetComboBox ItemsSource set with {0} items.", _filteredGroupSets.Count);
+            Console.WriteLine("GroupSetComboBox ItemsSource set with {0} items.", filteredGroupSets.Count);
             Console.WriteLine("GroupSetComboBox SelectedValue set to {0}.", _tempModGroup.GroupSetID);
         }
 

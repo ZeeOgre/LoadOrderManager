@@ -5,10 +5,9 @@ using System.Windows.Media;
 
 namespace ZO.LoadOrderManager
 {
-    public partial class LoadOrderWindowViewModel : ViewModelBase, INotifyPropertyChanged
+    public partial class LoadOrderWindowViewModel : ViewModelBase
     {
         // Fields
-        private bool isSaved;
         private string _statusMessage;
         private string _searchText;
         private bool _isInitialDataLoaded = false;
@@ -168,9 +167,6 @@ namespace ZO.LoadOrderManager
         // Direct public property for SelectedCachedItems
         public ObservableCollection<object> SelectedCachedItems { get; set; }
 
-        // PropertyChanged Event
-        public event PropertyChangedEventHandler? PropertyChanged;
-
         // Status message
         public string StatusMessage
         {
@@ -196,12 +192,6 @@ namespace ZO.LoadOrderManager
         // Core synchronization logic
         public void StartSync() => _isSynchronizing = true;
         public void EndSync() => _isSynchronizing = false;
-
-        // OnPropertyChanged helper
-        public void OnPropertyChanged(string propertyName)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
 
         // Update status method
         public void UpdateStatus(string message)

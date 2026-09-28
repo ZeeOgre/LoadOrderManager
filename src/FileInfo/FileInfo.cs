@@ -678,7 +678,7 @@ namespace ZO.LoadOrderManager
             return monitoredFiles;
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             if (obj is FileInfo other)
             {

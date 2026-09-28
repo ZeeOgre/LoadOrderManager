@@ -753,7 +753,7 @@ public bool InBethesda
             AggLoadInfo.Instance.RefreshMetadataFromDB();
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             if (obj is Plugin otherPlugin)
             {
