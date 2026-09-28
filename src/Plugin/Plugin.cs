@@ -33,9 +33,10 @@ namespace ZO.LoadOrderManager
         
         public bool InGameFolder
         {
-            get => State.HasFlag(ModState.GameFolder);
+            get => PluginID == 0 ? State.HasFlag(ModState.GameFolder) : GameFolderContext.IsPresent(PluginID);
             set
             {
+                if (PluginID != 0) GameFolderContext.SetPresent(PluginID, value);
                 if (value)
                 {
                     State |= ModState.GameFolder; // Set the GameFolder flag

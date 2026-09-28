@@ -350,6 +350,17 @@
                         <TextBlock FontFamily="Segoe UI Symbol" FontSize="30" Text="&#x25BC;"/>
                     </Button.Content>
                 </Button>
+                <StackPanel Orientation="Vertical" Margin="10,0,0,0" Width="260">
+                    <ComboBox ItemsSource="{Binding GameFolders}" SelectedItem="{Binding SelectedGameFolder, Mode=TwoWay}"
+                              ToolTip="{Binding SelectedGameFolder.GameRoot}">
+                        <ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding DisplayName}"/></DataTemplate></ComboBox.ItemTemplate>
+                    </ComboBox>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <Button Content="Add" Command="{Binding AddGameFolderCommand}" Margin="2" Padding="8,2"/>
+                        <Button Content="Edit" Command="{Binding EditGameFolderCommand}" Margin="2" Padding="8,2"/>
+                        <Button Content="Remove" Command="{Binding RemoveGameFolderCommand}" Margin="2" Padding="8,2"/>
+                    </StackPanel>
+                </StackPanel>
             </StackPanel>
 
             <StackPanel Grid.Column="1" Orientation="Vertical" HorizontalAlignment="Center">
