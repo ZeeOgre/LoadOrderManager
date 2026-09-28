@@ -45,7 +45,7 @@ namespace ZO.LoadOrderManager
 
                 // Verify local app data files before any database operations
                 Config.VerifyLocalAppDataFiles();
-                DbManager.EnsureConfigSchemaCompatibility();
+                EnsureConfigSchemaCompatibility();
 
                 bool dbExists = File.Exists(dbFilePath) && new System.IO.FileInfo(dbFilePath).Length > 0;
                 App.LogDebug($"Database file path: {dbFilePath}");
@@ -113,50 +113,6 @@ namespace ZO.LoadOrderManager
 
                 _initialized = true;
             }
-        }
-
-        /// <summary>
-        /// Brings the Config table up to the profile-aware shape before configuration is read.
-        /// This must remain separate from <see cref="Initialize"/> because Config.Initialize()
-        /// reads the database before the full database-manager initialization runs.
-        /// </summary>
-        public static void EnsureConfigSchemaCompatibility()
-        {
-            using var connection = Instance.GetConnection();
-            using var command = new SQLiteCommand(connection);
-
-            command.CommandText = "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = 'Config';";
-            if (Convert.ToInt64(command.ExecuteScalar()) == 0)
-            {
-                return;
-            }
-
-            command.CommandText = "PRAGMA table_info(Config);";
-            var columns = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            using (var reader = command.ExecuteReader())
-            {
-                while (reader.Read())
-                {
-                    columns.Add(reader.GetString(1));
-                }
-            }
-
-            using var transaction = connection.BeginTransaction();
-            if (!columns.Contains("ProfileID"))
-            {
-                command.CommandText = "ALTER TABLE Config ADD COLUMN ProfileID INTEGER;";
-                command.ExecuteNonQuery();
-                command.CommandText = "UPDATE Config SET ProfileID = rowid WHERE ProfileID IS NULL;";
-                command.ExecuteNonQuery();
-            }
-
-            if (!columns.Contains("IsActive"))
-            {
-                command.CommandText = "ALTER TABLE Config ADD COLUMN IsActive INTEGER NOT NULL DEFAULT 1;";
-                command.ExecuteNonQuery();
-            }
-
-            transaction.Commit();
         }
 
         private void EnsureGameFolderSchema()
