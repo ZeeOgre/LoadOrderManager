@@ -183,7 +183,7 @@ namespace ZO.LoadOrderManager
 };
 
 
-        // Changing the group’s parent and ordinal
+        // Changing the groupâ€™s parent and ordinal
         public void ChangeGroup(long newParentId)
         {
             // Disallow reserved groups as parents
@@ -440,7 +440,7 @@ namespace ZO.LoadOrderManager
             return null;
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             if (obj is ModGroup other)
             {

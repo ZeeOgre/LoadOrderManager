@@ -1,4 +1,5 @@
 ﻿using System.Reflection;
+using System.Runtime.Versioning;
 using System.Windows;
 
 
@@ -13,3 +14,4 @@ using System.Windows;
 )]
 [assembly: AssemblyVersion("0.0.18.0")]
 [assembly: AssemblyFileVersion("0.0.18.0")]
+[assembly: SupportedOSPlatform("windows")]
