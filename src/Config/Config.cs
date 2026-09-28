@@ -84,8 +84,6 @@ namespace ZO.LoadOrderManager
                     if (_instance == null)
                     {
                         VerifyLocalAppDataFiles();
-                        // Existing databases predate profile selection. Upgrade the Config
-                        // table before any profile-aware query attempts to read it.
                         DbManager.Instance.EnsureConfigSchemaCompatibility();
                         if (File.Exists(dbFilePath) && HasRowsInDatabase())
                         {
