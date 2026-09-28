@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Windows;
 using System.Windows.Input;
 
@@ -16,6 +17,7 @@ namespace ZO.LoadOrderManager
             // Initialize ObservableCollections for GroupSets, LoadOuts, and selection
             GroupSets = new ObservableCollection<GroupSet>();
             LoadOuts = new ObservableCollection<LoadOut>();
+            GameFolders = GameFolder.LoadAll();
             SelectedItems = new ObservableCollection<object>();
             SelectedCachedItems = new ObservableCollection<object>();
 
@@ -61,10 +63,68 @@ namespace ZO.LoadOrderManager
             EditLoadOutCommand = new RelayCommand(ExecuteEditLoadOutCommand, CanExecuteEditLoadOutCommand); // LoadOrderWindowViewModel.ContextMenuCommands.cs
 
             RefreshCommand = new RelayCommand(_ => RefreshData()); // LoadOrderWindowViewModel.MenuCommands.cs
+            AddGameFolderCommand = new RelayCommand(_ => AddGameFolder());
+            EditGameFolderCommand = new RelayCommand(_ => EditGameFolder(), _ => SelectedGameFolder != null);
+            RemoveGameFolderCommand = new RelayCommand(_ => RemoveGameFolder(), _ => GameFolders.Count > 1 && SelectedGameFolder != null);
+
+            var configuredRoot = Config.Instance.GameFolder;
+            var initialFolder = GameFolders.FirstOrDefault(folder =>
+                string.Equals(folder.GameRoot, configuredRoot, StringComparison.OrdinalIgnoreCase)) ?? GameFolders.FirstOrDefault();
+            if (initialFolder != null)
+            {
+                _selectedGameFolder = initialFolder;
+                GameFolderContext.Select(initialFolder);
+            }
 
             // Load initial data
             LoadInitialData();
 
+        }
+
+        private void AddGameFolder()
+        {
+            var folder = new GameFolder();
+            var editor = new GameFolderEditor(folder) { Owner = Application.Current.MainWindow };
+            if (editor.ShowDialog() != true) return;
+            GameFolders.Add(folder);
+            SelectedGameFolder = folder;
+        }
+
+        private void EditGameFolder()
+        {
+            if (SelectedGameFolder == null) return;
+            var editor = new GameFolderEditor(SelectedGameFolder) { Owner = Application.Current.MainWindow };
+            if (editor.ShowDialog() != true) return;
+            OnPropertyChanged(nameof(GameFolders));
+            GameFolderContext.Select(SelectedGameFolder);
+            ScanAndRefreshSelectedGameFolder();
+        }
+
+        private void RemoveGameFolder()
+        {
+            if (SelectedGameFolder == null || GameFolders.Count <= 1) return;
+            if (MessageBox.Show($"Remove '{SelectedGameFolder.DisplayName}' and its file inventory?", "Remove game folder",
+                MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) return;
+            var removed = SelectedGameFolder;
+            var replacement = GameFolders.First(folder => folder != removed);
+            removed.Delete();
+            GameFolders.Remove(removed);
+            SelectedGameFolder = replacement;
+        }
+
+        private async void ScanAndRefreshSelectedGameFolder()
+        {
+            if (SelectedGameFolder == null || !Directory.Exists(SelectedGameFolder.DataFolder)) return;
+            IsUiEnabled = false;
+            try
+            {
+                await Task.Run(() => FileManager.ScanGameDirectoryForStrays(false,
+                    AggLoadInfo.Instance.ActiveGroupSet?.GroupSetID, true));
+                LoadOrders.RefreshData();
+                foreach (var item in LoadOrders.Items) PropagateHideUnloadedPlugins(item, HideUnloadedPlugins);
+            }
+            catch (Exception ex) { SetWarning($"Unable to scan {SelectedGameFolder.DisplayName}: {ex.Message}"); }
+            finally { IsUiEnabled = true; }
         }
 
         // Load initial data for the ViewModel
