@@ -53,7 +53,8 @@ namespace ZO.LoadOrderManager
         {
             _quiet = quiet;
             MWMessage("Clearing all known file information", false); 
-            ResetPluginStatesAndFileFlags();
+            if (GameFolderContext.Active == null) throw new InvalidOperationException("No game folder is selected.");
+            ResetPluginStatesAndFileFlags(GameFolderContext.Active.GameFolderID);
             
             MWMessage("Scanning Game Folder and computing hashes, please wait",true);
             App.LogDebug("Scan Game Directory For Strays");
@@ -74,7 +75,7 @@ namespace ZO.LoadOrderManager
                 : "Quick Scan Selected, starting scan...",true);
 
             // Load all known FileInfo objects with the GameFolder flag set
-            var knownGameFolderFiles = ZO.LoadOrderManager.FileInfo.GetAllFiles()
+            var knownGameFolderFiles = ZO.LoadOrderManager.FileInfo.GetAllFiles(GameFolderContext.Active.GameFolderID)
     .GroupBy(f => f.Filename, StringComparer.OrdinalIgnoreCase)
     .Select(g => g.First())
     .ToDictionary(f => f.Filename, StringComparer.OrdinalIgnoreCase);
@@ -133,6 +134,7 @@ namespace ZO.LoadOrderManager
                         existingFileInfo.Flags |= FileFlags.GameFolder;
                         existingFileInfo.AbsolutePath = fileInfo.FullName;
                         existingFileInfo.RelativePath = Path.GetRelativePath(dataFolder, fileInfo.FullName);
+                        existingFileInfo.GameFolderID = GameFolderContext.Active.GameFolderID;
                         _ = ZO.LoadOrderManager.FileInfo.InsertFileInfo(existingFileInfo, existingPlugin.PluginID);
                        
 
@@ -168,7 +170,8 @@ namespace ZO.LoadOrderManager
                         HASH = newHash,
                         Flags = FileFlags.GameFolder | FileFlags.Plugin,
                         AbsolutePath = fileInfo.FullName,
-                        RelativePath = Path.GetRelativePath(dataFolder, fileInfo.FullName)
+                        RelativePath = Path.GetRelativePath(dataFolder, fileInfo.FullName),
+                        GameFolderID = GameFolderContext.Active.GameFolderID
                     };
                     //newFileInfo.Flags &= ~FileFlags.IsArchive;
                     _ = ZO.LoadOrderManager.FileInfo.InsertFileInfo(newFileInfo, newPlugin.PluginID);
@@ -185,6 +188,8 @@ namespace ZO.LoadOrderManager
 
                 _quiet = false;
             }
+
+            GameFolderContext.RefreshPresence();
 
             Application.Current.Dispatcher.Invoke(() =>
             {
@@ -226,7 +231,8 @@ namespace ZO.LoadOrderManager
                     HASH = newHash,
                     Flags = FileFlags.IsArchive | FileFlags.GameFolder ,
                     AbsolutePath = ba2File,
-                    RelativePath = Path.GetRelativePath(GameFolder, ba2File)
+                    RelativePath = Path.GetRelativePath(GameFolder, ba2File),
+                    GameFolderID = GameFolderContext.Active!.GameFolderID
                 };
                 //newFileInfo.Flags &= ~FileFlags.IsPlugin;
                 _ = ZO.LoadOrderManager.FileInfo.InsertFileInfo(ba2FileInfo, pluginId);
@@ -249,55 +255,33 @@ namespace ZO.LoadOrderManager
                     HASH = newHash,
                     Flags = FileFlags.Config | FileFlags.GameFolder,
                     AbsolutePath = iniFile,
-                    RelativePath = Path.GetRelativePath(GameFolder, iniFile)
+                    RelativePath = Path.GetRelativePath(GameFolder, iniFile),
+                    GameFolderID = GameFolderContext.Active!.GameFolderID
                 };
                 _ = ZO.LoadOrderManager.FileInfo.InsertFileInfo(iniFileInfo, pluginId);
             }
         }
 
-        public static void ResetPluginStatesAndFileFlags()
+        public static void ResetPluginStatesAndFileFlags(long gameFolderID)
         {
 
             // Use the DbManager singleton to get the database connection
             using (var connection = DbManager.Instance.GetConnection())
             {
 
-                // Update the State for all plugins where GroupID != -999
-                string updatePluginsSql = @"
-                UPDATE Plugins
-                SET State = State & ~1
-                WHERE PluginID NOT IN (
-                    SELECT PluginID
-                    FROM GroupSetPlugins
-                    WHERE GroupID = -999
-                )";
-
-                using (var command = new SQLiteCommand(updatePluginsSql, connection))
-                {
-                    command.ExecuteNonQuery();
-                }
-
-                // Update the Flags for all file info where PluginID is not in GroupID -999
                 string updateFileInfoSql = @"
-                UPDATE FileInfo
-                SET Flags = Flags & ~8
-                WHERE FileID NOT IN (
-                    SELECT FileID
-                    FROM Plugins
-                    WHERE PluginID IN (
-                        SELECT PluginID
-                        FROM GroupSetPlugins
-                        WHERE GroupID = -999
-                    )
-                )";
+                DELETE FROM FileInfo
+                WHERE GameFolderID = @GameFolderID AND (Flags & 8) = 8";
 
                 using (var command = new SQLiteCommand(updateFileInfoSql, connection))
                 {
+                    command.Parameters.AddWithValue("@GameFolderID", gameFolderID);
                     command.ExecuteNonQuery();
                 }
 
                 connection.Close();
             }
+            GameFolderContext.RefreshPresence();
         }
     }
 }

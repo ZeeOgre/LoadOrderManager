@@ -84,6 +84,7 @@ namespace ZO.LoadOrderManager
                     if (_instance == null)
                     {
                         VerifyLocalAppDataFiles();
+                        DbManager.Instance.EnsureConfigSchemaCompatibility();
                         if (File.Exists(dbFilePath) && HasRowsInDatabase())
                         {
                             _ = LoadFromDatabase();
@@ -230,7 +231,7 @@ namespace ZO.LoadOrderManager
         {
             using (var connection = DbManager.Instance.GetConnection())
             {
-                using var command = new SQLiteCommand("SELECT * FROM Config", connection);
+                using var command = new SQLiteCommand("SELECT * FROM Config LIMIT 1", connection);
                 using var reader = command.ExecuteReader();
                 if (reader.Read())
                 {
