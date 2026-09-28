@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using System.IO;
 using System.Windows;
 using ZO.LoadOrderManager;
@@ -9,7 +9,7 @@ public class GameFolderMonitor : IDisposable
     private static readonly List<GameFolderMonitor> _monitors = new List<GameFolderMonitor>(); // Prevent garbage collection
     private FileSystemWatcher _esmWatcher;
     private FileSystemWatcher _espWatcher;
-    private static readonly string gameFolder = Path.Combine(Config.Instance.GameFolder, "Data");
+    private readonly string gameFolder;
 
     private bool _disposed = false;
 
@@ -20,8 +20,9 @@ public class GameFolderMonitor : IDisposable
     private static GameFolderMonitor _persistentReference;
 
     // Constructor is private to enforce singleton
-    private GameFolderMonitor()
+    private GameFolderMonitor(string gameRoot)
     {
+        gameFolder = Path.Combine(gameRoot, "Data");
         App.LogDebug($"Initializing GameFolderMonitor for folder: {gameFolder}");
 
         // Watcher for .esm files
@@ -55,7 +56,7 @@ public class GameFolderMonitor : IDisposable
         {
             if (_instance == null)
             {
-                _instance = new GameFolderMonitor();
+                _instance = new GameFolderMonitor(GameFolderContext.Active?.GameRoot ?? Config.Instance.GameFolder);
                 _persistentReference = _instance; // Keep a static reference to prevent GC
             }
             return _instance;
@@ -105,6 +106,7 @@ public class GameFolderMonitor : IDisposable
                 // Create and insert FileInfo
                 var newFileInfo = new zoFileInfo(pluginFile)
                 {
+                    GameFolderID = GameFolderContext.Active?.GameFolderID,
                     Flags = FileFlags.Plugin | FileFlags.GameFolder,
                     DTStamp = newPlugin.DTStamp,
                     HASH = zoFileInfo.ComputeHash(pluginFile),
@@ -129,37 +131,13 @@ public class GameFolderMonitor : IDisposable
         }
     }
 
-    private async void OnPluginFileDeleted(object sender, FileSystemEventArgs e)
+    private void OnPluginFileDeleted(object sender, FileSystemEventArgs e)
     {
-        string pluginFile = e.FullPath;
-        string pluginName = Path.GetFileName(pluginFile).ToLowerInvariant();
+        var pluginName = Path.GetFileName(e.FullPath).ToLowerInvariant();
         App.LogDebug($"Plugin file deleted: {pluginName}");
-
         try
         {
-            // Check if the plugin exists
-            var existingPlugin = Plugin.LoadPlugin(null, pluginName, AggLoadInfo.Instance.ActiveGroupSet.GroupSetID);
-            if (existingPlugin != null)
-            {
-                // Remove the InGameFolder flag
-                existingPlugin.InGameFolder = false;
-                //existingPlugin.WriteMod();
-                existingPlugin.WriteMod();
-                var files = new ObservableCollection<zoFileInfo>(new zoFileInfo().LoadFilesByPlugin(existingPlugin.PluginID));
-                foreach (var file in files)
-                {
-                    file.ReplaceFlags(file.Flags & ~FileFlags.GameFolder);
-                }
-                AggLoadInfo.Instance.UpdatePlugin(existingPlugin);
-            }
-
-            
-
-            Application.Current.Dispatcher.Invoke(() =>
-            {
-                LoadOrderWindow.Instance.LOWVM.UpdateStatus($"{pluginFile} was removed from the Game Folder");
-                LoadOrderWindow.Instance.LOWVM.LoadOrders.RefreshData(); // Clear the warning after scan completion
-            });
+            FileManager.ScanGameDirectoryForStrays(false, AggLoadInfo.Instance.ActiveGroupSet.GroupSetID, true);
         }
         catch (Exception ex)
         {
@@ -183,6 +161,14 @@ public class GameFolderMonitor : IDisposable
     {
         App.LogDebug("Initializing GameFolderMonitor...");
         GameFolderMonitor.Instance.StartMonitoring();
+    }
+
+    public static void SwitchTo(GameFolder folder)
+    {
+        _instance?.Dispose();
+        if (_instance != null) _monitors.Remove(_instance);
+        _instance = new GameFolderMonitor(folder.GameRoot);
+        _persistentReference = _instance;
     }
 
     public static void StopAllMonitors()

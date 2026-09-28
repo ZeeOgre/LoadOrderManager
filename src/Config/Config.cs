@@ -84,6 +84,9 @@ namespace ZO.LoadOrderManager
                     if (_instance == null)
                     {
                         VerifyLocalAppDataFiles();
+                        // Existing databases predate profile selection. Upgrade the Config
+                        // table before any profile-aware query attempts to read it.
+                        DbManager.EnsureConfigSchemaCompatibility();
                         if (File.Exists(dbFilePath) && HasRowsInDatabase())
                         {
                             _ = LoadFromDatabase();
@@ -230,7 +233,8 @@ namespace ZO.LoadOrderManager
         {
             using (var connection = DbManager.Instance.GetConnection())
             {
-                using var command = new SQLiteCommand("SELECT * FROM Config", connection);
+                using var command = new SQLiteCommand(
+                    "SELECT * FROM Config WHERE COALESCE(IsActive, 0) = 1 ORDER BY ProfileID LIMIT 1", connection);
                 using var reader = command.ExecuteReader();
                 if (reader.Read())
                 {
