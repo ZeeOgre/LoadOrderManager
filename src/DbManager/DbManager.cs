@@ -45,6 +45,7 @@ namespace ZO.LoadOrderManager
 
                 // Verify local app data files before any database operations
                 Config.VerifyLocalAppDataFiles();
+                EnsureConfigSchemaCompatibility();
 
                 bool dbExists = File.Exists(dbFilePath) && new System.IO.FileInfo(dbFilePath).Length > 0;
                 App.LogDebug($"Database file path: {dbFilePath}");
