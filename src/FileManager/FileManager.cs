@@ -38,15 +38,13 @@ namespace ZO.LoadOrderManager
                     _quiet = true;
                     InitializationManager.StartInitialization(nameof(FileManager));
                     App.LogDebug("FileManager: Starting initialization...");
+                    if (GameFolderContext.Active == null)
+                    {
+                        throw new InvalidOperationException(
+                            "FileManager initialization requires an active game folder to be selected during application startup.");
+                    }
+
                     InitializeFavoriteGroupSetAndLoadOut();
-
-                    var gameFolders = ZO.LoadOrderManager.GameFolder.LoadAll();
-                    var activeGameFolder = gameFolders.FirstOrDefault(folder =>
-                        string.Equals(folder.GameRoot, Config.Instance.GameFolder, StringComparison.OrdinalIgnoreCase))
-                        ?? gameFolders.FirstOrDefault()
-                        ?? throw new InvalidOperationException("No game folder has been configured.");
-                    GameFolderContext.Select(activeGameFolder);
-
                     AggLoadInfo.Instance.InitFromDatabase();
                     FileMonitor.InitializeAllMonitors();
                     GameFolderMonitor.InitializeAllMonitors();
