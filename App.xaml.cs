@@ -313,9 +313,14 @@ namespace ZO.LoadOrderManager
         {
             var gameFolders = GameFolder.LoadAll();
             var configuredRoot = Config.Instance.GameFolder;
-            var selectedFolder = gameFolders.FirstOrDefault(folder =>
-                string.Equals(folder.GameRoot, configuredRoot, StringComparison.OrdinalIgnoreCase))
-                ?? gameFolders.FirstOrDefault();
+            var selectedFolder = Config.Instance.StartupGameFolderID.HasValue
+                ? gameFolders.FirstOrDefault(folder => folder.GameFolderID == Config.Instance.StartupGameFolderID.Value)
+                : null;
+            selectedFolder ??= gameFolders.FirstOrDefault(folder =>
+                !string.IsNullOrWhiteSpace(configuredRoot) &&
+                PathsReferToSameRoot(folder.GameRoot, configuredRoot));
+            selectedFolder ??= gameFolders.FirstOrDefault(folder => folder.DisplayName == "<DEFAULT>");
+            selectedFolder ??= gameFolders.FirstOrDefault();
 
             if (selectedFolder != null)
             {
@@ -330,7 +335,7 @@ namespace ZO.LoadOrderManager
                     .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
                 var migratedFolder = new GameFolder
                 {
-                    DisplayName = new DirectoryInfo(normalizedRoot).Name,
+                    DisplayName = "<DEFAULT>",
                     GameRoot = normalizedRoot
                 };
                 migratedFolder.Save();
@@ -368,6 +373,20 @@ namespace ZO.LoadOrderManager
 
             GameFolderContext.Select(createdFolder);
             return true;
+        }
+
+        private static bool PathsReferToSameRoot(string first, string second)
+        {
+            try
+            {
+                static string Normalize(string path) => Path.GetFullPath(path)
+                    .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+                return string.Equals(Normalize(first), Normalize(second), StringComparison.OrdinalIgnoreCase);
+            }
+            catch (Exception ex) when (ex is ArgumentException or NotSupportedException)
+            {
+                return false;
+            }
         }
 
         public static void RestartDialog(string message)

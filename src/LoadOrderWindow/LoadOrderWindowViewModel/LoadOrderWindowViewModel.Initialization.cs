@@ -67,9 +67,9 @@ namespace ZO.LoadOrderManager
             EditGameFolderCommand = new RelayCommand(_ => EditGameFolder(), _ => SelectedGameFolder != null);
             RemoveGameFolderCommand = new RelayCommand(_ => RemoveGameFolder(), _ => GameFolders.Count > 1 && SelectedGameFolder != null);
 
-            var configuredRoot = Config.Instance.GameFolder;
-            var initialFolder = GameFolders.FirstOrDefault(folder =>
-                string.Equals(folder.GameRoot, configuredRoot, StringComparison.OrdinalIgnoreCase)) ?? GameFolders.FirstOrDefault();
+            var activeGameFolderID = GameFolderContext.Active?.GameFolderID;
+            var initialFolder = GameFolders.FirstOrDefault(folder => folder.GameFolderID == activeGameFolderID)
+                ?? GameFolders.FirstOrDefault();
             if (initialFolder != null)
             {
                 _selectedGameFolder = initialFolder;
@@ -109,6 +109,10 @@ namespace ZO.LoadOrderManager
             var replacement = GameFolders.First(folder => folder != removed);
             removed.Delete();
             GameFolders.Remove(removed);
+            if (Config.Instance.StartupGameFolderID == removed.GameFolderID)
+            {
+                Config.SaveStartupGameFolderID(replacement.GameFolderID);
+            }
             SelectedGameFolder = replacement;
         }
 

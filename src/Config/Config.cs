@@ -23,6 +23,8 @@ namespace ZO.LoadOrderManager
         public List<FileInfo> MonitoredFiles { get; set; } = new List<FileInfo>();
         public bool DarkMode { get; set; } = true;
         public string? GameFolder { get; set; }
+        public long? StartupGameFolderID { get; set; }
+        public bool RememberLastGameFolder { get; set; } = true;
         public bool AutoScanGameFolder { get; set; } = true;
         public string? ModManagerRepoFolder { get; set; }
         public bool AutoScanModRepoFolder { get; set; } = false;
@@ -59,6 +61,8 @@ namespace ZO.LoadOrderManager
             if (other == null) throw new ArgumentNullException(nameof(other));
 
             this.GameFolder = other.GameFolder;
+            this.StartupGameFolderID = other.StartupGameFolderID;
+            this.RememberLastGameFolder = other.RememberLastGameFolder;
             this.AutoScanGameFolder = other.AutoScanGameFolder;
             this.ModManagerRepoFolder = other.ModManagerRepoFolder;
             this.AutoScanModRepoFolder = other.AutoScanModRepoFolder;   
@@ -239,6 +243,8 @@ namespace ZO.LoadOrderManager
                     _instance = new Config
                     {
                         GameFolder = reader["GameFolder"] != DBNull.Value ? reader["GameFolder"].ToString() : null,
+                        StartupGameFolderID = reader["StartupGameFolderID"] != DBNull.Value ? Convert.ToInt64(reader["StartupGameFolderID"]) : null,
+                        RememberLastGameFolder = reader["RememberLastGameFolder"] == DBNull.Value || Convert.ToBoolean(reader["RememberLastGameFolder"]),
                         AutoScanGameFolder = reader["AutoScanGameFolder"] != DBNull.Value && Convert.ToBoolean(reader["AutoScanGameFolder"]),
                         ModManagerRepoFolder = reader["ModManagerRepoFolder"] != DBNull.Value ? reader["ModManagerRepoFolder"].ToString() : null,
                         AutoScanModRepoFolder = reader["AutoScanModRepoFolder"] != DBNull.Value && Convert.ToBoolean(reader["AutoScanModRepoFolder"]),
@@ -273,6 +279,8 @@ namespace ZO.LoadOrderManager
                 command.CommandText = @"
                     INSERT INTO Config (
                         GameFolder,
+                        StartupGameFolderID,
+                        RememberLastGameFolder,
                         AutoScanGameFolder,
                         ModManagerRepoFolder,
                         AutoScanModRepoFolder,
@@ -290,6 +298,8 @@ namespace ZO.LoadOrderManager
     
                     ) VALUES (
                         @GameFolder,
+                        @StartupGameFolderID,
+                        @RememberLastGameFolder,
                         @AutoScanGameFolder,
                         @ModManagerRepoFolder,
                         @AutoScanModRepoFolder,
@@ -307,6 +317,8 @@ namespace ZO.LoadOrderManager
                     )";
 
                 _ = command.Parameters.AddWithValue("@GameFolder", config.GameFolder ?? (object)DBNull.Value);
+                _ = command.Parameters.AddWithValue("@StartupGameFolderID", (object?)config.StartupGameFolderID ?? DBNull.Value);
+                _ = command.Parameters.AddWithValue("@RememberLastGameFolder", config.RememberLastGameFolder ? 1 : 0);
                 _ = command.Parameters.AddWithValue("@AutoScanGameFolder", config.AutoScanGameFolder ? 1 : 0);
                 _ = command.Parameters.AddWithValue("@ModManagerRepoFolder", config.ModManagerRepoFolder ?? (object)DBNull.Value);
                 _ = command.Parameters.AddWithValue("@AutoScanModRepoFolder", config.AutoScanModRepoFolder ? 1 : 0);
@@ -326,6 +338,16 @@ namespace ZO.LoadOrderManager
                 _ = command.ExecuteNonQuery();
             }
             transaction.Commit();
+        }
+
+        public static void SaveStartupGameFolderID(long gameFolderID)
+        {
+            Instance.StartupGameFolderID = gameFolderID;
+            using var connection = DbManager.Instance.GetConnection();
+            using var command = new SQLiteCommand(
+                "UPDATE Config SET StartupGameFolderID = @GameFolderID WHERE COALESCE(IsActive, 0) = 1;", connection);
+            command.Parameters.AddWithValue("@GameFolderID", gameFolderID);
+            command.ExecuteNonQuery();
         }
     }
 }

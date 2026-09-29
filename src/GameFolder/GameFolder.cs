@@ -71,6 +71,10 @@ public static class GameFolderContext
     {
         Active = folder;
         Config.Instance.GameFolder = folder.GameRoot;
+        if (Config.Instance.RememberLastGameFolder)
+        {
+            Config.SaveStartupGameFolderID(folder.GameFolderID);
+        }
         RefreshPresence();
     }
 

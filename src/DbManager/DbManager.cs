@@ -46,6 +46,7 @@ namespace ZO.LoadOrderManager
                 // Verify local app data files before any database operations
                 Config.VerifyLocalAppDataFiles();
                 EnsureConfigSchemaCompatibility();
+                EnsureGameFolderSchema();
 
                 bool dbExists = File.Exists(dbFilePath) && new System.IO.FileInfo(dbFilePath).Length > 0;
                 App.LogDebug($"Database file path: {dbFilePath}");
@@ -144,6 +145,8 @@ namespace ZO.LoadOrderManager
             {
                 ("ProfileID", "INTEGER"),
                 ("IsActive", "INTEGER NOT NULL DEFAULT 1"),
+                ("StartupGameFolderID", "INTEGER"),
+                ("RememberLastGameFolder", "INTEGER NOT NULL DEFAULT 1"),
                 ("AutoScanGameFolder", "INTEGER NOT NULL DEFAULT 1"),
                 ("AutoScanModRepoFolder", "INTEGER NOT NULL DEFAULT 0"),
                 ("LootExePath", "TEXT"),
@@ -220,13 +223,13 @@ namespace ZO.LoadOrderManager
             }
 
             var legacyRoot = Config.Instance.GameFolder;
-            if (!string.IsNullOrWhiteSpace(legacyRoot) && Directory.Exists(legacyRoot))
+            if (!string.IsNullOrWhiteSpace(legacyRoot) && Directory.Exists(Path.Combine(legacyRoot, "Data")))
             {
                 command.CommandText = @"
                     INSERT INTO GameFolders (DisplayName, GameRoot) VALUES (@DisplayName, @GameRoot)
                     ON CONFLICT(GameRoot) DO NOTHING;";
                 command.Parameters.Clear();
-                command.Parameters.AddWithValue("@DisplayName", new DirectoryInfo(legacyRoot).Name);
+                command.Parameters.AddWithValue("@DisplayName", "<DEFAULT>");
                 command.Parameters.AddWithValue("@GameRoot", Path.GetFullPath(legacyRoot).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
                 command.ExecuteNonQuery();
             }

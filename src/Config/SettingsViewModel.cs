@@ -51,6 +51,30 @@ namespace ZO.LoadOrderManager
             }
         }
 
+        public ObservableCollection<GameFolder> GameFolders { get; private set; } = new();
+
+        public GameFolder? StartupGameFolder
+        {
+            get => GameFolders.FirstOrDefault(folder => folder.GameFolderID == _config.StartupGameFolderID);
+            set
+            {
+                if (value == null || _config.StartupGameFolderID == value.GameFolderID) return;
+                _config.StartupGameFolderID = value.GameFolderID;
+                OnPropertyChanged();
+            }
+        }
+
+        public bool RememberLastGameFolder
+        {
+            get => _config.RememberLastGameFolder;
+            set
+            {
+                if (_config.RememberLastGameFolder == value) return;
+                _config.RememberLastGameFolder = value;
+                OnPropertyChanged();
+            }
+        }
+
 
         public bool AutoCheckForUpdates
         {
@@ -148,19 +172,6 @@ namespace ZO.LoadOrderManager
         }
 
 
-        public string GameFolder
-        {
-            get => _config.GameFolder;
-            set
-            {
-                if (_config.GameFolder != value)
-                {
-                    _config.GameFolder = value;
-                    OnPropertyChanged();
-                }
-            }
-        }
-
         public bool DarkMode
         {
             get => _config.DarkMode;
@@ -222,7 +233,6 @@ namespace ZO.LoadOrderManager
         public ICommand CleanOrdinalsCommand { get; private set; }
         public ICommand EditFileCommand { get; private set; }
         public ICommand CompareFileCommand { get; private set; }
-        public ICommand BrowseGameFolderCommand { get; private set; }
         public ICommand CheckForUpdatesCommand { get; private set; }
         public ICommand LoadFromYamlCommand { get; private set; }
         public ICommand SaveCommand { get; private set; }
@@ -248,6 +258,7 @@ namespace ZO.LoadOrderManager
         private void InitializeViewModel()
         {
             MonitoredFiles = new ObservableCollection<FileInfo>(_config.MonitoredFiles);
+            GameFolders = GameFolder.LoadAll();
 
             AddNewMonitoredFileCommand = new RelayCommand(_ => AddNewFile());
             RestartMonitorCommand = new RelayCommand(_ => RestartMonitor());
@@ -255,7 +266,6 @@ namespace ZO.LoadOrderManager
             CleanOrdinalsCommand = new RelayCommand(_ => CleanOrdinals(true, false));
             EditFileCommand = new RelayCommand<FileInfo>(file => EditFile(file));
             CompareFileCommand = new RelayCommand<FileInfo>(file => CompareFile(file));
-            BrowseGameFolderCommand = new RelayCommand(_ => BrowseGameFolder());
             CheckForUpdatesCommand = new RelayCommand(_ => CheckForUpdates());
             LoadFromYamlCommand = new RelayCommand(_ => LoadFromYaml());
             SaveCommand = new RelayCommand(_ => Save());
@@ -391,25 +401,6 @@ namespace ZO.LoadOrderManager
             }
         }
 
-        private void BrowseGameFolder()
-        {
-            var dialog = new OpenFileDialog
-            {
-                CheckFileExists = false,
-                CheckPathExists = true,
-                FileName = "Select Folder",
-                Filter = "Folders|*.",
-                Title = "Select the game folder"
-            };
-
-            if (dialog.ShowDialog() == true)
-            {
-                string folderPath = System.IO.Path.GetDirectoryName(dialog.FileName);
-                _config.GameFolder = folderPath;
-                OnPropertyChanged(nameof(GameFolder));
-            }
-        }
-
         private void BrowseModManagerExecutable()
         {
             var openFileDialog = new OpenFileDialog
@@ -481,7 +472,9 @@ namespace ZO.LoadOrderManager
                     OnPropertyChanged(nameof(AutoCheckForUpdates));
                     OnPropertyChanged(nameof(AutoScanModRepoFolder));
                     OnPropertyChanged(nameof(AutoScanGameFolder));  
-                    OnPropertyChanged(nameof(GameFolder));
+                    OnPropertyChanged(nameof(GameFolders));
+                    OnPropertyChanged(nameof(StartupGameFolder));
+                    OnPropertyChanged(nameof(RememberLastGameFolder));
                     OnPropertyChanged(nameof(DarkMode));
                     OnPropertyChanged(nameof(ModManagerExecutable));
                     OnPropertyChanged(nameof(ModManagerArguments));

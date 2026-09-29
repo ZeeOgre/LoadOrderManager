@@ -13,6 +13,8 @@ CREATE TABLE IF NOT EXISTS Config (
     ProfileID           INTEGER PRIMARY KEY AUTOINCREMENT,
     IsActive            INTEGER NOT NULL DEFAULT (1),
     GameFolder           TEXT    NOT NULL,
+    StartupGameFolderID  INTEGER,
+    RememberLastGameFolder INTEGER NOT NULL DEFAULT (1),
     AutoCheckForUpdates  INTEGER DEFAULT (1),
     DarkMode             INTEGER DEFAULT (1),
     ModManagerRepoFolder TEXT,
