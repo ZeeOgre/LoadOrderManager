@@ -280,7 +280,7 @@ public class PluginViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(LoadOuts));
     }
 
-    public event PropertyChangedEventHandler PropertyChanged;
+    public event PropertyChangedEventHandler? PropertyChanged;
     protected void OnPropertyChanged(string propertyName)
     {
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));

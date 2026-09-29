@@ -10,6 +10,8 @@ BEGIN TRANSACTION;
 DROP TABLE IF EXISTS Config;
 
 CREATE TABLE IF NOT EXISTS Config (
+    ProfileID           INTEGER PRIMARY KEY AUTOINCREMENT,
+    IsActive            INTEGER NOT NULL DEFAULT (1),
     GameFolder           TEXT    NOT NULL,
     AutoCheckForUpdates  INTEGER DEFAULT (1),
     DarkMode             INTEGER DEFAULT (1),
@@ -18,6 +20,14 @@ CREATE TABLE IF NOT EXISTS Config (
     ModManagerArguments  TEXT
 );
 
+
+-- Table: GameFolders
+DROP TABLE IF EXISTS GameFolders;
+CREATE TABLE IF NOT EXISTS GameFolders (
+    GameFolderID INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+    DisplayName TEXT NOT NULL,
+    GameRoot TEXT NOT NULL COLLATE NOCASE UNIQUE
+);
 
 -- Table: ExternalIDs
 DROP TABLE IF EXISTS ExternalIDs;
@@ -46,8 +56,8 @@ CREATE TABLE IF NOT EXISTS FileInfo (
     FileID               INTEGER PRIMARY KEY AUTOINCREMENT
                                  NOT NULL,
     PluginID             INTEGER REFERENCES Plugins (PluginID) ON DELETE CASCADE,
-    Filename             TEXT    NOT NULL
-                                 UNIQUE,
+    GameFolderID         INTEGER REFERENCES GameFolders (GameFolderID) ON DELETE CASCADE,
+    Filename             TEXT    NOT NULL COLLATE NOCASE,
     RelativePath         TEXT,
     AbsolutePath         TEXT,
     ModManagerFolderPath TEXT,
@@ -59,7 +69,8 @@ CREATE TABLE IF NOT EXISTS FileInfo (
         PluginID
     )
     REFERENCES Plugins (PluginID) ON DELETE NO ACTION
-                                  ON UPDATE NO ACTION
+                                  ON UPDATE NO ACTION,
+    CONSTRAINT UQ_FileInfo_GameFolder_Filename UNIQUE (GameFolderID, Filename)
 );
 
 INSERT INTO FileInfo (FileID, PluginID, Filename, RelativePath, AbsolutePath, ModManagerFolderPath, DTStamp, HASH, Flags, FileContent) VALUES (1, NULL, 'Plugins.txt', '', '', NULL, '2024-10-01 09:59:10', '', 3, NULL);
@@ -1140,7 +1151,8 @@ CREATE VIEW IF NOT EXISTS vwPluginFiles AS
            fi.DTStamp,
            fi.HASH,
            fi.Flags,
-           fi.AbsolutePath
+           fi.AbsolutePath,
+           fi.GameFolderID
       FROM Plugins p
            JOIN
            FileInfo fi ON p.PluginID = fi.PluginID;

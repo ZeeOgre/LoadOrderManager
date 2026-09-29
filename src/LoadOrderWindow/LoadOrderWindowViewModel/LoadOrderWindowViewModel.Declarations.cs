@@ -5,10 +5,9 @@ using System.Windows.Media;
 
 namespace ZO.LoadOrderManager
 {
-    public partial class LoadOrderWindowViewModel : ViewModelBase, INotifyPropertyChanged
+    public partial class LoadOrderWindowViewModel : ViewModelBase
     {
         // Fields
-        private bool isSaved;
         private string _statusMessage;
         private string _searchText;
         private bool _isInitialDataLoaded = false;
@@ -18,7 +17,7 @@ namespace ZO.LoadOrderManager
         private string _warningMessage;
         private bool _isWarningActive;
 
-        private bool _hideUnloadedPlugins;
+        private bool _hideUnloadedPlugins = true;
         public bool HideUnloadedPlugins
         {
             get => _hideUnloadedPlugins;
@@ -99,6 +98,27 @@ namespace ZO.LoadOrderManager
         // Observable collections for GroupSets, LoadOuts, and SelectedItems
         public ObservableCollection<GroupSet> GroupSets { get; set; }
         public ObservableCollection<LoadOut> LoadOuts { get; set; }
+        public ObservableCollection<GameFolder> GameFolders { get; set; }
+
+        private GameFolder? _selectedGameFolder;
+        public GameFolder? SelectedGameFolder
+        {
+            get => _selectedGameFolder;
+            set
+            {
+                if (value == null || value == _selectedGameFolder) return;
+                _selectedGameFolder = value;
+                GameFolderContext.Select(value);
+                GameFolderMonitor.SwitchTo(value);
+                OnPropertyChanged(nameof(SelectedGameFolder));
+                UpdateStatus($"Selected game folder is now {value.DisplayName}");
+                ScanAndRefreshSelectedGameFolder();
+            }
+        }
+
+        public RelayCommand AddGameFolderCommand { get; private set; }
+        public RelayCommand EditGameFolderCommand { get; private set; }
+        public RelayCommand RemoveGameFolderCommand { get; private set; }
 
         private LoadOrdersViewModel _loadOrders;
         public LoadOrdersViewModel LoadOrders
@@ -147,9 +167,6 @@ namespace ZO.LoadOrderManager
         // Direct public property for SelectedCachedItems
         public ObservableCollection<object> SelectedCachedItems { get; set; }
 
-        // PropertyChanged Event
-        public event PropertyChangedEventHandler? PropertyChanged;
-
         // Status message
         public string StatusMessage
         {
@@ -175,12 +192,6 @@ namespace ZO.LoadOrderManager
         // Core synchronization logic
         public void StartSync() => _isSynchronizing = true;
         public void EndSync() => _isSynchronizing = false;
-
-        // OnPropertyChanged helper
-        public void OnPropertyChanged(string propertyName)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
 
         // Update status method
         public void UpdateStatus(string message)
