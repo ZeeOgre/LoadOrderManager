@@ -72,7 +72,7 @@
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
   </ItemGroup>
-  <Target Name="RearrangeOutputFiles" AfterTargets="Build;Publish" BeforeTargets="PostBuildEvent">
+  <Target Name="RearrangeOutputFiles" AfterTargets="Build;Publish" BeforeTargets="PostBuildEvent" Condition="'$(OS)' == 'Windows_NT'">
     <ItemGroup>
       <DllFiles Include="$(OutputPath)*.dll" Exclude="$(OutputPath)LoadOrderManager.dll;$(OutputPath)lib\**\*.*" />
       <ResourceDllFiles Include="$(OutputPath)**\*.resources.dll" Exclude="$(OutputPath)lib\locale\**\*.*" />
@@ -118,7 +118,7 @@
   <Target Name="PreBuild" BeforeTargets="PreBuildEvent" Condition="'$(Configuration)' == 'GitRelease'">
     <Exec Command="powershell -ExecutionPolicy Bypass -File $(ProjectDir)scripts\IncrementVersion.ps1 -SettingsFile $(ProjectDir)Properties\Settings.settings -CsprojFilePath $(ProjectDir)ZO.LOM.APP.csproj -AppConfigFilePath $(ProjectDir)App.config -VersionTxtFilePath $(ProjectDir)Properties\version.txt -AipFilePath $(ProjectDir)Installer\ZO.LoadOrderManager.aip -XmlOutputPath $(ProjectDir)Properties\AutoUpdater.xml -Configuration $(Configuration) -AssemblyInfoFilePath $(ProjectDir)Properties\AssemblyInfo.cs" />
   </Target>
-  <Target Name="PostBuildMoveCheck" BeforeTargets="RunAdvancedInstaller" AfterTargets="PostBuildEvent">
+  <Target Name="PostBuildMoveCheck" BeforeTargets="RunAdvancedInstaller" AfterTargets="PostBuildEvent" Condition="'$(OS)' == 'Windows_NT'">
     <Message Text="Executing PostBuildMoveCheck target..." Importance="high" />
     <Exec Command="powershell -ExecutionPolicy Bypass -File &quot;$(ProjectDir)scripts\WaitForFileMove.ps1&quot; -filePath &quot;$(TargetDir)lib\*.dll&quot; -timeoutInSeconds 60" />
     <Message Text="PostBuildMoveCheck target execution completed." Importance="high" />

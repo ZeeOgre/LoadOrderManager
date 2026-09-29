@@ -10,8 +10,6 @@ namespace ZO.LoadOrderManager
 {
     public partial class LoadOrderWindow : MetroWindow
     {
-        private bool isSaved;
-        private long SelectedLoadOutID;
        
         private bool _isLoadOrderTreeViewInitialized = false;
         private bool _isCachedGroupSetTreeViewInitialized = false;
@@ -173,7 +171,6 @@ namespace ZO.LoadOrderManager
 
             _ = Process.Start(new ProcessStartInfo(uri.AbsoluteUri) { UseShellExecute = true });
             e.Handled = true;
-            isSaved = false;
         }
 
         private void TreeView_KeyDown(object sender, KeyEventArgs e)

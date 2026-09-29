@@ -250,6 +250,13 @@ namespace ZO.LoadOrderManager
                         InitializationManager.ReportProgress(20, "Database manager initialized");
                         InitializationManager.EndInitialization(nameof(DbManager));
 
+                        if (!EnsureActiveGameFolder(loadingWindow))
+                        {
+                            LogDebug("Game folder selection was cancelled. Shutting down.");
+                            Dispatcher.Invoke(Shutdown);
+                            return;
+                        }
+
                         App.LogDebug("Initializing file manager...");
                         InitializationManager.StartInitialization(nameof(FileManager));
                         FileManager.Initialize();
@@ -299,6 +306,86 @@ namespace ZO.LoadOrderManager
                 LogDebug($"Exception in HandleNormalMode: {ex.Message}");
                 MessageBox.Show($"An error occurred in normal mode: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 Shutdown();
+            }
+        }
+
+        private bool EnsureActiveGameFolder(LoadingWindow? loadingWindow)
+        {
+            var gameFolders = GameFolder.LoadAll();
+            var configuredRoot = Config.Instance.GameFolder;
+            var selectedFolder = Config.Instance.StartupGameFolderID.HasValue
+                ? gameFolders.FirstOrDefault(folder => folder.GameFolderID == Config.Instance.StartupGameFolderID.Value)
+                : null;
+            selectedFolder ??= gameFolders.FirstOrDefault(folder =>
+                !string.IsNullOrWhiteSpace(configuredRoot) &&
+                PathsReferToSameRoot(folder.GameRoot, configuredRoot));
+            selectedFolder ??= gameFolders.FirstOrDefault(folder => folder.DisplayName == "<DEFAULT>");
+            selectedFolder ??= gameFolders.FirstOrDefault();
+
+            if (selectedFolder != null)
+            {
+                GameFolderContext.Select(selectedFolder);
+                return true;
+            }
+
+            if (!string.IsNullOrWhiteSpace(configuredRoot) &&
+                Directory.Exists(Path.Combine(configuredRoot, "Data")))
+            {
+                var normalizedRoot = Path.GetFullPath(configuredRoot)
+                    .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+                var migratedFolder = new GameFolder
+                {
+                    DisplayName = "<DEFAULT>",
+                    GameRoot = normalizedRoot
+                };
+                migratedFolder.Save();
+                GameFolderContext.Select(migratedFolder);
+                return true;
+            }
+
+            GameFolder? createdFolder = null;
+            var saved = false;
+            Dispatcher.Invoke(() =>
+            {
+                var message = "A Starfield game folder must be selected before Load Order Manager can continue.";
+                if (loadingWindow != null)
+                {
+                    MessageBox.Show(loadingWindow, message, "Game folder required", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+                else
+                {
+                    MessageBox.Show(message, "Game folder required", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+
+                createdFolder = new GameFolder();
+                var editor = new GameFolderEditor(createdFolder);
+                if (loadingWindow != null)
+                {
+                    editor.Owner = loadingWindow;
+                }
+                saved = editor.ShowDialog() == true;
+            });
+
+            if (!saved || createdFolder == null)
+            {
+                return false;
+            }
+
+            GameFolderContext.Select(createdFolder);
+            return true;
+        }
+
+        private static bool PathsReferToSameRoot(string first, string second)
+        {
+            try
+            {
+                static string Normalize(string path) => Path.GetFullPath(path)
+                    .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+                return string.Equals(Normalize(first), Normalize(second), StringComparison.OrdinalIgnoreCase);
+            }
+            catch (Exception ex) when (ex is ArgumentException or NotSupportedException)
+            {
+                return false;
             }
         }
 
