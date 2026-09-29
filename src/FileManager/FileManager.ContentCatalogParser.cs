@@ -14,6 +14,8 @@ namespace ZO.LoadOrderManager
             }
 
             groupSetID ??= 1; // Set groupSetID to 1 if it is null
+            var activeGameFolderID = GameFolderContext.Active?.GameFolderID
+                ?? throw new InvalidOperationException("ContentCatalog parsing requires an active game folder.");
 
             try
             {
@@ -66,7 +68,7 @@ namespace ZO.LoadOrderManager
                         var fileNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
                         var files = pluginData["Files"]?.Select(f => f.ToString())
                             .Where(f => fileNames.Add(f)) // Add to HashSet and filter out duplicates
-                            .Select(f => new FileInfo(f))
+                            .Select(f => new FileInfo(f) { GameFolderID = activeGameFolderID })
                             .ToList() ?? new List<FileInfo>();
 
                         if (existingPlugin != null)

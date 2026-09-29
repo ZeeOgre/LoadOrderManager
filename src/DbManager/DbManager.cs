@@ -421,8 +421,8 @@ namespace ZO.LoadOrderManager
 
                 // Insert data back into FileInfo with new sequential FileIDs
                 using (var insertFromTempCommand = new SQLiteCommand(
-                    @"INSERT INTO FileInfo (PluginID, Filename, RelativePath, AbsolutePath, ModManagerFolderPath, DTStamp, HASH, Flags, FileContent)
-                      SELECT PluginID, Filename, RelativePath, AbsolutePath, ModManagerFolderPath, DTStamp, HASH, Flags, FileContent
+                    @"INSERT INTO FileInfo (PluginID, GameFolderID, Filename, RelativePath, AbsolutePath, ModManagerFolderPath, DTStamp, HASH, Flags, FileContent)
+                      SELECT PluginID, GameFolderID, Filename, RelativePath, AbsolutePath, ModManagerFolderPath, DTStamp, HASH, Flags, FileContent
                       FROM TempFileInfo;", connection))
                 {
                     insertFromTempCommand.ExecuteNonQuery();

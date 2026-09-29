@@ -93,9 +93,12 @@ public static class GameFolderContext
         using var connection = DbManager.Instance.GetConnection();
         using var command = new SQLiteCommand(@"
             SELECT DISTINCT PluginID FROM FileInfo
-            WHERE GameFolderID = @GameFolderID AND PluginID IS NOT NULL AND (Flags & @PluginFlag) = @PluginFlag", connection);
+            WHERE GameFolderID = @GameFolderID AND PluginID IS NOT NULL
+              AND (Flags & @PluginFlag) = @PluginFlag
+              AND (Flags & @GameFolderFlag) = @GameFolderFlag", connection);
         command.Parameters.AddWithValue("@GameFolderID", Active.GameFolderID);
         command.Parameters.AddWithValue("@PluginFlag", (long)FileFlags.Plugin);
+        command.Parameters.AddWithValue("@GameFolderFlag", (long)FileFlags.GameFolder);
         using var reader = command.ExecuteReader();
         while (reader.Read()) PresentPluginIDs.Add(reader.GetInt64(0));
     }
