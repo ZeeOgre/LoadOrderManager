@@ -6,7 +6,7 @@ public class ObservableHashSet<T> : ISet<T>, INotifyCollectionChanged
     private readonly HashSet<T> _hashSet = new HashSet<T>();
     private readonly ObservableCollection<T> _observableCollection = new ObservableCollection<T>();
 
-    public event NotifyCollectionChangedEventHandler CollectionChanged
+    public event NotifyCollectionChangedEventHandler? CollectionChanged
     {
         add => _observableCollection.CollectionChanged += value;
         remove => _observableCollection.CollectionChanged -= value;

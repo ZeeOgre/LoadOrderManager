@@ -362,6 +362,13 @@ namespace ZO.LoadOrderManager
                 }
                 else if (selectedItem.EntityType == EntityType.Group)
                 {
+                    var selectedGroup = selectedItem.GetModGroup();
+                    if (selectedGroup == null)
+                    {
+                        SetWarning($"Unable to resolve group '{selectedItem.DisplayName}'.");
+                        return;
+                    }
+
                     // Block deleting groups that hold other groups
                     if (selectedItem.Children.Any(child => child.EntityType == EntityType.Group))
                     {
@@ -370,11 +377,9 @@ namespace ZO.LoadOrderManager
                     }
 
                     // Adjust ordinals of sibling groups and move child plugins to unassigned group
-                    AdjustSiblingGroupsAndMoveChildPlugins(selectedItem, parentGroup);
+                    AdjustSiblingGroupsAndMoveChildPlugins(selectedItem, selectedGroup, parentGroup);
 
                     // Remove the group from the GroupSetGroupCollection
-                    var groupSetID = parentGroup.GroupSetID;
-                    var groupID = selectedItem.GetModGroup().GroupID;
                     selectedItem.ParentID = null;
                     
                 }
@@ -384,10 +389,13 @@ namespace ZO.LoadOrderManager
         }
 
 
-        private void AdjustSiblingGroupsAndMoveChildPlugins(LoadOrderItemViewModel selectedItem, ModGroup parentGroup)
+        private void AdjustSiblingGroupsAndMoveChildPlugins(
+            LoadOrderItemViewModel selectedItem,
+            ModGroup selectedGroup,
+            ModGroup parentGroup)
         {
             var siblingGroups = AggLoadInfo.Instance.Groups?
-                .Where(g => g.ParentID == parentGroup.GroupID && g.Ordinal > selectedItem.GetModGroup().Ordinal)
+                .Where(g => g.ParentID == parentGroup.GroupID && g.Ordinal > selectedGroup.Ordinal)
                 .ToList();
             if (siblingGroups != null)
             {

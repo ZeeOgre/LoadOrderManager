@@ -16,7 +16,7 @@ public enum GroupFlags
 
 public class GroupSet : INotifyPropertyChanged, IEquatable<GroupSet>
 {
-    public event PropertyChangedEventHandler PropertyChanged;
+    public event PropertyChangedEventHandler? PropertyChanged;
 
 
     public long GroupSetID { get; set; }
@@ -377,7 +377,7 @@ public class GroupSet : INotifyPropertyChanged, IEquatable<GroupSet>
     }
 
     // Equality comparison
-    public override bool Equals(object obj)
+    public override bool Equals(object? obj)
     {
         if (obj is GroupSet otherGroupSet)
         {

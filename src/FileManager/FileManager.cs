@@ -9,7 +9,7 @@ namespace ZO.LoadOrderManager
         public static readonly string PluginsFile = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "starfield", "plugins.txt");
         public static readonly string ContentCatalogFile = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "starfield", "contentcatalog.txt");
         public static string AppDataFolder => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "ZeeOgre", "LoadOrderManager");
-        public static string GameFolder => Config.Instance.GameFolder;
+        public static string GameFolder => GameFolderContext.Active?.GameRoot ?? Config.Instance.GameFolder;
         public static string GameDocsFolder => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "My Games", "Starfield");
         public static string GameSaveFolder => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "My Games", "Starfield", "Saves");
         public static string GameLocalAppDataFolder => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "starfield");
@@ -38,8 +38,13 @@ namespace ZO.LoadOrderManager
                     _quiet = true;
                     InitializationManager.StartInitialization(nameof(FileManager));
                     App.LogDebug("FileManager: Starting initialization...");
-                    InitializeFavoriteGroupSetAndLoadOut();
+                    if (GameFolderContext.Active == null)
+                    {
+                        throw new InvalidOperationException(
+                            "FileManager initialization requires an active game folder to be selected during application startup.");
+                    }
 
+                    InitializeFavoriteGroupSetAndLoadOut();
                     AggLoadInfo.Instance.InitFromDatabase();
                     FileMonitor.InitializeAllMonitors();
                     GameFolderMonitor.InitializeAllMonitors();

@@ -28,11 +28,13 @@
             <!-- Version/Check Updates/Save -->
         </Grid.RowDefinitions>
 
-        <!-- Existing Game Folder StackPanel (Row 0) -->
+        <!-- Startup Game Folder (Row 0) -->
         <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="10" HorizontalAlignment="Stretch">
-            <TextBlock Text="Game Folder:" VerticalAlignment="Center" Width="150"/>
-            <TextBox Name="GameFolderTextBox" Width="400" Margin="10,0,10,0" Text="{Binding GameFolder}" HorizontalAlignment="Stretch"/>
-            <Button Content="📁" Command="{Binding BrowseGameFolderCommand}" Width="30" HorizontalAlignment="Right"/>
+            <TextBlock Text="Startup Game Folder:" VerticalAlignment="Center" Width="150"/>
+            <ComboBox Width="300" Margin="10,0,10,0"
+                      ItemsSource="{Binding GameFolders}"
+                      SelectedItem="{Binding StartupGameFolder}"/>
+            <CheckBox IsChecked="{Binding RememberLastGameFolder}" Content="Remember last used" Margin="10,0,10,0"/>
             <CheckBox IsChecked="{Binding AutoScanGameFolder}" Content="AutoScan" Margin="10,0,10,0" />
 
         </StackPanel>

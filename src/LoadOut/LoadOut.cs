@@ -151,7 +151,7 @@ namespace ZO.LoadOrderManager
                     _ = command.Parameters.AddWithValue("@ProfileName", this.Name);
                     _ = command.Parameters.AddWithValue("@GroupSetID", this.GroupSetID);
                     _ = command.Parameters.AddWithValue("@IsFavorite", this.IsFavorite ? 1 : 0);
-                    if (this.ProfileID == 0 || this.ProfileID == null)
+                    if (this.ProfileID == 0)
                     {
                         command.CommandText += " RETURNING ProfileID";
                         this.ProfileID = (long)command.ExecuteScalar();
@@ -346,7 +346,7 @@ namespace ZO.LoadOrderManager
             return ProfileID == other.ProfileID;
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             return Equals(obj as LoadOut); // Use the type-safe Equals method
         }

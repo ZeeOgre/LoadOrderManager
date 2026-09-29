@@ -33,9 +33,10 @@ namespace ZO.LoadOrderManager
         
         public bool InGameFolder
         {
-            get => State.HasFlag(ModState.GameFolder);
+            get => PluginID == 0 ? State.HasFlag(ModState.GameFolder) : GameFolderContext.IsPresent(PluginID);
             set
             {
+                if (PluginID != 0) GameFolderContext.SetPresent(PluginID, value);
                 if (value)
                 {
                     State |= ModState.GameFolder; // Set the GameFolder flag
@@ -325,6 +326,7 @@ public bool InBethesda
                 Files = this.Files.Select(file => new FileInfo
                 {
                     FileID = file.FileID,
+                    GameFolderID = file.GameFolderID,
                     Filename = file.Filename,
                     RelativePath = file.RelativePath,
                     DTStamp = file.DTStamp,
@@ -491,23 +493,7 @@ public bool InBethesda
                 // Insert or update FileInfo table
                 foreach (var file in this.Files)
                 {
-                    command.CommandText = @"
-                            INSERT INTO FileInfo (PluginID, Filename, RelativePath, DTStamp, HASH, Flags)
-                            VALUES (@PluginID, @Filename, @RelativePath, @DTStamp, @HASH, @Flags)
-                            ON CONFLICT(Filename) DO UPDATE 
-                            SET RelativePath = COALESCE(excluded.RelativePath, FileInfo.RelativePath), 
-                                DTStamp = COALESCE(excluded.DTStamp, FileInfo.DTStamp), 
-                                HASH = COALESCE(excluded.HASH, FileInfo.HASH), 
-                                Flags = excluded.Flags;";
-                    command.Parameters.Clear();
-                    _ = command.Parameters.AddWithValue("@PluginID", this.PluginID);
-                    _ = command.Parameters.AddWithValue("@Filename", string.IsNullOrEmpty(file.Filename) ? DBNull.Value : file.Filename);
-                    _ = command.Parameters.AddWithValue("@RelativePath", string.IsNullOrEmpty(file.RelativePath) ? DBNull.Value : file.RelativePath);
-                    _ = command.Parameters.AddWithValue("@DTStamp", string.IsNullOrEmpty(file.DTStamp) ? DBNull.Value : file.DTStamp);
-                    _ = command.Parameters.AddWithValue("@HASH", string.IsNullOrEmpty(file.HASH) ? DBNull.Value : file.HASH);
-                    _ = command.Parameters.AddWithValue("@Flags", file.Flags);
-
-                    _ = command.ExecuteNonQuery();
+                    _ = FileInfo.UpsertPluginFileInfo(connection, file, this.PluginID);
                 }
 
                 transaction.Commit(); // Commit the transaction after all operations
@@ -752,7 +738,7 @@ public bool InBethesda
             AggLoadInfo.Instance.RefreshMetadataFromDB();
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             if (obj is Plugin otherPlugin)
             {

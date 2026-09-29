@@ -57,6 +57,7 @@ namespace ZO.LoadOrderManager
 
 
         public long FileID { get; set; }
+        public long? GameFolderID { get; set; }
         public string Filename { get; set; }
         public string? RelativePath { get; set; }
         public string DTStamp { get; set; }
@@ -330,7 +331,7 @@ namespace ZO.LoadOrderManager
         
 
 
-        public static List<FileInfo> GetAllFiles()
+        public static List<FileInfo> GetAllFiles(long? gameFolderID = null)
         {
             var fileInfos = new List<FileInfo>();
 
@@ -342,10 +343,10 @@ namespace ZO.LoadOrderManager
             }
 
             using var command = new SQLiteCommand(
-                "SELECT DISTINCT FileID, Filename, RelativePath, DTStamp, HASH, Flags, AbsolutePath " +
-                "FROM vwPluginFiles", connection);
+                "SELECT DISTINCT FileID, Filename, RelativePath, DTStamp, HASH, Flags, AbsolutePath, GameFolderID " +
+                "FROM vwPluginFiles WHERE (@GameFolderID IS NULL AND GameFolderID IS NULL) OR GameFolderID = @GameFolderID", connection);
 
-            _ = command.Parameters.AddWithValue("@GameFolderFlag", (long)FileFlags.GameFolder);
+            _ = command.Parameters.AddWithValue("@GameFolderID", (object?)gameFolderID ?? DBNull.Value);
 
             using var reader = command.ExecuteReader();
             while (reader.Read())
@@ -358,7 +359,8 @@ namespace ZO.LoadOrderManager
                     DTStamp = reader.IsDBNull(3) ? string.Empty : reader.GetString(3),
                     HASH = reader.IsDBNull(4) ? string.Empty : reader.GetString(4),
                     Flags = reader.IsDBNull(5) ? FileFlags.None : (FileFlags)reader.GetInt64(5),
-                    AbsolutePath = reader.IsDBNull(6) ? string.Empty : reader.GetString(6)
+                    AbsolutePath = reader.IsDBNull(6) ? string.Empty : reader.GetString(6),
+                    GameFolderID = reader.IsDBNull(7) ? null : reader.GetInt64(7)
                 };
                 fileInfos.Add(fileInfo);
             }
@@ -424,7 +426,7 @@ namespace ZO.LoadOrderManager
             }
 
             using var command = new SQLiteCommand(
-                "SELECT FileID, Filename, RelativePath, DTStamp, HASH, Flags, AbsolutePath " +
+                "SELECT FileID, Filename, RelativePath, DTStamp, HASH, Flags, AbsolutePath, GameFolderID " +
                 "FROM vwPluginFiles WHERE PluginID = @PluginID", connection);
 
             _ = command.Parameters.AddWithValue("@PluginID", pluginId);
@@ -440,7 +442,8 @@ namespace ZO.LoadOrderManager
                     DTStamp = reader.IsDBNull(3) ? string.Empty : reader.GetString(3), // Ensure this matches the TEXT type in the schema
                     HASH = reader.IsDBNull(4) ? string.Empty : reader.GetString(4), // Handle potential null values
                     Flags = reader.IsDBNull(5) ? FileFlags.None : (FileFlags)reader.GetInt64(5), // Handle potential null values
-                    AbsolutePath = reader.IsDBNull(6) ? string.Empty : reader.GetString(6) // Ensure this matches the TEXT type in the schema
+                    AbsolutePath = reader.IsDBNull(6) ? string.Empty : reader.GetString(6), // Ensure this matches the TEXT type in the schema
+                    GameFolderID = reader.IsDBNull(7) ? null : reader.GetInt64(7)
                 };
                 fileInfos.Add(fileInfo);
             }
@@ -460,54 +463,7 @@ namespace ZO.LoadOrderManager
 
             try
             {
-                using var command = new SQLiteCommand(connection);
-                if (fileInfo.FileID == 0)
-                {
-                    command.CommandText = @"
-                INSERT INTO FileInfo (PluginID, Filename, RelativePath, DTStamp, HASH, Flags, AbsolutePath)
-                VALUES (@PluginID, @Filename, @RelativePath, @DTStamp, @HASH, @Flags, @AbsolutePath)
-                ON CONFLICT(Filename) DO UPDATE 
-                SET RelativePath = COALESCE(excluded.RelativePath, FileInfo.RelativePath), 
-                    DTStamp = COALESCE(excluded.DTStamp, FileInfo.DTStamp), 
-                    HASH = COALESCE(excluded.HASH, FileInfo.HASH), 
-                    Flags = FileInfo.Flags | excluded.Flags,
-                    AbsolutePath = COALESCE(excluded.AbsolutePath, FileInfo.AbsolutePath)";
-
-                    command.Parameters.AddWithValue("@PluginID", pluginId);
-                    command.Parameters.AddWithValue("@Filename", fileInfo.Filename);
-                    command.Parameters.AddWithValue("@RelativePath", fileInfo.RelativePath ?? (object)DBNull.Value);
-                    command.Parameters.AddWithValue("@DTStamp", fileInfo.DTStamp);
-                    command.Parameters.AddWithValue("@HASH", fileInfo.HASH ?? (object)DBNull.Value);
-                    command.Parameters.AddWithValue("@Flags", (long)fileInfo.Flags);
-                    command.Parameters.AddWithValue("@AbsolutePath", fileInfo.AbsolutePath);
-
-                    fileInfo.FileID = Convert.ToInt64(command.ExecuteScalar());
-                }
-                else
-                {
-                    command.CommandText = @"
-                    INSERT INTO FileInfo (PluginID, Filename, RelativePath, DTStamp, HASH, Flags, AbsolutePath)
-                    VALUES (@PluginID, @Filename, @RelativePath, @DTStamp, @HASH, @Flags, @AbsolutePath)
-                    ON CONFLICT(Filename) DO UPDATE 
-                    SET RelativePath = COALESCE(excluded.RelativePath, FileInfo.RelativePath), 
-                        DTStamp = COALESCE(excluded.DTStamp, FileInfo.DTStamp), 
-                        HASH = COALESCE(excluded.HASH, FileInfo.HASH), 
-                        Flags = COALESCE(FileInfo.Flags, 0) | COALESCE(excluded.Flags, 0),
-                        AbsolutePath = COALESCE(excluded.AbsolutePath, FileInfo.AbsolutePath)";
-
-
-
-                    command.Parameters.AddWithValue("@FileID", fileInfo.FileID);
-                    command.Parameters.AddWithValue("@PluginID", pluginId);
-                    command.Parameters.AddWithValue("@Filename", fileInfo.Filename);
-                    command.Parameters.AddWithValue("@RelativePath", fileInfo.RelativePath ?? (object)DBNull.Value);
-                    command.Parameters.AddWithValue("@DTStamp", fileInfo.DTStamp);
-                    command.Parameters.AddWithValue("@HASH", fileInfo.HASH ?? (object)DBNull.Value);
-                    command.Parameters.AddWithValue("@Flags", (long)fileInfo.Flags);
-                    command.Parameters.AddWithValue("@AbsolutePath", fileInfo.AbsolutePath);
-
-                    command.ExecuteNonQuery();
-                }
+                UpsertPluginFileInfo(connection, fileInfo, pluginId);
 
 #if WINDOWS
                 App.LogDebug($"Fileinfo Commit Transaction");
@@ -526,6 +482,55 @@ namespace ZO.LoadOrderManager
             }
         }
 
+        internal static FileInfo UpsertPluginFileInfo(SQLiteConnection connection, FileInfo fileInfo, long pluginId)
+        {
+            if (fileInfo.Flags.HasFlag(FileFlags.GameFolder) && !fileInfo.GameFolderID.HasValue)
+            {
+                fileInfo.GameFolderID = GameFolderContext.Active?.GameFolderID
+                    ?? throw new InvalidOperationException("A game-folder file cannot be saved without an active game folder.");
+            }
+
+            using var command = new SQLiteCommand(connection);
+            command.CommandText = fileInfo.GameFolderID.HasValue
+                ? @"
+                    INSERT INTO FileInfo (PluginID, GameFolderID, Filename, RelativePath, DTStamp, HASH, Flags, AbsolutePath)
+                    VALUES (@PluginID, @GameFolderID, @Filename, @RelativePath, @DTStamp, @HASH, @Flags, @AbsolutePath)
+                    ON CONFLICT(GameFolderID, Filename) DO UPDATE SET
+                        PluginID = excluded.PluginID,
+                        RelativePath = COALESCE(excluded.RelativePath, FileInfo.RelativePath),
+                        DTStamp = COALESCE(excluded.DTStamp, FileInfo.DTStamp),
+                        HASH = COALESCE(excluded.HASH, FileInfo.HASH),
+                        Flags = COALESCE(FileInfo.Flags, 0) | COALESCE(excluded.Flags, 0),
+                        AbsolutePath = COALESCE(excluded.AbsolutePath, FileInfo.AbsolutePath);
+                    SELECT FileID FROM FileInfo
+                    WHERE GameFolderID = @GameFolderID AND Filename = @Filename COLLATE NOCASE LIMIT 1;"
+                : @"
+                    UPDATE FileInfo SET
+                        PluginID = @PluginID,
+                        RelativePath = COALESCE(@RelativePath, RelativePath),
+                        DTStamp = COALESCE(@DTStamp, DTStamp),
+                        HASH = COALESCE(@HASH, HASH),
+                        Flags = COALESCE(Flags, 0) | COALESCE(@Flags, 0),
+                        AbsolutePath = COALESCE(@AbsolutePath, AbsolutePath)
+                    WHERE GameFolderID IS NULL AND Filename = @Filename COLLATE NOCASE;
+                    INSERT INTO FileInfo (PluginID, GameFolderID, Filename, RelativePath, DTStamp, HASH, Flags, AbsolutePath)
+                    SELECT @PluginID, NULL, @Filename, @RelativePath, @DTStamp, @HASH, @Flags, @AbsolutePath
+                    WHERE changes() = 0;
+                    SELECT FileID FROM FileInfo
+                    WHERE GameFolderID IS NULL AND Filename = @Filename COLLATE NOCASE LIMIT 1;";
+
+            command.Parameters.AddWithValue("@PluginID", pluginId);
+            command.Parameters.AddWithValue("@GameFolderID", (object?)fileInfo.GameFolderID ?? DBNull.Value);
+            command.Parameters.AddWithValue("@Filename", fileInfo.Filename);
+            command.Parameters.AddWithValue("@RelativePath", (object?)fileInfo.RelativePath ?? DBNull.Value);
+            command.Parameters.AddWithValue("@DTStamp", string.IsNullOrEmpty(fileInfo.DTStamp) ? DBNull.Value : fileInfo.DTStamp);
+            command.Parameters.AddWithValue("@HASH", (object?)fileInfo.HASH ?? DBNull.Value);
+            command.Parameters.AddWithValue("@Flags", (long)fileInfo.Flags);
+            command.Parameters.AddWithValue("@AbsolutePath", string.IsNullOrEmpty(fileInfo.AbsolutePath) ? DBNull.Value : fileInfo.AbsolutePath);
+            fileInfo.FileID = Convert.ToInt64(command.ExecuteScalar());
+            return fileInfo;
+        }
+
         public static FileInfo InsertFileInfo(FileInfo fileInfo)
         {
             using var connection = DbManager.Instance.GetConnection();
@@ -542,15 +547,13 @@ namespace ZO.LoadOrderManager
                 if (fileInfo.FileID == 0)
                 {
                     command.CommandText = @"
+                UPDATE FileInfo SET RelativePath = @RelativePath, DTStamp = @DTStamp, HASH = @HASH,
+                    Flags = @Flags, AbsolutePath = @AbsolutePath, FileContent = @FileContent
+                WHERE GameFolderID IS NULL AND Filename = @Filename COLLATE NOCASE;
                 INSERT INTO FileInfo (Filename, RelativePath, DTStamp, HASH, Flags, AbsolutePath, FileContent)
-                VALUES (@Filename, @RelativePath, @DTStamp, @HASH, @Flags, @AbsolutePath, @FileContent)
-                ON CONFLICT(Filename) DO UPDATE 
-                SET RelativePath = COALESCE(excluded.RelativePath, FileInfo.RelativePath), 
-                    DTStamp = COALESCE(excluded.DTStamp, FileInfo.DTStamp), 
-                    HASH = COALESCE(excluded.HASH, FileInfo.HASH), 
-                    Flags = excluded.Flags,
-                    AbsolutePath = excluded.AbsolutePath,
-                    FileContent = excluded.FileContent";
+                SELECT @Filename, @RelativePath, @DTStamp, @HASH, @Flags, @AbsolutePath, @FileContent
+                WHERE changes() = 0;
+                SELECT FileID FROM FileInfo WHERE GameFolderID IS NULL AND Filename = @Filename COLLATE NOCASE LIMIT 1;";
 
                     command.Parameters.AddWithValue("@Filename", fileInfo.Filename);
                     command.Parameters.AddWithValue("@RelativePath", fileInfo.RelativePath ?? (object)DBNull.Value);
@@ -675,7 +678,7 @@ namespace ZO.LoadOrderManager
             return monitoredFiles;
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             if (obj is FileInfo other)
             {
@@ -699,4 +702,3 @@ namespace ZO.LoadOrderManager
 
     }
 }
-

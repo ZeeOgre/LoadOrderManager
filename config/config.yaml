@@ -1,6 +1,8 @@
 monitoredFiles: []
 darkMode: true
 gameFolder: M:\SteamLibrary\steamapps\common\Starfield
+startupGameFolderID: null
+rememberLastGameFolder: true
 autoScanGameFolder: true
 modManagerRepoFolder: M:\Games\ModStaging\Starfield_Steam
 autoScanModRepoFolder: false
