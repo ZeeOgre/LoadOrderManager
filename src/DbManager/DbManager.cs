@@ -110,6 +110,8 @@ namespace ZO.LoadOrderManager
                     _ = Config.LoadFromDatabase();
                 }
 
+                EnsureGameFolderSchema();
+
                 _initialized = true;
             }
         }
