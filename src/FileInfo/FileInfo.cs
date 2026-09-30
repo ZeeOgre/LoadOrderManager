@@ -2,6 +2,9 @@ using System.Data.SQLite;
 using System.IO;
 using System.IO.Compression;
 using System.IO.Hashing;
+using System.Buffers;
+using System.Diagnostics;
+using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Windows;
@@ -27,6 +30,8 @@ namespace ZO.LoadOrderManager
 
     public class FileInfo
     {
+        private static readonly ConcurrentDictionary<string, Lazy<string>> ActiveHashes =
+            new(StringComparer.OrdinalIgnoreCase);
 
         private static readonly Dictionary<string, string> FolderDefinitions = new()
     {
@@ -62,6 +67,8 @@ namespace ZO.LoadOrderManager
         public string? RelativePath { get; set; }
         public string DTStamp { get; set; }
         public string? HASH { get; set; }
+        public long? FileSize { get; set; }
+        public long? LastWriteTimeUtcTicks { get; set; }
         public FileFlags Flags { get; set; }
         public string AbsolutePath { get; set; } // Absolute path of the file
         [YamlIgnore]
@@ -92,6 +99,8 @@ namespace ZO.LoadOrderManager
             Filename = fileInfo.Name.ToLowerInvariant();
             RelativePath = Path.GetRelativePath(Path.Combine(gameFolderPath, "data"), fileInfo.FullName);
             DTStamp = fileInfo.LastWriteTime.ToString("o");
+            FileSize = fileInfo.Length;
+            LastWriteTimeUtcTicks = fileInfo.LastWriteTimeUtc.Ticks;
             if (checkHash) { HASH = ComputeHash(fileInfo.FullName); }
             Flags = GetFlagsFromFileObject(fileInfo);
             AbsolutePath = Flags.HasFlag(FileFlags.IsJunction) ? GetJunctionTarget(fileInfo.FullName) : fileInfo.FullName;
@@ -343,7 +352,7 @@ namespace ZO.LoadOrderManager
             }
 
             using var command = new SQLiteCommand(
-                "SELECT DISTINCT FileID, Filename, RelativePath, DTStamp, HASH, Flags, AbsolutePath, GameFolderID " +
+                "SELECT DISTINCT FileID, Filename, RelativePath, DTStamp, HASH, Flags, AbsolutePath, GameFolderID, FileSize, LastWriteTimeUtcTicks " +
                 "FROM vwPluginFiles WHERE (@GameFolderID IS NULL AND GameFolderID IS NULL) OR GameFolderID = @GameFolderID", connection);
 
             _ = command.Parameters.AddWithValue("@GameFolderID", (object?)gameFolderID ?? DBNull.Value);
@@ -362,6 +371,8 @@ namespace ZO.LoadOrderManager
                     AbsolutePath = reader.IsDBNull(6) ? string.Empty : reader.GetString(6),
                     GameFolderID = reader.IsDBNull(7) ? null : reader.GetInt64(7)
                 };
+                fileInfo.FileSize = reader.IsDBNull(8) ? null : reader.GetInt64(8);
+                fileInfo.LastWriteTimeUtcTicks = reader.IsDBNull(9) ? null : reader.GetInt64(9);
                 fileInfos.Add(fileInfo);
             }
 
@@ -371,9 +382,23 @@ namespace ZO.LoadOrderManager
 
         public static string ComputeHash(string filePath)
         {
-            const int bufferSize = 8 * 1024 * 1024; // 8MB buffer
+            string normalizedPath = Path.GetFullPath(filePath);
+            var pendingHash = ActiveHashes.GetOrAdd(normalizedPath,
+                path => new Lazy<string>(() => ComputeHashCore(path), LazyThreadSafetyMode.ExecutionAndPublication));
+            try
+            {
+                return pendingHash.Value;
+            }
+            finally
+            {
+                ActiveHashes.TryRemove(normalizedPath, out _);
+            }
+        }
 
-            System.Threading.Thread.Sleep(10);
+        private static string ComputeHashCore(string filePath)
+        {
+            const int bufferSize = 1024 * 1024;
+            var timer = Stopwatch.StartNew();
 
             try
             {
@@ -381,21 +406,29 @@ namespace ZO.LoadOrderManager
                     filePath,
                     FileMode.Open,
                     FileAccess.Read,
-                    FileShare.ReadWrite,
+                    FileShare.ReadWrite | FileShare.Delete,
                     bufferSize: bufferSize,
-                    useAsync: false);
+                    options: FileOptions.SequentialScan);
 
-                var hasher = new XxHash64();
+                var hasher = new XxHash128();
 
-                byte[] buffer = new byte[bufferSize];
-                int bytesRead;
-                while ((bytesRead = stream.Read(buffer, 0, buffer.Length)) > 0)
+                byte[] buffer = ArrayPool<byte>.Shared.Rent(bufferSize);
+                try
                 {
-                    hasher.Append(buffer.AsSpan(0, bytesRead));
+                    int bytesRead;
+                    while ((bytesRead = stream.Read(buffer, 0, buffer.Length)) > 0)
+                    {
+                        hasher.Append(buffer.AsSpan(0, bytesRead));
+                    }
+                }
+                finally
+                {
+                    ArrayPool<byte>.Shared.Return(buffer);
                 }
 
                 byte[] hashBytes = hasher.GetCurrentHash();
-
+                timer.Stop();
+                App.LogDebug($"Full-file XXHash128 completed: {filePath} ({stream.Length:N0} bytes) in {timer.Elapsed.TotalSeconds:F2}s");
                 return BitConverter.ToString(hashBytes).Replace("-", "").ToLowerInvariant();
             }
             catch (IOException ex)
@@ -404,6 +437,28 @@ namespace ZO.LoadOrderManager
                 Console.WriteLine($"Error computing hash for file {filePath}: {ex.Message}");
                 return string.Empty; // Return an empty string or a default value
             }
+        }
+
+        /// <summary>
+        /// Computes a full-file hash only when the persisted physical fingerprint changed.
+        /// A row is trusted only when length, UTC write ticks, and hash are all present.
+        /// </summary>
+        public static bool RefreshFingerprint(FileInfo stored, System.IO.FileInfo physicalFile, bool hashWhenChanged)
+        {
+            long length = physicalFile.Length;
+            long ticks = physicalFile.LastWriteTimeUtc.Ticks;
+            bool hasHash = !string.IsNullOrWhiteSpace(stored.HASH);
+            bool exactMatch = stored.FileSize == length && stored.LastWriteTimeUtcTicks == ticks;
+            bool skippedHash = hasHash && exactMatch;
+            if (hashWhenChanged && !skippedHash)
+            {
+                stored.HASH = ComputeHash(physicalFile.FullName);
+            }
+
+            stored.FileSize = length;
+            stored.LastWriteTimeUtcTicks = ticks;
+            stored.DTStamp = physicalFile.LastWriteTime.ToString("o");
+            return skippedHash;
         }
 
 
@@ -426,7 +481,7 @@ namespace ZO.LoadOrderManager
             }
 
             using var command = new SQLiteCommand(
-                "SELECT FileID, Filename, RelativePath, DTStamp, HASH, Flags, AbsolutePath, GameFolderID " +
+                "SELECT FileID, Filename, RelativePath, DTStamp, HASH, Flags, AbsolutePath, GameFolderID, FileSize, LastWriteTimeUtcTicks " +
                 "FROM vwPluginFiles WHERE PluginID = @PluginID", connection);
 
             _ = command.Parameters.AddWithValue("@PluginID", pluginId);
@@ -445,6 +500,8 @@ namespace ZO.LoadOrderManager
                     AbsolutePath = reader.IsDBNull(6) ? string.Empty : reader.GetString(6), // Ensure this matches the TEXT type in the schema
                     GameFolderID = reader.IsDBNull(7) ? null : reader.GetInt64(7)
                 };
+                fileInfo.FileSize = reader.IsDBNull(8) ? null : reader.GetInt64(8);
+                fileInfo.LastWriteTimeUtcTicks = reader.IsDBNull(9) ? null : reader.GetInt64(9);
                 fileInfos.Add(fileInfo);
             }
 
@@ -493,13 +550,15 @@ namespace ZO.LoadOrderManager
             using var command = new SQLiteCommand(connection);
             command.CommandText = fileInfo.GameFolderID.HasValue
                 ? @"
-                    INSERT INTO FileInfo (PluginID, GameFolderID, Filename, RelativePath, DTStamp, HASH, Flags, AbsolutePath)
-                    VALUES (@PluginID, @GameFolderID, @Filename, @RelativePath, @DTStamp, @HASH, @Flags, @AbsolutePath)
+                    INSERT INTO FileInfo (PluginID, GameFolderID, Filename, RelativePath, DTStamp, HASH, Flags, AbsolutePath, FileSize, LastWriteTimeUtcTicks)
+                    VALUES (@PluginID, @GameFolderID, @Filename, @RelativePath, @DTStamp, @HASH, @Flags, @AbsolutePath, @FileSize, @LastWriteTimeUtcTicks)
                     ON CONFLICT(GameFolderID, Filename) DO UPDATE SET
                         PluginID = excluded.PluginID,
                         RelativePath = COALESCE(excluded.RelativePath, FileInfo.RelativePath),
                         DTStamp = COALESCE(excluded.DTStamp, FileInfo.DTStamp),
                         HASH = COALESCE(excluded.HASH, FileInfo.HASH),
+                        FileSize = COALESCE(excluded.FileSize, FileInfo.FileSize),
+                        LastWriteTimeUtcTicks = COALESCE(excluded.LastWriteTimeUtcTicks, FileInfo.LastWriteTimeUtcTicks),
                         Flags = COALESCE(FileInfo.Flags, 0) | COALESCE(excluded.Flags, 0),
                         AbsolutePath = COALESCE(excluded.AbsolutePath, FileInfo.AbsolutePath);
                     SELECT FileID FROM FileInfo
@@ -510,11 +569,13 @@ namespace ZO.LoadOrderManager
                         RelativePath = COALESCE(@RelativePath, RelativePath),
                         DTStamp = COALESCE(@DTStamp, DTStamp),
                         HASH = COALESCE(@HASH, HASH),
+                        FileSize = COALESCE(@FileSize, FileSize),
+                        LastWriteTimeUtcTicks = COALESCE(@LastWriteTimeUtcTicks, LastWriteTimeUtcTicks),
                         Flags = COALESCE(Flags, 0) | COALESCE(@Flags, 0),
                         AbsolutePath = COALESCE(@AbsolutePath, AbsolutePath)
                     WHERE GameFolderID IS NULL AND Filename = @Filename COLLATE NOCASE;
-                    INSERT INTO FileInfo (PluginID, GameFolderID, Filename, RelativePath, DTStamp, HASH, Flags, AbsolutePath)
-                    SELECT @PluginID, NULL, @Filename, @RelativePath, @DTStamp, @HASH, @Flags, @AbsolutePath
+                    INSERT INTO FileInfo (PluginID, GameFolderID, Filename, RelativePath, DTStamp, HASH, Flags, AbsolutePath, FileSize, LastWriteTimeUtcTicks)
+                    SELECT @PluginID, NULL, @Filename, @RelativePath, @DTStamp, @HASH, @Flags, @AbsolutePath, @FileSize, @LastWriteTimeUtcTicks
                     WHERE changes() = 0;
                     SELECT FileID FROM FileInfo
                     WHERE GameFolderID IS NULL AND Filename = @Filename COLLATE NOCASE LIMIT 1;";
@@ -527,6 +588,8 @@ namespace ZO.LoadOrderManager
             command.Parameters.AddWithValue("@HASH", (object?)fileInfo.HASH ?? DBNull.Value);
             command.Parameters.AddWithValue("@Flags", (long)fileInfo.Flags);
             command.Parameters.AddWithValue("@AbsolutePath", string.IsNullOrEmpty(fileInfo.AbsolutePath) ? DBNull.Value : fileInfo.AbsolutePath);
+            command.Parameters.AddWithValue("@FileSize", (object?)fileInfo.FileSize ?? DBNull.Value);
+            command.Parameters.AddWithValue("@LastWriteTimeUtcTicks", (object?)fileInfo.LastWriteTimeUtcTicks ?? DBNull.Value);
             fileInfo.FileID = Convert.ToInt64(command.ExecuteScalar());
             return fileInfo;
         }
@@ -548,10 +611,11 @@ namespace ZO.LoadOrderManager
                 {
                     command.CommandText = @"
                 UPDATE FileInfo SET RelativePath = @RelativePath, DTStamp = @DTStamp, HASH = @HASH,
+                    FileSize = @FileSize, LastWriteTimeUtcTicks = @LastWriteTimeUtcTicks,
                     Flags = @Flags, AbsolutePath = @AbsolutePath, FileContent = @FileContent
                 WHERE GameFolderID IS NULL AND Filename = @Filename COLLATE NOCASE;
-                INSERT INTO FileInfo (Filename, RelativePath, DTStamp, HASH, Flags, AbsolutePath, FileContent)
-                SELECT @Filename, @RelativePath, @DTStamp, @HASH, @Flags, @AbsolutePath, @FileContent
+                INSERT INTO FileInfo (Filename, RelativePath, DTStamp, HASH, FileSize, LastWriteTimeUtcTicks, Flags, AbsolutePath, FileContent)
+                SELECT @Filename, @RelativePath, @DTStamp, @HASH, @FileSize, @LastWriteTimeUtcTicks, @Flags, @AbsolutePath, @FileContent
                 WHERE changes() = 0;
                 SELECT FileID FROM FileInfo WHERE GameFolderID IS NULL AND Filename = @Filename COLLATE NOCASE LIMIT 1;";
 
@@ -559,6 +623,8 @@ namespace ZO.LoadOrderManager
                     command.Parameters.AddWithValue("@RelativePath", fileInfo.RelativePath ?? (object)DBNull.Value);
                     command.Parameters.AddWithValue("@DTStamp", fileInfo.DTStamp);
                     command.Parameters.AddWithValue("@HASH", fileInfo.HASH ?? (object)DBNull.Value);
+                    command.Parameters.AddWithValue("@FileSize", (object?)fileInfo.FileSize ?? DBNull.Value);
+                    command.Parameters.AddWithValue("@LastWriteTimeUtcTicks", (object?)fileInfo.LastWriteTimeUtcTicks ?? DBNull.Value);
                     command.Parameters.AddWithValue("@Flags", (long)fileInfo.Flags);
                     command.Parameters.AddWithValue("@AbsolutePath", fileInfo.AbsolutePath);
                     command.Parameters.AddWithValue("@FileContent", fileInfo.CompressedContent ?? (object)DBNull.Value);
@@ -573,6 +639,8 @@ namespace ZO.LoadOrderManager
                     RelativePath = @RelativePath,
                     DTStamp = COALESCE(@DTStamp, DTStamp),
                     HASH = COALESCE(@HASH, HASH),
+                    FileSize = COALESCE(@FileSize, FileSize),
+                    LastWriteTimeUtcTicks = COALESCE(@LastWriteTimeUtcTicks, LastWriteTimeUtcTicks),
                     Flags = @Flags,
                     AbsolutePath = @AbsolutePath,
                     FileContent = @FileContent
@@ -583,6 +651,8 @@ namespace ZO.LoadOrderManager
                     command.Parameters.AddWithValue("@RelativePath", fileInfo.RelativePath ?? (object)DBNull.Value);
                     command.Parameters.AddWithValue("@DTStamp", fileInfo.DTStamp);
                     command.Parameters.AddWithValue("@HASH", fileInfo.HASH ?? (object)DBNull.Value);
+                    command.Parameters.AddWithValue("@FileSize", (object?)fileInfo.FileSize ?? DBNull.Value);
+                    command.Parameters.AddWithValue("@LastWriteTimeUtcTicks", (object?)fileInfo.LastWriteTimeUtcTicks ?? DBNull.Value);
                     command.Parameters.AddWithValue("@Flags", (long)fileInfo.Flags);
                     command.Parameters.AddWithValue("@AbsolutePath", fileInfo.AbsolutePath);
                     command.Parameters.AddWithValue("@FileContent", fileInfo.CompressedContent ?? (object)DBNull.Value);

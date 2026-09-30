@@ -65,6 +65,8 @@ CREATE TABLE IF NOT EXISTS FileInfo (
     ModManagerFolderPath TEXT,
     DTStamp              TEXT    NOT NULL,
     HASH                 TEXT,
+    FileSize             INTEGER,
+    LastWriteTimeUtcTicks INTEGER,
     Flags                INTEGER,
     FileContent          BLOB,
     CONSTRAINT FK_FileInfo_PluginID FOREIGN KEY (

@@ -287,6 +287,8 @@ public bool InBethesda
                     RelativePath = relativePath,
                     DTStamp = file.LastWriteTime.ToString("o"),
                     HASH = newHash,
+                    FileSize = file.Length,
+                    LastWriteTimeUtcTicks = file.LastWriteTimeUtc.Ticks,
                     Flags = FileFlags.None
                 }
             };
