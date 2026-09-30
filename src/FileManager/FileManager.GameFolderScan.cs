@@ -13,6 +13,7 @@ namespace ZO.LoadOrderManager
     partial class FileManager
     {
         private static bool _quiet = false;
+        private static int _scanInProgress;
 
         //public static void ScanGameDirectoryForStrays(bool fullScan = true, long? groupSetID = null)
         //{
@@ -51,15 +52,24 @@ namespace ZO.LoadOrderManager
         //public static async Task ScanGameDirectoryForStraysAsync(bool fullScan = true, long? groupSetID = null)
        public static void ScanGameDirectoryForStrays(bool fullScan = true, long? groupSetID = null, bool quiet = false)
         {
+            if (Interlocked.Exchange(ref _scanInProgress, 1) != 0)
+            {
+                App.LogDebug("Skipped duplicate GameFolder scan request because a scan is already active.");
+                return;
+            }
+
+            try
+            {
             _quiet = quiet;
             MWMessage("Clearing all known file information", false); 
             if (GameFolderContext.Active == null) throw new InvalidOperationException("No game folder is selected.");
-            ResetPluginStatesAndFileFlags(GameFolderContext.Active.GameFolderID);
+            var activeGameFolder = GameFolderContext.Active;
+            if (InitializationManager.IsAnyInitializing()) InitializationManager.ReportScanContext(activeGameFolder);
+            RemoveMissingGameFolderFiles(activeGameFolder.GameFolderID);
             
             MWMessage("Scanning Game Folder and computing hashes, please wait",true);
             App.LogDebug("Scan Game Directory For Strays");
-            var gameFolder = FileManager.GameFolder;
-            var dataFolder = Path.Combine(gameFolder, "data");
+            var dataFolder = activeGameFolder.DataFolder;
             var pluginFiles = Directory.GetFiles(dataFolder, "*.esp")
                 .Concat(Directory.GetFiles(dataFolder, "*.esm"))
                 .ToList();
@@ -75,7 +85,7 @@ namespace ZO.LoadOrderManager
                 : "Quick Scan Selected, starting scan...",true);
 
             // Load all known FileInfo objects with the GameFolder flag set
-            var knownGameFolderFiles = ZO.LoadOrderManager.FileInfo.GetAllFiles(GameFolderContext.Active.GameFolderID)
+            var knownGameFolderFiles = ZO.LoadOrderManager.FileInfo.GetAllFiles(activeGameFolder.GameFolderID)
     .GroupBy(f => f.Filename, StringComparer.OrdinalIgnoreCase)
     .Select(g => g.First())
     .ToDictionary(f => f.Filename, StringComparer.OrdinalIgnoreCase);
@@ -122,7 +132,6 @@ namespace ZO.LoadOrderManager
                 {
                     
                     var existingPlugin = AggLoadInfo.Instance.Plugins.FirstOrDefault(p => p.PluginName.Equals(pluginName, StringComparison.OrdinalIgnoreCase));
-                    bool coreFile = existingPlugin != null && (existingPlugin.GroupID == -999);
                     if (existingPlugin != null)
                     {
 
@@ -130,22 +139,22 @@ namespace ZO.LoadOrderManager
                         existingPlugin.InGameFolder = true;
                         _ = existingPlugin.WriteMod();
 
-                        if (fullScan & !coreFile) existingFileInfo.HASH = ZO.LoadOrderManager.FileInfo.ComputeHash(pluginFile);
+                        ZO.LoadOrderManager.FileInfo.RefreshFingerprint(existingFileInfo, fileInfo, hashWhenChanged: true);
                         existingFileInfo.Flags |= FileFlags.GameFolder;
                         existingFileInfo.AbsolutePath = fileInfo.FullName;
                         existingFileInfo.RelativePath = Path.GetRelativePath(dataFolder, fileInfo.FullName);
-                        existingFileInfo.GameFolderID = GameFolderContext.Active.GameFolderID;
+                        existingFileInfo.GameFolderID = activeGameFolder.GameFolderID;
                         _ = ZO.LoadOrderManager.FileInfo.InsertFileInfo(existingFileInfo, existingPlugin.PluginID);
                        
 
                         // Check for affiliated archives
-                        AddAffiliatedFiles(fileInfo, existingPlugin.PluginID, fullScan && !coreFile);
+                        AddAffiliatedFiles(fileInfo, existingPlugin.PluginID, hashChangedFiles: true);
                         AggLoadInfo.Instance.UpdatePlugin(existingPlugin);
                     }
                 }
                 else
                 {
-                    if (fullScan) newHash = ZO.LoadOrderManager.FileInfo.ComputeHash(fileInfo.FullName);
+                    newHash = ZO.LoadOrderManager.FileInfo.ComputeHash(fileInfo.FullName);
                     // Create a new Plugin object
                     var newPlugin = new Plugin
                     {
@@ -171,13 +180,15 @@ namespace ZO.LoadOrderManager
                         Flags = FileFlags.GameFolder | FileFlags.Plugin,
                         AbsolutePath = fileInfo.FullName,
                         RelativePath = Path.GetRelativePath(dataFolder, fileInfo.FullName),
-                        GameFolderID = GameFolderContext.Active.GameFolderID
+                        GameFolderID = activeGameFolder.GameFolderID
                     };
+                    newFileInfo.FileSize = fileInfo.Length;
+                    newFileInfo.LastWriteTimeUtcTicks = fileInfo.LastWriteTimeUtc.Ticks;
                     //newFileInfo.Flags &= ~FileFlags.IsArchive;
                     _ = ZO.LoadOrderManager.FileInfo.InsertFileInfo(newFileInfo, newPlugin.PluginID);
 
                     // Check for affiliated archives
-                    AddAffiliatedFiles(fileInfo, newPlugin.PluginID, fullScan);
+                    AddAffiliatedFiles(fileInfo, newPlugin.PluginID, hashChangedFiles: true);
                     
                 }
 
@@ -201,15 +212,22 @@ namespace ZO.LoadOrderManager
             //App.RestartDialog("Finished loading all files from the game folder. Please restart the application to see the changes.");
 
             App.LogDebug("Scan complete.");
+            }
+            finally
+            {
+                Interlocked.Exchange(ref _scanInProgress, 0);
+            }
         }
 
-        public static void AddAffiliatedFiles(System.IO.FileInfo pluginFileInfo, long pluginId, bool fullScan)
+        public static void AddAffiliatedFiles(System.IO.FileInfo pluginFileInfo, long pluginId, bool hashChangedFiles)
         {
             var dataFolder = pluginFileInfo.DirectoryName;
             if (dataFolder == null) return;
 
             var baseFileName = Path.GetFileNameWithoutExtension(pluginFileInfo.Name);
-            var ba2Files = Directory.GetFiles(dataFolder, $"{baseFileName}*.ba2");
+            var ba2Files = Directory.GetFiles(dataFolder, "*.ba2")
+                .Where(path => Path.GetFileName(path).StartsWith($"{baseFileName} - ", StringComparison.OrdinalIgnoreCase))
+                .ToArray();
             var iniFiles = Directory.GetFiles(dataFolder, $"{baseFileName}.ini");
 
             int totalAffiliatedFiles = ba2Files.Length + iniFiles.Length;
@@ -221,18 +239,29 @@ namespace ZO.LoadOrderManager
                 string ba2FileName = Path.GetFileName(ba2File);
                 MWMessage($"({currentAffiliatedFileIndex}/{totalAffiliatedFiles}) Adding affiliated file info for {ba2FileName}",false);
 
-                string? newHash = null;
-                if (fullScan) newHash = ZO.LoadOrderManager.FileInfo.ComputeHash(ba2File);
+                var physicalFile = new System.IO.FileInfo(ba2File);
+                var existing = ZO.LoadOrderManager.FileInfo.GetAllFiles(GameFolderContext.Active!.GameFolderID)
+                    .FirstOrDefault(item => item.Filename.Equals(ba2FileName, StringComparison.OrdinalIgnoreCase));
+                string? newHash = existing?.HASH;
+                if (existing != null)
+                {
+                    ZO.LoadOrderManager.FileInfo.RefreshFingerprint(existing, physicalFile, hashChangedFiles);
+                    newHash = existing.HASH;
+                }
+                else if (hashChangedFiles)
+                    newHash = ZO.LoadOrderManager.FileInfo.ComputeHash(ba2File);
 
                 var ba2FileInfo = new ZO.LoadOrderManager.FileInfo
                 {
                     Filename = ba2FileName,
-                    DTStamp = File.GetLastWriteTime(ba2File).ToString("o"),
+                    DTStamp = physicalFile.LastWriteTime.ToString("o"),
                     HASH = newHash,
                     Flags = FileFlags.IsArchive | FileFlags.GameFolder ,
                     AbsolutePath = ba2File,
-                    RelativePath = Path.GetRelativePath(GameFolder, ba2File),
-                    GameFolderID = GameFolderContext.Active!.GameFolderID
+                    RelativePath = Path.GetRelativePath(dataFolder, ba2File),
+                    GameFolderID = GameFolderContext.Active!.GameFolderID,
+                    FileSize = physicalFile.Length,
+                    LastWriteTimeUtcTicks = physicalFile.LastWriteTimeUtc.Ticks
                 };
                 //newFileInfo.Flags &= ~FileFlags.IsPlugin;
                 _ = ZO.LoadOrderManager.FileInfo.InsertFileInfo(ba2FileInfo, pluginId);
@@ -246,36 +275,56 @@ namespace ZO.LoadOrderManager
                 string iniFileName = Path.GetFileName(iniFile);
                 MWMessage($"({currentAffiliatedFileIndex}/{totalAffiliatedFiles}) Adding affiliated file info for {iniFileName}", false);
 
-                string? newHash = null;
-                if (fullScan) newHash = ZO.LoadOrderManager.FileInfo.ComputeHash(iniFile);
+                var physicalFile = new System.IO.FileInfo(iniFile);
+                var existing = ZO.LoadOrderManager.FileInfo.GetAllFiles(GameFolderContext.Active!.GameFolderID)
+                    .FirstOrDefault(item => item.Filename.Equals(iniFileName, StringComparison.OrdinalIgnoreCase));
+                string? newHash = existing?.HASH;
+                if (existing != null)
+                {
+                    ZO.LoadOrderManager.FileInfo.RefreshFingerprint(existing, physicalFile, hashChangedFiles);
+                    newHash = existing.HASH;
+                }
+                else if (hashChangedFiles)
+                    newHash = ZO.LoadOrderManager.FileInfo.ComputeHash(iniFile);
                 var iniFileInfo = new ZO.LoadOrderManager.FileInfo
                 {
                     Filename = iniFileName,
-                    DTStamp = File.GetLastWriteTime(iniFile).ToString("o"),
+                    DTStamp = physicalFile.LastWriteTime.ToString("o"),
                     HASH = newHash,
                     Flags = FileFlags.Config | FileFlags.GameFolder,
                     AbsolutePath = iniFile,
-                    RelativePath = Path.GetRelativePath(GameFolder, iniFile),
-                    GameFolderID = GameFolderContext.Active!.GameFolderID
+                    RelativePath = Path.GetRelativePath(dataFolder, iniFile),
+                    GameFolderID = GameFolderContext.Active!.GameFolderID,
+                    FileSize = physicalFile.Length,
+                    LastWriteTimeUtcTicks = physicalFile.LastWriteTimeUtc.Ticks
                 };
                 _ = ZO.LoadOrderManager.FileInfo.InsertFileInfo(iniFileInfo, pluginId);
             }
         }
 
-        public static void ResetPluginStatesAndFileFlags(long gameFolderID)
+        public static void RemoveMissingGameFolderFiles(long gameFolderID)
         {
+            var missingFileIds = ZO.LoadOrderManager.FileInfo.GetAllFiles(gameFolderID)
+                .Where(file => string.IsNullOrWhiteSpace(file.AbsolutePath) || !File.Exists(file.AbsolutePath))
+                .Select(file => file.FileID)
+                .ToArray();
+
+            if (missingFileIds.Length == 0)
+            {
+                return;
+            }
 
             // Use the DbManager singleton to get the database connection
             using (var connection = DbManager.Instance.GetConnection())
             {
 
-                string updateFileInfoSql = @"
-                DELETE FROM FileInfo
-                WHERE GameFolderID = @GameFolderID AND (Flags & 8) = 8";
+                string updateFileInfoSql = "DELETE FROM FileInfo WHERE GameFolderID = @GameFolderID AND FileID = @FileID";
 
-                using (var command = new SQLiteCommand(updateFileInfoSql, connection))
+                foreach (long fileId in missingFileIds)
                 {
+                    using var command = new SQLiteCommand(updateFileInfoSql, connection);
                     command.Parameters.AddWithValue("@GameFolderID", gameFolderID);
+                    command.Parameters.AddWithValue("@FileID", fileId);
                     command.ExecuteNonQuery();
                 }
 
@@ -283,5 +332,7 @@ namespace ZO.LoadOrderManager
             }
             GameFolderContext.RefreshPresence();
         }
+
+        public static void ResetPluginStatesAndFileFlags(long gameFolderID) => RemoveMissingGameFolderFiles(gameFolderID);
     }
 }

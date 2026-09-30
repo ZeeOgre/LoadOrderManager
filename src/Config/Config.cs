@@ -138,30 +138,18 @@ namespace ZO.LoadOrderManager
                 if (!Directory.Exists(localAppDataPath))
                 {
                     _ = Directory.CreateDirectory(localAppDataPath);
-                    return;
                 }
 
                 if (!File.Exists(dbFilePath))
                 {
-                    string sampleDbPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "data", "LoadOrderManager.db");
-                    if (File.Exists(sampleDbPath))
+                    string baselineSqlPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "data", "baseload.sql");
+                    if (File.Exists(baselineSqlPath))
                     {
-                        var result = MessageBox.Show("The database file is missing. Would you like to copy the sample data over?", "Database Missing", MessageBoxButton.YesNo, MessageBoxImage.Question);
-                        if (result == MessageBoxResult.Yes)
-                        {
-                            File.Copy(sampleDbPath, dbFilePath);
-                            _ = MessageBox.Show("Sample data copied successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
-                        }
-                        else
-                        {
-                            _ = MessageBox.Show("Database file is missing. Please reinstall the application and try again.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                            Application.Current?.Dispatcher.Invoke(() => Application.Current.Shutdown());
-                            return;
-                        }
+                        BuildDatabaseFromBaseline(baselineSqlPath);
                     }
                     else
                     {
-                        _ = MessageBox.Show("The database file is missing and no sample data is available. Please reinstall the application and try again.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                        _ = MessageBox.Show("The database file is missing and data\\baseload.sql is unavailable. Please reinstall the application and try again.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                         Application.Current?.Dispatcher.Invoke(() => Application.Current.Shutdown());
                         return;
                     }
@@ -186,6 +174,30 @@ namespace ZO.LoadOrderManager
             finally
             {
                 _isVerificationInProgress = false;
+            }
+        }
+
+        private static void BuildDatabaseFromBaseline(string baselineSqlPath)
+        {
+            Directory.CreateDirectory(localAppDataPath);
+            string temporaryDatabasePath = dbFilePath + ".new";
+            File.Delete(temporaryDatabasePath);
+
+            try
+            {
+                SQLiteConnection.CreateFile(temporaryDatabasePath);
+                using var connection = new SQLiteConnection($"Data Source={temporaryDatabasePath};Version=3;");
+                connection.Open();
+                using var command = new SQLiteCommand(File.ReadAllText(baselineSqlPath), connection);
+                command.ExecuteNonQuery();
+                connection.Close();
+                File.Move(temporaryDatabasePath, dbFilePath);
+                App.LogDebug($"Created database from baseline SQL: {baselineSqlPath}");
+            }
+            catch
+            {
+                File.Delete(temporaryDatabasePath);
+                throw;
             }
         }
 

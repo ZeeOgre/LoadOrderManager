@@ -8,6 +8,7 @@ namespace ZO.LoadOrderManager
         private static readonly HashSet<string> InitializingComponents = new HashSet<string>();
         private static readonly object Lock = new object();
         private static Action<long, string>? _progressCallback;
+        private static Action<string, string>? _scanContextCallback;
 
         public static void StartInitialization(string componentName)
         {
@@ -60,6 +61,17 @@ namespace ZO.LoadOrderManager
         public static void SetProgressCallback(Action<long, string> progressCallback)
         {
             _progressCallback = progressCallback;
+        }
+
+        public static void SetScanContextCallback(Action<string, string> scanContextCallback)
+        {
+            _scanContextCallback = scanContextCallback;
+        }
+
+        public static void ReportScanContext(GameFolder folder)
+        {
+            Application.Current?.Dispatcher.Invoke(() =>
+                _scanContextCallback?.Invoke(folder.DisplayName, folder.DataFolder));
         }
 
         private static readonly Queue<(long progress, string message)> ProgressQueue = new Queue<(long, string)>();

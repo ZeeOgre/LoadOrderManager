@@ -222,6 +222,22 @@ namespace ZO.LoadOrderManager
                 command.ExecuteNonQuery();
             }
 
+            command.CommandText = "PRAGMA table_info(FileInfo);";
+            var fileInfoColumns = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            using (var reader = command.ExecuteReader())
+                while (reader.Read()) fileInfoColumns.Add(reader.GetString(1));
+
+            if (!fileInfoColumns.Contains("FileSize"))
+            {
+                command.CommandText = "ALTER TABLE FileInfo ADD COLUMN FileSize INTEGER;";
+                command.ExecuteNonQuery();
+            }
+            if (!fileInfoColumns.Contains("LastWriteTimeUtcTicks"))
+            {
+                command.CommandText = "ALTER TABLE FileInfo ADD COLUMN LastWriteTimeUtcTicks INTEGER;";
+                command.ExecuteNonQuery();
+            }
+
             var legacyRoot = Config.Instance.GameFolder;
             if (!string.IsNullOrWhiteSpace(legacyRoot) && Directory.Exists(Path.Combine(legacyRoot, "Data")))
             {
@@ -238,7 +254,8 @@ namespace ZO.LoadOrderManager
                 DROP VIEW IF EXISTS vwPluginFiles;
                 CREATE VIEW vwPluginFiles AS
                 SELECT fi.FileID, p.PluginID, p.PluginName, fi.Filename, fi.RelativePath,
-                       fi.DTStamp, fi.HASH, fi.Flags, fi.AbsolutePath, fi.GameFolderID
+                       fi.DTStamp, fi.HASH, fi.Flags, fi.AbsolutePath, fi.GameFolderID,
+                       fi.FileSize, fi.LastWriteTimeUtcTicks
                 FROM Plugins p JOIN FileInfo fi ON p.PluginID = fi.PluginID;";
             command.Parameters.Clear();
             command.ExecuteNonQuery();

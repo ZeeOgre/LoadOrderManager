@@ -4,9 +4,18 @@
         xmlns:metro="http://metro.mahapps.com/winfx/xaml/controls"
         Style="{StaticResource MaterialDesignWindow}"
         xmlns:local="clr-namespace:ZO.LoadOrderManager"
-        Title="Loading" Height="200" Width="400">
+        Title="Loading" Height="240" Width="520">
     <Grid>
-        <ProgressBar x:Name="ProgressBar" Minimum="0" Maximum="100" Height="30" VerticalAlignment="Top" Margin="10"/>
-        <Label x:Name="MessageLabel" Content="Initializing..." VerticalAlignment="Center" HorizontalAlignment="Center"/>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <ProgressBar x:Name="ProgressBar" Minimum="0" Maximum="100" Height="30" Margin="10"/>
+        <StackPanel x:Name="ScanContextPanel" Grid.Row="1" Margin="12,4" Visibility="Collapsed">
+            <TextBlock x:Name="GameFolderNameText" FontWeight="SemiBold"/>
+            <TextBlock x:Name="GameFolderPathText" TextWrapping="Wrap"/>
+        </StackPanel>
+        <Label x:Name="MessageLabel" Grid.Row="2" Content="Initializing..." VerticalAlignment="Center" HorizontalAlignment="Center"/>
     </Grid>
 </metro:MetroWindow>

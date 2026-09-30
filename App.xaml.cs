@@ -229,6 +229,10 @@ namespace ZO.LoadOrderManager
                         loadingWindow?.UpdateProgress(progress, message);
                     });
                 });
+                InitializationManager.SetScanContextCallback((displayName, dataFolder) =>
+                {
+                    Dispatcher.Invoke(() => loadingWindow?.UpdateScanContext(displayName, dataFolder));
+                });
 
                 // Run initialization tasks in a background thread
                 _ = Task.Run(() =>

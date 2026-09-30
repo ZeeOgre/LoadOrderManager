@@ -425,8 +425,9 @@
                           IsChecked="{Binding HideUnloadedPlugins, Mode=TwoWay}" 
                               Width="490" />
             </StackPanel>
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Grid.Column="2" Width="100">
-                <Button x:Name="SaveButton" Content="Save" Width="70" Margin="25,5,5,5" Command="{Binding SavePluginsCommand}"/>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Grid.Column="2">
+                <Button x:Name="PlayButton" Content="PLAY" Width="70" Margin="5" Command="{Binding PlayGameCommand}"/>
+                <Button x:Name="SaveButton" Content="Save" Width="70" Margin="5" Command="{Binding SavePluginsCommand}"/>
             </StackPanel>
         </Grid>
 

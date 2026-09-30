@@ -367,3 +367,6 @@ FodyWeavers.xsd
 # Ignore Installer cache
 [Ii]nstaller/*-cache/**
 [Ii]nstaller/*-cache/**/*
+
+# Runtime databases are generated from the version-controlled SQL baseline.
+data/*.db

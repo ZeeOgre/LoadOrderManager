@@ -75,7 +75,6 @@ var knownFileNames = new HashSet<string>(knownFiles.Select(f => f.Value.Filename
                     {
 
                         var existingPlugin = AggLoadInfo.Instance.Plugins.FirstOrDefault(p => p.PluginName.Equals(pluginName, StringComparison.OrdinalIgnoreCase));
-                        bool coreFile = existingPlugin != null && (existingPlugin.GroupID == -999);
                         if (existingPlugin != null)
                         {
 
@@ -86,14 +85,14 @@ var knownFileNames = new HashSet<string>(knownFiles.Select(f => f.Value.Filename
                             existingPlugin.State |= ModState.Nexus | ModState.ModManager;   
                             _ = existingPlugin.WriteMod();
 
-                            if (!coreFile) existingFileInfo.HASH = ZO.LoadOrderManager.FileInfo.ComputeHash(pluginFile);
+                            ZO.LoadOrderManager.FileInfo.RefreshFingerprint(existingFileInfo, fileInfo, hashWhenChanged: true);
                             existingFileInfo.Flags |= FileFlags.Plugin;
                             existingFileInfo.AbsolutePath = fileInfo.FullName;
                             _ = ZO.LoadOrderManager.FileInfo.InsertFileInfo(existingFileInfo, existingPlugin.PluginID);
 
 
                             // Check for affiliated archives
-                            AddAffiliatedFiles(fileInfo, existingPlugin.PluginID, !coreFile);
+                            AddAffiliatedFiles(fileInfo, existingPlugin.PluginID, hashChangedFiles: true);
                             plugin = existingPlugin;
                         }
                     }
@@ -125,6 +124,8 @@ var knownFileNames = new HashSet<string>(knownFiles.Select(f => f.Value.Filename
                             AbsolutePath = fileInfo.FullName,
                             RelativePath = Path.GetRelativePath(GameFolder, fileInfo.FullName)
                         };
+                        newFileInfo.FileSize = fileInfo.Length;
+                        newFileInfo.LastWriteTimeUtcTicks = fileInfo.LastWriteTimeUtc.Ticks;
                         _ = ZO.LoadOrderManager.FileInfo.InsertFileInfo(newFileInfo, newPlugin.PluginID);
 
                         plugin = newPlugin;
@@ -184,12 +185,15 @@ var knownFileNames = new HashSet<string>(knownFiles.Select(f => f.Value.Filename
                 }
 
                 // Create FileInfo object
+                var physicalFile = new System.IO.FileInfo(modFile);
                 var fileInfo = new ZO.LoadOrderManager.FileInfo
                 {
                     Filename = fileName,
                     RelativePath = Path.GetRelativePath(modFolder, modFile),
                     DTStamp = File.GetLastWriteTime(modFile).ToString("o"),
                     HASH = ZO.LoadOrderManager.FileInfo.ComputeHash(modFile),
+                    FileSize = physicalFile.Length,
+                    LastWriteTimeUtcTicks = physicalFile.LastWriteTimeUtc.Ticks,
                     Flags = fileFlags,
                     AbsolutePath = modFile
                 };

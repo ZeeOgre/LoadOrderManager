@@ -17,6 +17,7 @@ namespace ZO.LoadOrderManager
         public ICommand MoveUpCommand { get; }
         public ICommand MoveDownCommand { get; }
         public ICommand SavePluginsCommand { get; }
+        public ICommand PlayGameCommand { get; }
         public ICommand SaveLoadOutCommand { get; }
         public ICommand EditGroupSetCommand { get; }
         public ICommand EditLoadOutCommand { get; }
@@ -37,6 +38,41 @@ namespace ZO.LoadOrderManager
 
             LoadOut.SetPluginEnabled(SelectedLoadOut.ProfileID, itemViewModel.PluginData.PluginID, itemViewModel.IsActive);
             OnPropertyChanged(nameof(LoadOuts));
+        }
+
+        private void PlayGame()
+        {
+            var activeFolder = GameFolderContext.Active;
+            if (activeFolder == null)
+            {
+                UpdateStatus("Select a game folder before launching Starfield.");
+                return;
+            }
+
+            string executablePath = Path.Combine(activeFolder.GameRoot, "Starfield.exe");
+            if (!File.Exists(executablePath))
+            {
+                UpdateStatus($"Starfield.exe was not found in {activeFolder.GameRoot}.");
+                _ = MessageBox.Show($"Starfield.exe was not found in:\n{activeFolder.GameRoot}",
+                    "Unable to launch Starfield", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            try
+            {
+                _ = Process.Start(new ProcessStartInfo(executablePath)
+                {
+                    WorkingDirectory = activeFolder.GameRoot,
+                    UseShellExecute = true
+                });
+                UpdateStatus($"Launching Starfield from {activeFolder.DisplayName}.");
+            }
+            catch (Exception ex)
+            {
+                App.LogDebug($"Unable to launch Starfield: {ex.Message}");
+                UpdateStatus("Unable to launch Starfield.");
+                _ = MessageBox.Show(ex.Message, "Unable to launch Starfield", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
 
