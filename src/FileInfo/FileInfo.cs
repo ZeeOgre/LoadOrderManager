@@ -448,11 +448,22 @@ namespace ZO.LoadOrderManager
             long length = physicalFile.Length;
             long ticks = physicalFile.LastWriteTimeUtc.Ticks;
             bool hasHash = !string.IsNullOrWhiteSpace(stored.HASH);
-            bool exactMatch = stored.FileSize == length && stored.LastWriteTimeUtcTicks == ticks;
-            bool skippedHash = hasHash && exactMatch;
+            bool hasStoredMetadata = stored.FileSize.HasValue && stored.LastWriteTimeUtcTicks.HasValue;
+            bool exactMatch = hasStoredMetadata && stored.FileSize == length && stored.LastWriteTimeUtcTicks == ticks;
+
+            // Older/catalog rows can already have a useful hash but predate the persisted
+            // size/timestamp fingerprint. Establish that baseline without reading the whole
+            // file. A later metadata change will take the normal hash-and-compare path.
+            bool metadataBackfill = hasHash && !hasStoredMetadata;
+            bool skippedHash = hasHash && (exactMatch || metadataBackfill);
             if (hashWhenChanged && !skippedHash)
             {
                 stored.HASH = ComputeHash(physicalFile.FullName);
+            }
+
+            if (metadataBackfill)
+            {
+                App.LogDebug($"Fingerprint metadata backfilled without hashing: {physicalFile.FullName}");
             }
 
             stored.FileSize = length;

@@ -54,7 +54,7 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="data\**\*" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="data\**\*" Exclude="data\*.db" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="docs\**\*" CopyToOutputDirectory="OverwriteAlways" />
   </ItemGroup>
   <ItemGroup>
