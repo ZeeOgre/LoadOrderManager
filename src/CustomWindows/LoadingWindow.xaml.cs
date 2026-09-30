@@ -17,6 +17,13 @@ namespace ZO.LoadOrderManager
             MessageLabel.Content = message;
         }
 
+        public void UpdateScanContext(string displayName, string dataFolder)
+        {
+            GameFolderNameText.Text = $"Scanning {displayName}";
+            GameFolderPathText.Text = dataFolder;
+            ScanContextPanel.Visibility = Visibility.Visible;
+        }
+
         public void ShowInForeground()
         {
             this.Show();

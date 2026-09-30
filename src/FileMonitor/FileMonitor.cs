@@ -17,12 +17,17 @@ namespace ZO.LoadOrderManager
         private string _filePath;
         private string _lastHash;
         private byte[] _lastContent;
+        private long _lastLength;
+        private long _lastWriteTimeUtcTicks;
 
-        public FileMonitor(string filePath, byte[] initialContent)
+        public FileMonitor(string filePath, byte[] initialContent, string? initialHash = null)
         {
             _filePath = filePath;
-            _lastHash = FileInfo.ComputeHash(filePath);
+            var physicalFile = new System.IO.FileInfo(filePath);
+            _lastHash = string.IsNullOrWhiteSpace(initialHash) ? FileInfo.ComputeHash(filePath) : initialHash;
             _lastContent = initialContent;
+            _lastLength = physicalFile.Length;
+            _lastWriteTimeUtcTicks = physicalFile.LastWriteTimeUtc.Ticks;
 
             _watcher = new FileSystemWatcher(Path.GetDirectoryName(filePath))
             {
@@ -59,8 +64,16 @@ namespace ZO.LoadOrderManager
         {
             if (e.ChangeType == WatcherChangeTypes.Changed || e.ChangeType == WatcherChangeTypes.Renamed)
             {
+                var physicalFile = new System.IO.FileInfo(_filePath);
+                if (physicalFile.Length == _lastLength && physicalFile.LastWriteTimeUtc.Ticks == _lastWriteTimeUtcTicks)
+                {
+                    return;
+                }
+
                 // Compute the new file hash and compare
                 string newHash = FileInfo.ComputeHash(_filePath);
+                _lastLength = physicalFile.Length;
+                _lastWriteTimeUtcTicks = physicalFile.LastWriteTimeUtc.Ticks;
                 if (newHash != _lastHash)
                 {
                     _lastHash = newHash;
@@ -113,17 +126,19 @@ namespace ZO.LoadOrderManager
                         if (file.FileContent != null)
                         {
                             // Check if the file and its hash match the database
-                            string currentHash = FileInfo.ComputeHash(resolvedPath);
-                            if (file.HASH != currentHash)
+                            string? previousHash = file.HASH;
+                            FileInfo.RefreshFingerprint(file, new System.IO.FileInfo(resolvedPath), hashWhenChanged: true);
+                            string currentHash = file.HASH ?? string.Empty;
+                            if (previousHash != currentHash)
                             {
                                 file.HASH = currentHash;
                                 file.FileContent = File.ReadAllBytes(resolvedPath);
                                 file.CompressedContent = CompressFile(file.FileContent);
                                 file.DTStamp = File.GetLastWriteTime(resolvedPath).ToString("o");
-                                _ = FileInfo.InsertFileInfo(file);
                             }
+                            _ = FileInfo.InsertFileInfo(file);
 
-                            _ = new FileMonitor(resolvedPath, file.FileContent);
+                            _ = new FileMonitor(resolvedPath, file.FileContent, currentHash);
                         }
                         else
                         {
@@ -131,6 +146,7 @@ namespace ZO.LoadOrderManager
                             Console.WriteLine($"FileContent is null for file: {file}");
 
                             // Create a new FileInfo object for the target file
+                            var physicalFile = new System.IO.FileInfo(resolvedPath);
                             var newFileInfo = new FileInfo
                             {
                                 AbsolutePath = resolvedPath,
@@ -138,6 +154,8 @@ namespace ZO.LoadOrderManager
                                 DTStamp = File.GetLastWriteTime(resolvedPath).ToString("o"),
                                 FileContent = File.ReadAllBytes(resolvedPath),
                                 HASH = FileInfo.ComputeHash(resolvedPath),
+                                FileSize = physicalFile.Length,
+                                LastWriteTimeUtcTicks = physicalFile.LastWriteTimeUtc.Ticks,
                                 CompressedContent = CompressFile(File.ReadAllBytes(resolvedPath)),
                                 Flags = file.Flags | FileFlags.IsMonitored
                             };
@@ -146,7 +164,7 @@ namespace ZO.LoadOrderManager
                             _ = FileInfo.InsertFileInfo(newFileInfo);
 
                             // Initialize the FileMonitor with the new FileInfo
-                            _ = new FileMonitor(newFileInfo.AbsolutePath, newFileInfo.FileContent);
+                            _ = new FileMonitor(newFileInfo.AbsolutePath, newFileInfo.FileContent, newFileInfo.HASH);
                             App.LogDebug($"New FileMonitor for {newFileInfo.AbsolutePath} established");
                         }
                     }

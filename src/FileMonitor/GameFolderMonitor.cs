@@ -85,7 +85,8 @@ public class GameFolderMonitor : IDisposable
                 foreach (var file in files)
                 {
                     file.ReplaceFlags(file.Flags | FileFlags.GameFolder);
-                    file.HASH = zoFileInfo.ComputeHash(pluginFile); // Recalculate hash
+                    zoFileInfo.RefreshFingerprint(file, new System.IO.FileInfo(pluginFile), hashWhenChanged: true);
+                    zoFileInfo.InsertFileInfo(file, existingPlugin.PluginID);
                 }
             }
             else
@@ -104,19 +105,23 @@ public class GameFolderMonitor : IDisposable
                 AggLoadInfo.Instance.Plugins.Add(newPlugin);
 
                 // Create and insert FileInfo
+                var physicalFile = new System.IO.FileInfo(pluginFile);
                 var newFileInfo = new zoFileInfo(pluginFile)
                 {
                     GameFolderID = GameFolderContext.Active?.GameFolderID,
                     Flags = FileFlags.Plugin | FileFlags.GameFolder,
                     DTStamp = newPlugin.DTStamp,
                     HASH = zoFileInfo.ComputeHash(pluginFile),
+                    FileSize = physicalFile.Length,
+                    LastWriteTimeUtcTicks = physicalFile.LastWriteTimeUtc.Ticks,
                     AbsolutePath = pluginFile
                 };
                 zoFileInfo.InsertFileInfo(newFileInfo, newPlugin.PluginID);
 
                 // Process affiliated files
                 App.LogDebug($"Processing affiliated files for {pluginName}");
-                await Task.Run(() => FileManager.AddAffiliatedFiles(new System.IO.FileInfo(pluginFile), newFileInfo.FileID, true));
+                await Task.Run(() => FileManager.AddAffiliatedFiles(
+                    new System.IO.FileInfo(pluginFile), newPlugin.PluginID, hashChangedFiles: true));
             }
 
             Application.Current.Dispatcher.Invoke(() =>
